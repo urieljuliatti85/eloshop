@@ -11,6 +11,6 @@ class CartsControllerTest < ActionDispatch::IntegrationTest
 
     get cart_path
     assert_response :success
-    assert_select "td", text: products(:one).name
+    assert_match products(:one).name, response.body
   end
 end

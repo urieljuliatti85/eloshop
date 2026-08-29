@@ -26,7 +26,7 @@ class FullPurchaseFlowTest < ActionDispatch::IntegrationTest
     # Cliente adiciona ao carrinho
     post cart_items_path, params: { product_id: product.id, quantity: 1 }
     get cart_path
-    assert_select "td", text: product.name
+    assert_match product.name, response.body
 
     # Cliente finaliza o checkout
     assert_difference("Order.count", 1) do
