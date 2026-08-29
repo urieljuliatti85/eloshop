@@ -1,34 +1,36 @@
 <div class="w-full">
-  <h1 class="text-2xl font-bold mb-6">Produtos</h1>
+  <section class="mb-16 overflow-hidden rounded-lg bg-brand-100">
+    <div class="flex flex-col items-start gap-6 px-8 py-16 md:px-16">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-600">Feito à mão</span>
+      <h1 class="max-w-lg text-4xl font-bold text-brand-600 md:text-5xl">
+        Peças com história, feitas por artesãos de verdade
+      </h1>
+      <p class="max-w-md text-ink-muted">
+        Cada produto é feito à mão, em pequenas tiragens ou sob encomenda. Conheça o processo antes de comprar.
+      </p>
+      <%= link_to "Ver produtos", products_path, class: "rounded bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
+    </div>
+  </section>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  <h2 class="mb-8 text-2xl font-bold text-ink">Produtos</h2>
+
+  <div class="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
     <% @products.each do |product| %>
-      <%= link_to product_path(product), class: "border rounded p-3 block hover:shadow" do %>
-        <% if product.main_image.attached? %>
-          <%= image_tag product.main_image, class: "w-full aspect-square object-cover mb-2" %>
-        <% end %>
-
-        <p class="font-semibold"><%= product.name %></p>
-        <p><%= number_to_currency(product.price_cents / 100.0, unit: product.currency) %></p>
-
-        <% unless product.available_for_purchase? %>
-          <p class="text-red-700 text-sm">Indisponível</p>
-        <% end %>
-      <% end %>
+      <%= render "product_card", product: product %>
     <% end %>
   </div>
 
   <% if @products.none? %>
-    <p class="text-gray-600">Nenhum produto disponível no momento.</p>
+    <p class="text-ink-muted">Nenhum produto disponível no momento.</p>
   <% end %>
 
-  <div class="flex gap-4 mt-6">
+  <div class="mt-12 flex justify-center gap-3">
     <% if @page > 1 %>
-      <%= link_to "Anterior", products_path(page: @page - 1) %>
+      <%= link_to "Anterior", products_path(page: @page - 1), class: "rounded border border-gray-300 px-4 py-2 text-sm font-medium hover:border-brand-500 hover:text-brand-600" %>
     <% end %>
 
     <% if @page < @total_pages %>
-      <%= link_to "Próxima", products_path(page: @page + 1) %>
+      <%= link_to "Próxima", products_path(page: @page + 1), class: "rounded border border-gray-300 px-4 py-2 text-sm font-medium hover:border-brand-500 hover:text-brand-600" %>
     <% end %>
   </div>
 </div>
