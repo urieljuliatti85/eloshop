@@ -49,4 +49,24 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "p", text: "Indisponível"
   end
+
+  test "shows a product with variants including the variant selector" do
+    product = products(:with_variants)
+
+    get product_path(product.slug)
+
+    assert_response :success
+    assert_select "select[data-variant-selector-target='size']"
+    assert_select "input[type='submit']"
+  end
+
+  test "shows a product with variants as unavailable when no active variant has stock" do
+    product = products(:with_variants)
+    product.product_variants.update_all(stock_quantity: 0)
+
+    get product_path(product.slug)
+
+    assert_response :success
+    assert_select "p", text: "Indisponível"
+  end
 end

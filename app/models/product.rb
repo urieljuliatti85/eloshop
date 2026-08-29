@@ -82,6 +82,15 @@ class Product < ApplicationRecord
     product_variants.any?
   end
 
+  # Menor preço entre as variantes ativas — usado no catálogo para produtos
+  # com variante, já que o price_cents do próprio produto não representa
+  # necessariamente nenhuma opção comprável (Fase 9, preço por variante).
+  def starting_price_cents
+    return price_cents unless has_variants?
+
+    product_variants.select(&:active?).filter_map(&:price_cents).min || price_cents
+  end
+
   # Snapshot textual do prazo de produção, gravado no pedido no momento da
   # compra (ver docs/checkout.md e docs/shipping.md — não confundir com
   # prazo de transporte).

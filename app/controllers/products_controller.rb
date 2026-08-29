@@ -8,10 +8,10 @@ class ProductsController < StorefrontController
 
     @page = [ params[:page].to_i, 1 ].max
     @total_pages = (scope.count / PER_PAGE.to_f).ceil
-    @products = scope.limit(PER_PAGE).offset((@page - 1) * PER_PAGE)
+    @products = scope.includes(:product_variants).limit(PER_PAGE).offset((@page - 1) * PER_PAGE)
   end
 
   def show
-    @product = Product.active.find_by!(slug: params[:slug])
+    @product = Product.active.includes(:product_variants).find_by!(slug: params[:slug])
   end
 end
