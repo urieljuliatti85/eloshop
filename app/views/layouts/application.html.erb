@@ -23,19 +23,13 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <header class="container mx-auto pt-6 px-5 flex justify-end gap-4">
-      <% if respond_to?(:customer_authenticated?) && customer_authenticated? %>
-        <%= button_to "Sair", customer_session_path, method: :delete %>
-      <% elsif respond_to?(:customer_authenticated?) %>
-        <%= link_to "Entrar", new_customer_session_path %>
-        <%= link_to "Criar conta", new_customer_path %>
-      <% end %>
-      <%= link_to "Carrinho", cart_path %>
-    </header>
+  <body class="flex min-h-screen flex-col bg-white text-ink">
+    <%= render "layouts/header" %>
 
-    <main class="container mx-auto mt-12 px-5 flex">
+    <main class="container mx-auto flex-1 px-5 py-12">
       <%= yield %>
     </main>
+
+    <%= render "layouts/footer" %>
   </body>
 </html>

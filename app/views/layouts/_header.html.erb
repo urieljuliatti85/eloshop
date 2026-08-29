@@ -1,0 +1,30 @@
+<header class="border-b border-gray-200 bg-white">
+  <div class="container mx-auto flex items-center justify-between gap-6 px-5 py-5">
+    <%= link_to root_path, class: "text-xl font-bold text-ink" do %>
+      EloShop
+    <% end %>
+
+    <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-ink">
+      <%= link_to "Início", root_path %>
+      <%= link_to "Loja", products_path %>
+    </nav>
+
+    <div class="flex items-center gap-5 text-sm">
+      <% if respond_to?(:customer_authenticated?) && customer_authenticated? %>
+        <%= button_to "Sair", customer_session_path, method: :delete, class: "text-ink hover:text-brand-600" %>
+      <% elsif respond_to?(:customer_authenticated?) %>
+        <%= link_to "Entrar", new_customer_session_path, class: "text-ink hover:text-brand-600" %>
+        <%= link_to "Criar conta", new_customer_path, class: "text-ink hover:text-brand-600" %>
+      <% end %>
+
+      <%= link_to cart_path, class: "relative text-ink hover:text-brand-600", aria: { label: "Carrinho" } do %>
+        Carrinho
+        <% if Current.cart&.cart_items&.any? %>
+          <span class="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-semibold text-white">
+            <%= Current.cart.cart_items.sum(:quantity) %>
+          </span>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</header>
