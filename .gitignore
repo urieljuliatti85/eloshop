@@ -35,3 +35,8 @@
 
 # macOS
 .DS_Store
+
+# Documentação interna de planejamento/orientação (não faz parte do código da aplicação).
+/CLAUDE.md
+/ROADMAP.md
+/docs/
