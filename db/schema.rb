@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_224257) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_233333) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,11 +60,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_224257) do
     t.bigint "cart_id", null: false
     t.datetime "created_at", null: false
     t.bigint "product_id", null: false
+    t.bigint "product_variant_id"
     t.integer "quantity", default: 1, null: false
     t.datetime "updated_at", null: false
-    t.index ["cart_id", "product_id"], name: "index_cart_items_on_cart_id_and_product_id", unique: true
+    t.index "cart_id, product_id, COALESCE(product_variant_id, (0)::bigint)", name: "index_cart_items_on_cart_product_and_variant", unique: true
     t.index ["cart_id"], name: "index_cart_items_on_cart_id"
     t.index ["product_id"], name: "index_cart_items_on_product_id"
+    t.index ["product_variant_id"], name: "index_cart_items_on_product_variant_id"
   end
 
   create_table "carts", force: :cascade do |t|
@@ -95,17 +97,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_224257) do
   end
 
   create_table "order_items", force: :cascade do |t|
+    t.string "color_snapshot"
     t.datetime "created_at", null: false
+    t.string "material_snapshot"
     t.bigint "order_id", null: false
     t.bigint "product_id", null: false
     t.string "product_name", null: false
+    t.bigint "product_variant_id"
     t.string "production_time_snapshot"
     t.integer "quantity", null: false
+    t.string "size_snapshot"
     t.string "sku", null: false
     t.integer "unit_price_cents", null: false
     t.datetime "updated_at", null: false
+    t.string "variant_sku"
     t.index ["order_id"], name: "index_order_items_on_order_id"
     t.index ["product_id"], name: "index_order_items_on_product_id"
+    t.index ["product_variant_id"], name: "index_order_items_on_product_variant_id"
   end
 
   create_table "orders", force: :cascade do |t|
@@ -142,6 +150,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_224257) do
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
     t.index ["order_id"], name: "index_payments_on_order_id"
+  end
+
+  create_table "product_variants", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "color"
+    t.datetime "created_at", null: false
+    t.string "material"
+    t.integer "price_cents", null: false
+    t.bigint "product_id", null: false
+    t.string "size"
+    t.string "sku", null: false
+    t.integer "stock_quantity", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index "product_id, COALESCE(size, ''::character varying), COALESCE(color, ''::character varying), COALESCE(material, ''::character varying)", name: "index_product_variants_on_product_and_combination", unique: true
+    t.index ["product_id"], name: "index_product_variants_on_product_id"
+    t.index ["sku"], name: "index_product_variants_on_sku", unique: true
+    t.check_constraint "price_cents >= 0", name: "product_variants_price_cents_check"
+    t.check_constraint "stock_quantity >= 0", name: "product_variants_stock_quantity_check"
   end
 
   create_table "products", force: :cascade do |t|
@@ -186,13 +212,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_224257) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "addresses", "customers"
   add_foreign_key "cart_items", "carts"
+  add_foreign_key "cart_items", "product_variants"
   add_foreign_key "cart_items", "products"
   add_foreign_key "carts", "customers"
   add_foreign_key "customer_sessions", "customers"
   add_foreign_key "order_items", "orders"
+  add_foreign_key "order_items", "product_variants"
   add_foreign_key "order_items", "products"
   add_foreign_key "orders", "customers"
   add_foreign_key "payment_events", "payments"
   add_foreign_key "payments", "orders"
+  add_foreign_key "product_variants", "products"
   add_foreign_key "sessions", "users"
 end

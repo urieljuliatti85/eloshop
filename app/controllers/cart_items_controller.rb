@@ -5,7 +5,10 @@ class CartItemsController < StorefrontController
 
   def create
     requested_quantity = params[:quantity].presence&.to_i || 1
-    item = Current.cart.cart_items.find_or_initialize_by(product_id: params[:product_id])
+    item = Current.cart.cart_items.find_or_initialize_by(
+      product_id: params[:product_id],
+      product_variant_id: params[:product_variant_id].presence
+    )
     item.quantity = (item.new_record? ? 0 : item.quantity) + requested_quantity
 
     if item.save

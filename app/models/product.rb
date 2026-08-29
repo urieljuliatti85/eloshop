@@ -33,6 +33,7 @@ class Product < ApplicationRecord
   }, default: "standard", prefix: true
 
   has_one_attached :main_image
+  has_many :product_variants, dependent: :destroy
 
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 
@@ -47,6 +48,8 @@ class Product < ApplicationRecord
   validates :production_time_min_days, :production_time_max_days,
             presence: true, numericality: { greater_than: 0 }, if: :availability_type_made_to_order?
   validate :production_time_range_valid, if: :availability_type_made_to_order?
+
+  validate :availability_type_immutable_while_has_variants, if: :availability_type_changed?
 
   validate :main_image_content_type_allowed
   validate :main_image_size_within_limit
@@ -64,11 +67,19 @@ class Product < ApplicationRecord
   end
 
   # Fonte única de verdade sobre disponibilidade de compra — ver docs/inventory.md.
-  # Produto sob encomenda não depende de estoque físico.
+  # Produto sob encomenda não depende de estoque físico. Produto com
+  # variantes (Fase 9) nunca é comprado "cru" — a decisão passa sempre pela
+  # variante escolhida, então aqui só reflete se existe alguma opção comprável.
   def available_for_purchase?
-    return active? if availability_type_made_to_order?
+    return false unless active?
+    return product_variants.any?(&:available_for_purchase?) if has_variants?
+    return true if availability_type_made_to_order?
 
-    active? && stock_quantity.positive?
+    stock_quantity.positive?
+  end
+
+  def has_variants?
+    product_variants.any?
   end
 
   # Snapshot textual do prazo de produção, gravado no pedido no momento da
@@ -121,5 +132,12 @@ class Product < ApplicationRecord
     return if main_image.byte_size <= MAIN_IMAGE_MAX_BYTES
 
     errors.add(:main_image, "deve ter no máximo 5MB")
+  end
+
+  def availability_type_immutable_while_has_variants
+    return if availability_type_standard?
+    return unless persisted? && has_variants?
+
+    errors.add(:availability_type, "não pode ser alterado enquanto o produto tiver variantes cadastradas")
   end
 end

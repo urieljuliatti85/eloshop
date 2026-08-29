@@ -6,6 +6,6 @@ class Cart < ApplicationRecord
   validates :session_token, presence: true, uniqueness: true
 
   def subtotal_cents
-    cart_items.includes(:product).sum(&:subtotal_cents)
+    cart_items.includes(:product, :product_variant).sum(&:subtotal_cents)
   end
 end

@@ -52,38 +52,68 @@ module Checkout
 
     # Bloqueia cada produto envolvido (SELECT ... FOR UPDATE) antes de
     # revalidar disponibilidade e quantidade, para que dois checkouts
-    # simultâneos na última unidade não vendam a mesma peça duas vezes.
-    # Os produtos são bloqueados em ordem estável (product_id) para evitar
-    # deadlock quando um carrinho tem mais de um item.
+    # simultâneos na última unidade não vendam a mesma peça duas vezes. Um
+    # item com variante (Fase 9) também bloqueia a ProductVariant — o estoque
+    # dela é a fonte de verdade, não o do produto. Tudo é bloqueado em ordem
+    # estável (product_id, depois product_variant_id) para evitar deadlock
+    # quando um carrinho tem mais de um item.
     def lock_and_revalidate_cart_items!
-      cart_items = @cart.cart_items.includes(:product).order(:product_id).to_a
+      cart_items = @cart.cart_items.includes(:product, :product_variant)
+                        .order(:product_id, :product_variant_id).to_a
       raise Failed, "Carrinho vazio." if cart_items.empty?
 
       cart_items.each do |cart_item|
         product = cart_item.product
         product.lock!
 
-        raise Failed, "#{product.name} não está mais disponível." unless product.available_for_purchase?
+        if cart_item.product_variant
+          raise Failed, "#{product.name} não está mais disponível." unless product.active?
 
-        if !product.availability_type_made_to_order? && cart_item.quantity > product.stock_quantity
-          raise Failed, "Estoque insuficiente para #{product.name}."
+          lock_and_validate_variant!(cart_item)
+        else
+          raise Failed, "#{product.name} não está mais disponível." unless product.available_for_purchase?
+
+          if !product.availability_type_made_to_order? && cart_item.quantity > product.stock_quantity
+            raise Failed, "Estoque insuficiente para #{product.name}."
+          end
         end
       end
 
       cart_items
     end
 
+    def lock_and_validate_variant!(cart_item)
+      variant = cart_item.product_variant
+      variant.lock!
+
+      label = "#{cart_item.product.name} (#{variant.to_label})"
+
+      raise Failed, "#{label} não está mais disponível." unless variant.available_for_purchase?
+      raise Failed, "Estoque insuficiente para #{label}." if cart_item.quantity > variant.stock_quantity
+    end
+
     def create_order_item_and_debit_stock!(order, cart_item)
       product = cart_item.product
+      variant = cart_item.product_variant
 
       order.order_items.create!(
         product: product,
+        product_variant: variant,
         product_name: product.name,
-        sku: product.sku,
-        unit_price_cents: product.price_cents,
+        sku: variant&.sku || product.sku,
+        variant_sku: variant&.sku,
+        unit_price_cents: cart_item.unit_price_cents,
         quantity: cart_item.quantity,
-        production_time_snapshot: product.production_time_range
+        production_time_snapshot: product.production_time_range,
+        size_snapshot: variant&.size,
+        color_snapshot: variant&.color,
+        material_snapshot: variant&.material
       )
+
+      if variant
+        variant.update!(stock_quantity: variant.stock_quantity - cart_item.quantity)
+        return
+      end
 
       # Produto sob encomenda não tem estoque físico — ver docs/inventory.md.
       return if product.availability_type_made_to_order?
@@ -92,7 +122,7 @@ module Checkout
     end
 
     def subtotal_cents(cart_items)
-      cart_items.sum { |cart_item| cart_item.product.price_cents * cart_item.quantity }
+      cart_items.sum { |cart_item| cart_item.unit_price_cents * cart_item.quantity }
     end
 
     def address_snapshot

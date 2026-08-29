@@ -29,3 +29,13 @@ three:
   sku: CESTO-VIME-ESGOTADO-001
   stock_quantity: 0
   status: active
+
+with_variants:
+  name: Camiseta artesanal
+  slug: camiseta-artesanal
+  description: Camiseta feita à mão, disponível em mais de um tamanho.
+  price_cents: 6990
+  currency: BRL
+  sku: CAMISETA-001
+  stock_quantity: 0
+  status: active

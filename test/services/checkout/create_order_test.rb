@@ -7,9 +7,9 @@ module Checkout
       @address = addresses(:one)
     end
 
-    def build_cart_with_item(product, quantity:)
+    def build_cart_with_item(product, quantity:, variant: nil)
       cart = Cart.create!(session_token: SecureRandom.hex(10))
-      cart.cart_items.create!(product: product, quantity: quantity)
+      cart.cart_items.create!(product: product, product_variant: variant, quantity: quantity)
       cart
     end
 
@@ -21,6 +21,16 @@ module Checkout
         stock_quantity: 5,
         currency: "BRL",
         status: "active"
+      }.merge(attrs))
+    end
+
+    def build_variant(product, **attrs)
+      product.product_variants.create!({
+        sku: "VAR-#{SecureRandom.hex(4)}",
+        price_cents: 1500,
+        stock_quantity: 5,
+        size: "P",
+        active: true
       }.merge(attrs))
     end
 
@@ -138,6 +148,76 @@ module Checkout
       order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
 
       assert order.persisted?
+    end
+
+    test "variant item debits the variant's stock, not the product's, and snapshots size/color/material/sku" do
+      product = build_product(stock_quantity: 0)
+      variant = build_variant(product, stock_quantity: 3, price_cents: 1500, size: "P", color: "Azul")
+      cart = build_cart_with_item(product, quantity: 2, variant: variant)
+
+      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      item = order.order_items.first
+
+      assert_equal 1, variant.reload.stock_quantity
+      assert_equal 0, product.reload.stock_quantity
+      assert_equal 3000, order.subtotal_cents
+      assert_equal variant.sku, item.variant_sku
+      assert_equal "P", item.size_snapshot
+      assert_equal "Azul", item.color_snapshot
+    end
+
+    test "raises when the variant's stock became insufficient after the item was added to the cart" do
+      product = build_product
+      variant = build_variant(product, stock_quantity: 3)
+      cart = build_cart_with_item(product, quantity: 3, variant: variant)
+
+      variant.update!(stock_quantity: 1)
+
+      assert_no_difference("Order.count") do
+        assert_raises(CreateOrder::Failed) do
+          CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+        end
+      end
+
+      assert_equal 1, variant.reload.stock_quantity
+    end
+
+    test "raises when the variant was deactivated after the item was added to the cart" do
+      product = build_product
+      variant = build_variant(product)
+      cart = build_cart_with_item(product, quantity: 1, variant: variant)
+
+      variant.update!(active: false)
+
+      assert_raises(CreateOrder::Failed) do
+        CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      end
+    end
+
+    test "raises when the product itself became unavailable even though the variant still has stock" do
+      product = build_product
+      variant = build_variant(product)
+      cart = build_cart_with_item(product, quantity: 1, variant: variant)
+
+      product.discontinue!
+
+      assert_raises(CreateOrder::Failed) do
+        CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      end
+    end
+
+    test "order preserves the variant snapshot even if the variant is later changed" do
+      product = build_product
+      variant = build_variant(product, size: "P", color: "Verde")
+      cart = build_cart_with_item(product, quantity: 1, variant: variant)
+
+      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      item = order.order_items.first
+
+      variant.update!(size: "M", color: "Azul", price_cents: 9999)
+
+      assert_equal "P", item.reload.size_snapshot
+      assert_equal "Verde", item.color_snapshot
     end
   end
 end

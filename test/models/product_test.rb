@@ -93,6 +93,33 @@ class ProductTest < ActiveSupport::TestCase
     assert_equal products(:one).slug, products(:one).to_param
   end
 
+  test "has_variants? reflects whether the product has product_variants" do
+    assert_not products(:one).has_variants?
+    assert products(:with_variants).has_variants?
+  end
+
+  test "available_for_purchase? for a product with variants depends on the variants, not its own stock_quantity" do
+    product = products(:with_variants)
+    assert_equal 0, product.stock_quantity
+    assert product.available_for_purchase?
+
+    product.product_variants.update_all(active: false)
+    assert_not product.reload.available_for_purchase?
+  end
+
+  test "available_for_purchase? is false for a product with variants that is not active" do
+    product = products(:with_variants)
+    product.update!(status: "draft")
+    assert_not product.available_for_purchase?
+  end
+
+  test "cannot change availability_type away from standard once the product has variants" do
+    product = products(:with_variants)
+    product.availability_type = "made_to_order"
+    assert_not product.valid?
+    assert_includes product.errors[:availability_type], "não pode ser alterado enquanto o produto tiver variantes cadastradas"
+  end
+
   test "one_of_a_kind rejects stock_quantity greater than 1" do
     product = Product.new(products(:one).attributes.except("id", "name", "slug", "sku").merge(
       "name" => "Peça única 1", "sku" => "UNICA-001", "availability_type" => "one_of_a_kind", "stock_quantity" => 2

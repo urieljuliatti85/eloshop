@@ -6,9 +6,9 @@
     <%= link_to "Ver produtos", products_path, class: "mt-4 inline-block text-brand-600 hover:underline" %>
   <% else %>
     <div class="divide-y divide-gray-200 border-y border-gray-200">
-      <% @cart.cart_items.includes(:product).each do |item| %>
+      <% @cart.cart_items.includes(:product, :product_variant).each do |item| %>
         <div class="flex flex-col gap-4 py-6 sm:flex-row sm:items-center">
-          <div class="h-20 w-20 flex-none overflow-hidden rounded bg-brand-100">
+          <div class="h-20 w-20 flex-none overflow-hidden rounded-xl bg-brand-100">
             <% if item.product.main_image.attached? %>
               <%= image_tag item.product.main_image, class: "h-full w-full object-cover", alt: item.product.name %>
             <% end %>
@@ -16,12 +16,15 @@
 
           <div class="flex-1">
             <%= link_to item.product.name, product_path(item.product), class: "font-semibold text-ink hover:text-brand-600" %>
-            <p class="text-sm text-ink-muted"><%= number_to_currency(item.product.price_cents / 100.0, unit: item.product.currency) %></p>
+            <% if item.product_variant %>
+              <p class="text-sm text-ink-muted"><%= item.product_variant.to_label %></p>
+            <% end %>
+            <p class="text-sm text-ink-muted"><%= number_to_currency(item.unit_price_cents / 100.0, unit: item.product.currency) %></p>
           </div>
 
           <%= form_with url: cart_item_path(item), method: :patch, class: "flex items-center gap-2" do |form| %>
-            <%= form.number_field :quantity, value: item.quantity, min: 1, class: "w-16 rounded border border-gray-300 px-2 py-1 text-center" %>
-            <%= form.submit "Atualizar", class: "rounded border border-gray-300 px-3 py-1 text-sm hover:border-brand-500 hover:text-brand-600 cursor-pointer" %>
+            <%= form.number_field :quantity, value: item.quantity, min: 1, class: "w-16 rounded-full border border-gray-300 px-2 py-1 text-center" %>
+            <%= form.submit "Atualizar", class: "rounded-full border border-gray-300 px-3 py-1 text-sm hover:border-brand-500 hover:text-brand-600 cursor-pointer" %>
           <% end %>
 
           <p class="w-28 text-right font-medium text-ink"><%= number_to_currency(item.subtotal_cents / 100.0, unit: item.product.currency) %></p>
@@ -36,7 +39,7 @@
         Total: <%= number_to_currency(@cart.subtotal_cents / 100.0, unit: @cart.cart_items.first.product.currency) %>
       </p>
 
-      <%= link_to "Finalizar compra", new_order_path, class: "rounded bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
+      <%= link_to "Finalizar compra", new_order_path, class: "rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
     </div>
   <% end %>
 </div>
