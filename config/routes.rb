@@ -9,6 +9,8 @@ Rails.application.routes.draw do
         patch :unpublish
         patch :discontinue
       end
+
+      resources :product_variants, path: "variantes", except: %i[index show]
     end
 
     resources :orders, only: %i[index show]

@@ -42,4 +42,45 @@
       <%= button_to "Descontinuar", discontinue_admin_product_path(@product), method: :patch, class: "border px-3 py-1 rounded text-red-700" %>
     <% end %>
   </div>
+
+  <% if @product.availability_type_standard? %>
+    <div class="mt-8">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-semibold">Variantes</h2>
+        <%= link_to "Nova variante", new_admin_product_product_variant_path(@product), class: "border px-3 py-1 rounded text-sm" %>
+      </div>
+
+      <% if @product.product_variants.any? %>
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b">
+              <th class="py-2">Combinação</th>
+              <th class="py-2">SKU</th>
+              <th class="py-2">Preço</th>
+              <th class="py-2">Estoque</th>
+              <th class="py-2">Ativa</th>
+              <th class="py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @product.product_variants.each do |variant| %>
+              <tr class="border-b">
+                <td class="py-2"><%= variant.to_label %></td>
+                <td class="py-2"><%= variant.sku %></td>
+                <td class="py-2"><%= number_to_currency(variant.price_cents / 100.0, unit: @product.currency) %></td>
+                <td class="py-2"><%= variant.stock_quantity %></td>
+                <td class="py-2"><%= variant.active? ? "Sim" : "Não" %></td>
+                <td class="py-2">
+                  <%= link_to "Editar", edit_admin_product_product_variant_path(@product, variant), class: "underline" %>
+                  <%= button_to "Excluir", admin_product_product_variant_path(@product, variant), method: :delete, class: "text-red-700 underline ml-2", form: { data: { turbo_confirm: "Excluir esta variante?" } } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-sm text-gray-600">Nenhuma variante cadastrada.</p>
+      <% end %>
+    </div>
+  <% end %>
 </div>
