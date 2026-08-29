@@ -1,35 +1,61 @@
-<div class="w-full max-w-xl">
-  <% if @product.main_image.attached? %>
-    <%= image_tag @product.main_image, class: "mb-4 max-w-md" %>
-  <% end %>
+<div class="w-full">
+  <nav class="mb-8 text-sm text-ink-muted">
+    <%= link_to "Início", root_path, class: "hover:text-brand-600" %>
+    <span class="mx-2">/</span>
+    <%= link_to "Loja", products_path, class: "hover:text-brand-600" %>
+    <span class="mx-2">/</span>
+    <span class="text-ink"><%= @product.name %></span>
+  </nav>
 
-  <h1 class="text-2xl font-bold mb-2"><%= @product.name %></h1>
-  <p class="text-xl mb-4"><%= number_to_currency(@product.price_cents / 100.0, unit: @product.currency) %></p>
+  <div class="grid grid-cols-1 gap-12 md:grid-cols-2">
+    <div class="aspect-square overflow-hidden rounded-lg bg-brand-100">
+      <% if @product.main_image.attached? %>
+        <%= image_tag @product.main_image, class: "h-full w-full object-cover", alt: @product.name %>
+      <% end %>
+    </div>
 
-  <% if @product.availability_type_one_of_a_kind? %>
-    <p class="text-sm text-gray-600 mb-2">Peça única</p>
-  <% elsif @product.availability_type_made_to_order? %>
-    <p class="text-sm text-gray-600 mb-2">Feito sob encomenda — prazo de produção: <%= @product.production_time_range %></p>
-  <% end %>
+    <div>
+      <h1 class="text-3xl font-bold text-ink"><%= @product.name %></h1>
+      <p class="mt-2 text-2xl text-brand-600"><%= number_to_currency(@product.price_cents / 100.0, unit: @product.currency) %></p>
 
-  <% if @product.available_for_purchase? %>
-    <p class="text-green-700 mb-4">Disponível</p>
+      <% if @product.availability_type_one_of_a_kind? %>
+        <p class="mt-4 inline-block rounded-full bg-brand-100 px-3 py-1 text-sm font-medium text-brand-600">Peça única</p>
+      <% elsif @product.availability_type_made_to_order? %>
+        <p class="mt-4 inline-block rounded-full bg-ink px-3 py-1 text-sm font-medium text-white">
+          Sob encomenda — produção em <%= @product.production_time_range %>
+        </p>
+      <% end %>
 
-    <%= form_with url: cart_items_path, method: :post, class: "flex items-end gap-2 mb-6" do |form| %>
-      <%= form.hidden_field :product_id, value: @product.id %>
-      <div>
-        <%= form.label :quantity, "Quantidade" %>
-        <% if @product.availability_type_made_to_order? %>
-          <%= form.number_field :quantity, value: 1, min: 1, class: "border rounded w-20 px-1" %>
+      <p class="mt-6 leading-relaxed text-ink-muted"><%= @product.description %></p>
+
+      <div class="mt-8 border-t border-gray-200 pt-8">
+        <% if @product.available_for_purchase? %>
+          <p class="mb-4 text-sm font-medium text-green-700">Disponível</p>
+
+          <%= form_with url: cart_items_path, method: :post, class: "flex items-center gap-4" do |form| %>
+            <%= form.hidden_field :product_id, value: @product.id %>
+
+            <div class="flex items-center rounded border border-gray-300">
+              <% if @product.availability_type_made_to_order? %>
+                <%= form.number_field :quantity, value: 1, min: 1, class: "w-16 px-3 py-2 text-center focus:outline-none" %>
+              <% else %>
+                <%= form.number_field :quantity, value: 1, min: 1, max: @product.stock_quantity, class: "w-16 px-3 py-2 text-center focus:outline-none" %>
+              <% end %>
+            </div>
+
+            <%= form.submit "Adicionar ao carrinho", class: "flex-1 rounded bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+          <% end %>
         <% else %>
-          <%= form.number_field :quantity, value: 1, min: 1, max: @product.stock_quantity, class: "border rounded w-20 px-1" %>
+          <p class="text-sm font-medium text-red-700">Indisponível</p>
         <% end %>
       </div>
-      <%= form.submit "Adicionar ao carrinho", class: "bg-black text-white px-4 py-2 rounded" %>
-    <% end %>
-  <% else %>
-    <p class="text-red-700 mb-4">Indisponível</p>
-  <% end %>
 
-  <p><%= @product.description %></p>
+      <dl class="mt-8 space-y-2 border-t border-gray-200 pt-8 text-sm">
+        <div class="flex gap-2">
+          <dt class="w-24 text-ink-muted">SKU</dt>
+          <dd class="text-ink"><%= @product.sku %></dd>
+        </div>
+      </dl>
+    </div>
+  </div>
 </div>
