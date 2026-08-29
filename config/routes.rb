@@ -19,6 +19,8 @@ Rails.application.routes.draw do
   resource :cart, only: %i[show]
   resources :cart_items, only: %i[create update destroy]
 
+  resource :contact, only: %i[new create]
+
   resources :customers, only: %i[new create]
   resource :customer_session, only: %i[new create destroy]
   resources :addresses, only: %i[new create]

@@ -1,0 +1,7 @@
+<p><strong>Nome:</strong> <%= @name %></p>
+<p><strong>E-mail:</strong> <%= @email %></p>
+<% if @subject.present? %>
+  <p><strong>Assunto:</strong> <%= @subject %></p>
+<% end %>
+<p><strong>Mensagem:</strong></p>
+<p><%= simple_format(@message) %></p>
