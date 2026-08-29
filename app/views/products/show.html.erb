@@ -6,6 +6,12 @@
   <h1 class="text-2xl font-bold mb-2"><%= @product.name %></h1>
   <p class="text-xl mb-4"><%= number_to_currency(@product.price_cents / 100.0, unit: @product.currency) %></p>
 
+  <% if @product.availability_type_one_of_a_kind? %>
+    <p class="text-sm text-gray-600 mb-2">Peça única</p>
+  <% elsif @product.availability_type_made_to_order? %>
+    <p class="text-sm text-gray-600 mb-2">Feito sob encomenda — prazo de produção: <%= @product.production_time_range %></p>
+  <% end %>
+
   <% if @product.available_for_purchase? %>
     <p class="text-green-700 mb-4">Disponível</p>
 
@@ -13,7 +19,11 @@
       <%= form.hidden_field :product_id, value: @product.id %>
       <div>
         <%= form.label :quantity, "Quantidade" %>
-        <%= form.number_field :quantity, value: 1, min: 1, max: @product.stock_quantity, class: "border rounded w-20 px-1" %>
+        <% if @product.availability_type_made_to_order? %>
+          <%= form.number_field :quantity, value: 1, min: 1, class: "border rounded w-20 px-1" %>
+        <% else %>
+          <%= form.number_field :quantity, value: 1, min: 1, max: @product.stock_quantity, class: "border rounded w-20 px-1" %>
+        <% end %>
       </div>
       <%= form.submit "Adicionar ao carrinho", class: "bg-black text-white px-4 py-2 rounded" %>
     <% end %>

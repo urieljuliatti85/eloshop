@@ -65,7 +65,7 @@ module Checkout
 
         raise Failed, "#{product.name} não está mais disponível." unless product.available_for_purchase?
 
-        if cart_item.quantity > product.stock_quantity
+        if !product.availability_type_made_to_order? && cart_item.quantity > product.stock_quantity
           raise Failed, "Estoque insuficiente para #{product.name}."
         end
       end
@@ -81,8 +81,12 @@ module Checkout
         product_name: product.name,
         sku: product.sku,
         unit_price_cents: product.price_cents,
-        quantity: cart_item.quantity
+        quantity: cart_item.quantity,
+        production_time_snapshot: product.production_time_range
       )
+
+      # Produto sob encomenda não tem estoque físico — ver docs/inventory.md.
+      return if product.availability_type_made_to_order?
 
       product.update!(stock_quantity: product.stock_quantity - cart_item.quantity)
     end

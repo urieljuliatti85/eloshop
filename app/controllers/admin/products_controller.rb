@@ -64,7 +64,10 @@ module Admin
     end
 
     def product_params
-      params.expect(product: [ :name, :description, :price_cents, :currency, :sku, :stock_quantity, :main_image ])
+      params.expect(product: [
+        :name, :description, :price_cents, :currency, :sku, :stock_quantity, :main_image,
+        :availability_type, :production_time_min_days, :production_time_max_days
+      ])
     end
   end
 end

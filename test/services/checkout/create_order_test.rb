@@ -117,5 +117,27 @@ module Checkout
       assert_equal 1000, item.unit_price_cents
       assert_equal original_street, order.reload.shipping_address_snapshot["street"]
     end
+
+    test "made_to_order item does not debit stock and snapshots the production time" do
+      product = build_product(
+        availability_type: "made_to_order", stock_quantity: 0,
+        production_time_min_days: 7, production_time_max_days: 10
+      )
+      cart = build_cart_with_item(product, quantity: 3)
+
+      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+
+      assert_equal 0, product.reload.stock_quantity
+      assert_equal "7 a 10 dias úteis", order.order_items.first.production_time_snapshot
+    end
+
+    test "made_to_order item is not blocked by requesting a quantity greater than stock_quantity" do
+      product = build_product(availability_type: "made_to_order", stock_quantity: 0, production_time_min_days: 1, production_time_max_days: 2)
+      cart = build_cart_with_item(product, quantity: 5)
+
+      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+
+      assert order.persisted?
+    end
   end
 end

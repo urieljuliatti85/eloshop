@@ -21,6 +21,8 @@ class CartItem < ApplicationRecord
       return
     end
 
+    return if product.availability_type_made_to_order?
+
     if quantity.to_i > product.stock_quantity
       errors.add(:quantity, "não pode ser maior que o estoque disponível")
     end

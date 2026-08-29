@@ -35,8 +35,29 @@
   </div>
 
   <div>
+    <%= form.label :availability_type, "Tipo de disponibilidade" %>
+    <%= form.select :availability_type,
+          options_for_select(
+            [["Estoque padrão", "standard"], ["Peça única", "one_of_a_kind"], ["Sob encomenda", "made_to_order"]],
+            form.object.availability_type
+          ), {}, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
     <%= form.label :stock_quantity, "Estoque" %>
     <%= form.number_field :stock_quantity, class: "border rounded w-full px-2 py-1" %>
+    <p class="text-sm text-gray-600">Ignorado para produtos sob encomenda. Peça única aceita no máximo 1.</p>
+  </div>
+
+  <div>
+    <%= form.label :production_time_min_days, "Prazo de produção — mínimo (dias úteis)" %>
+    <%= form.number_field :production_time_min_days, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= form.label :production_time_max_days, "Prazo de produção — máximo (dias úteis)" %>
+    <%= form.number_field :production_time_max_days, class: "border rounded w-full px-2 py-1" %>
+    <p class="text-sm text-gray-600">Obrigatório apenas para produtos sob encomenda.</p>
   </div>
 
   <div>

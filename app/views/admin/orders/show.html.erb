@@ -9,7 +9,12 @@
     <tbody>
       <% @order.order_items.each do |item| %>
         <tr class="border-b">
-          <td class="py-2"><%= item.product_name %></td>
+          <td class="py-2">
+            <%= item.product_name %>
+            <% if item.production_time_snapshot.present? %>
+              <br><span class="text-sm text-gray-600">Prazo de produção: <%= item.production_time_snapshot %></span>
+            <% end %>
+          </td>
           <td class="py-2"><%= item.sku %></td>
           <td class="py-2"><%= item.quantity %>x</td>
           <td class="py-2"><%= number_to_currency(item.subtotal_cents / 100.0, unit: "BRL") %></td>

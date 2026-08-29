@@ -93,6 +93,76 @@ class ProductTest < ActiveSupport::TestCase
     assert_equal products(:one).slug, products(:one).to_param
   end
 
+  test "one_of_a_kind rejects stock_quantity greater than 1" do
+    product = Product.new(products(:one).attributes.except("id", "name", "slug", "sku").merge(
+      "name" => "Peça única 1", "sku" => "UNICA-001", "availability_type" => "one_of_a_kind", "stock_quantity" => 2
+    ))
+    assert_not product.valid?
+    assert_includes product.errors[:stock_quantity], "must be less than or equal to 1"
+  end
+
+  test "one_of_a_kind accepts stock_quantity of 1" do
+    product = Product.new(products(:one).attributes.except("id", "name", "slug", "sku").merge(
+      "name" => "Peça única 2", "sku" => "UNICA-002", "availability_type" => "one_of_a_kind", "stock_quantity" => 1
+    ))
+    assert product.valid?
+  end
+
+  test "one_of_a_kind cannot go back to active once sold out" do
+    product = Product.new(products(:one).attributes.except("id", "name", "slug", "sku").merge(
+      "name" => "Peça única 3", "sku" => "UNICA-003", "availability_type" => "one_of_a_kind", "stock_quantity" => 1
+    )).tap(&:save!)
+
+    product.update!(status: "sold_out")
+
+    assert_raises(Product::InvalidStatusTransition) { product.publish! }
+  end
+
+  test "standard product can go back to active after sold out (restock)" do
+    product = products(:one)
+    product.update!(status: "sold_out")
+
+    product.publish!
+
+    assert product.active?
+  end
+
+  test "made_to_order requires a production time range" do
+    product = Product.new(products(:one).attributes.except("id", "slug", "sku").merge(
+      "sku" => "ENCOMENDA-001", "availability_type" => "made_to_order"
+    ))
+    assert_not product.valid?
+    assert_includes product.errors[:production_time_min_days], "can't be blank"
+    assert_includes product.errors[:production_time_max_days], "can't be blank"
+  end
+
+  test "made_to_order rejects a maximum lead time smaller than the minimum" do
+    product = Product.new(products(:one).attributes.except("id", "slug", "sku").merge(
+      "sku" => "ENCOMENDA-002", "availability_type" => "made_to_order",
+      "production_time_min_days" => 10, "production_time_max_days" => 5
+    ))
+    assert_not product.valid?
+    assert_includes product.errors[:production_time_max_days], "deve ser maior ou igual ao prazo mínimo"
+  end
+
+  test "made_to_order is available for purchase regardless of stock_quantity" do
+    product = Product.new(products(:one).attributes.except("id", "slug", "sku").merge(
+      "sku" => "ENCOMENDA-003", "availability_type" => "made_to_order",
+      "production_time_min_days" => 7, "production_time_max_days" => 10, "stock_quantity" => 0
+    ))
+
+    assert product.available_for_purchase?
+  end
+
+  test "production_time_range formats the lead time for made_to_order products" do
+    product = Product.new(availability_type: "made_to_order", production_time_min_days: 7, production_time_max_days: 10)
+    assert_equal "7 a 10 dias úteis", product.production_time_range
+  end
+
+  test "production_time_range is nil for non made_to_order products" do
+    assert_nil products(:one).production_time_range
+  end
+
   test "rejects main_image with disallowed content type" do
     product = products(:one)
     product.main_image.attach(io: StringIO.new("plain text"), filename: "doc.txt", content_type: "text/plain")

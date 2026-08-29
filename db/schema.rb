@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_222349) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_224257) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -99,6 +99,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_222349) do
     t.bigint "order_id", null: false
     t.bigint "product_id", null: false
     t.string "product_name", null: false
+    t.string "production_time_snapshot"
     t.integer "quantity", null: false
     t.string "sku", null: false
     t.integer "unit_price_cents", null: false
@@ -144,16 +145,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_222349) do
   end
 
   create_table "products", force: :cascade do |t|
+    t.string "availability_type", default: "standard", null: false
     t.datetime "created_at", null: false
     t.string "currency", default: "BRL", null: false
     t.text "description"
     t.string "name", null: false
     t.integer "price_cents", null: false
+    t.integer "production_time_max_days"
+    t.integer "production_time_min_days"
     t.string "sku", null: false
     t.string "slug", null: false
     t.string "status", default: "draft", null: false
     t.integer "stock_quantity", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.index ["availability_type"], name: "index_products_on_availability_type"
     t.index ["sku"], name: "index_products_on_sku", unique: true
     t.index ["slug"], name: "index_products_on_slug", unique: true
     t.index ["status"], name: "index_products_on_status"
