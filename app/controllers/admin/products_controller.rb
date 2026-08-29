@@ -58,7 +58,9 @@ module Admin
     private
 
     def set_product
-      @product = Product.find(params[:id])
+      # O :id da rota recebe o slug, já que Product#to_param retorna o slug
+      # (usado para gerar URLs amigáveis no storefront público — ver ProductsController).
+      @product = Product.find_by!(slug: params[:id])
     end
 
     def product_params

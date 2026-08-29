@@ -49,6 +49,10 @@ class Product < ApplicationRecord
     active? && stock_quantity.positive?
   end
 
+  def to_param
+    slug
+  end
+
   private
 
   def transition_to!(new_status)

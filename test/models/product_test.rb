@@ -89,6 +89,10 @@ class ProductTest < ActiveSupport::TestCase
     assert_not out_of_stock.available_for_purchase?
   end
 
+  test "to_param returns the slug" do
+    assert_equal products(:one).slug, products(:one).to_param
+  end
+
   test "rejects main_image with disallowed content type" do
     product = products(:one)
     product.main_image.attach(io: StringIO.new("plain text"), filename: "doc.txt", content_type: "text/plain")

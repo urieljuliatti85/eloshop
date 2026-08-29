@@ -1,0 +1,34 @@
+<div class="w-full">
+  <h1 class="text-2xl font-bold mb-6">Produtos</h1>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <% @products.each do |product| %>
+      <%= link_to product_path(product), class: "border rounded p-3 block hover:shadow" do %>
+        <% if product.main_image.attached? %>
+          <%= image_tag product.main_image, class: "w-full aspect-square object-cover mb-2" %>
+        <% end %>
+
+        <p class="font-semibold"><%= product.name %></p>
+        <p><%= number_to_currency(product.price_cents / 100.0, unit: product.currency) %></p>
+
+        <% unless product.available_for_purchase? %>
+          <p class="text-red-700 text-sm">Indisponível</p>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if @products.none? %>
+    <p class="text-gray-600">Nenhum produto disponível no momento.</p>
+  <% end %>
+
+  <div class="flex gap-4 mt-6">
+    <% if @page > 1 %>
+      <%= link_to "Anterior", products_path(page: @page - 1) %>
+    <% end %>
+
+    <% if @page < @total_pages %>
+      <%= link_to "Próxima", products_path(page: @page + 1) %>
+    <% end %>
+  </div>
+</div>

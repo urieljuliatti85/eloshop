@@ -1,0 +1,16 @@
+<div class="w-full max-w-xl">
+  <% if @product.main_image.attached? %>
+    <%= image_tag @product.main_image, class: "mb-4 max-w-md" %>
+  <% end %>
+
+  <h1 class="text-2xl font-bold mb-2"><%= @product.name %></h1>
+  <p class="text-xl mb-4"><%= number_to_currency(@product.price_cents / 100.0, unit: @product.currency) %></p>
+
+  <% if @product.available_for_purchase? %>
+    <p class="text-green-700 mb-4">Disponível</p>
+  <% else %>
+    <p class="text-red-700 mb-4">Indisponível</p>
+  <% end %>
+
+  <p><%= @product.description %></p>
+</div>
