@@ -22,7 +22,11 @@ Rails.application.routes.draw do
   resources :customers, only: %i[new create]
   resource :customer_session, only: %i[new create destroy]
   resources :addresses, only: %i[new create]
-  resources :orders, only: %i[new create show]
+  resources :orders, only: %i[new create show] do
+    resource :payment, only: %i[new]
+  end
+
+  post "webhooks/fake_gateway", to: "payment_webhooks#create", as: :fake_gateway_webhook
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

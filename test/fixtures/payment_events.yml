@@ -1,0 +1,11 @@
+one:
+  payment: one
+  gateway_event_id: event-one
+  payload: { "status": "approved" }
+  processed_at: 2026-08-29 19:23:49
+
+two:
+  payment: two
+  gateway_event_id: event-two
+  payload: { "status": "approved" }
+  processed_at: 2026-08-29 19:23:49

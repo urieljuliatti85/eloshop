@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_215810) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_222349) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -121,6 +121,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_215810) do
     t.index ["idempotency_key"], name: "index_orders_on_idempotency_key", unique: true
   end
 
+  create_table "payment_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "gateway_event_id", null: false
+    t.jsonb "payload"
+    t.bigint "payment_id", null: false
+    t.datetime "processed_at"
+    t.datetime "updated_at", null: false
+    t.index ["gateway_event_id"], name: "index_payment_events_on_gateway_event_id", unique: true
+    t.index ["payment_id"], name: "index_payment_events_on_payment_id"
+  end
+
+  create_table "payments", force: :cascade do |t|
+    t.integer "amount_cents", null: false
+    t.datetime "created_at", null: false
+    t.string "external_id", null: false
+    t.string "gateway", null: false
+    t.bigint "order_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_payments_on_order_id"
+  end
+
   create_table "products", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "currency", default: "BRL", null: false
@@ -165,5 +187,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_215810) do
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "products"
   add_foreign_key "orders", "customers"
+  add_foreign_key "payment_events", "payments"
+  add_foreign_key "payments", "orders"
   add_foreign_key "sessions", "users"
 end
