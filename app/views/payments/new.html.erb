@@ -1,14 +1,14 @@
 <div class="w-full max-w-md">
-  <h1 class="text-2xl font-bold mb-2">Pagamento — Pedido #<%= @order.id %></h1>
-  <p class="mb-4 text-sm text-gray-600">Valor: <%= number_to_currency(@payment.amount_cents / 100.0, unit: "BRL") %></p>
+  <h1 class="mb-2 text-2xl font-bold text-ink">Pagamento — Pedido #<%= @order.id %></h1>
+  <p class="mb-6 text-sm text-ink-muted">Valor: <%= number_to_currency(@payment.amount_cents / 100.0, unit: "BRL") %></p>
 
   <% if @payment.paid? %>
-    <p class="text-green-700">Pagamento aprovado.</p>
+    <p class="rounded bg-green-50 px-4 py-3 text-sm text-green-800">Pagamento aprovado.</p>
   <% elsif @payment.failed? %>
-    <p class="text-red-700 mb-4">Pagamento recusado.</p>
-    <%= link_to "Tentar novamente", new_order_payment_path(@order), class: "underline" %>
+    <p class="mb-4 rounded bg-red-50 px-4 py-3 text-sm text-red-800">Pagamento recusado.</p>
+    <%= link_to "Tentar novamente", new_order_payment_path(@order), class: "text-brand-600 hover:underline" %>
   <% else %>
-    <p class="mb-6 text-gray-600">
+    <p class="mb-6 rounded bg-brand-50 px-4 py-3 text-sm text-ink-muted">
       Este é um gateway de pagamento simulado (não há integração real ainda — ver <code>docs/payments.md</code>).
       Use os botões abaixo para simular a resposta do gateway.
     </p>
@@ -19,7 +19,7 @@
         <%= form.hidden_field :external_id, value: @payment.external_id %>
         <%= form.hidden_field :status, value: "approved" %>
         <%= form.hidden_field :secret, value: @webhook_secret %>
-        <%= form.submit "Aprovar pagamento", class: "bg-green-700 text-white px-4 py-2 rounded" %>
+        <%= form.submit "Aprovar pagamento", class: "rounded bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 cursor-pointer" %>
       <% end %>
 
       <%= form_with url: fake_gateway_webhook_path, method: :post do |form| %>
@@ -27,7 +27,7 @@
         <%= form.hidden_field :external_id, value: @payment.external_id %>
         <%= form.hidden_field :status, value: "declined" %>
         <%= form.hidden_field :secret, value: @webhook_secret %>
-        <%= form.submit "Recusar pagamento", class: "bg-red-700 text-white px-4 py-2 rounded" %>
+        <%= form.submit "Recusar pagamento", class: "rounded bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800 cursor-pointer" %>
       <% end %>
     </div>
   <% end %>

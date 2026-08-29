@@ -1,42 +1,58 @@
-<div class="w-full max-w-xl">
-  <h1 class="text-2xl font-bold mb-6">Revisar pedido</h1>
+<div class="w-full">
+  <h1 class="mb-8 text-2xl font-bold text-ink">Revisar pedido</h1>
 
   <% if alert %>
-    <p class="mb-4 text-red-700"><%= alert %></p>
+    <p class="mb-6 rounded bg-red-50 px-4 py-3 text-sm text-red-800"><%= alert %></p>
   <% end %>
 
-  <h2 class="font-semibold mb-2">Itens</h2>
-  <table class="w-full text-left border-collapse mb-6">
-    <tbody>
-      <% @cart.cart_items.includes(:product).each do |item| %>
-        <tr class="border-b">
-          <td class="py-2"><%= item.product.name %></td>
-          <td class="py-2"><%= item.quantity %>x</td>
-          <td class="py-2"><%= number_to_currency(item.subtotal_cents / 100.0, unit: item.product.currency) %></td>
-        </tr>
+  <div class="grid grid-cols-1 gap-12 md:grid-cols-2">
+    <div>
+      <% if @addresses.empty? %>
+        <p class="text-ink-muted">
+          Você ainda não tem um endereço cadastrado.
+          <%= link_to "Cadastrar endereço", new_address_path, class: "text-brand-600 hover:underline" %>
+        </p>
+      <% else %>
+        <%= form_with url: orders_path, class: "flex flex-col gap-6" do |form| %>
+          <div>
+            <h2 class="mb-3 font-semibold text-ink">Endereço de entrega</h2>
+            <div class="space-y-2">
+              <% @addresses.each do |address| %>
+                <label class="flex items-start gap-2 rounded border border-gray-300 px-3 py-2 has-[:checked]:border-brand-500">
+                  <%= radio_button_tag :address_id, address.id, address == @addresses.first, class: "mt-1" %>
+                  <span class="text-sm text-ink"><%= "#{address.street}, #{address.number} - #{address.city}/#{address.state}" %></span>
+                </label>
+              <% end %>
+            </div>
+          </div>
+
+          <%= form.submit "Finalizar pedido", class: "w-fit rounded bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+        <% end %>
       <% end %>
-    </tbody>
-  </table>
+    </div>
 
-  <% if @addresses.empty? %>
-    <p class="mb-4">
-      Você ainda não tem um endereço cadastrado.
-      <%= link_to "Cadastrar endereço", new_address_path %>
-    </p>
-  <% else %>
-    <%= form_with url: orders_path, class: "flex flex-col gap-4" do |form| %>
-      <h2 class="font-semibold">Endereço de entrega</h2>
-      <% @addresses.each do |address| %>
-        <label class="block">
-          <%= radio_button_tag :address_id, address.id, address == @addresses.first %>
-          <%= "#{address.street}, #{address.number} - #{address.city}/#{address.state}" %>
-        </label>
-      <% end %>
+    <div class="rounded-lg bg-brand-50 p-6">
+      <h2 class="mb-4 font-semibold text-ink">Itens</h2>
 
-      <p>Frete: <%= number_to_currency(@shipping_cents / 100.0, unit: "BRL") %></p>
-      <p class="font-semibold">Total: <%= number_to_currency((@cart.subtotal_cents + @shipping_cents) / 100.0, unit: "BRL") %></p>
+      <div class="space-y-3">
+        <% @cart.cart_items.includes(:product).each do |item| %>
+          <div class="flex justify-between text-sm">
+            <span class="text-ink"><%= item.product.name %> <span class="text-ink-muted">x<%= item.quantity %></span></span>
+            <span class="text-ink"><%= number_to_currency(item.subtotal_cents / 100.0, unit: item.product.currency) %></span>
+          </div>
+        <% end %>
+      </div>
 
-      <%= form.submit "Finalizar pedido", class: "bg-black text-white px-4 py-2 rounded w-fit" %>
-    <% end %>
-  <% end %>
+      <div class="mt-4 space-y-2 border-t border-brand-200 pt-4 text-sm">
+        <div class="flex justify-between text-ink-muted">
+          <span>Frete</span>
+          <span><%= number_to_currency(@shipping_cents / 100.0, unit: "BRL") %></span>
+        </div>
+        <div class="flex justify-between text-base font-semibold text-ink">
+          <span>Total</span>
+          <span><%= number_to_currency((@cart.subtotal_cents + @shipping_cents) / 100.0, unit: "BRL") %></span>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

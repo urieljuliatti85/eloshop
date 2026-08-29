@@ -1,39 +1,47 @@
-<div class="w-full max-w-xl">
+<div class="w-full max-w-2xl">
   <% if notice %>
-    <p class="mb-4 text-green-700"><%= notice %></p>
+    <p class="mb-6 rounded bg-green-50 px-4 py-3 text-sm text-green-800"><%= notice %></p>
   <% end %>
 
-  <h1 class="text-2xl font-bold mb-2">Pedido #<%= @order.id %></h1>
-  <p class="mb-4 text-sm text-gray-600">Status: <%= @order.status %></p>
+  <h1 class="mb-2 text-2xl font-bold text-ink">Pedido #<%= @order.id %></h1>
+  <p class="mb-6 text-sm text-ink-muted">Status: <%= @order.status %></p>
 
   <% if @order.pending? %>
-    <%= link_to "Pagar agora", new_order_payment_path(@order), class: "bg-black text-white px-4 py-2 rounded w-fit inline-block mb-6" %>
+    <%= link_to "Pagar agora", new_order_payment_path(@order), class: "mb-8 inline-block w-fit rounded bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
   <% end %>
 
-  <h2 class="font-semibold mb-2">Itens</h2>
-  <table class="w-full text-left border-collapse mb-6">
-    <tbody>
-      <% @order.order_items.each do |item| %>
-        <tr class="border-b">
-          <td class="py-2">
-            <%= item.product_name %>
-            <% if item.production_time_snapshot.present? %>
-              <br><span class="text-sm text-gray-600">Prazo de produção: <%= item.production_time_snapshot %></span>
-            <% end %>
-          </td>
-          <td class="py-2"><%= item.quantity %>x</td>
-          <td class="py-2"><%= number_to_currency(item.subtotal_cents / 100.0, unit: "BRL") %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+  <h2 class="mb-3 font-semibold text-ink">Itens</h2>
+  <div class="divide-y divide-gray-200 border-y border-gray-200">
+    <% @order.order_items.each do |item| %>
+      <div class="flex items-center justify-between py-3 text-sm">
+        <div>
+          <p class="text-ink"><%= item.product_name %> <span class="text-ink-muted">x<%= item.quantity %></span></p>
+          <% if item.production_time_snapshot.present? %>
+            <p class="text-ink-muted">Prazo de produção: <%= item.production_time_snapshot %></p>
+          <% end %>
+        </div>
+        <p class="text-ink"><%= number_to_currency(item.subtotal_cents / 100.0, unit: "BRL") %></p>
+      </div>
+    <% end %>
+  </div>
 
-  <p>Subtotal: <%= number_to_currency(@order.subtotal_cents / 100.0, unit: "BRL") %></p>
-  <p>Frete: <%= number_to_currency(@order.shipping_cents / 100.0, unit: "BRL") %></p>
-  <p class="font-semibold mb-6">Total: <%= number_to_currency(@order.total_cents / 100.0, unit: "BRL") %></p>
+  <div class="mt-4 space-y-2 text-sm">
+    <div class="flex justify-between text-ink-muted">
+      <span>Subtotal</span>
+      <span><%= number_to_currency(@order.subtotal_cents / 100.0, unit: "BRL") %></span>
+    </div>
+    <div class="flex justify-between text-ink-muted">
+      <span>Frete</span>
+      <span><%= number_to_currency(@order.shipping_cents / 100.0, unit: "BRL") %></span>
+    </div>
+    <div class="flex justify-between text-base font-semibold text-ink">
+      <span>Total</span>
+      <span><%= number_to_currency(@order.total_cents / 100.0, unit: "BRL") %></span>
+    </div>
+  </div>
 
-  <h2 class="font-semibold mb-2">Endereço de entrega</h2>
-  <p>
+  <h2 class="mb-2 mt-8 font-semibold text-ink">Endereço de entrega</h2>
+  <p class="text-sm text-ink-muted">
     <%= @order.shipping_address_snapshot["street"] %>, <%= @order.shipping_address_snapshot["number"] %>
     - <%= @order.shipping_address_snapshot["city"] %>/<%= @order.shipping_address_snapshot["state"] %>
   </p>
