@@ -1,0 +1,31 @@
+<div class="w-full max-w-xl">
+  <% if notice %>
+    <p class="mb-4 text-green-700"><%= notice %></p>
+  <% end %>
+
+  <h1 class="text-2xl font-bold mb-2">Pedido #<%= @order.id %></h1>
+  <p class="mb-4 text-sm text-gray-600">Status: <%= @order.status %></p>
+
+  <h2 class="font-semibold mb-2">Itens</h2>
+  <table class="w-full text-left border-collapse mb-6">
+    <tbody>
+      <% @order.order_items.each do |item| %>
+        <tr class="border-b">
+          <td class="py-2"><%= item.product_name %></td>
+          <td class="py-2"><%= item.quantity %>x</td>
+          <td class="py-2"><%= number_to_currency(item.subtotal_cents / 100.0, unit: "BRL") %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <p>Subtotal: <%= number_to_currency(@order.subtotal_cents / 100.0, unit: "BRL") %></p>
+  <p>Frete: <%= number_to_currency(@order.shipping_cents / 100.0, unit: "BRL") %></p>
+  <p class="font-semibold mb-6">Total: <%= number_to_currency(@order.total_cents / 100.0, unit: "BRL") %></p>
+
+  <h2 class="font-semibold mb-2">Endereço de entrega</h2>
+  <p>
+    <%= @order.shipping_address_snapshot["street"] %>, <%= @order.shipping_address_snapshot["number"] %>
+    - <%= @order.shipping_address_snapshot["city"] %>/<%= @order.shipping_address_snapshot["state"] %>
+  </p>
+</div>

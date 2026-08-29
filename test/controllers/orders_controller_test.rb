@@ -23,7 +23,23 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
       post orders_path, params: { address_id: addresses(:one).id }
     end
 
-    assert_redirected_to root_path
+    assert_redirected_to order_path(Order.last)
+  end
+
+  test "a customer can view their own order" do
+    sign_in_customer(customers(:one))
+
+    get order_path(orders(:one))
+
+    assert_response :success
+  end
+
+  test "a customer cannot view another customer's order by guessing the URL" do
+    sign_in_customer(customers(:one))
+
+    get order_path(orders(:two))
+
+    assert_response :not_found
   end
 
   private

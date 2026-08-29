@@ -18,4 +18,31 @@ class OrderTest < ActiveSupport::TestCase
     assert_not order.valid?
     assert_includes order.errors[:total_cents], "must be greater than or equal to 0"
   end
+
+  test "confirm! transitions pending to confirmed" do
+    order = orders(:one)
+    order.confirm!
+    assert order.confirmed?
+  end
+
+  test "cancel! transitions pending to cancelled" do
+    order = orders(:one)
+    order.cancel!
+    assert order.cancelled?
+  end
+
+  test "cancel! transitions confirmed to cancelled" do
+    order = orders(:one)
+    order.confirm!
+    order.cancel!
+    assert order.cancelled?
+  end
+
+  test "cancelled is a terminal state" do
+    order = orders(:one)
+    order.cancel!
+
+    assert_raises(Order::InvalidStatusTransition) { order.confirm! }
+    assert_raises(Order::InvalidStatusTransition) { order.cancel! }
+  end
 end

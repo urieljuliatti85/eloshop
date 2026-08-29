@@ -10,6 +10,8 @@ Rails.application.routes.draw do
         patch :discontinue
       end
     end
+
+    resources :orders, only: %i[index show]
   end
 
   resources :products, only: %i[index show], param: :slug, path: "produtos"
@@ -20,7 +22,7 @@ Rails.application.routes.draw do
   resources :customers, only: %i[new create]
   resource :customer_session, only: %i[new create destroy]
   resources :addresses, only: %i[new create]
-  resources :orders, only: %i[new create]
+  resources :orders, only: %i[new create show]
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

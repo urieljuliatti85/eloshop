@@ -20,9 +20,13 @@ class OrdersController < StorefrontController
     ).call
 
     session.delete(:checkout_idempotency_key)
-    redirect_to root_path, notice: "Pedido \##{order.id} criado com sucesso."
+    redirect_to order_path(order), notice: "Pedido \##{order.id} criado com sucesso."
   rescue Checkout::CreateOrder::Failed => e
     redirect_to cart_path, alert: e.message
+  end
+
+  def show
+    @order = Current.customer.orders.find(params[:id])
   end
 
   private
