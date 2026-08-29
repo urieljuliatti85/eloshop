@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Git hook: roda RuboCop e a suíte de testes antes de permitir o commit.
+# Instalado automaticamente por bin/setup — ver .githooks/README.md.
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+
+echo "== pre-commit: RuboCop =="
+bin/rubocop
+
+echo "== pre-commit: bin/rails test =="
+bin/rails test
