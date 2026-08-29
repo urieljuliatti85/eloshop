@@ -1,0 +1,46 @@
+<div class="w-full max-w-xl">
+  <h1 class="text-2xl font-bold mb-6">Carrinho</h1>
+
+  <% if notice %>
+    <p class="mb-4 text-green-700"><%= notice %></p>
+  <% end %>
+  <% if alert %>
+    <p class="mb-4 text-red-700"><%= alert %></p>
+  <% end %>
+
+  <% if @cart.cart_items.empty? %>
+    <p class="text-gray-600">Seu carrinho está vazio.</p>
+  <% else %>
+    <table class="w-full text-left border-collapse mb-6">
+      <thead>
+        <tr class="border-b">
+          <th class="py-2">Produto</th>
+          <th class="py-2">Preço</th>
+          <th class="py-2">Quantidade</th>
+          <th class="py-2">Subtotal</th>
+          <th class="py-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @cart.cart_items.includes(:product).each do |item| %>
+          <tr class="border-b">
+            <td class="py-2"><%= item.product.name %></td>
+            <td class="py-2"><%= number_to_currency(item.product.price_cents / 100.0, unit: item.product.currency) %></td>
+            <td class="py-2">
+              <%= form_with url: cart_item_path(item), method: :patch, class: "flex gap-2" do |form| %>
+                <%= form.number_field :quantity, value: item.quantity, min: 1, class: "border rounded w-16 px-1" %>
+                <%= form.submit "Atualizar", class: "border px-2 rounded" %>
+              <% end %>
+            </td>
+            <td class="py-2"><%= number_to_currency(item.subtotal_cents / 100.0, unit: item.product.currency) %></td>
+            <td class="py-2">
+              <%= button_to "Remover", cart_item_path(item), method: :delete, class: "text-red-700" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <p class="text-xl font-semibold">Total: <%= number_to_currency(@cart.subtotal_cents / 100.0, unit: @cart.cart_items.first.product.currency) %></p>
+  <% end %>
+</div>

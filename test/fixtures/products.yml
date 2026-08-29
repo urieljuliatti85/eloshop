@@ -19,3 +19,13 @@ two:
   sku: CANECA-001
   stock_quantity: 0
   status: draft
+
+three:
+  name: Cesto de vime esgotado
+  slug: cesto-de-vime-esgotado
+  description: Cesto trançado à mão, sem estoque no momento.
+  price_cents: 5990
+  currency: BRL
+  sku: CESTO-VIME-ESGOTADO-001
+  stock_quantity: 0
+  status: active

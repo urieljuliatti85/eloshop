@@ -24,7 +24,11 @@
   </head>
 
   <body>
-    <main class="container mx-auto mt-28 px-5 flex">
+    <header class="container mx-auto pt-6 px-5 flex justify-end">
+      <%= link_to "Carrinho", cart_path %>
+    </header>
+
+    <main class="container mx-auto mt-12 px-5 flex">
       <%= yield %>
     </main>
   </body>

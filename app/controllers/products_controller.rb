@@ -1,7 +1,5 @@
-class ProductsController < ApplicationController
+class ProductsController < StorefrontController
   PER_PAGE = 12
-
-  allow_unauthenticated_access
 
   def index
     scope = Product.active.order(created_at: :desc)

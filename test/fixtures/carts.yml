@@ -1,0 +1,7 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  session_token: cart-session-token-one
+
+two:
+  session_token: cart-session-token-two

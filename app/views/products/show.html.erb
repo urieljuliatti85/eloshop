@@ -8,6 +8,15 @@
 
   <% if @product.available_for_purchase? %>
     <p class="text-green-700 mb-4">Disponível</p>
+
+    <%= form_with url: cart_items_path, method: :post, class: "flex items-end gap-2 mb-6" do |form| %>
+      <%= form.hidden_field :product_id, value: @product.id %>
+      <div>
+        <%= form.label :quantity, "Quantidade" %>
+        <%= form.number_field :quantity, value: 1, min: 1, max: @product.stock_quantity, class: "border rounded w-20 px-1" %>
+      </div>
+      <%= form.submit "Adicionar ao carrinho", class: "bg-black text-white px-4 py-2 rounded" %>
+    <% end %>
   <% else %>
     <p class="text-red-700 mb-4">Indisponível</p>
   <% end %>
