@@ -1,0 +1,42 @@
+<div class="w-full max-w-xl">
+  <h1 class="text-2xl font-bold mb-6">Revisar pedido</h1>
+
+  <% if alert %>
+    <p class="mb-4 text-red-700"><%= alert %></p>
+  <% end %>
+
+  <h2 class="font-semibold mb-2">Itens</h2>
+  <table class="w-full text-left border-collapse mb-6">
+    <tbody>
+      <% @cart.cart_items.includes(:product).each do |item| %>
+        <tr class="border-b">
+          <td class="py-2"><%= item.product.name %></td>
+          <td class="py-2"><%= item.quantity %>x</td>
+          <td class="py-2"><%= number_to_currency(item.subtotal_cents / 100.0, unit: item.product.currency) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% if @addresses.empty? %>
+    <p class="mb-4">
+      Você ainda não tem um endereço cadastrado.
+      <%= link_to "Cadastrar endereço", new_address_path %>
+    </p>
+  <% else %>
+    <%= form_with url: orders_path, class: "flex flex-col gap-4" do |form| %>
+      <h2 class="font-semibold">Endereço de entrega</h2>
+      <% @addresses.each do |address| %>
+        <label class="block">
+          <%= radio_button_tag :address_id, address.id, address == @addresses.first %>
+          <%= "#{address.street}, #{address.number} - #{address.city}/#{address.state}" %>
+        </label>
+      <% end %>
+
+      <p>Frete: <%= number_to_currency(@shipping_cents / 100.0, unit: "BRL") %></p>
+      <p class="font-semibold">Total: <%= number_to_currency((@cart.subtotal_cents + @shipping_cents) / 100.0, unit: "BRL") %></p>
+
+      <%= form.submit "Finalizar pedido", class: "bg-black text-white px-4 py-2 rounded w-fit" %>
+    <% end %>
+  <% end %>
+</div>

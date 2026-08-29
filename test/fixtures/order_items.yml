@@ -1,0 +1,15 @@
+one:
+  order: one
+  product: one
+  product_name: Vaso artesanal azul
+  sku: VASO-AZUL-001
+  unit_price_cents: 8990
+  quantity: 1
+
+two:
+  order: two
+  product: one
+  product_name: Vaso artesanal azul
+  sku: VASO-AZUL-001
+  unit_price_cents: 4990
+  quantity: 2

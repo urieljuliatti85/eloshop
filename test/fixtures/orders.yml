@@ -1,0 +1,17 @@
+one:
+  customer: one
+  status: pending
+  subtotal_cents: 8990
+  shipping_cents: 1500
+  total_cents: 10490
+  shipping_address_snapshot: { "street": "Rua das Flores", "number": "123", "city": "São Paulo", "state": "SP", "zip_code": "01000-000" }
+  idempotency_key: order-one-idempotency-key
+
+two:
+  customer: two
+  status: pending
+  subtotal_cents: 9980
+  shipping_cents: 1500
+  total_cents: 11480
+  shipping_address_snapshot: { "street": "Avenida Brasil", "number": "456", "city": "Rio de Janeiro", "state": "RJ", "zip_code": "20000-000" }
+  idempotency_key: order-two-idempotency-key

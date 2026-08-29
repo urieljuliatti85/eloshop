@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_213700) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_215810) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -94,6 +94,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_213700) do
     t.index ["email"], name: "index_customers_on_email", unique: true
   end
 
+  create_table "order_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "order_id", null: false
+    t.bigint "product_id", null: false
+    t.string "product_name", null: false
+    t.integer "quantity", null: false
+    t.string "sku", null: false
+    t.integer "unit_price_cents", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_order_items_on_order_id"
+    t.index ["product_id"], name: "index_order_items_on_product_id"
+  end
+
+  create_table "orders", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "customer_id", null: false
+    t.string "idempotency_key", null: false
+    t.jsonb "shipping_address_snapshot", null: false
+    t.integer "shipping_cents", null: false
+    t.string "status", default: "pending", null: false
+    t.integer "subtotal_cents", null: false
+    t.integer "total_cents", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id"], name: "index_orders_on_customer_id"
+    t.index ["idempotency_key"], name: "index_orders_on_idempotency_key", unique: true
+  end
+
   create_table "products", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "currency", default: "BRL", null: false
@@ -108,6 +135,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_213700) do
     t.index ["sku"], name: "index_products_on_sku", unique: true
     t.index ["slug"], name: "index_products_on_slug", unique: true
     t.index ["status"], name: "index_products_on_status"
+    t.check_constraint "stock_quantity >= 0", name: "products_stock_quantity_check"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -134,5 +162,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_213700) do
   add_foreign_key "cart_items", "products"
   add_foreign_key "carts", "customers"
   add_foreign_key "customer_sessions", "customers"
+  add_foreign_key "order_items", "orders"
+  add_foreign_key "order_items", "products"
+  add_foreign_key "orders", "customers"
   add_foreign_key "sessions", "users"
 end

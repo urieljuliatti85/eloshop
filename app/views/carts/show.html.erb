@@ -41,6 +41,8 @@
       </tbody>
     </table>
 
-    <p class="text-xl font-semibold">Total: <%= number_to_currency(@cart.subtotal_cents / 100.0, unit: @cart.cart_items.first.product.currency) %></p>
+    <p class="text-xl font-semibold mb-4">Total: <%= number_to_currency(@cart.subtotal_cents / 100.0, unit: @cart.cart_items.first.product.currency) %></p>
+
+    <%= link_to "Finalizar compra", new_order_path, class: "bg-black text-white px-4 py-2 rounded w-fit inline-block" %>
   <% end %>
 </div>
