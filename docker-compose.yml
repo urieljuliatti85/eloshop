@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: eloshop
+      POSTGRES_PASSWORD: eloshop
+      POSTGRES_DB: eloshop_development
+    ports:
+      - "5432:5432"
+    volumes:
+      - eloshop_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eloshop"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  eloshop_postgres_data:
