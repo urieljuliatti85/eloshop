@@ -8,7 +8,7 @@
   </nav>
 
   <div class="grid grid-cols-1 gap-12 md:grid-cols-2">
-    <div class="aspect-square overflow-hidden rounded-lg bg-brand-100">
+    <div class="aspect-square overflow-hidden rounded-2xl bg-brand-100">
       <% if @product.main_image.attached? %>
         <%= image_tag @product.main_image, class: "h-full w-full object-cover", alt: @product.name %>
       <% end %>
@@ -16,7 +16,10 @@
 
     <div>
       <h1 class="text-3xl font-bold text-ink"><%= @product.name %></h1>
-      <p class="mt-2 text-2xl text-brand-600"><%= number_to_currency(@product.price_cents / 100.0, unit: @product.currency) %></p>
+
+      <% unless @product.has_variants? %>
+        <p class="mt-2 text-2xl text-brand-600"><%= number_to_currency(@product.price_cents / 100.0, unit: @product.currency) %></p>
+      <% end %>
 
       <% if @product.availability_type_one_of_a_kind? %>
         <p class="mt-4 inline-block rounded-full bg-brand-100 px-3 py-1 text-sm font-medium text-brand-600">Peça única</p>
@@ -32,18 +35,22 @@
         <% if @product.available_for_purchase? %>
           <p class="mb-4 text-sm font-medium text-green-700">Disponível</p>
 
-          <%= form_with url: cart_items_path, method: :post, class: "flex items-center gap-4" do |form| %>
-            <%= form.hidden_field :product_id, value: @product.id %>
+          <% if @product.has_variants? %>
+            <%= render "variant_selector", product: @product %>
+          <% else %>
+            <%= form_with url: cart_items_path, method: :post, class: "flex items-center gap-4" do |form| %>
+              <%= form.hidden_field :product_id, value: @product.id %>
 
-            <div class="flex items-center rounded border border-gray-300">
-              <% if @product.availability_type_made_to_order? %>
-                <%= form.number_field :quantity, value: 1, min: 1, class: "w-16 px-3 py-2 text-center focus:outline-none" %>
-              <% else %>
-                <%= form.number_field :quantity, value: 1, min: 1, max: @product.stock_quantity, class: "w-16 px-3 py-2 text-center focus:outline-none" %>
-              <% end %>
-            </div>
+              <div class="flex items-center rounded-full border border-gray-300">
+                <% if @product.availability_type_made_to_order? %>
+                  <%= form.number_field :quantity, value: 1, min: 1, class: "w-16 rounded-full px-3 py-2 text-center focus:outline-none" %>
+                <% else %>
+                  <%= form.number_field :quantity, value: 1, min: 1, max: @product.stock_quantity, class: "w-16 rounded-full px-3 py-2 text-center focus:outline-none" %>
+                <% end %>
+              </div>
 
-            <%= form.submit "Adicionar ao carrinho", class: "flex-1 rounded bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+              <%= form.submit "Adicionar ao carrinho", class: "flex-1 rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+            <% end %>
           <% end %>
         <% else %>
           <p class="text-sm font-medium text-red-700">Indisponível</p>

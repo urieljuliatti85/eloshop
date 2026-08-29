@@ -1,10 +1,10 @@
-<div class="w-full max-w-md">
-  <h1 class="text-2xl font-bold mb-6">Criar conta</h1>
+<div class="mx-auto w-full max-w-md">
+  <h1 class="mb-8 text-2xl font-bold text-ink">Criar conta</h1>
 
   <%= form_with model: @customer, url: customers_path, class: "flex flex-col gap-4" do |form| %>
     <% if @customer.errors.any? %>
-      <div class="text-red-700">
-        <ul>
+      <div class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <ul class="list-inside list-disc">
           <% @customer.errors.full_messages.each do |message| %>
             <li><%= message %></li>
           <% end %>
@@ -13,27 +13,29 @@
     <% end %>
 
     <div>
-      <%= form.label :name, "Nome" %>
-      <%= form.text_field :name, class: "border rounded w-full px-2 py-1" %>
+      <%= form.label :name, "Nome", class: "mb-1 block text-sm font-medium text-ink" %>
+      <%= form.text_field :name, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
     </div>
 
     <div>
-      <%= form.label :email, "E-mail" %>
-      <%= form.email_field :email, class: "border rounded w-full px-2 py-1" %>
+      <%= form.label :email, "E-mail", class: "mb-1 block text-sm font-medium text-ink" %>
+      <%= form.email_field :email, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
     </div>
 
     <div>
-      <%= form.label :password, "Senha" %>
-      <%= form.password_field :password, class: "border rounded w-full px-2 py-1" %>
+      <%= form.label :password, "Senha", class: "mb-1 block text-sm font-medium text-ink" %>
+      <%= form.password_field :password, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
     </div>
 
     <div>
-      <%= form.label :password_confirmation, "Confirmar senha" %>
-      <%= form.password_field :password_confirmation, class: "border rounded w-full px-2 py-1" %>
+      <%= form.label :password_confirmation, "Confirmar senha", class: "mb-1 block text-sm font-medium text-ink" %>
+      <%= form.password_field :password_confirmation, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
     </div>
 
-    <%= form.submit "Criar conta", class: "bg-black text-white px-4 py-2 rounded w-fit" %>
+    <%= form.submit "Criar conta", class: "mt-2 w-fit cursor-pointer rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
   <% end %>
 
-  <p class="mt-4"><%= link_to "Já tenho conta", new_customer_session_path %></p>
+  <p class="mt-6 text-sm text-ink-muted">
+    Já tem conta? <%= link_to "Entrar", new_customer_session_path, class: "font-medium text-brand-600 hover:underline" %>
+  </p>
 </div>

@@ -1,27 +1,27 @@
-<header class="border-b border-gray-200 bg-white">
-  <div class="container mx-auto flex items-center justify-between gap-6 px-5 py-5">
+<header class="sticky top-0 z-10 border-b border-gray-100 bg-white/90 backdrop-blur">
+  <div class="container mx-auto flex items-center justify-between gap-6 px-5 py-4">
     <%= link_to root_path, class: "flex items-center" do %>
-      <%= image_tag "logo.png", alt: "EloShop", class: "h-10" %>
+      <%= image_tag "logo.png", alt: "EloShop", class: "h-9" %>
     <% end %>
 
-    <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-ink">
-      <%= link_to "Início", root_path %>
-      <%= link_to "Loja", products_path %>
-      <%= link_to "Contato", new_contact_path %>
+    <nav class="hidden items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-medium text-ink md:flex">
+      <%= link_to "Início", root_path, class: "rounded-full px-4 py-2 transition hover:bg-white hover:shadow-sm" %>
+      <%= link_to "Loja", products_path, class: "rounded-full px-4 py-2 transition hover:bg-white hover:shadow-sm" %>
+      <%= link_to "Contato", new_contact_path, class: "rounded-full px-4 py-2 transition hover:bg-white hover:shadow-sm" %>
     </nav>
 
-    <div class="flex items-center gap-5 text-sm">
+    <div class="flex items-center gap-4 text-sm">
       <% if respond_to?(:customer_authenticated?) && customer_authenticated? %>
-        <%= button_to "Sair", customer_session_path, method: :delete, class: "text-ink hover:text-brand-600" %>
+        <%= button_to "Sair", customer_session_path, method: :delete, class: "font-medium text-ink hover:text-brand-600 cursor-pointer" %>
       <% elsif respond_to?(:customer_authenticated?) %>
-        <%= link_to "Entrar", new_customer_session_path, class: "text-ink hover:text-brand-600" %>
-        <%= link_to "Criar conta", new_customer_path, class: "text-ink hover:text-brand-600" %>
+        <%= link_to "Entrar", new_customer_session_path, class: "font-medium text-ink hover:text-brand-600" %>
+        <%= link_to "Criar conta", new_customer_path, class: "rounded-full bg-ink px-5 py-2.5 font-semibold text-white transition hover:bg-brand-600" %>
       <% end %>
 
-      <%= link_to cart_path, class: "relative text-ink hover:text-brand-600", aria: { label: "Carrinho" } do %>
+      <%= link_to cart_path, class: "relative flex items-center gap-1.5 font-medium text-ink hover:text-brand-600", aria: { label: "Carrinho" } do %>
         Carrinho
         <% if Current.cart&.cart_items&.any? %>
-          <span class="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-semibold text-white">
+          <span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-semibold text-white">
             <%= Current.cart.cart_items.sum(:quantity) %>
           </span>
         <% end %>

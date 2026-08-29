@@ -1,7 +1,7 @@
-<footer class="border-t border-gray-200 bg-white">
+<footer class="border-t border-gray-100 bg-white">
   <div class="container mx-auto grid grid-cols-1 gap-10 px-5 py-16 md:grid-cols-4">
     <div>
-      <p class="text-lg font-bold text-ink">EloShop</p>
+      <%= image_tag "logo.png", alt: "EloShop", class: "h-8" %>
       <p class="mt-4 max-w-xs text-sm text-ink-muted">
         Artesanato e peças feitas à mão, com processo e materiais que você pode conhecer antes de comprar.
       </p>
@@ -29,8 +29,8 @@
     </div>
   </div>
 
-  <div class="border-t border-gray-100">
-    <p class="container mx-auto px-5 py-6 text-xs text-ink-muted">
+  <div class="bg-ink">
+    <p class="container mx-auto px-5 py-5 text-xs text-white/70">
       &copy; <%= Date.current.year %> EloShop. Todos os direitos reservados.
     </p>
   </div>

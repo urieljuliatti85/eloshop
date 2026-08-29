@@ -7,7 +7,7 @@
   <p class="mb-6 text-sm text-ink-muted">Status: <%= @order.status %></p>
 
   <% if @order.pending? %>
-    <%= link_to "Pagar agora", new_order_payment_path(@order), class: "mb-8 inline-block w-fit rounded bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
+    <%= link_to "Pagar agora", new_order_payment_path(@order), class: "mb-8 inline-block w-fit rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
   <% end %>
 
   <h2 class="mb-3 font-semibold text-ink">Itens</h2>
@@ -16,6 +16,9 @@
       <div class="flex items-center justify-between py-3 text-sm">
         <div>
           <p class="text-ink"><%= item.product_name %> <span class="text-ink-muted">x<%= item.quantity %></span></p>
+          <% if item.variant_label.present? %>
+            <p class="text-ink-muted"><%= item.variant_label %></p>
+          <% end %>
           <% if item.production_time_snapshot.present? %>
             <p class="text-ink-muted">Prazo de produção: <%= item.production_time_snapshot %></p>
           <% end %>

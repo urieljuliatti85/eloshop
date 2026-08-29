@@ -3,7 +3,7 @@
 
   <%= form_with model: @address, url: addresses_path, class: "flex flex-col gap-4" do |form| %>
     <% if @address.errors.any? %>
-      <div class="rounded bg-red-50 px-4 py-3 text-sm text-red-800">
+      <div class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
         <ul class="list-inside list-disc">
           <% @address.errors.full_messages.each do |message| %>
             <li><%= message %></li>
@@ -15,42 +15,42 @@
     <div class="grid grid-cols-3 gap-4">
       <div class="col-span-2">
         <%= form.label :street, "Rua", class: "mb-1 block text-sm font-medium text-ink" %>
-        <%= form.text_field :street, class: "w-full rounded border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+        <%= form.text_field :street, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
       </div>
 
       <div>
         <%= form.label :number, "Número", class: "mb-1 block text-sm font-medium text-ink" %>
-        <%= form.text_field :number, class: "w-full rounded border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+        <%= form.text_field :number, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
       </div>
     </div>
 
     <div>
       <%= form.label :complement, "Complemento", class: "mb-1 block text-sm font-medium text-ink" %>
-      <%= form.text_field :complement, class: "w-full rounded border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+      <%= form.text_field :complement, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
     </div>
 
     <div>
       <%= form.label :neighborhood, "Bairro", class: "mb-1 block text-sm font-medium text-ink" %>
-      <%= form.text_field :neighborhood, class: "w-full rounded border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+      <%= form.text_field :neighborhood, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
     </div>
 
     <div class="grid grid-cols-3 gap-4">
       <div class="col-span-2">
         <%= form.label :city, "Cidade", class: "mb-1 block text-sm font-medium text-ink" %>
-        <%= form.text_field :city, class: "w-full rounded border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+        <%= form.text_field :city, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
       </div>
 
       <div>
         <%= form.label :state, "Estado", class: "mb-1 block text-sm font-medium text-ink" %>
-        <%= form.text_field :state, class: "w-full rounded border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+        <%= form.text_field :state, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
       </div>
     </div>
 
     <div>
       <%= form.label :zip_code, "CEP", class: "mb-1 block text-sm font-medium text-ink" %>
-      <%= form.text_field :zip_code, class: "w-full rounded border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+      <%= form.text_field :zip_code, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
     </div>
 
-    <%= form.submit "Salvar endereço", class: "mt-2 w-fit rounded bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+    <%= form.submit "Salvar endereço", class: "mt-2 w-fit rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
   <% end %>
 </div>
