@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: Vaso artesanal azul
+  slug: vaso-artesanal-azul
+  description: Peça feita à mão em cerâmica.
+  price_cents: 8990
+  currency: BRL
+  sku: VASO-AZUL-001
+  stock_quantity: 3
+  status: active
+
+two:
+  name: Caneca de cerâmica
+  slug: caneca-ceramica
+  description: Caneca artesanal pintada à mão.
+  price_cents: 4990
+  currency: BRL
+  sku: CANECA-001
+  stock_quantity: 0
+  status: draft

@@ -1,4 +1,17 @@
 Rails.application.routes.draw do
+  resource :session
+  resources :passwords, param: :token
+
+  namespace :admin do
+    resources :products, only: %i[index show new create edit update] do
+      member do
+        patch :publish
+        patch :unpublish
+        patch :discontinue
+      end
+    end
+  end
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -10,5 +23,6 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  # root "posts#index"
+  # TODO: substituir pela home pública da loja quando o storefront existir (Fase 2 do ROADMAP.md).
+  root "admin/products#index"
 end

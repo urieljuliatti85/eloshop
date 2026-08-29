@@ -1,0 +1,45 @@
+<div class="w-full max-w-xl">
+  <% if notice %>
+    <p class="mb-4 text-green-700"><%= notice %></p>
+  <% end %>
+  <% if alert %>
+    <p class="mb-4 text-red-700"><%= alert %></p>
+  <% end %>
+
+  <h1 class="text-2xl font-bold mb-2"><%= @product.name %></h1>
+  <p class="mb-4 text-sm text-gray-600">Status: <%= @product.status %></p>
+
+  <% if @product.main_image.attached? %>
+    <%= image_tag @product.main_image, class: "mb-4 max-w-xs" %>
+  <% end %>
+
+  <dl class="grid grid-cols-2 gap-y-2 mb-6">
+    <dt class="font-semibold">SKU</dt>
+    <dd><%= @product.sku %></dd>
+
+    <dt class="font-semibold">Preço</dt>
+    <dd><%= number_to_currency(@product.price_cents / 100.0, unit: @product.currency) %></dd>
+
+    <dt class="font-semibold">Estoque</dt>
+    <dd><%= @product.stock_quantity %></dd>
+
+    <dt class="font-semibold">Descrição</dt>
+    <dd><%= @product.description %></dd>
+  </dl>
+
+  <div class="flex gap-2">
+    <%= link_to "Editar", edit_admin_product_path(@product), class: "border px-3 py-1 rounded" %>
+
+    <% if @product.draft? %>
+      <%= button_to "Publicar", publish_admin_product_path(@product), method: :patch, class: "border px-3 py-1 rounded" %>
+    <% elsif @product.active? %>
+      <%= button_to "Despublicar", unpublish_admin_product_path(@product), method: :patch, class: "border px-3 py-1 rounded" %>
+    <% elsif @product.sold_out? %>
+      <%= button_to "Marcar como ativo", publish_admin_product_path(@product), method: :patch, class: "border px-3 py-1 rounded" %>
+    <% end %>
+
+    <% unless @product.discontinued? %>
+      <%= button_to "Descontinuar", discontinue_admin_product_path(@product), method: :patch, class: "border px-3 py-1 rounded text-red-700" %>
+    <% end %>
+  </div>
+</div>
