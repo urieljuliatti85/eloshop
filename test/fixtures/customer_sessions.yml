@@ -1,0 +1,9 @@
+one:
+  customer: one
+  ip_address: 127.0.0.1
+  user_agent: Rails Testing
+
+two:
+  customer: two
+  ip_address: 127.0.0.1
+  user_agent: Rails Testing

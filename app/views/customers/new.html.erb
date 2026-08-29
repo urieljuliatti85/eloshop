@@ -1,0 +1,39 @@
+<div class="w-full max-w-md">
+  <h1 class="text-2xl font-bold mb-6">Criar conta</h1>
+
+  <%= form_with model: @customer, url: customers_path, class: "flex flex-col gap-4" do |form| %>
+    <% if @customer.errors.any? %>
+      <div class="text-red-700">
+        <ul>
+          <% @customer.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= form.label :name, "Nome" %>
+      <%= form.text_field :name, class: "border rounded w-full px-2 py-1" %>
+    </div>
+
+    <div>
+      <%= form.label :email, "E-mail" %>
+      <%= form.email_field :email, class: "border rounded w-full px-2 py-1" %>
+    </div>
+
+    <div>
+      <%= form.label :password, "Senha" %>
+      <%= form.password_field :password, class: "border rounded w-full px-2 py-1" %>
+    </div>
+
+    <div>
+      <%= form.label :password_confirmation, "Confirmar senha" %>
+      <%= form.password_field :password_confirmation, class: "border rounded w-full px-2 py-1" %>
+    </div>
+
+    <%= form.submit "Criar conta", class: "bg-black text-white px-4 py-2 rounded w-fit" %>
+  <% end %>
+
+  <p class="mt-4"><%= link_to "Já tenho conta", new_customer_session_path %></p>
+</div>

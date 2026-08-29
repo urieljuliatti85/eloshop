@@ -1,4 +1,6 @@
 class CartItemsController < StorefrontController
+  allow_unauthenticated_customer_access
+
   before_action :set_cart_item, only: %i[update destroy]
 
   def create

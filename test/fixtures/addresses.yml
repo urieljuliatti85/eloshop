@@ -1,0 +1,18 @@
+one:
+  customer: one
+  street: Rua das Flores
+  number: "123"
+  complement: Apto 4
+  neighborhood: Centro
+  city: São Paulo
+  state: SP
+  zip_code: "01000-000"
+
+two:
+  customer: two
+  street: Avenida Brasil
+  number: "456"
+  neighborhood: Jardim
+  city: Rio de Janeiro
+  state: RJ
+  zip_code: "20000-000"

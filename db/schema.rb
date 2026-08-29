@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_210114) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_29_213700) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_210114) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "addresses", force: :cascade do |t|
+    t.string "city"
+    t.string "complement"
+    t.datetime "created_at", null: false
+    t.bigint "customer_id", null: false
+    t.string "neighborhood"
+    t.string "number"
+    t.string "state"
+    t.string "street"
+    t.datetime "updated_at", null: false
+    t.string "zip_code"
+    t.index ["customer_id"], name: "index_addresses_on_customer_id"
+  end
+
   create_table "cart_items", force: :cascade do |t|
     t.bigint "cart_id", null: false
     t.datetime "created_at", null: false
@@ -60,6 +74,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_210114) do
     t.datetime "updated_at", null: false
     t.index ["customer_id"], name: "index_carts_on_customer_id"
     t.index ["session_token"], name: "index_carts_on_session_token", unique: true
+  end
+
+  create_table "customer_sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "customer_id", null: false
+    t.string "ip_address"
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.index ["customer_id"], name: "index_customer_sessions_on_customer_id"
+  end
+
+  create_table "customers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.string "name", null: false
+    t.string "password_digest", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_customers_on_email", unique: true
   end
 
   create_table "products", force: :cascade do |t|
@@ -97,7 +129,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_210114) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "addresses", "customers"
   add_foreign_key "cart_items", "carts"
   add_foreign_key "cart_items", "products"
+  add_foreign_key "carts", "customers"
+  add_foreign_key "customer_sessions", "customers"
   add_foreign_key "sessions", "users"
 end

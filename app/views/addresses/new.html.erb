@@ -1,0 +1,52 @@
+<div class="w-full max-w-md">
+  <h1 class="text-2xl font-bold mb-6">Endereço de entrega</h1>
+
+  <%= form_with model: @address, url: addresses_path, class: "flex flex-col gap-4" do |form| %>
+    <% if @address.errors.any? %>
+      <div class="text-red-700">
+        <ul>
+          <% @address.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= form.label :street, "Rua" %>
+      <%= form.text_field :street, class: "border rounded w-full px-2 py-1" %>
+    </div>
+
+    <div>
+      <%= form.label :number, "Número" %>
+      <%= form.text_field :number, class: "border rounded w-full px-2 py-1" %>
+    </div>
+
+    <div>
+      <%= form.label :complement, "Complemento" %>
+      <%= form.text_field :complement, class: "border rounded w-full px-2 py-1" %>
+    </div>
+
+    <div>
+      <%= form.label :neighborhood, "Bairro" %>
+      <%= form.text_field :neighborhood, class: "border rounded w-full px-2 py-1" %>
+    </div>
+
+    <div>
+      <%= form.label :city, "Cidade" %>
+      <%= form.text_field :city, class: "border rounded w-full px-2 py-1" %>
+    </div>
+
+    <div>
+      <%= form.label :state, "Estado" %>
+      <%= form.text_field :state, class: "border rounded w-full px-2 py-1" %>
+    </div>
+
+    <div>
+      <%= form.label :zip_code, "CEP" %>
+      <%= form.text_field :zip_code, class: "border rounded w-full px-2 py-1" %>
+    </div>
+
+    <%= form.submit "Salvar endereço", class: "bg-black text-white px-4 py-2 rounded w-fit" %>
+  <% end %>
+</div>
