@@ -1,6 +1,10 @@
 class CartsController < StorefrontController
   allow_unauthenticated_customer_access
 
+  # Sem isso, dá pra tentar adivinhar códigos de cupom válidos por força
+  # bruta — ver docs/security.md.
+  rate_limit to: 10, within: 3.minutes, only: :apply_coupon, with: -> { redirect_to cart_path, alert: "Muitas tentativas. Tente novamente em alguns minutos." }
+
   def show
     @cart = Current.cart
   end

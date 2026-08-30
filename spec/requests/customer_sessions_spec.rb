@@ -42,4 +42,26 @@ RSpec.describe "Customer sessions", type: :request do
       expect(response.cookies["customer_session_id"]).to be_nil
     end
   end
+
+  describe "session expiration" do
+    it "keeps an active session valid within the inactivity window" do
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+
+      travel CustomerSession::INACTIVITY_TIMEOUT - 1.day do
+        get new_order_path
+
+        expect(response).not_to redirect_to(new_customer_session_path)
+      end
+    end
+
+    it "expires a session past the inactivity window" do
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+
+      travel CustomerSession::INACTIVITY_TIMEOUT + 1.day do
+        get new_order_path
+
+        expect(response).to redirect_to(new_customer_session_path)
+      end
+    end
+  end
 end

@@ -36,6 +36,12 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 RSpec.configure do |config|
   config.include AuthenticationHelpers
+  config.include ActiveSupport::Testing::TimeHelpers
+
+  # cache_store é :memory_store em teste (ver config/environments/test.rb)
+  # para permitir testar rate_limit de verdade — sem isso, contadores de
+  # um exemplo vazariam para o próximo (mesmo IP de teste em todos).
+  config.before(:each) { Rails.cache.clear }
 
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_paths = [

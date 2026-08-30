@@ -93,6 +93,17 @@ RSpec.describe "Orders", type: :request do
 
       expect(response).to redirect_to(cart_path)
     end
+
+    it "rate limits repeated checkout attempts" do
+      sign_in_customer
+
+      10.times { post orders_path, params: { address_id: 0 } }
+
+      post orders_path, params: { address_id: 0 }
+
+      follow_redirect!
+      expect(response.body).to include("Muitas tentativas")
+    end
   end
 
   describe "GET /orders/:id" do

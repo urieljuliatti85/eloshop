@@ -20,7 +20,10 @@ Rails.application.configure do
 
   # Show full error reports.
   config.consider_all_requests_local = true
-  config.cache_store = :null_store
+  # :memory_store (não :null_store) para que `rate_limit` (Fase 18, ver
+  # docs/security.md) seja testável de verdade — cada teste limpa o cache
+  # no setup (ver test_helper.rb / rails_helper.rb) para não vazar estado.
+  config.cache_store = :memory_store
 
   # Render exception templates for rescuable exceptions and raise for other exceptions.
   config.action_dispatch.show_exceptions = :rescuable
