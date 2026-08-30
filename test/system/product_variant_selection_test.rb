@@ -8,7 +8,7 @@ class ProductVariantSelectionTest < ApplicationSystemTestCase
 
     visit product_path(product.slug)
 
-    select "G", from: "variant_size"
+    choose "G"
 
     assert_text formatted_price(large)
     assert_selector "input[type='submit']:not([disabled])"

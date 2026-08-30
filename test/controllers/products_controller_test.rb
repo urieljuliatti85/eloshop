@@ -56,7 +56,7 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     get product_path(product.slug)
 
     assert_response :success
-    assert_select "select[data-variant-selector-target='size']"
+    assert_select "input[type='radio'][data-variant-selector-target='size']"
     assert_select "input[type='submit']"
   end
 

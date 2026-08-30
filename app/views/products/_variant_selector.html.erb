@@ -20,40 +20,58 @@
     <%= number_to_currency(product.starting_price_cents / 100.0, unit: product.currency) %>
   </p>
 
-  <%= form_with url: cart_items_path, method: :post, class: "mt-4 flex flex-col gap-4" do |form| %>
+  <%= form_with url: cart_items_path, method: :post, class: "mt-6 flex flex-col gap-6" do |form| %>
     <%= form.hidden_field :product_id, value: product.id %>
     <%= form.hidden_field :product_variant_id, data: { "variant-selector-target": "variantId" } %>
 
     <% if sizes.any? %>
       <div>
-        <label for="variant_size" class="mb-1 block text-sm font-medium text-ink">Tamanho</label>
-        <select id="variant_size" data-variant-selector-target="size" data-action="change->variant-selector#update" class="rounded-full border border-gray-300 px-4 py-2">
-          <% sizes.each do |size| %>
-            <option value="<%= size %>"><%= size %></option>
+        <p class="mb-2 text-sm font-medium text-ink">Tamanho</p>
+        <div class="flex flex-wrap gap-2">
+          <% sizes.each_with_index do |size, index| %>
+            <label class="cursor-pointer">
+              <input type="radio" name="variant_size" value="<%= size %>" <%= "checked" if index.zero? %>
+                     data-variant-selector-target="size" data-action="change->variant-selector#update" class="peer sr-only">
+              <span class="flex h-11 min-w-11 items-center justify-center rounded-full border border-gray-300 px-4 text-sm font-medium text-ink peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white">
+                <%= size %>
+              </span>
+            </label>
           <% end %>
-        </select>
+        </div>
       </div>
     <% end %>
 
     <% if colors.any? %>
       <div>
-        <label for="variant_color" class="mb-1 block text-sm font-medium text-ink">Cor</label>
-        <select id="variant_color" data-variant-selector-target="color" data-action="change->variant-selector#update" class="rounded-full border border-gray-300 px-4 py-2">
-          <% colors.each do |color| %>
-            <option value="<%= color %>"><%= color %></option>
+        <p class="mb-2 text-sm font-medium text-ink">Cor</p>
+        <div class="flex flex-wrap gap-2">
+          <% colors.each_with_index do |color, index| %>
+            <label class="cursor-pointer">
+              <input type="radio" name="variant_color" value="<%= color %>" <%= "checked" if index.zero? %>
+                     data-variant-selector-target="color" data-action="change->variant-selector#update" class="peer sr-only">
+              <span class="flex h-11 items-center justify-center rounded-full border border-gray-300 px-4 text-sm font-medium text-ink peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white">
+                <%= color %>
+              </span>
+            </label>
           <% end %>
-        </select>
+        </div>
       </div>
     <% end %>
 
     <% if materials.any? %>
       <div>
-        <label for="variant_material" class="mb-1 block text-sm font-medium text-ink">Material</label>
-        <select id="variant_material" data-variant-selector-target="material" data-action="change->variant-selector#update" class="rounded-full border border-gray-300 px-4 py-2">
-          <% materials.each do |material| %>
-            <option value="<%= material %>"><%= material %></option>
+        <p class="mb-2 text-sm font-medium text-ink">Material</p>
+        <div class="flex flex-wrap gap-2">
+          <% materials.each_with_index do |material, index| %>
+            <label class="cursor-pointer">
+              <input type="radio" name="variant_material" value="<%= material %>" <%= "checked" if index.zero? %>
+                     data-variant-selector-target="material" data-action="change->variant-selector#update" class="peer sr-only">
+              <span class="flex h-11 items-center justify-center rounded-full border border-gray-300 px-4 text-sm font-medium text-ink peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white">
+                <%= material %>
+              </span>
+            </label>
           <% end %>
-        </select>
+        </div>
       </div>
     <% end %>
 
