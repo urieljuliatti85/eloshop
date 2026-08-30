@@ -1,0 +1,58 @@
+# Procedência das fotos de catálogo usadas pelo seed (db/seeds.rb).
+#
+# CC BY e CC BY-SA EXIGEM atribuição: este arquivo é a fonte única do crédito
+# exibido em /creditos. Alterar uma foto sem alterar a entrada aqui deixa o
+# site descumprindo a licença — por isso a página lê daqui em vez de repetir
+# os dados em uma view.
+#
+# Ao adicionar uma foto em db/seeds/images/<SKU>.jpg, adicione a entrada
+# correspondente. Fotos próprias (sem exigência de atribuição) não precisam
+# constar.
+---
+- sku: CESTO-VIME-001
+  produto: Cesto de vime trançado
+  titulo: Savat 4
+  autor: AIDEPCUL
+  licenca: CC BY 4.0
+  licenca_url: https://creativecommons.org/licenses/by/4.0/
+  origem_url: https://commons.wikimedia.org/w/index.php?curid=196845470
+
+- sku: CANECA-001
+  produto: Caneca de cerâmica pintada à mão
+  titulo: Celtic Clays Mug
+  autor: IrishFireside
+  licenca: CC BY 2.0
+  licenca_url: https://creativecommons.org/licenses/by/2.0/
+  origem_url: https://www.flickr.com/photos/43762537@N00/2535213015
+
+- sku: CAMISETA-001
+  produto: Camiseta artesanal de algodão
+  titulo: Stack of folded t-shirts
+  autor: rawpixel
+  licenca: CC0 1.0
+  licenca_url: https://creativecommons.org/publicdomain/zero/1.0/
+  origem_url: https://www.rawpixel.com/image/11515802/stack-folded-t-shirts
+
+- sku: COLAR-MACRAME-001
+  produto: Colar de macramê com pedra bruta
+  titulo: Natural wood pendant necklace with macrame, handmade
+  autor: john bonham2
+  licenca: CC BY-SA 2.0
+  licenca_url: https://creativecommons.org/licenses/by-sa/2.0/
+  origem_url: https://www.flickr.com/photos/95205391@N05/27851846113
+
+- sku: ALMOFADA-BORDADO-001
+  produto: Almofada bordada com nome
+  titulo: handmade Om cushion
+  autor: cernaovec
+  licenca: CC BY-SA 2.0
+  licenca_url: https://creativecommons.org/licenses/by-sa/2.0/
+  origem_url: https://www.flickr.com/photos/69599449@N05/16361200206
+
+- sku: JOGO-CROCHE-001
+  produto: Jogo americano de crochê
+  titulo: Crochet Doily
+  autor: noricum
+  licenca: CC BY-SA 2.0
+  licenca_url: https://creativecommons.org/licenses/by-sa/2.0/
+  origem_url: https://www.flickr.com/photos/43437767@N00/1303641701

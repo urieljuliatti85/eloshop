@@ -39,6 +39,37 @@ class SeedsTest < ActiveSupport::TestCase
                  "um seed repetido com arquivo íntegro não deve gerar blob novo"
   end
 
+  test "usa a foto real do catálogo quando existe arquivo para o SKU" do
+    Rails.application.load_seed
+
+    com_foto = Product.find_by!(sku: "CESTO-VIME-001")
+    assert_equal "image/jpeg", com_foto.main_image.blob.content_type,
+                 "deveria anexar a foto de db/seeds/images"
+
+    sem_foto = Product.find_by!(sku: "VASO-AZUL-001")
+    assert_equal "image/png", sem_foto.main_image.blob.content_type,
+                 "sem foto para o SKU, deve cair no gradiente"
+  end
+
+  # O seed roda a cada boot: trocar uma imagem enviada pelo admin seria
+  # destrutivo e silencioso.
+  test "não sobrescreve imagem que não foi gerada pelo seed" do
+    Rails.application.load_seed
+    product = Product.find_by!(sku: "VASO-AZUL-001")
+
+    product.main_image.purge
+    product.reload
+    product.main_image.attach(
+      io: file_fixture("sample.png").open,
+      filename: "foto-do-artesao.png",
+      content_type: "image/png"
+    )
+
+    Rails.application.load_seed
+
+    assert_equal "foto-do-artesao.png", product.reload.main_image.blob.filename.to_s
+  end
+
   private
 
   def seeded_product

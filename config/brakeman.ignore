@@ -1,0 +1,13 @@
+{
+  "ignored_warnings": [
+    {
+      "fingerprint": "1b06751b538eaf9c3169254fb2132a886ef9c3f820da6bf5e314b6fc6502626d",
+      "note": "ImageCredit#origem_url rejeita qualquer esquema fora de http/https (URI::HTTP cobre os dois) e devolve nil, e a view mostra texto simples quando a URL é nil. O Brakeman não enxerga a validação porque ela vive no método, não na view. Mitigação coberta por spec/requests/storefront/credits_spec.rb ('não transforma URL de esquema perigoso em link')."
+    },
+    {
+      "fingerprint": "c664921eb156dd39e2c683ea2bc5ff255848e8140009d48493fd53f55ed0e634",
+      "note": "Mesma situação de origem_url, para ImageCredit#licenca_url. Validação no método, fallback para texto na view, coberta pelo mesmo spec."
+    }
+  ],
+  "brakeman_version": "8.0.6"
+}

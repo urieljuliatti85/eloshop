@@ -53,6 +53,10 @@ Rails.application.routes.draw do
 
   resource :contact, only: %i[new create]
 
+  # Atribuição das fotos de catálogo. CC BY e CC BY-SA exigem crédito
+  # visível para quem publica a imagem — ver db/seeds/images/credits.yml.
+  get "creditos", to: "credits#show", as: :credits
+
   resources :customers, only: %i[new create]
   resource :customer_session, only: %i[new create destroy]
   resources :addresses, only: %i[new create]

@@ -61,17 +61,54 @@ rescue StandardError
   false
 end
 
-def attach_seed_image(record, attachment_name, filename, top_rgb, bottom_rgb)
+# Foto real do catálogo, quando existir. Nem todo produto tem: as imagens vêm
+# de bancos com licença aberta (ver db/seeds/images/CREDITS.md) e nem todo item
+# encontrou foto adequada. Quem não tem cai no gradiente, que continua servindo
+# de placeholder.
+#
+# Sem constante de propósito: o seed é carregado mais de uma vez no mesmo
+# processo (testes, db:seed repetido) e uma constante emitiria warning de
+# redefinição a cada carga.
+def seed_photo_path(sku)
+  path = Rails.root.join("db/seeds/images/#{sku}.jpg")
+  path.exist? ? path : nil
+end
+
+# Só reconhece como placeholder o que o próprio seed gerou: PNG com exatamente
+# o nome que ele usa. Uma foto enviada pelo admin tem outro nome e nunca é
+# sobrescrita — o seed roda a cada boot, então trocar imagem alheia por engano
+# seria destrutivo e silencioso.
+def seed_placeholder_image?(attachment, placeholder_filename)
+  blob = attachment.respond_to?(:blobs) ? attachment.blobs.first : attachment.blob
+  return false unless blob
+
+  blob.content_type == "image/png" && blob.filename.to_s == placeholder_filename
+end
+
+def attach_seed_image(record, attachment_name, filename, top_rgb, bottom_rgb, photo_path = nil)
   attachment = record.public_send(attachment_name)
 
   if attachment.attached?
-    return unless seed_image_file_missing?(attachment)
+    # Reanexa quando o arquivo sumiu, ou quando existe foto real para promover
+    # sobre o gradiente que o seed havia colocado.
+    stale = seed_image_file_missing?(attachment) ||
+            (photo_path.present? && seed_placeholder_image?(attachment, filename))
+    return unless stale
 
     attachment.purge
     # purge apaga o blob no banco, mas a associação segue em cache no objeto
     # em memória. Sem recarregar, o attach seguinte tenta reaproveitar o
     # blob_id recém-apagado e estoura ForeignKeyViolation.
     record.reload
+  end
+
+  if photo_path
+    record.public_send(attachment_name).attach(
+      io: File.open(photo_path, "rb"),
+      filename: "#{File.basename(filename, '.*')}.jpg",
+      content_type: "image/jpeg"
+    )
+    return
   end
 
   io = StringIO.new(png_gradient(640, 640, top_rgb, bottom_rgb))
@@ -376,7 +413,9 @@ catalog.each do |item|
   end
 
   top, bottom = item[:colors]
-  attach_seed_image(product, :main_image, "#{product.slug}.png", top, bottom)
+  # A capa usa a foto real quando o produto tem uma; a galeria segue no
+  # gradiente, já que só há uma foto por SKU.
+  attach_seed_image(product, :main_image, "#{product.slug}.png", top, bottom, seed_photo_path(item[:sku]))
   # Sem guard de `attached?` aqui: attach_seed_image já decide sozinho entre
   # não fazer nada, curar um anexo órfão ou anexar pela primeira vez. O guard
   # anterior impedia a cura da galeria.
