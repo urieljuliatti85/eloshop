@@ -71,6 +71,10 @@ Rails.application.routes.draw do
 
   get "sitemap.xml", to: "sitemaps#show", defaults: { format: "xml" }, as: :sitemap
 
+  # Endpoint que o gateway configurado chama. O path neutro é o que vai no
+  # painel do provedor; o path do fake existe porque os botões de simulação
+  # na tela de pagamento apontam para ele.
+  post "webhooks/payments", to: "payment_webhooks#create", as: :payment_webhook
   post "webhooks/fake_gateway", to: "payment_webhooks#create", as: :fake_gateway_webhook
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
