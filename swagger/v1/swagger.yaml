@@ -113,7 +113,7 @@ paths:
                 - availability_type
                 - available_for_purchase
         '404':
-          description: produto em rascunho não é exposto pela API pública
+          description: produto não encontrado ou não disponível publicamente
           content:
             application/json:
               schema:
