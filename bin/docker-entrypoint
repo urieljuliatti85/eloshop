@@ -3,6 +3,10 @@
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
+  # db:prepare só executa db:seed na criação inicial do banco. Reaplicar
+  # o seed em todo boot é seguro: em produção só cria SKUs que ainda não
+  # existem e anexa imagem se a peça ainda não tiver capa.
+  ./bin/rails db:seed
 
   # Railway (Fase 20) atribui a porta dinamicamente via $PORT — o Thruster
   # (bin/thrust) escuta em HTTP_PORT (padrão 80), então precisa apontar pra
