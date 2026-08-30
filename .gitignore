@@ -40,3 +40,7 @@
 /CLAUDE.md
 /ROADMAP.md
 /docs/
+
+# SDK do Railway (railway/iac), necessário só para rodar `railway config
+# plan/apply` sobre .railway/railway.ts — não faz parte do runtime da aplicação.
+/node_modules/
