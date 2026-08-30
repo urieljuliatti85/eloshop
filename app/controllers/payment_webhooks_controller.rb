@@ -1,4 +1,14 @@
 class PaymentWebhooksController < ApplicationController
+  # Um gateway de verdade chamando este endpoint não tem token CSRF — a
+  # autenticidade do webhook é garantida pelo segredo verificado abaixo
+  # (comparação timing-safe, ver Gateways::FakeGateway#verify_webhook), não
+  # pela proteção CSRF (que é para formulários de navegador). Removido por
+  # engano por um autofix automático do CodeQL/Copilot que não reconheceu
+  # esse padrão — sem isso, todo webhook real recebe 422
+  # ActionController::InvalidAuthenticityToken e nenhum pagamento é
+  # confirmado. Ver docs/security.md, seção Webhooks.
+  skip_forgery_protection
+
   allow_unauthenticated_access
 
   def create
