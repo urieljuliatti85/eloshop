@@ -3,6 +3,12 @@
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
+
+  # Railway (Fase 20) atribui a porta dinamicamente via $PORT — o Thruster
+  # (bin/thrust) escuta em HTTP_PORT (padrão 80), então precisa apontar pra
+  # essa porta em runtime. Sem $PORT definida (Kamal, Docker local), cai no
+  # padrão de sempre.
+  export HTTP_PORT="${PORT:-80}"
 fi
 
 exec "${@}"

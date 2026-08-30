@@ -64,21 +64,37 @@ test:
 # Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
 # for a full overview on how database connection configuration can be specified.
 #
+# Fase 20 (deploy): Railway fornece um único Postgres (DATABASE_URL) — cada
+# papel (primary/cache/queue/cable) usa o mesmo host/porta/usuário/senha,
+# mas com um banco próprio, sobrescrevendo só o nome. db:prepare precisa de
+# bancos fisicamente distintos por papel pra carregar o schema de cada um
+# corretamente (testado localmente: `url:` sozinho — mesmo com `database:`
+# também presente no hash — sempre vence pro nome do banco, então reaproveitar
+# a mesma DATABASE_URL nos 4 papéis faz db:prepare pular cache/queue/cable,
+# já achando o banco "pronto" por causa do primary; por isso o parse manual
+# abaixo, host/porta/usuário/senha explícitos em vez de `url:`). São 4 bancos
+# dentro da mesma instância Postgres da Railway, não 4 instâncias — sem
+# custo/complexidade extra de provisionar.
+<% if ENV["DATABASE_URL"] %>
+  <% database_url = URI.parse(ENV["DATABASE_URL"]) %>
+<% end %>
 production:
   primary: &primary_production
     <<: *default
-    database: eloshop_production
-    username: eloshop
-    password: <%= ENV["ELOSHOP_DATABASE_PASSWORD"] %>
+    host: <%= database_url&.host %>
+    port: <%= database_url&.port %>
+    username: <%= database_url&.user %>
+    password: <%= database_url&.password %>
+    database: <%= database_url&.path&.delete_prefix("/") %>
   cache:
     <<: *primary_production
-    database: eloshop_production_cache
+    database: <%= database_url&.path&.delete_prefix("/") %>_cache
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
-    database: eloshop_production_queue
+    database: <%= database_url&.path&.delete_prefix("/") %>_queue
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
-    database: eloshop_production_cable
+    database: <%= database_url&.path&.delete_prefix("/") %>_cable
     migrations_paths: db/cable_migrate

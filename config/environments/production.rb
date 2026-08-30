@@ -21,13 +21,13 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
+  # Store uploaded files on the volume persistente da Railway (ver config/storage.yml).
+  config.active_storage.service = :production
 
-  # config.assume_ssl fica para a Fase 20 (deploy) — depende de como o proxy
-  # SSL escolhido termina TLS (ver config/deploy.yml). force_ssl já é
-  # decisão de segurança independente disso — ver docs/security.md.
-  # config.assume_ssl = true
+  # Railway termina TLS na borda e encaminha HTTP puro pro container — sem
+  # isso, force_ssl entraria em loop de redirecionamento tentando forçar
+  # HTTPS numa conexão que, internamente, já chegou em HTTP. Ver docs/security.md.
+  config.assume_ssl = true
 
   # Força todo acesso via SSL, ativa Strict-Transport-Security e cookies secure.
   config.force_ssl = true

@@ -42,6 +42,13 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 1.2"
 
+# Documentação da API pública (v1) via OpenAPI/Swagger — montada em
+# /api-docs em todos os ambientes (ver config/routes.rb), por isso fora do
+# grupo development/test: só rswag-specs (a DSL usada nos specs) é
+# dev/test-only, já que api/ui são carregadas em runtime.
+gem "rswag-api"
+gem "rswag-ui"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -58,9 +65,7 @@ group :development, :test do
   # Testes de comportamento e documentação OpenAPI/Swagger
   gem "rspec-rails"
 
-  # Documentação e teste de API via OpenAPI/Swagger [https://github.com/rswag/rswag]
-  gem "rswag-api"
-  gem "rswag-ui"
+  # DSL de specs que gera swagger.yaml a partir dos testes [https://github.com/rswag/rswag]
   gem "rswag-specs"
 end
 

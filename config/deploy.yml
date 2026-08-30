@@ -1,3 +1,7 @@
+# Fase 20 (deploy): o deploy atual é feito via Railway (PaaS), não Kamal —
+# este arquivo fica parado, sem uso, preservado para uma eventual migração
+# futura para VPS própria. Ver docs/architecture.md e ROADMAP.md, Fase 20.
+
 # Name of your application. Used to uniquely configure containers.
 service: eloshop
 
