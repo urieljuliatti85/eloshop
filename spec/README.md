@@ -1,8 +1,7 @@
 # spec/
 
-Este diretório existe só para os specs do **rswag** (documentação e teste de
-API via OpenAPI/Swagger). A suíte de testes principal do projeto continua em
-Minitest, em `test/` — ver `ROADMAP.md` e `CLAUDE.md`.
+Este diretório abriga a suíte principal em **RSpec** e os specs do
+**rswag** para documentação e teste de API via OpenAPI/Swagger.
 
 Quando um endpoint JSON for adicionado (`app/controllers/api/...`), o spec
 correspondente vai em `spec/requests/`, seguindo a DSL do rswag

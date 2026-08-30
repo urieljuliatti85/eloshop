@@ -55,8 +55,7 @@ group :development, :test do
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
 
-  # RSpec, usado só pelos specs do rswag (documentação/teste de API OpenAPI)
-  # — a suíte principal do projeto continua em Minitest, ver ROADMAP.md.
+  # Testes de comportamento e documentação OpenAPI/Swagger
   gem "rspec-rails"
 
   # Documentação e teste de API via OpenAPI/Swagger [https://github.com/rswag/rswag]

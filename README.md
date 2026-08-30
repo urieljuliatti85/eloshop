@@ -10,8 +10,8 @@ E-commerce de artesanato e produtos feitos à mão, construído em Ruby on Rails
 * Tailwind CSS
 * Active Storage
 * Solid Queue, Solid Cache, Solid Cable
-* Minitest + Capybara (suíte principal)
-* RSpec + rswag (só para documentação/teste de API OpenAPI, ver `spec/README.md`)
+* RSpec + rswag (suíte principal de testes e documentação de API)
+* Capybara + Selenium para testes de sistema
 
 ## Requisitos
 
@@ -55,9 +55,10 @@ própria, ver `app/controllers/admin/`).
 ## Testes
 
 ```bash
-bin/rails test          # models, controllers, integration
-bin/rails test:system   # testes de sistema (Capybara + Selenium)
-bundle exec rspec       # specs do rswag (documentação de API)
+bundle exec rspec                     # suíte principal de testes
+bundle exec rspec spec/requests       # request specs e OpenAPI
+bin/rails rswag:specs:swaggerize     # gera swagger/v1/swagger.yaml
+bin/rails test:system                 # testes de sistema (Capybara + Selenium)
 ```
 
 ## Documentação de API

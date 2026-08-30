@@ -8,5 +8,5 @@ cd "$(git rev-parse --show-toplevel)"
 echo "== pre-commit: RuboCop =="
 bin/rubocop
 
-echo "== pre-commit: bin/rails test =="
-bin/rails test
+echo "== pre-commit: bundle exec rspec =="
+bundle exec rspec
