@@ -1,1 +1,13 @@
 # See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+
+User-agent: *
+Disallow: /admin
+Disallow: /cart
+Disallow: /orders
+Disallow: /session
+Disallow: /customer_session
+Disallow: /passwords
+Disallow: /wishlist
+Allow: /
+
+Sitemap: /sitemap.xml

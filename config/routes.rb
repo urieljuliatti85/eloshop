@@ -65,6 +65,8 @@ Rails.application.routes.draw do
     member { post :move_to_cart }
   end
 
+  get "sitemap.xml", to: "sitemaps#show", defaults: { format: "xml" }, as: :sitemap
+
   post "webhooks/fake_gateway", to: "payment_webhooks#create", as: :fake_gateway_webhook
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
