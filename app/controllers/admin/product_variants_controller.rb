@@ -29,7 +29,7 @@ module Admin
     end
 
     def destroy
-      @product_variant.destroy!
+      ActiveRecord::Base.transaction(requires_new: true) { @product_variant.destroy! }
       redirect_to admin_product_path(@product), notice: "Variante removida."
     rescue ActiveRecord::InvalidForeignKey
       redirect_to admin_product_path(@product), alert: "Esta variante já foi usada em pedidos e não pode ser excluída — desative-a em vez disso."
