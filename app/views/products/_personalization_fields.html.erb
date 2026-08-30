@@ -1,0 +1,14 @@
+<% if product.personalization_options.any? %>
+  <div class="flex flex-col gap-4">
+    <% product.personalization_options.each do |option| %>
+      <div>
+        <label for="personalization_<%= option.id %>" class="mb-1 block text-sm font-medium text-ink">
+          <%= option.label %><% if option.required? %> <span class="text-red-700">*</span><% end %>
+        </label>
+        <%= text_field_tag "personalizations[#{option.id}]", nil,
+              id: "personalization_#{option.id}", maxlength: option.max_length, required: option.required?,
+              class: "w-full rounded-full border border-gray-300 px-4 py-2 focus:border-brand-500 focus:outline-none" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

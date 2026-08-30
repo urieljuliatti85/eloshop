@@ -40,6 +40,9 @@
             <span class="text-ink">
               <%= item.product.name %>
               <% if item.product_variant %> (<%= item.product_variant.to_label %>)<% end %>
+              <% item.personalization_entries.each do |entry| %>
+                <span class="block text-xs text-ink-muted"><%= entry[:label] %>: <%= entry[:value] %></span>
+              <% end %>
               <span class="text-ink-muted">x<%= item.quantity %></span>
             </span>
             <span class="text-ink"><%= number_to_currency(item.subtotal_cents / 100.0, unit: item.product.currency) %></span>

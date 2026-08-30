@@ -19,6 +19,9 @@
           <% if item.variant_label.present? %>
             <p class="text-ink-muted"><%= item.variant_label %></p>
           <% end %>
+          <% item.personalization_entries.each do |entry| %>
+            <p class="text-ink-muted"><%= entry[:label] %>: <%= entry[:value] %></p>
+          <% end %>
           <% if item.production_time_snapshot.present? %>
             <p class="text-ink-muted">Prazo de produção: <%= item.production_time_snapshot %></p>
           <% end %>

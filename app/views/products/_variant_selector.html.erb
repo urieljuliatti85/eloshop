@@ -57,6 +57,8 @@
       </div>
     <% end %>
 
+    <%= render "personalization_fields", product: product %>
+
     <div class="flex items-center gap-4">
       <div class="flex items-center rounded-full border border-gray-300">
         <%= form.number_field :quantity, value: 1, min: 1, class: "w-16 rounded-full px-3 py-2 text-center focus:outline-none" %>

@@ -38,18 +38,22 @@
           <% if @product.has_variants? %>
             <%= render "variant_selector", product: @product %>
           <% else %>
-            <%= form_with url: cart_items_path, method: :post, class: "flex items-center gap-4" do |form| %>
+            <%= form_with url: cart_items_path, method: :post, class: "flex flex-col gap-4" do |form| %>
               <%= form.hidden_field :product_id, value: @product.id %>
 
-              <div class="flex items-center rounded-full border border-gray-300">
-                <% if @product.availability_type_made_to_order? %>
-                  <%= form.number_field :quantity, value: 1, min: 1, class: "w-16 rounded-full px-3 py-2 text-center focus:outline-none" %>
-                <% else %>
-                  <%= form.number_field :quantity, value: 1, min: 1, max: @product.stock_quantity, class: "w-16 rounded-full px-3 py-2 text-center focus:outline-none" %>
-                <% end %>
-              </div>
+              <%= render "personalization_fields", product: @product %>
 
-              <%= form.submit "Adicionar ao carrinho", class: "flex-1 rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+              <div class="flex items-center gap-4">
+                <div class="flex items-center rounded-full border border-gray-300">
+                  <% if @product.availability_type_made_to_order? %>
+                    <%= form.number_field :quantity, value: 1, min: 1, class: "w-16 rounded-full px-3 py-2 text-center focus:outline-none" %>
+                  <% else %>
+                    <%= form.number_field :quantity, value: 1, min: 1, max: @product.stock_quantity, class: "w-16 rounded-full px-3 py-2 text-center focus:outline-none" %>
+                  <% end %>
+                </div>
+
+                <%= form.submit "Adicionar ao carrinho", class: "flex-1 rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+              </div>
             <% end %>
           <% end %>
         <% else %>

@@ -69,4 +69,15 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "p", text: "Indisponível"
   end
+
+  test "shows a product with personalization fields, marking the required one" do
+    product = products(:with_personalization)
+
+    get product_path(product.slug)
+
+    assert_response :success
+    assert_select "input#personalization_#{personalization_options(:name_engraving).id}[required]"
+    assert_select "input#personalization_#{personalization_options(:message).id}"
+    assert_select "input#personalization_#{personalization_options(:message).id}[required]", count: 0
+  end
 end
