@@ -39,10 +39,16 @@ export default defineRailway(() => {
     },
 
     // Idem: healthcheck e política de restart também vinham do railway.json.
+    //
+    // `restartPolicyType: "ON_FAILURE"` está deliberadamente ausente: é o
+    // default da Railway, e a API grava null ao recebê-lo. Declarar aqui
+    // deixaria `railway config plan` sempre acusando uma mudança pendente que
+    // nunca se resolve — e um plan que nunca fica limpo ensina a ignorar o
+    // plan, que é o detector de drift. O comportamento é o mesmo; só o
+    // maxRetries precisa ser explícito, porque o default é 10.
     deploy: {
       healthcheckPath: "/up",
       healthcheckTimeout: 30,
-      restartPolicyType: "ON_FAILURE",
       restartPolicyMaxRetries: 3,
     },
 
