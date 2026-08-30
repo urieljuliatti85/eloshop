@@ -18,7 +18,10 @@ class ReviewModerationTest < ApplicationSystemTestCase
     assert_no_text "Chegou rápido e muito bem embalado"
 
     sign_in_as_admin(admin)
-    assert_text "Peças com história"
+    # O login do admin redireciona para a raiz, que passou a ser a home
+    # (home#show) e não mais o catálogo — daí o h1 da apresentação da loja, e
+    # não "Loja".
+    assert_selector "h1", text: "Peças com história"
 
     visit admin_reviews_path
     click_button "Aprovar"

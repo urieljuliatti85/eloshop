@@ -26,6 +26,43 @@ RSpec.describe "Storefront products", type: :request do
       expect(response.body).to include('<meta name="description"')
     end
 
+    it "orders by price when the shopper picks a price sort" do
+      cheap = Product.create!(name: "Vaso barato", sku: "STORE-010", price_cents: 1_000, stock_quantity: 3, currency: "BRL", status: :active)
+      expensive = Product.create!(name: "Vaso caro", sku: "STORE-011", price_cents: 9_000, stock_quantity: 3, currency: "BRL", status: :active)
+
+      get products_path(sort: "menor-preco")
+      expect(response.body.index(cheap.name)).to be < response.body.index(expensive.name)
+
+      get products_path(sort: "maior-preco")
+      expect(response.body.index(expensive.name)).to be < response.body.index(cheap.name)
+    end
+
+    it "falls back to the default sort when the sort param is not on the allowed list" do
+      older = Product.create!(name: "Vaso antigo", sku: "STORE-012", price_cents: 1_000, stock_quantity: 3, currency: "BRL", status: :active, created_at: 2.days.ago)
+      newer = Product.create!(name: "Vaso novo", sku: "STORE-013", price_cents: 9_000, stock_quantity: 3, currency: "BRL", status: :active, created_at: 1.hour.ago)
+
+      get products_path(sort: "price_cents asc; drop table products")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body.index(newer.name)).to be < response.body.index(older.name)
+    end
+
+    it "honors a page size from the allowed list" do
+      3.times { |i| Product.create!(name: "Vaso paginado #{i}", sku: "STORE-02#{i}", price_cents: 1_000, stock_quantity: 3, currency: "BRL", status: :active) }
+
+      get products_path(per_page: 8)
+
+      expect(response.body).to include("Mostrando 1–3 de 3 resultados")
+    end
+
+    it "ignores a page size outside the allowed list" do
+      13.times { |i| Product.create!(name: "Vaso limite #{i}", sku: "STORE-1#{i.to_s.rjust(2, "0")}", price_cents: 1_000, stock_quantity: 3, currency: "BRL", status: :active) }
+
+      get products_path(per_page: 500)
+
+      expect(response.body).to include("Mostrando 1–12 de 13 resultados")
+    end
+
     it "sets a category-specific title when filtered by category" do
       category = Category.create!(name: "Decoração SEO")
       Product.create!(name: "Vaso categoria seo", sku: "STORE-005", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active, category: category)

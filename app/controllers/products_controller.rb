@@ -1,10 +1,25 @@
 class ProductsController < StorefrontController
+  # Quantos produtos por página o cliente pode escolher na vitrine ("Mostrar").
+  # Lista fechada: o valor vem da query string e vira LIMIT.
+  PER_PAGE_OPTIONS = [ 8, 12, 16, 24 ].freeze
   PER_PAGE = 12
+
+  # "Ordenar por" — também lista fechada, porque o valor vira ORDER BY.
+  SORT_OPTIONS = {
+    "recentes" => { label: "Novidades", order: { created_at: :desc } },
+    "menor-preco" => { label: "Menor preço", order: { price_cents: :asc } },
+    "maior-preco" => { label: "Maior preço", order: { price_cents: :desc } },
+    "nome" => { label: "Nome (A–Z)", order: { name: :asc } }
+  }.freeze
+  DEFAULT_SORT = "recentes"
 
   allow_unauthenticated_customer_access
 
   def index
-    scope = Product.active.order(created_at: :desc)
+    @sort = SORT_OPTIONS.key?(params[:sort]) ? params[:sort] : DEFAULT_SORT
+    @per_page = PER_PAGE_OPTIONS.include?(params[:per_page].to_i) ? params[:per_page].to_i : PER_PAGE
+
+    scope = Product.active.order(SORT_OPTIONS.fetch(@sort)[:order])
     @categories = Category.order(:name)
     @tags = Tag.order(:name)
     @materials = Material.order(:name)
@@ -21,14 +36,19 @@ class ProductsController < StorefrontController
     scope = scope.where.not(personalization_options: { id: nil }).joins(:personalization_options) if params[:personalizable] == "1"
     scope = scope.distinct
 
+    @total_count = scope.count
+    @total_pages = (@total_count / @per_page.to_f).ceil
     @page = [ params[:page].to_i, 1 ].max
-    @total_pages = (scope.count / PER_PAGE.to_f).ceil
-    @products = scope.includes(:product_variants).limit(PER_PAGE).offset((@page - 1) * PER_PAGE)
+    @products = scope
+      .includes(:product_variants, :personalization_options)
+      .with_attached_main_image
+      .limit(@per_page)
+      .offset((@page - 1) * @per_page)
   end
 
   def show
     @product = Product.active.includes(:product_variants).find_by!(slug: params[:slug])
-    @related_products = @product.related_products.includes(:product_variants)
+    @related_products = @product.related_products.includes(:product_variants, :personalization_options).with_attached_main_image
     @reviews = @product.approved_reviews.includes(:customer)
     @existing_review = customer_authenticated? ? @product.reviews.find_by(customer: Current.customer) : nil
   end
