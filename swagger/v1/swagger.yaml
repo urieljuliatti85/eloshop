@@ -3,7 +3,126 @@ openapi: 3.0.1
 info:
   title: API V1
   version: v1
-paths: {}
+paths:
+  "/api/v1/products":
+    get:
+      summary: Lista produtos ativos
+      tags:
+      - Products
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: Página da listagem (padrão 1)
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: produtos ativos encontrados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        description:
+                          type: string
+                          nullable: true
+                        price_cents:
+                          type: integer
+                        currency:
+                          type: string
+                        availability_type:
+                          type: string
+                        production_time_range:
+                          type: string
+                          nullable: true
+                        available_for_purchase:
+                          type: boolean
+                      required:
+                      - id
+                      - name
+                      - slug
+                      - price_cents
+                      - currency
+                      - availability_type
+                      - available_for_purchase
+                  page:
+                    type: integer
+                  total_pages:
+                    type: integer
+                required:
+                - products
+                - page
+                - total_pages
+  "/api/v1/products/{slug}":
+    get:
+      summary: Exibe um produto ativo pelo slug
+      tags:
+      - Products
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: produto encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  slug:
+                    type: string
+                  description:
+                    type: string
+                    nullable: true
+                  price_cents:
+                    type: integer
+                  currency:
+                    type: string
+                  availability_type:
+                    type: string
+                  production_time_range:
+                    type: string
+                    nullable: true
+                  available_for_purchase:
+                    type: boolean
+                required:
+                - id
+                - name
+                - slug
+                - price_cents
+                - currency
+                - availability_type
+                - available_for_purchase
+        '404':
+          description: produto em rascunho não é exposto pela API pública
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
 servers:
 - url: https://{defaultHost}
   variables:
