@@ -1,9 +1,4 @@
 class PaymentWebhooksController < ApplicationController
-  # Um gateway de verdade chamando este endpoint não tem token CSRF — a
-  # autenticidade do webhook é garantida pelo segredo verificado abaixo, não
-  # pela proteção CSRF (que é para formulários de navegador).
-  skip_forgery_protection
-
   allow_unauthenticated_access
 
   def create
