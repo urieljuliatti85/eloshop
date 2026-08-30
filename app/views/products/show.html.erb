@@ -61,12 +61,35 @@
         <% end %>
       </div>
 
-      <dl class="mt-8 space-y-2 border-t border-gray-200 pt-8 text-sm">
-        <div class="flex gap-2">
-          <dt class="w-24 text-ink-muted">SKU</dt>
-          <dd class="text-ink"><%= @product.sku %></dd>
-        </div>
-      </dl>
+      <div class="mt-8 divide-y divide-gray-200 border-t border-gray-200">
+        <details class="group py-4" open>
+          <summary class="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-ink">
+            Detalhes do produto
+            <span class="text-ink-muted transition group-open:rotate-45">+</span>
+          </summary>
+
+          <dl class="mt-3 space-y-2 text-sm">
+            <div class="flex gap-2">
+              <dt class="w-24 text-ink-muted">SKU</dt>
+              <dd class="text-ink"><%= @product.sku %></dd>
+            </div>
+          </dl>
+        </details>
+
+        <details class="group py-4">
+          <summary class="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-ink">
+            Envio
+            <span class="text-ink-muted transition group-open:rotate-45">+</span>
+          </summary>
+
+          <div class="mt-3 space-y-1 text-sm text-ink-muted">
+            <p>Frete calculado no checkout.</p>
+            <% if @product.availability_type_made_to_order? %>
+              <p>Produção: <%= @product.production_time_range %> antes do envio.</p>
+            <% end %>
+          </div>
+        </details>
+      </div>
     </div>
   </div>
 </div>
