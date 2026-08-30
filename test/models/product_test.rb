@@ -273,4 +273,18 @@ class ProductTest < ActiveSupport::TestCase
   test "related_products respects the limit" do
     assert products(:one).related_products(limit: 1).size <= 1
   end
+
+  test "average_rating and reviews_count only consider approved reviews" do
+    product = products(:one)
+    product.reviews.create!(customer: customers(:one), rating: 5, comment: "Ótimo", status: "approved")
+    product.reviews.create!(customer: customers(:two), rating: 3, comment: "Pendente")
+
+    assert_equal 5.0, product.average_rating
+    assert_equal 1, product.reviews_count
+  end
+
+  test "average_rating is nil without approved reviews" do
+    assert_nil products(:one).average_rating
+    assert_equal 0, products(:one).reviews_count
+  end
 end

@@ -17,10 +17,19 @@ Rails.application.routes.draw do
       resources :product_images, path: "imagens", only: %i[destroy]
     end
 
+    resources :reviews, only: %i[index] do
+      member do
+        patch :approve
+        patch :reject
+      end
+    end
+
     resources :orders, only: %i[index show]
   end
 
-  resources :products, only: %i[index show], param: :slug, path: "produtos"
+  resources :products, only: %i[index show], param: :slug, path: "produtos" do
+    resources :reviews, only: %i[create]
+  end
 
   namespace :api do
     namespace :v1 do

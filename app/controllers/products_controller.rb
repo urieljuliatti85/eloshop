@@ -14,5 +14,7 @@ class ProductsController < StorefrontController
   def show
     @product = Product.active.includes(:product_variants).find_by!(slug: params[:slug])
     @related_products = @product.related_products.includes(:product_variants)
+    @reviews = @product.approved_reviews.includes(:customer)
+    @existing_review = customer_authenticated? ? @product.reviews.find_by(customer: Current.customer) : nil
   end
 end

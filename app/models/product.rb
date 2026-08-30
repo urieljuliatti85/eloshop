@@ -40,6 +40,7 @@ class Product < ApplicationRecord
   has_many :product_variants, dependent: :destroy
   has_many :personalization_options, dependent: :destroy
   has_many :wishlist_items, dependent: :destroy
+  has_many :reviews, dependent: :destroy
 
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 
@@ -96,6 +97,18 @@ class Product < ApplicationRecord
   # wishlist), sem precisar passar pela PDP para escolher nada.
   def directly_purchasable?
     !has_variants? && personalization_options.none?(&:required?)
+  end
+
+  def approved_reviews
+    reviews.visible.order(created_at: :desc)
+  end
+
+  def average_rating
+    approved_reviews.average(:rating)&.round(1)
+  end
+
+  def reviews_count
+    approved_reviews.count
   end
 
   # Menor preço entre as variantes ativas — usado no catálogo para produtos

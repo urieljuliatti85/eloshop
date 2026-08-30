@@ -22,6 +22,12 @@
         <%= render "wishlist_button", product: @product %>
       </div>
 
+      <% if @product.average_rating %>
+        <a href="#avaliacoes" class="mt-2 inline-block text-sm text-ink-muted hover:text-brand-600">
+          ★ <%= @product.average_rating %> (<%= pluralize(@product.reviews_count, "avaliação", plural: "avaliações") %>)
+        </a>
+      <% end %>
+
       <% unless @product.has_variants? %>
         <p class="mt-3 text-2xl text-brand-600"><%= number_to_currency(@product.price_cents / 100.0, unit: @product.currency) %></p>
       <% end %>
@@ -93,6 +99,8 @@
       </div>
     </div>
   </div>
+
+  <%= render "reviews", product: @product, reviews: @reviews, existing_review: @existing_review %>
 
   <% if @related_products.any? %>
     <div class="mt-20">

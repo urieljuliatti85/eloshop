@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_30_003821) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_30_004743) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -206,6 +206,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_003821) do
     t.check_constraint "stock_quantity >= 0", name: "products_stock_quantity_check"
   end
 
+  create_table "reviews", force: :cascade do |t|
+    t.text "comment", null: false
+    t.datetime "created_at", null: false
+    t.bigint "customer_id", null: false
+    t.bigint "product_id", null: false
+    t.integer "rating", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "verified_purchase", default: false, null: false
+    t.index ["customer_id", "product_id"], name: "index_reviews_on_customer_id_and_product_id", unique: true
+    t.index ["customer_id"], name: "index_reviews_on_customer_id"
+    t.index ["product_id"], name: "index_reviews_on_product_id"
+    t.index ["status"], name: "index_reviews_on_status"
+    t.check_constraint "rating >= 1 AND rating <= 5", name: "reviews_rating_range_check"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "ip_address"
@@ -249,6 +265,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_003821) do
   add_foreign_key "payments", "orders"
   add_foreign_key "personalization_options", "products"
   add_foreign_key "product_variants", "products"
+  add_foreign_key "reviews", "customers"
+  add_foreign_key "reviews", "products"
   add_foreign_key "sessions", "users"
   add_foreign_key "wishlist_items", "customers"
   add_foreign_key "wishlist_items", "products"

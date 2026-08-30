@@ -1,0 +1,57 @@
+<div id="avaliacoes" class="mt-20 max-w-2xl">
+  <h2 class="mb-8 text-2xl font-bold text-ink">Avaliações</h2>
+
+  <% if reviews.any? %>
+    <div class="space-y-6">
+      <% reviews.each do |review| %>
+        <div class="border-b border-gray-100 pb-6">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-ink">★ <%= review.rating %>/5</span>
+            <% if review.verified_purchase? %>
+              <span class="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-600">Compra verificada</span>
+            <% end %>
+          </div>
+          <p class="mt-2 text-ink-muted"><%= review.comment %></p>
+          <p class="mt-2 text-xs text-ink-muted"><%= review.customer.name %> · <%= review.created_at.strftime("%d/%m/%Y") %></p>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-ink-muted">Este produto ainda não tem avaliações.</p>
+  <% end %>
+
+  <div class="mt-10">
+    <% if existing_review %>
+      <% status_labels = { "pending" => "aguardando aprovação", "approved" => "publicada", "rejected" => "rejeitada" } %>
+      <p class="text-sm text-ink-muted">
+        Você já avaliou este produto (<%= existing_review.rating %>/5, <%= status_labels[existing_review.status] %>).
+      </p>
+    <% elsif customer_authenticated? %>
+      <h3 class="mb-3 font-semibold text-ink">Deixe sua avaliação</h3>
+
+      <%= form_with model: Review.new, url: product_reviews_path(product), class: "flex flex-col gap-4" do |form| %>
+        <div>
+          <label class="mb-1 block text-sm font-medium text-ink">Nota</label>
+          <div class="flex gap-4">
+            <% (1..5).each do |value| %>
+              <label class="flex items-center gap-1 text-sm text-ink">
+                <%= form.radio_button :rating, value, required: true %> <%= value %>
+              </label>
+            <% end %>
+          </div>
+        </div>
+
+        <div>
+          <%= form.label :comment, "Comentário", class: "mb-1 block text-sm font-medium text-ink" %>
+          <%= form.text_area :comment, required: true, rows: 4, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+        </div>
+
+        <%= form.submit "Enviar avaliação", class: "w-fit rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+      <% end %>
+    <% else %>
+      <p class="text-sm text-ink-muted">
+        <%= link_to "Entre na sua conta", new_customer_session_path, class: "text-brand-600 hover:underline" %> para avaliar este produto.
+      </p>
+    <% end %>
+  </div>
+</div>

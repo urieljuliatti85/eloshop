@@ -1,0 +1,52 @@
+<div class="w-full">
+  <h1 class="text-2xl font-bold mb-6">Avaliações</h1>
+
+  <% if notice %>
+    <p class="mb-4 text-green-700"><%= notice %></p>
+  <% end %>
+
+  <div class="flex gap-2 mb-4 text-sm">
+    <%= link_to "Todas", admin_reviews_path, class: (params[:status].blank? ? "font-semibold underline" : "underline") %>
+    <%= link_to "Pendentes", admin_reviews_path(status: "pending"), class: (params[:status] == "pending" ? "font-semibold underline" : "underline") %>
+    <%= link_to "Aprovadas", admin_reviews_path(status: "approved"), class: (params[:status] == "approved" ? "font-semibold underline" : "underline") %>
+    <%= link_to "Rejeitadas", admin_reviews_path(status: "rejected"), class: (params[:status] == "rejected" ? "font-semibold underline" : "underline") %>
+  </div>
+
+  <table class="w-full text-left border-collapse">
+    <thead>
+      <tr class="border-b">
+        <th class="py-2">Produto</th>
+        <th class="py-2">Cliente</th>
+        <th class="py-2">Nota</th>
+        <th class="py-2">Comentário</th>
+        <th class="py-2">Compra verificada</th>
+        <th class="py-2">Status</th>
+        <th class="py-2"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @reviews.each do |review| %>
+        <tr class="border-b">
+          <td class="py-2"><%= review.product.name %></td>
+          <td class="py-2"><%= review.customer.name %></td>
+          <td class="py-2"><%= review.rating %>/5</td>
+          <td class="py-2 max-w-xs"><%= truncate(review.comment, length: 100) %></td>
+          <td class="py-2"><%= review.verified_purchase? ? "Sim" : "Não" %></td>
+          <td class="py-2"><%= review.status %></td>
+          <td class="py-2">
+            <% if review.pending? || review.rejected? %>
+              <%= button_to "Aprovar", approve_admin_review_path(review), method: :patch, class: "underline" %>
+            <% end %>
+            <% if review.pending? || review.approved? %>
+              <%= button_to "Rejeitar", reject_admin_review_path(review), method: :patch, class: "text-red-700 underline ml-2" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% if @reviews.none? %>
+    <p class="text-sm text-gray-600 mt-4">Nenhuma avaliação encontrada.</p>
+  <% end %>
+</div>
