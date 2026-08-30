@@ -16,4 +16,10 @@ class OrderItem < ApplicationRecord
   def variant_label
     [ size_snapshot, color_snapshot, material_snapshot ].compact_blank.join(" / ")
   end
+
+  # Snapshot da personalização no momento da compra — já vem com label e
+  # valor prontos, sem depender de PersonalizationOption continuar existindo.
+  def personalization_entries
+    personalizations.map { |entry| { label: entry["label"], value: entry["value"] } }
+  end
 end

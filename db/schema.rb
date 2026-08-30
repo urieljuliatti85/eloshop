@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_29_233333) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_30_000117) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -59,11 +59,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_233333) do
   create_table "cart_items", force: :cascade do |t|
     t.bigint "cart_id", null: false
     t.datetime "created_at", null: false
+    t.string "personalization_digest", default: "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945", null: false
+    t.jsonb "personalizations", default: [], null: false
     t.bigint "product_id", null: false
     t.bigint "product_variant_id"
     t.integer "quantity", default: 1, null: false
     t.datetime "updated_at", null: false
-    t.index "cart_id, product_id, COALESCE(product_variant_id, (0)::bigint)", name: "index_cart_items_on_cart_product_and_variant", unique: true
+    t.index "cart_id, product_id, COALESCE(product_variant_id, (0)::bigint), personalization_digest", name: "index_cart_items_on_cart_product_variant_and_personalization", unique: true
     t.index ["cart_id"], name: "index_cart_items_on_cart_id"
     t.index ["product_id"], name: "index_cart_items_on_product_id"
     t.index ["product_variant_id"], name: "index_cart_items_on_product_variant_id"
@@ -101,6 +103,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_233333) do
     t.datetime "created_at", null: false
     t.string "material_snapshot"
     t.bigint "order_id", null: false
+    t.jsonb "personalizations", default: [], null: false
     t.bigint "product_id", null: false
     t.string "product_name", null: false
     t.bigint "product_variant_id"
@@ -150,6 +153,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_233333) do
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
     t.index ["order_id"], name: "index_payments_on_order_id"
+  end
+
+  create_table "personalization_options", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "label", null: false
+    t.integer "max_length", default: 100, null: false
+    t.bigint "product_id", null: false
+    t.boolean "required", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "label"], name: "index_personalization_options_on_product_id_and_label", unique: true
+    t.index ["product_id"], name: "index_personalization_options_on_product_id"
+    t.check_constraint "max_length > 0", name: "personalization_options_max_length_check"
   end
 
   create_table "product_variants", force: :cascade do |t|
@@ -222,6 +237,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_29_233333) do
   add_foreign_key "orders", "customers"
   add_foreign_key "payment_events", "payments"
   add_foreign_key "payments", "orders"
+  add_foreign_key "personalization_options", "products"
   add_foreign_key "product_variants", "products"
   add_foreign_key "sessions", "users"
 end

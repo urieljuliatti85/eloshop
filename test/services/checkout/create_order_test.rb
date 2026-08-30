@@ -7,9 +7,9 @@ module Checkout
       @address = addresses(:one)
     end
 
-    def build_cart_with_item(product, quantity:, variant: nil)
+    def build_cart_with_item(product, quantity:, variant: nil, personalizations: [])
       cart = Cart.create!(session_token: SecureRandom.hex(10))
-      cart.cart_items.create!(product: product, product_variant: variant, quantity: quantity)
+      cart.cart_items.create!(product: product, product_variant: variant, quantity: quantity, personalizations: personalizations)
       cart
     end
 
@@ -218,6 +218,34 @@ module Checkout
 
       assert_equal "P", item.reload.size_snapshot
       assert_equal "Verde", item.color_snapshot
+    end
+
+    test "order item snapshots the personalization label and value" do
+      product = build_product
+      option = product.personalization_options.create!(label: "Nome gravado", required: true, max_length: 30)
+      cart = build_cart_with_item(product, quantity: 1, personalizations: [
+        { "personalization_option_id" => option.id, "value" => "Maria" }
+      ])
+
+      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      item = order.order_items.first
+
+      assert_equal [ { label: "Nome gravado", value: "Maria" } ], item.personalization_entries
+    end
+
+    test "order preserves the personalization snapshot even if the option is later renamed or removed" do
+      product = build_product
+      option = product.personalization_options.create!(label: "Nome gravado", required: true, max_length: 30)
+      cart = build_cart_with_item(product, quantity: 1, personalizations: [
+        { "personalization_option_id" => option.id, "value" => "Maria" }
+      ])
+
+      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      item = order.order_items.first
+
+      option.destroy!
+
+      assert_equal [ { label: "Nome gravado", value: "Maria" } ], item.reload.personalization_entries
     end
   end
 end

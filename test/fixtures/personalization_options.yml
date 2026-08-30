@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+name_engraving:
+  product: with_personalization
+  label: Nome gravado
+  required: true
+  max_length: 30
+
+message:
+  product: with_personalization
+  label: Mensagem
+  required: false
+  max_length: 200

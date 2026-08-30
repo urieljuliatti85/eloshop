@@ -39,3 +39,13 @@ with_variants:
   sku: CAMISETA-001
   stock_quantity: 0
   status: active
+
+with_personalization:
+  name: Caneca personalizada
+  slug: caneca-personalizada
+  description: Caneca artesanal com nome gravado.
+  price_cents: 5990
+  currency: BRL
+  sku: CANECA-PERSONALIZADA-001
+  stock_quantity: 5
+  status: active

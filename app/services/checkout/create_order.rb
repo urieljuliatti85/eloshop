@@ -107,7 +107,8 @@ module Checkout
         production_time_snapshot: product.production_time_range,
         size_snapshot: variant&.size,
         color_snapshot: variant&.color,
-        material_snapshot: variant&.material
+        material_snapshot: variant&.material,
+        personalizations: cart_item.personalization_entries.map { |entry| entry.transform_keys(&:to_s) }
       )
 
       if variant

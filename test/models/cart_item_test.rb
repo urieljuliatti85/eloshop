@@ -87,4 +87,92 @@ class CartItemTest < ActiveSupport::TestCase
     second.product_variant.stock_quantity = 1
     assert second.valid?
   end
+
+  test "invalid when a required personalization is missing" do
+    item = CartItem.new(cart: carts(:one), product: products(:with_personalization), quantity: 1)
+    assert_not item.valid?
+    assert_includes item.errors[:personalizations], "Nome gravado é obrigatório"
+  end
+
+  test "valid when the required personalization is filled and the optional one is omitted" do
+    item = CartItem.new(
+      cart: carts(:one), product: products(:with_personalization), quantity: 1,
+      personalizations: [ { "personalization_option_id" => personalization_options(:name_engraving).id, "value" => "Maria" } ]
+    )
+    assert item.valid?
+  end
+
+  test "invalid when a personalization value exceeds max_length" do
+    item = CartItem.new(
+      cart: carts(:one), product: products(:with_personalization), quantity: 1,
+      personalizations: [
+        { "personalization_option_id" => personalization_options(:name_engraving).id, "value" => "a" * 31 }
+      ]
+    )
+    assert_not item.valid?
+    assert_includes item.errors[:personalizations], "Nome gravado deve ter no máximo 30 caracteres"
+  end
+
+  test "invalid with a personalization option that belongs to another product" do
+    item = CartItem.new(
+      cart: carts(:one), product: products(:one), quantity: 1,
+      personalizations: [ { "personalization_option_id" => personalization_options(:name_engraving).id, "value" => "Maria" } ]
+    )
+    assert_not item.valid?
+    assert_includes item.errors[:personalizations], "contém um campo que não pertence a este produto"
+  end
+
+  test "blank values are treated as not provided and stripped out" do
+    item = CartItem.new(
+      cart: carts(:one), product: products(:with_personalization), quantity: 1,
+      personalizations: [
+        { "personalization_option_id" => personalization_options(:name_engraving).id, "value" => "Maria" },
+        { "personalization_option_id" => personalization_options(:message).id, "value" => "   " }
+      ]
+    )
+    item.valid?
+    assert_equal 1, item.personalizations.size
+    assert_equal "Maria", item.personalizations.first["value"]
+  end
+
+  test "personalization_entries joins the stored value with the option's current label" do
+    item = CartItem.new(
+      cart: carts(:one), product: products(:with_personalization), quantity: 1,
+      personalizations: [ { "personalization_option_id" => personalization_options(:name_engraving).id, "value" => "Maria" } ]
+    )
+    item.valid?
+
+    assert_equal [ { label: "Nome gravado", value: "Maria" } ], item.personalization_entries
+  end
+
+  test "two personalized items of the same product with different values coexist in the same cart" do
+    cart = carts(:one)
+    cart.cart_items.create!(
+      product: products(:with_personalization), quantity: 1,
+      personalizations: [ { "personalization_option_id" => personalization_options(:name_engraving).id, "value" => "Maria" } ]
+    )
+
+    second = CartItem.new(
+      cart: cart, product: products(:with_personalization), quantity: 1,
+      personalizations: [ { "personalization_option_id" => personalization_options(:name_engraving).id, "value" => "João" } ]
+    )
+
+    assert second.valid?
+  end
+
+  test "adding the same product with the same personalization twice is rejected as a duplicate" do
+    cart = carts(:one)
+    cart.cart_items.create!(
+      product: products(:with_personalization), quantity: 1,
+      personalizations: [ { "personalization_option_id" => personalization_options(:name_engraving).id, "value" => "Maria" } ]
+    )
+
+    duplicate = CartItem.new(
+      cart: cart, product: products(:with_personalization), quantity: 1,
+      personalizations: [ { "personalization_option_id" => personalization_options(:name_engraving).id, "value" => "Maria" } ]
+    )
+
+    assert_not duplicate.valid?
+    assert_includes duplicate.errors[:product_id], "has already been taken"
+  end
 end

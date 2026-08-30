@@ -34,6 +34,7 @@ class Product < ApplicationRecord
 
   has_one_attached :main_image
   has_many :product_variants, dependent: :destroy
+  has_many :personalization_options, dependent: :destroy
 
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 
