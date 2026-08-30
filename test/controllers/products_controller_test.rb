@@ -101,4 +101,12 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "button[data-action='gallery#show']", count: 0
   end
+
+  test "shows related products excluding the current one" do
+    get product_path(@active_product.slug)
+
+    assert_response :success
+    assert_select "h2", text: "Você também pode gostar"
+    assert_select "a[href='#{product_path(@active_product.slug)}']", count: 0
+  end
 end

@@ -13,5 +13,6 @@ class ProductsController < StorefrontController
 
   def show
     @product = Product.active.includes(:product_variants).find_by!(slug: params[:slug])
+    @related_products = @product.related_products.includes(:product_variants)
   end
 end

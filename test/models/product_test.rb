@@ -258,4 +258,19 @@ class ProductTest < ActiveSupport::TestCase
     assert_equal "cover.png", photos.first.filename.to_s
     assert_equal "extra.png", photos.second.filename.to_s
   end
+
+  test "related_products excludes itself and non-active products" do
+    related = products(:one).related_products
+
+    assert_not_includes related, products(:one)
+    assert_not_includes related, products(:two)
+  end
+
+  test "related_products only returns active products" do
+    assert products(:one).related_products.all?(&:active?)
+  end
+
+  test "related_products respects the limit" do
+    assert products(:one).related_products(limit: 1).size <= 1
+  end
 end

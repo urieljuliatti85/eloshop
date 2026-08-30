@@ -112,6 +112,15 @@ class Product < ApplicationRecord
     slug
   end
 
+  RELATED_PRODUCTS_LIMIT = 4
+
+  # Sem categorias/tags (Fase 11 ainda não implementada) para basear uma
+  # recomendação real — decisão do negócio: outros produtos ativos, mais
+  # recentes primeiro. Reavaliar quando a Fase 11 existir.
+  def related_products(limit: RELATED_PRODUCTS_LIMIT)
+    Product.active.where.not(id: id).order(created_at: :desc).limit(limit)
+  end
+
   # Capa (main_image) primeiro, depois o resto da galeria — main_image
   # continua sendo a foto explicitamente definida como principal, nunca
   # depende da ordem acidental dos anexos (ver docs/catalog.md, "Imagens").

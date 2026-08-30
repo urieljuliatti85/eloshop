@@ -90,4 +90,16 @@
       </div>
     </div>
   </div>
+
+  <% if @related_products.any? %>
+    <div class="mt-20">
+      <h2 class="mb-8 text-2xl font-bold text-ink">Você também pode gostar</h2>
+
+      <div class="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-4">
+        <% @related_products.each do |related_product| %>
+          <%= render "product_card", product: related_product %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 </div>
