@@ -8,8 +8,10 @@ E-commerce de artesanato e produtos feitos à mão, construído em Ruby on Rails
 * PostgreSQL 16
 * Hotwire (Turbo + Stimulus)
 * Tailwind CSS
+* Active Storage
 * Solid Queue, Solid Cache, Solid Cable
-* Minitest + Capybara
+* Minitest + Capybara (suíte principal)
+* RSpec + rswag (só para documentação/teste de API OpenAPI, ver `spec/README.md`)
 
 ## Requisitos
 
@@ -17,6 +19,16 @@ E-commerce de artesanato e produtos feitos à mão, construído em Ruby on Rails
 * Docker (para subir o PostgreSQL local)
 
 ## Configuração inicial
+
+```bash
+bin/setup
+```
+
+Instala as dependências, prepara o banco de dados, limpa logs/tmp, instala o
+git hook de pre-commit (RuboCop + testes, ver `.githooks/README.md`) e sobe
+`bin/dev`. Para pular a subida do servidor: `bin/setup --skip-server`.
+
+Alternativa manual, passo a passo:
 
 ```bash
 bundle install
@@ -37,19 +49,36 @@ bin/dev
 ```
 
 Sobe o servidor Rails e o watcher do Tailwind (via `Procfile.dev`) em
-`http://localhost:3000`.
+`http://localhost:3000`. A área administrativa fica em `/admin` (autenticação
+própria, ver `app/controllers/admin/`).
 
 ## Testes
 
 ```bash
-bin/rails test
+bin/rails test          # models, controllers, integration
+bin/rails test:system   # testes de sistema (Capybara + Selenium)
+bundle exec rspec       # specs do rswag (documentação de API)
 ```
 
-## Lint
+## Documentação de API
+
+Com o servidor rodando, a UI do Swagger fica em `/api-docs`. O arquivo
+`swagger/v1/swagger.yaml` é gerado a partir dos specs em `spec/requests/`:
 
 ```bash
-bin/rubocop
+bin/rails rswag:specs:swaggerize
 ```
+
+## Lint e segurança
+
+```bash
+bin/rubocop         # lint
+bin/brakeman        # análise estática de segurança
+bin/bundler-audit   # vulnerabilidades conhecidas em gems
+```
+
+CI (GitHub Actions, `.github/workflows/`) roda lint, testes, testes de
+sistema, Brakeman/bundler-audit e CodeQL a cada push/PR em `main`.
 
 ## Documentação do domínio
 
