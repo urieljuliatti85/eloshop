@@ -41,9 +41,38 @@ def png_gradient(width, height, top_rgb, bottom_rgb)
   png
 end
 
+# Um anexo pode constar no banco sem o arquivo existir no disco. Foi o que
+# aconteceu em produção: as imagens foram anexadas enquanto o app ainda
+# gravava no filesystem efêmero do container, antes do volume persistente
+# entrar. O Postgres é persistente e guardou os registros de blob/attachment;
+# o volume ficou vazio. Resultado: toda imagem de produto respondia 404.
+#
+# Checar só `attached?` fazia o seed pular a reanexação justamente nesse caso,
+# então o estado quebrado se reaplicava a cada boot em vez de se curar.
+#
+# Na dúvida (erro ao consultar o serviço), trata como presente: não vale
+# arriscar destruir um anexo bom por causa de uma falha transitória de I/O.
+def seed_image_file_missing?(attachment)
+  return false unless attachment.attached?
+
+  blobs = attachment.respond_to?(:blobs) ? attachment.blobs : [ attachment.blob ]
+  blobs.compact.any? { |blob| !blob.service.exist?(blob.key) }
+rescue StandardError
+  false
+end
+
 def attach_seed_image(record, attachment_name, filename, top_rgb, bottom_rgb)
   attachment = record.public_send(attachment_name)
-  return if attachment.attached?
+
+  if attachment.attached?
+    return unless seed_image_file_missing?(attachment)
+
+    attachment.purge
+    # purge apaga o blob no banco, mas a associação segue em cache no objeto
+    # em memória. Sem recarregar, o attach seguinte tenta reaproveitar o
+    # blob_id recém-apagado e estoura ForeignKeyViolation.
+    record.reload
+  end
 
   io = StringIO.new(png_gradient(640, 640, top_rgb, bottom_rgb))
   io.set_encoding(Encoding::BINARY)
@@ -348,7 +377,8 @@ catalog.each do |item|
 
   top, bottom = item[:colors]
   attach_seed_image(product, :main_image, "#{product.slug}.png", top, bottom)
-  unless product.images.attached?
-    attach_seed_image(product, :images, "#{product.slug}-detalhe.png", bottom, top)
-  end
+  # Sem guard de `attached?` aqui: attach_seed_image já decide sozinho entre
+  # não fazer nada, curar um anexo órfão ou anexar pela primeira vez. O guard
+  # anterior impedia a cura da galeria.
+  attach_seed_image(product, :images, "#{product.slug}-detalhe.png", bottom, top)
 end
