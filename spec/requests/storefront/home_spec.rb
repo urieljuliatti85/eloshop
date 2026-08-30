@@ -19,6 +19,27 @@ RSpec.describe "Storefront home", type: :request do
       expect(response.body).not_to include(product.name)
     end
 
+    it "lists the top-level categories, linking each one to the filtered catalog" do
+      parent = Category.create!(name: "Casa da home")
+      child = Category.create!(name: "Cozinha da home", parent: parent)
+
+      get root_path
+
+      expect(response.body).to include("Explore por categoria")
+      expect(response.body).to include(parent.name)
+      expect(response.body).to include(CGI.escapeHTML(products_path(category: parent.slug)))
+      expect(response.body).not_to include(CGI.escapeHTML(products_path(category: child.slug)))
+    end
+
+    it "omits the category section when there is no category yet" do
+      Category.delete_all
+
+      get root_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include("Explore por categoria")
+    end
+
     it "sets the default title, description and its own canonical URL" do
       get root_path
 

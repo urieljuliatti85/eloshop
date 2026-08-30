@@ -16,4 +16,26 @@
       <%= link_to "Ver produtos", products_path, class: "rounded-full bg-white px-8 py-4 text-sm font-semibold text-brand-600 transition hover:bg-brand-50" %>
     </div>
   </section>
+
+  <% if @categories.any? %>
+    <section class="mt-20">
+      <div class="text-center">
+        <h2 class="text-3xl font-bold text-ink md:text-4xl">Explore por categoria</h2>
+        <p class="mt-2 text-ink-muted">As peças organizadas do jeito que você procura.</p>
+      </div>
+
+      <div class="mt-10 grid grid-cols-2 gap-6 md:grid-cols-3">
+        <% @categories.each do |category| %>
+          <%= link_to products_path(category: category.slug), class: "group block text-center" do %>
+            <div class="aspect-[4/5] overflow-hidden rounded-2xl bg-sand-100">
+              <% if (cover = @category_covers[category]) %>
+                <%= image_tag cover.main_image, class: "h-full w-full object-cover transition duration-300 group-hover:scale-105", alt: "", loading: "lazy" %>
+              <% end %>
+            </div>
+            <p class="mt-4 text-lg font-semibold text-ink group-hover:text-brand-600"><%= category.name %></p>
+          <% end %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
 </div>
