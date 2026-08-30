@@ -5,6 +5,10 @@ Rails.application.routes.draw do
   resources :passwords, param: :token
 
   namespace :admin do
+    root to: "dashboard#index"
+
+    resources :customers, only: %i[index show]
+
     resources :products, only: %i[index show new create edit update] do
       member do
         patch :publish
@@ -60,6 +64,8 @@ Rails.application.routes.draw do
   resources :wishlist_items, only: %i[create destroy] do
     member { post :move_to_cart }
   end
+
+  get "sitemap.xml", to: "sitemaps#show", defaults: { format: "xml" }, as: :sitemap
 
   post "webhooks/fake_gateway", to: "payment_webhooks#create", as: :fake_gateway_webhook
 

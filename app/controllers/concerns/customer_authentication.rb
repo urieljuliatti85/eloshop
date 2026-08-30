@@ -25,8 +25,11 @@ module CustomerAuthentication
       Current.customer_session ||= find_customer_session_by_cookie
     end
 
+    # Ver comentário equivalente em Authentication#find_session_by_cookie.
     def find_customer_session_by_cookie
-      CustomerSession.find_by(id: cookies.signed[:customer_session_id]) if cookies.signed[:customer_session_id]
+      return unless cookies.signed[:customer_session_id]
+
+      CustomerSession.active.find_by(id: cookies.signed[:customer_session_id])&.tap(&:touch)
     end
 
     def request_customer_authentication
@@ -36,7 +39,7 @@ module CustomerAuthentication
     def start_new_customer_session_for(customer)
       customer.customer_sessions.create!(user_agent: request.user_agent, ip_address: request.remote_ip).tap do |customer_session|
         Current.customer_session = customer_session
-        cookies.signed.permanent[:customer_session_id] = { value: customer_session.id, httponly: true, same_site: :lax }
+        cookies.signed.permanent[:customer_session_id] = { value: customer_session.id, httponly: true, same_site: :lax, secure: Rails.env.production? }
       end
     end
 

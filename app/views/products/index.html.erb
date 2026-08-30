@@ -1,3 +1,17 @@
+<%
+  index_title = if @category
+    "#{@category.breadcrumb_name} | EloShop"
+  elsif params[:q].present?
+    "Busca por \"#{params[:q]}\" | EloShop"
+  else
+    "Loja | EloShop — Artesanato e produtos feitos à mão"
+  end
+  index_description = @category ? "Produtos artesanais da categoria #{@category.breadcrumb_name} na EloShop." : SeoHelper::DEFAULT_DESCRIPTION
+%>
+<% content_for :title, index_title %>
+<% content_for :meta_description, index_description %>
+<% content_for :canonical_url, products_url(category: @category&.slug) %>
+
 <div class="w-full">
   <section class="relative mb-16 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-500 to-brand-300">
     <div class="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl"></div>

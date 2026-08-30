@@ -17,7 +17,7 @@ module Carting
 
   def create_cart_with_cookie
     Cart.create!(session_token: SecureRandom.hex(20)).tap do |cart|
-      cookies.signed.permanent[:cart_token] = { value: cart.session_token, httponly: true, same_site: :lax }
+      cookies.signed.permanent[:cart_token] = { value: cart.session_token, httponly: true, same_site: :lax, secure: Rails.env.production? }
     end
   end
 end

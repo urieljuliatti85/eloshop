@@ -14,6 +14,11 @@ module ActiveSupport
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
 
+    # cache_store é :memory_store em teste (ver config/environments/test.rb)
+    # para permitir testar rate_limit de verdade — sem isso, contadores de
+    # um teste vazariam para o próximo (mesmo IP de teste em todos).
+    setup { Rails.cache.clear }
+
     # Add more helper methods to be used by all tests here...
   end
 end

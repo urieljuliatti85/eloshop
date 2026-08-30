@@ -1,0 +1,130 @@
+<div class="w-full">
+  <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
+
+  <div class="grid grid-cols-1 gap-6 mb-10 sm:grid-cols-3">
+    <div class="border rounded p-4">
+      <p class="text-sm text-gray-600">Pedidos pendentes</p>
+      <p class="text-2xl font-bold"><%= @pending_orders_count %></p>
+    </div>
+    <div class="border rounded p-4">
+      <p class="text-sm text-gray-600">Produtos com estoque baixo</p>
+      <p class="text-2xl font-bold"><%= @low_stock_products.count %></p>
+    </div>
+    <div class="border rounded p-4">
+      <p class="text-sm text-gray-600">Reviews aguardando moderação</p>
+      <p class="text-2xl font-bold"><%= @pending_reviews_count %></p>
+    </div>
+  </div>
+
+  <section class="mb-10">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="font-semibold">Pedidos pendentes</h2>
+      <%= link_to "Ver todos", admin_orders_path, class: "text-sm underline" %>
+    </div>
+    <% if @pending_orders.any? %>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b">
+            <th class="py-2">#</th>
+            <th class="py-2">Cliente</th>
+            <th class="py-2">Total</th>
+            <th class="py-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @pending_orders.each do |order| %>
+            <tr class="border-b">
+              <td class="py-2"><%= order.id %></td>
+              <td class="py-2"><%= order.customer.name %></td>
+              <td class="py-2"><%= number_to_currency(order.total_cents / 100.0, unit: "BRL") %></td>
+              <td class="py-2"><%= link_to "Ver", admin_order_path(order) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-sm text-gray-600">Nenhum pedido pendente.</p>
+    <% end %>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="font-semibold mb-2">Estoque baixo (≤ <%= Product::LOW_STOCK_THRESHOLD %> unidades)</h2>
+    <% if @low_stock_products.any? %>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b">
+            <th class="py-2">Produto</th>
+            <th class="py-2">Estoque</th>
+            <th class="py-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @low_stock_products.each do |product| %>
+            <tr class="border-b">
+              <td class="py-2"><%= product.name %></td>
+              <td class="py-2"><%= product.stock_quantity %></td>
+              <td class="py-2"><%= link_to "Ver", admin_product_path(product) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-sm text-gray-600">Nenhum produto com estoque baixo.</p>
+    <% end %>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="font-semibold mb-2">Esgotados</h2>
+    <% if @sold_out_products.any? %>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b">
+            <th class="py-2">Produto</th>
+            <th class="py-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @sold_out_products.each do |product| %>
+            <tr class="border-b">
+              <td class="py-2"><%= product.name %></td>
+              <td class="py-2"><%= link_to "Ver", admin_product_path(product) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-sm text-gray-600">Nenhum produto esgotado.</p>
+    <% end %>
+  </section>
+
+  <section>
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="font-semibold">Reviews aguardando moderação</h2>
+      <%= link_to "Ver todas", admin_reviews_path(status: "pending"), class: "text-sm underline" %>
+    </div>
+    <% if @pending_reviews.any? %>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b">
+            <th class="py-2">Produto</th>
+            <th class="py-2">Cliente</th>
+            <th class="py-2">Nota</th>
+            <th class="py-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @pending_reviews.each do |review| %>
+            <tr class="border-b">
+              <td class="py-2"><%= review.product.name %></td>
+              <td class="py-2"><%= review.customer.name %></td>
+              <td class="py-2"><%= review.rating %></td>
+              <td class="py-2"><%= link_to "Ver", admin_reviews_path(status: "pending") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-sm text-gray-600">Nenhuma review aguardando moderação.</p>
+    <% end %>
+  </section>
+</div>

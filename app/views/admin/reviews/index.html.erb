@@ -1,10 +1,6 @@
 <div class="w-full">
   <h1 class="text-2xl font-bold mb-6">Avaliações</h1>
 
-  <% if notice %>
-    <p class="mb-4 text-green-700"><%= notice %></p>
-  <% end %>
-
   <div class="flex gap-2 mb-4 text-sm">
     <%= link_to "Todas", admin_reviews_path, class: (params[:status].blank? ? "font-semibold underline" : "underline") %>
     <%= link_to "Pendentes", admin_reviews_path(status: "pending"), class: (params[:status] == "pending" ? "font-semibold underline" : "underline") %>

@@ -1,0 +1,17 @@
+<nav class="border-b border-gray-200 bg-white">
+  <div class="container mx-auto flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+    <%= link_to "EloShop Admin", admin_root_path, class: "font-bold" %>
+
+    <div class="flex flex-wrap items-center gap-1 text-sm">
+      <%= link_to "Dashboard", admin_root_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
+      <%= link_to "Produtos", admin_products_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
+      <%= link_to "Pedidos", admin_orders_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
+      <%= link_to "Clientes", admin_customers_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
+      <%= link_to "Categorias", admin_categories_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
+      <%= link_to "Cupons", admin_coupons_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
+      <%= link_to "Reviews", admin_reviews_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
+    </div>
+
+    <%= button_to "Sair", session_path, method: :delete, class: "text-sm underline cursor-pointer" %>
+  </div>
+</nav>

@@ -287,4 +287,28 @@ class ProductTest < ActiveSupport::TestCase
     assert_nil products(:one).average_rating
     assert_equal 0, products(:one).reviews_count
   end
+
+  test "low_stock includes active standard products at or below the threshold" do
+    product = Product.create!(name: "Baixo estoque", sku: "LOW-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: Product::LOW_STOCK_THRESHOLD, currency: "BRL", status: "active", availability_type: "standard")
+
+    assert_includes Product.low_stock, product
+  end
+
+  test "low_stock excludes products above the threshold" do
+    product = Product.create!(name: "Estoque normal", sku: "LOW-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: Product::LOW_STOCK_THRESHOLD + 1, currency: "BRL", status: "active", availability_type: "standard")
+
+    assert_not_includes Product.low_stock, product
+  end
+
+  test "low_stock excludes sold out products" do
+    product = Product.create!(name: "Esgotado", sku: "LOW-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 0, currency: "BRL", status: "sold_out", availability_type: "standard")
+
+    assert_not_includes Product.low_stock, product
+  end
+
+  test "low_stock excludes made_to_order products" do
+    product = Product.create!(name: "Sob encomenda", sku: "LOW-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 0, currency: "BRL", status: "active", availability_type: "made_to_order", production_time_min_days: 1, production_time_max_days: 2)
+
+    assert_not_includes Product.low_stock, product
+  end
 end

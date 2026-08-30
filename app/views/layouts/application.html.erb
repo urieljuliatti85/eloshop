@@ -1,13 +1,27 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Eloshop" %></title>
+    <title><%= page_title %></title>
+    <meta name="description" content="<%= page_description %>">
+    <link rel="canonical" href="<%= canonical_url %>">
+
+    <meta property="og:site_name" content="EloShop">
+    <meta property="og:type" content="<%= og_type %>">
+    <meta property="og:title" content="<%= page_title %>">
+    <meta property="og:description" content="<%= page_description %>">
+    <meta property="og:url" content="<%= canonical_url %>">
+    <% if content_for(:og_image).present? %>
+      <meta property="og:image" content="<%= content_for(:og_image) %>">
+    <% end %>
+
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Eloshop">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+
+    <%= yield :structured_data %>
 
     <%= yield :head %>
 

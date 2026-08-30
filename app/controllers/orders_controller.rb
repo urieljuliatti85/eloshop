@@ -1,6 +1,8 @@
 class OrdersController < StorefrontController
   before_action :ensure_cart_not_empty, only: :new
 
+  rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to cart_path, alert: "Muitas tentativas. Tente novamente em alguns minutos." }
+
   def new
     @cart = Current.cart
     @addresses = Current.customer.addresses

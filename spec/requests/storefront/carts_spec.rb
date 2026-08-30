@@ -54,6 +54,15 @@ RSpec.describe "Carts", type: :request do
       follow_redirect!
       expect(response.body).to include("inválido")
     end
+
+    it "rate limits repeated attempts to guess a coupon code" do
+      10.times { post apply_coupon_cart_path, params: { code: "TENTATIVA" } }
+
+      post apply_coupon_cart_path, params: { code: "TENTATIVA" }
+
+      follow_redirect!
+      expect(response.body).to include("Muitas tentativas")
+    end
   end
 
   describe "DELETE /cart/remove_coupon" do

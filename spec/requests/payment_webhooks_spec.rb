@@ -69,5 +69,29 @@ RSpec.describe "Payment webhooks", type: :request do
 
       expect(response).to have_http_status(:unprocessable_entity)
     end
+
+    # O ambiente de teste desliga a proteção CSRF globalmente
+    # (config.action_controller.allow_forgery_protection = false), o que
+    # mascararia uma regressão real: um gateway de verdade nunca envia
+    # token CSRF, então se skip_forgery_protection for removido do
+    # controller, todo webhook real recebe 422 InvalidAuthenticityToken em
+    # produção — só reativando a proteção aqui é possível detectar isso.
+    it "is exempt from CSRF protection" do
+      original = ActionController::Base.allow_forgery_protection
+      ActionController::Base.allow_forgery_protection = true
+
+      begin
+        post fake_gateway_webhook_path, params: {
+          event_id: SecureRandom.hex(10),
+          external_id: payment.external_id,
+          status: "approved",
+          secret: Gateways::FakeGateway::WEBHOOK_SECRET
+        }
+      ensure
+        ActionController::Base.allow_forgery_protection = original
+      end
+
+      expect(response).to have_http_status(:redirect)
+    end
   end
 end

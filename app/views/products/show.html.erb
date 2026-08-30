@@ -1,3 +1,13 @@
+<% content_for :title, "#{@product.name} | EloShop" %>
+<% content_for :meta_description, truncate(@product.description.to_s.presence || "#{@product.name}, artesanal, feito à mão na EloShop.", length: 160) %>
+<% content_for :canonical_url, product_url(@product) %>
+<% content_for :og_type, "product" %>
+<% content_for :og_image, rails_blob_url(@product.main_image) if @product.main_image.attached? %>
+
+<% content_for :structured_data do %>
+  <%= tag.script product_structured_data(@product), type: "application/ld+json" %>
+<% end %>
+
 <div class="w-full">
   <nav class="mb-8 text-sm text-ink-muted">
     <%= link_to "Início", root_path, class: "hover:text-brand-600" %>
