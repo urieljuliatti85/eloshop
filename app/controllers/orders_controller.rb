@@ -4,7 +4,8 @@ class OrdersController < StorefrontController
   def new
     @cart = Current.cart
     @addresses = Current.customer.addresses
-    @shipping_cents = Checkout::CreateOrder::SHIPPING_CENTS
+    @shipping = Shipping::Calculator.new(cart: @cart, address: @addresses.first).call if @addresses.any?
+    @shipping_cents = @shipping&.shipping_cents
     session[:checkout_idempotency_key] ||= SecureRandom.hex(20)
   end
 
@@ -23,6 +24,8 @@ class OrdersController < StorefrontController
     redirect_to order_path(order), notice: "Pedido \##{order.id} criado com sucesso."
   rescue Checkout::CreateOrder::Failed => e
     redirect_to cart_path, alert: e.message
+  rescue Shipping::Calculator::Unavailable => e
+    redirect_to new_order_path, alert: e.message
   end
 
   def show

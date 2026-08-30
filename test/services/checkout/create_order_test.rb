@@ -44,6 +44,8 @@ module Checkout
       assert_equal 2000, order.subtotal_cents
       assert_equal CreateOrder::SHIPPING_CENTS, order.shipping_cents
       assert_equal 2000 + CreateOrder::SHIPPING_CENTS, order.total_cents
+      assert_equal "Entrega padrão", order.shipment.service
+      assert_equal 5, order.shipment.estimated_days
       assert_equal 3, product.reload.stock_quantity
       assert_empty cart.cart_items.reload
     end

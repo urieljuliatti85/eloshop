@@ -57,6 +57,8 @@ class Product < ApplicationRecord
   validates :currency, presence: true
   validates :price_cents, numericality: { greater_than_or_equal_to: 0 }
   validates :stock_quantity, numericality: { greater_than_or_equal_to: 0 }
+  validates :weight_grams, :length_cm, :width_cm, :height_cm,
+            numericality: { greater_than: 0 }, allow_nil: true
 
   validates :stock_quantity, numericality: { less_than_or_equal_to: 1 }, if: :availability_type_one_of_a_kind?
   validates :production_time_min_days, :production_time_max_days,

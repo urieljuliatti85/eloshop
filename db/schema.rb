@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_30_013000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_30_013102) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -241,6 +241,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_013000) do
     t.datetime "created_at", null: false
     t.string "currency", default: "BRL", null: false
     t.text "description"
+    t.integer "height_cm"
+    t.integer "length_cm"
     t.string "name", null: false
     t.integer "price_cents", null: false
     t.integer "production_time_max_days"
@@ -250,6 +252,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_013000) do
     t.string "status", default: "draft", null: false
     t.integer "stock_quantity", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.integer "weight_grams"
+    t.integer "width_cm"
     t.index ["availability_type"], name: "index_products_on_availability_type"
     t.index ["category_id"], name: "index_products_on_category_id"
     t.index ["sku"], name: "index_products_on_sku", unique: true
@@ -281,6 +285,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_013000) do
     t.string "user_agent"
     t.bigint "user_id", null: false
     t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
+  create_table "shipments", force: :cascade do |t|
+    t.string "carrier", null: false
+    t.datetime "created_at", null: false
+    t.datetime "delivered_at"
+    t.integer "estimated_days", null: false
+    t.bigint "order_id", null: false
+    t.string "service", null: false
+    t.datetime "shipped_at"
+    t.integer "shipping_cents", null: false
+    t.string "status", default: "pending", null: false
+    t.string "tracking_code"
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_shipments_on_order_id"
+    t.index ["tracking_code"], name: "index_shipments_on_tracking_code", unique: true
   end
 
   create_table "tags", force: :cascade do |t|
@@ -346,6 +366,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_013000) do
   add_foreign_key "reviews", "customers"
   add_foreign_key "reviews", "products"
   add_foreign_key "sessions", "users"
+  add_foreign_key "shipments", "orders", on_delete: :cascade
   add_foreign_key "wishlist_items", "customers"
   add_foreign_key "wishlist_items", "products"
 end

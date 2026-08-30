@@ -77,6 +77,7 @@ module Admin
       params.expect(product: [
         :name, :description, :price_cents, :currency, :sku, :stock_quantity, :main_image,
         :availability_type, :production_time_min_days, :production_time_max_days, :category_id,
+        :weight_grams, :length_cm, :width_cm, :height_cm,
         :tag_names, :material_names, :technique_names
       ]).except(:tag_names, :material_names, :technique_names)
     end

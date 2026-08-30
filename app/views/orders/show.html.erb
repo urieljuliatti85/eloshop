@@ -40,6 +40,12 @@
       <span>Frete</span>
       <span><%= number_to_currency(@order.shipping_cents / 100.0, unit: "BRL") %></span>
     </div>
+    <% if @order.shipment %>
+      <div class="flex justify-between text-ink-muted">
+        <span><%= @order.shipment.service %></span>
+        <span>até <%= @order.shipment.estimated_days %> dias úteis</span>
+      </div>
+    <% end %>
     <div class="flex justify-between text-base font-semibold text-ink">
       <span>Total</span>
       <span><%= number_to_currency(@order.total_cents / 100.0, unit: "BRL") %></span>

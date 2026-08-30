@@ -83,6 +83,20 @@
   </div>
 
   <div>
+    <%= form.label :weight_grams, "Peso para frete (gramas)" %>
+    <%= form.number_field :weight_grams, min: 1, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div class="grid grid-cols-3 gap-3">
+    <% { length_cm: "Comprimento", width_cm: "Largura", height_cm: "Altura" }.each do |field, label| %>
+      <div>
+        <%= form.label field, "#{label} (cm)" %>
+        <%= form.number_field field, min: 1, class: "border rounded w-full px-2 py-1" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div>
     <%= form.label :main_image, "Imagem principal" %>
     <%= form.file_field :main_image, accept: "image/png,image/jpeg,image/webp" %>
   </div>

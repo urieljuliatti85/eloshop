@@ -4,10 +4,7 @@ module Checkout
   # idempotência, concorrência) que este serviço implementa.
   class CreateOrder
     class Failed < StandardError; end
-
-    # Frete fixo do MVP — cálculo real (Correios) é pós-MVP, ver Fase 12 do
-    # ROADMAP.md e docs/shipping.md.
-    SHIPPING_CENTS = 1500
+    SHIPPING_CENTS = Shipping::Calculator::BASE_CENTS
 
     def initialize(cart:, customer:, address:, idempotency_key:)
       @cart = cart
@@ -31,15 +28,22 @@ module Checkout
       Order.transaction do
         cart_items = lock_and_revalidate_cart_items!
         subtotal = subtotal_cents(cart_items)
+        shipping = Shipping::Calculator.new(cart: @cart, address: @address).call
 
         order = Order.create!(
           customer: @customer,
           status: "pending",
           subtotal_cents: subtotal,
-          shipping_cents: SHIPPING_CENTS,
-          total_cents: subtotal + SHIPPING_CENTS,
+          shipping_cents: shipping.shipping_cents,
+          total_cents: subtotal + shipping.shipping_cents,
           shipping_address_snapshot: address_snapshot,
           idempotency_key: @idempotency_key
+        )
+        order.create_shipment!(
+          carrier: shipping.carrier,
+          service: shipping.service,
+          shipping_cents: shipping.shipping_cents,
+          estimated_days: shipping.estimated_days
         )
 
         cart_items.each { |cart_item| create_order_item_and_debit_stock!(order, cart_item) }
