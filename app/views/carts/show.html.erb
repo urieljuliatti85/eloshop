@@ -5,41 +5,83 @@
     <p class="text-ink-muted">Seu carrinho está vazio.</p>
     <%= link_to "Ver produtos", products_path, class: "mt-4 inline-block text-brand-600 hover:underline" %>
   <% else %>
-    <div class="divide-y divide-gray-200 border-y border-gray-200">
-      <% @cart.cart_items.includes(:product, :product_variant).each do |item| %>
-        <div class="flex flex-col gap-4 py-6 sm:flex-row sm:items-center">
-          <div class="h-20 w-20 flex-none overflow-hidden rounded-xl bg-brand-100">
-            <% if item.product.main_image.attached? %>
-              <%= image_tag item.product.main_image, class: "h-full w-full object-cover", alt: item.product.name %>
-            <% end %>
-          </div>
-
-          <div class="flex-1">
-            <%= link_to item.product.name, product_path(item.product), class: "font-semibold text-ink hover:text-brand-600" %>
-            <% if item.product_variant %>
-              <p class="text-sm text-ink-muted"><%= item.product_variant.to_label %></p>
-            <% end %>
-            <p class="text-sm text-ink-muted"><%= number_to_currency(item.unit_price_cents / 100.0, unit: item.product.currency) %></p>
-          </div>
-
-          <%= form_with url: cart_item_path(item), method: :patch, class: "flex items-center gap-2" do |form| %>
-            <%= form.number_field :quantity, value: item.quantity, min: 1, class: "w-16 rounded-full border border-gray-300 px-2 py-1 text-center" %>
-            <%= form.submit "Atualizar", class: "rounded-full border border-gray-300 px-3 py-1 text-sm hover:border-brand-500 hover:text-brand-600 cursor-pointer" %>
-          <% end %>
-
-          <p class="w-28 text-right font-medium text-ink"><%= number_to_currency(item.subtotal_cents / 100.0, unit: item.product.currency) %></p>
-
-          <%= button_to "Remover", cart_item_path(item), method: :delete, class: "text-sm text-red-700 hover:underline cursor-pointer" %>
+    <div class="grid grid-cols-1 gap-10 lg:grid-cols-3">
+      <div class="lg:col-span-2">
+        <div class="hidden grid-cols-[80px_1fr_110px_140px_100px] gap-4 border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-wider text-ink-muted sm:grid">
+          <span></span>
+          <span>Produto</span>
+          <span class="text-right">Preço</span>
+          <span class="text-center">Qtd.</span>
+          <span class="text-right">Total</span>
         </div>
-      <% end %>
-    </div>
 
-    <div class="mt-8 flex flex-col items-end gap-4">
-      <p class="text-xl font-semibold text-ink">
-        Total: <%= number_to_currency(@cart.subtotal_cents / 100.0, unit: @cart.cart_items.first.product.currency) %>
-      </p>
+        <div class="divide-y divide-gray-100">
+          <% @cart.cart_items.includes(:product, :product_variant).each do |item| %>
+            <div class="grid grid-cols-[80px_1fr] items-center gap-4 py-6 sm:grid-cols-[80px_1fr_110px_140px_100px]">
+              <div class="relative h-20 w-20 flex-none overflow-hidden rounded-xl bg-brand-100">
+                <% if item.product.main_image.attached? %>
+                  <%= image_tag item.product.main_image, class: "h-full w-full object-cover", alt: item.product.name %>
+                <% end %>
 
-      <%= link_to "Finalizar compra", new_order_path, class: "rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
+                <%= button_to "×", cart_item_path(item), method: :delete,
+                      class: "absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-ink shadow hover:bg-red-50 hover:text-red-700",
+                      form: { aria: { label: "Remover #{item.product.name}" } } %>
+              </div>
+
+              <div>
+                <%= link_to item.product.name, product_path(item.product), class: "font-semibold text-ink hover:text-brand-600" %>
+                <% if item.product_variant %>
+                  <p class="text-sm text-ink-muted"><%= item.product_variant.to_label %></p>
+                <% end %>
+                <% item.personalization_entries.each do |entry| %>
+                  <p class="text-sm text-ink-muted"><%= entry[:label] %>: <%= entry[:value] %></p>
+                <% end %>
+                <p class="mt-1 text-sm text-ink-muted sm:hidden">
+                  <%= number_to_currency(item.unit_price_cents / 100.0, unit: item.product.currency) %>
+                </p>
+              </div>
+
+              <p class="hidden text-right text-sm text-ink-muted sm:block">
+                <%= number_to_currency(item.unit_price_cents / 100.0, unit: item.product.currency) %>
+              </p>
+
+              <div class="flex items-center gap-3 sm:justify-center">
+                <% if item.quantity > 1 %>
+                  <%= button_to "−", cart_item_path(item), method: :patch, params: { quantity: item.quantity - 1 },
+                        class: "flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-gray-300 text-ink hover:border-brand-500 hover:text-brand-600" %>
+                <% else %>
+                  <span class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-100 text-gray-300">−</span>
+                <% end %>
+
+                <span class="w-6 text-center text-sm font-medium text-ink"><%= item.quantity %></span>
+
+                <%= button_to "+", cart_item_path(item), method: :patch, params: { quantity: item.quantity + 1 },
+                      class: "flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-gray-300 text-ink hover:border-brand-500 hover:text-brand-600" %>
+              </div>
+
+              <p class="text-right font-medium text-ink"><%= number_to_currency(item.subtotal_cents / 100.0, unit: item.product.currency) %></p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="lg:col-span-1">
+        <div class="sticky top-24 overflow-hidden rounded-2xl bg-brand-50 p-6">
+          <p class="text-xs font-semibold uppercase tracking-wider text-ink-muted">Total do carrinho</p>
+          <p class="mt-2 text-3xl font-bold text-ink">
+            <%= number_to_currency(@cart.subtotal_cents / 100.0, unit: @cart.cart_items.first.product.currency) %>
+          </p>
+          <p class="mt-1 text-sm text-ink-muted">Frete calculado no checkout.</p>
+
+          <%= link_to "Finalizar compra", new_order_path, class: "mt-6 block w-full rounded-full bg-brand-500 px-8 py-4 text-center text-sm font-semibold text-white hover:bg-brand-600" %>
+
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"
+               class="pointer-events-none absolute -bottom-6 -right-6 h-40 w-40 text-brand-200/60">
+            <path d="M6 8h12l-1 12H7L6 8Z" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M9 8V6a3 3 0 0 1 6 0v2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
     </div>
   <% end %>
 </div>
