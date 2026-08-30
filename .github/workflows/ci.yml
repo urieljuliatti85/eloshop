@@ -147,7 +147,34 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
-        run: bin/rails db:test:prepare test:system
+        run: |
+          bin/rails db:test:prepare
+
+          if bin/rails test:system; then
+            exit 0
+          fi
+
+          # Guarda a evidência da primeira tentativa ANTES de repetir: a
+          # segunda sobrescreve os screenshots e continua escrevendo no mesmo
+          # log, e um retry verde apagaria justamente o dado necessário para
+          # investigar o flake.
+          mkdir -p tmp/primeira-tentativa
+          cp -r tmp/screenshots tmp/primeira-tentativa/ 2>/dev/null || true
+          cp log/test.log tmp/primeira-tentativa/ 2>/dev/null || true
+
+          echo "::warning title=Teste de sistema instável::A suíte de sistema falhou na primeira tentativa e foi repetida. A evidência está no artefato 'system-test-primeira-tentativa'. Um job verde com este aviso NÃO é um job limpo."
+
+          bin/rails test:system
+
+      # Sobe mesmo quando o job termina verde: é o caso do retry que passou na
+      # segunda tentativa, o único em que o flake deixa rastro.
+      - name: Keep evidence from a retried system test run
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: system-test-primeira-tentativa
+          path: ${{ github.workspace }}/tmp/primeira-tentativa
+          if-no-files-found: ignore
 
       - name: Keep screenshots and server log from failed system tests
         uses: actions/upload-artifact@v7
