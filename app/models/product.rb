@@ -18,6 +18,11 @@ class Product < ApplicationRecord
   MAIN_IMAGE_ALLOWED_CONTENT_TYPES = %w[image/png image/jpeg image/webp].freeze
   IMAGES_MAX_COUNT = 8
 
+  # Limiar de alerta no dashboard do admin — só para produtos com estoque
+  # físico rastreável (availability_type standard); não se aplica a
+  # made_to_order (sem estoque físico) nem one_of_a_kind (sempre 1 unidade).
+  LOW_STOCK_THRESHOLD = 3
+
   enum :status, {
     draft: "draft",
     active: "active",
@@ -157,6 +162,10 @@ class Product < ApplicationRecord
         term: term
       )
       .distinct
+  }
+
+  scope :low_stock, -> {
+    active.availability_type_standard.where(stock_quantity: 1..LOW_STOCK_THRESHOLD)
   }
 
   RELATED_PRODUCTS_LIMIT = 4

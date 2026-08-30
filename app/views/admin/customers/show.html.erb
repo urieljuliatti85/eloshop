@@ -1,0 +1,48 @@
+<div class="w-full max-w-2xl">
+  <h1 class="text-2xl font-bold mb-2"><%= @customer.name %></h1>
+  <p class="mb-6 text-sm text-gray-600">
+    <%= @customer.email %> — cliente desde <%= @customer.created_at.to_date %>
+  </p>
+
+  <h2 class="font-semibold mb-2">Endereços</h2>
+  <% if @customer.addresses.any? %>
+    <ul class="mb-6 space-y-2 text-sm">
+      <% @customer.addresses.each do |address| %>
+        <li class="border rounded p-3">
+          <%= address.street %>, <%= address.number %>
+          <% if address.complement.present? %> - <%= address.complement %><% end %>
+          — <%= address.neighborhood %>, <%= address.city %>/<%= address.state %>
+          — CEP <%= address.zip_code %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="mb-6 text-sm text-gray-600">Nenhum endereço cadastrado.</p>
+  <% end %>
+
+  <h2 class="font-semibold mb-2">Pedidos</h2>
+  <% if @orders.any? %>
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="border-b">
+          <th class="py-2">#</th>
+          <th class="py-2">Status</th>
+          <th class="py-2">Total</th>
+          <th class="py-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @orders.each do |order| %>
+          <tr class="border-b">
+            <td class="py-2"><%= order.id %></td>
+            <td class="py-2"><%= order.status %></td>
+            <td class="py-2"><%= number_to_currency(order.total_cents / 100.0, unit: "BRL") %></td>
+            <td class="py-2"><%= link_to "Ver", admin_order_path(order) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-sm text-gray-600">Nenhum pedido ainda.</p>
+  <% end %>
+</div>

@@ -5,4 +5,9 @@ class UserTest < ActiveSupport::TestCase
     user = User.new(email_address: " DOWNCASED@EXAMPLE.COM ")
     assert_equal("downcased@example.com", user.email_address)
   end
+
+  test "defaults to the admin role" do
+    user = User.new
+    assert user.admin?
+  end
 end

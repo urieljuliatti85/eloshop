@@ -5,6 +5,10 @@ Rails.application.routes.draw do
   resources :passwords, param: :token
 
   namespace :admin do
+    root to: "dashboard#index"
+
+    resources :customers, only: %i[index show]
+
     resources :products, only: %i[index show new create edit update] do
       member do
         patch :publish
