@@ -92,4 +92,55 @@ class CartItemsControllerTest < ActionDispatch::IntegrationTest
       }
     end
   end
+
+  test "adding a product with personalization stores the submitted value" do
+    assert_difference("CartItem.count", 1) do
+      post cart_items_path, params: {
+        product_id: products(:with_personalization).id, quantity: 1,
+        personalizations: { personalization_options(:name_engraving).id => "Maria" }
+      }
+    end
+
+    item = CartItem.order(created_at: :desc).first
+    assert_equal [ { label: "Nome gravado", value: "Maria" } ], item.personalization_entries
+  end
+
+  test "does not add a product without a required personalization" do
+    assert_no_difference("CartItem.count") do
+      post cart_items_path, params: { product_id: products(:with_personalization).id, quantity: 1 }
+    end
+
+    assert_redirected_to product_path(products(:with_personalization))
+  end
+
+  test "adding the same personalization twice sums the quantity" do
+    post cart_items_path, params: {
+      product_id: products(:with_personalization).id, quantity: 1,
+      personalizations: { personalization_options(:name_engraving).id => "Maria" }
+    }
+
+    assert_no_difference("CartItem.count") do
+      post cart_items_path, params: {
+        product_id: products(:with_personalization).id, quantity: 2,
+        personalizations: { personalization_options(:name_engraving).id => "Maria" }
+      }
+    end
+
+    item = CartItem.order(created_at: :desc).first
+    assert_equal 3, item.quantity
+  end
+
+  test "adding two different personalizations of the same product creates two cart items" do
+    post cart_items_path, params: {
+      product_id: products(:with_personalization).id, quantity: 1,
+      personalizations: { personalization_options(:name_engraving).id => "Maria" }
+    }
+
+    assert_difference("CartItem.count", 1) do
+      post cart_items_path, params: {
+        product_id: products(:with_personalization).id, quantity: 1,
+        personalizations: { personalization_options(:name_engraving).id => "João" }
+      }
+    end
+  end
 end

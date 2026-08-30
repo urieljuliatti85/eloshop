@@ -5,11 +5,25 @@ class CartItemsController < StorefrontController
 
   def create
     requested_quantity = params[:quantity].presence&.to_i || 1
-    item = Current.cart.cart_items.find_or_initialize_by(
+
+    new_item = Current.cart.cart_items.build(
       product_id: params[:product_id],
-      product_variant_id: params[:product_variant_id].presence
+      product_variant_id: params[:product_variant_id].presence,
+      personalizations: personalization_params
     )
-    item.quantity = (item.new_record? ? 0 : item.quantity) + requested_quantity
+    # Roda os before_validation (normalização + digest) sem persistir, só
+    # para descobrir a identidade completa do item (produto + variante +
+    # personalização) e então decidir se soma quantidade num item existente
+    # ou cria uma linha nova.
+    new_item.valid?
+
+    item = Current.cart.cart_items.find_by(
+      product_id: new_item.product_id,
+      product_variant_id: new_item.product_variant_id,
+      personalization_digest: new_item.personalization_digest
+    ) || new_item
+
+    item.quantity = (item.persisted? ? item.quantity : 0) + requested_quantity
 
     if item.save
       redirect_to cart_path, notice: "Produto adicionado ao carrinho."
@@ -36,5 +50,15 @@ class CartItemsController < StorefrontController
 
   def set_cart_item
     @cart_item = Current.cart.cart_items.find(params[:id])
+  end
+
+  # Não é mass-assignment: cada entrada só vira {option_id, value} — o
+  # próprio CartItem rejeita (na validação) qualquer option_id que não
+  # pertença ao produto sendo adicionado.
+  def personalization_params
+    raw = params[:personalizations]
+    return [] if raw.blank?
+
+    raw.to_unsafe_h.map { |option_id, value| { "personalization_option_id" => option_id, "value" => value } }
   end
 end

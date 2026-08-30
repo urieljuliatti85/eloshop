@@ -11,6 +11,7 @@ Rails.application.routes.draw do
       end
 
       resources :product_variants, path: "variantes", except: %i[index show]
+      resources :personalization_options, path: "personalizacoes", except: %i[index show]
     end
 
     resources :orders, only: %i[index show]
