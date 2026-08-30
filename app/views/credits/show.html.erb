@@ -19,15 +19,25 @@
       <% @image_credits.each do |credit| %>
         <li class="border-b border-gray-100 pb-6 last:border-0">
           <p class="font-semibold text-ink"><%= credit.produto %></p>
+          <%# URL nula = esquema recusado por ImageCredit; o crédito continua
+              legível como texto, que é o que a licença exige. %>
           <p class="mt-1 text-sm text-ink-muted">
-            <%= link_to credit.titulo, credit.origem_url,
-                        rel: "noopener nofollow", target: "_blank",
-                        class: "underline hover:text-brand-600" %>
+            <% if credit.origem_url %>
+              <%= link_to credit.titulo, credit.origem_url,
+                          rel: "noopener nofollow", target: "_blank",
+                          class: "underline hover:text-brand-600" %>
+            <% else %>
+              <%= credit.titulo %>
+            <% end %>
             por <%= credit.autor %>,
             licenciada sob
-            <%= link_to credit.licenca, credit.licenca_url,
-                        rel: "license noopener nofollow", target: "_blank",
-                        class: "underline hover:text-brand-600" %>.
+            <% if credit.licenca_url %>
+              <%= link_to credit.licenca, credit.licenca_url,
+                          rel: "license noopener nofollow", target: "_blank",
+                          class: "underline hover:text-brand-600" %>.
+            <% else %>
+              <%= credit.licenca %>.
+            <% end %>
           </p>
         </li>
       <% end %>

@@ -24,6 +24,30 @@ RSpec.describe "Credits", type: :request do
       expect(response.body).to include(credit.origem_url)
     end
 
+    # Brakeman (LinkToHref) aponta href vinda de dado externo. O YAML é do
+    # repositório, mas um `javascript:` ali viraria XSS na página pública.
+    it "não transforma URL de esquema perigoso em link" do
+      perigoso = ImageCredit.new(
+        "produto" => "Peça de teste", "titulo" => "Titulo", "autor" => "Autor",
+        "licenca" => "CC BY 4.0",
+        "licenca_url" => "javascript:alert(1)",
+        "origem_url" => "javascript:alert(2)"
+      )
+
+      expect(perigoso.licenca_url).to be_nil
+      expect(perigoso.origem_url).to be_nil
+    end
+
+    it "mantém URLs http e https" do
+      ok = ImageCredit.new(
+        "licenca_url" => "https://creativecommons.org/licenses/by/4.0/",
+        "origem_url" => "http://exemplo.test/foto"
+      )
+
+      expect(ok.licenca_url).to eq("https://creativecommons.org/licenses/by/4.0/")
+      expect(ok.origem_url).to eq("http://exemplo.test/foto")
+    end
+
     it "é alcançável a partir do rodapé de qualquer página da loja" do
       get root_path
 
