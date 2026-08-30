@@ -18,6 +18,10 @@
         <%= link_to "Criar conta", new_customer_path, class: "rounded-full bg-ink px-5 py-2.5 font-semibold text-white transition hover:bg-brand-600" %>
       <% end %>
 
+      <% if respond_to?(:customer_authenticated?) && customer_authenticated? %>
+        <%= link_to "Favoritos", wishlist_path, class: "font-medium text-ink hover:text-brand-600" %>
+      <% end %>
+
       <%= link_to cart_path, class: "relative flex items-center gap-1.5 font-medium text-ink hover:text-brand-600", aria: { label: "Carrinho" } do %>
         Carrinho
         <% if Current.cart&.cart_items&.any? %>

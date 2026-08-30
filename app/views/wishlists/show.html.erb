@@ -1,0 +1,45 @@
+<div class="w-full">
+  <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Favoritos</p>
+  <h1 class="mt-1 text-4xl font-bold text-ink">Meus favoritos</h1>
+
+  <% if @wishlist_items.empty? %>
+    <p class="mt-8 text-ink-muted">Você ainda não favoritou nenhum produto.</p>
+    <%= link_to "Ver produtos", products_path, class: "mt-4 inline-block text-brand-600 hover:underline" %>
+  <% else %>
+    <div class="mt-10 divide-y divide-gray-100">
+      <% @wishlist_items.each do |item| %>
+        <% product = item.product %>
+        <div class="grid grid-cols-[88px_1fr] items-center gap-4 py-8 sm:grid-cols-[88px_1fr_140px_140px]">
+          <div class="h-22 w-22 flex-none overflow-hidden rounded-xl bg-gray-50">
+            <% if product.main_image.attached? %>
+              <%= image_tag product.main_image, class: "h-full w-full object-cover", alt: product.name %>
+            <% end %>
+          </div>
+
+          <div>
+            <%= link_to product.name, product_path(product), class: "font-semibold text-ink hover:text-brand-600" %>
+            <p class="text-sm text-ink-muted">
+              <% if product.has_variants? %>a partir de <% end %><%= number_to_currency(product.starting_price_cents / 100.0, unit: product.currency) %>
+            </p>
+            <% unless product.available_for_purchase? %>
+              <p class="mt-1 text-sm font-medium text-red-700">Indisponível no momento</p>
+            <% end %>
+          </div>
+
+          <div>
+            <% if product.available_for_purchase? && product.directly_purchasable? %>
+              <%= button_to "Mover para o carrinho", move_to_cart_wishlist_item_path(item), method: :post,
+                    class: "w-full rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-ink hover:border-brand-500 hover:text-brand-600 cursor-pointer" %>
+            <% elsif product.available_for_purchase? %>
+              <%= link_to "Escolher opções", product_path(product),
+                    class: "block w-full rounded-full border border-gray-300 px-4 py-2 text-center text-sm font-medium text-ink hover:border-brand-500 hover:text-brand-600" %>
+            <% end %>
+          </div>
+
+          <%= button_to "Remover", wishlist_item_path(item), method: :delete,
+                class: "text-sm text-red-700 hover:underline cursor-pointer" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

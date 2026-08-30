@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_30_000117) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_30_003821) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -223,6 +223,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_000117) do
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
+  create_table "wishlist_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "customer_id", null: false
+    t.bigint "product_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id", "product_id"], name: "index_wishlist_items_on_customer_id_and_product_id", unique: true
+    t.index ["customer_id"], name: "index_wishlist_items_on_customer_id"
+    t.index ["product_id"], name: "index_wishlist_items_on_product_id"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "addresses", "customers"
@@ -240,4 +250,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_000117) do
   add_foreign_key "personalization_options", "products"
   add_foreign_key "product_variants", "products"
   add_foreign_key "sessions", "users"
+  add_foreign_key "wishlist_items", "customers"
+  add_foreign_key "wishlist_items", "products"
 end

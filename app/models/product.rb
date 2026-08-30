@@ -39,6 +39,7 @@ class Product < ApplicationRecord
   has_many_attached :images
   has_many :product_variants, dependent: :destroy
   has_many :personalization_options, dependent: :destroy
+  has_many :wishlist_items, dependent: :destroy
 
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 
@@ -88,6 +89,13 @@ class Product < ApplicationRecord
 
   def has_variants?
     product_variants.any?
+  end
+
+  # Sem variante e sem personalização obrigatória — pode ser adicionado ao
+  # carrinho diretamente (ex.: "mover para o carrinho" a partir da
+  # wishlist), sem precisar passar pela PDP para escolher nada.
+  def directly_purchasable?
+    !has_variants? && personalization_options.none?(&:required?)
   end
 
   # Menor preço entre as variantes ativas — usado no catálogo para produtos

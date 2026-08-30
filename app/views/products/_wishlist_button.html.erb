@@ -1,0 +1,11 @@
+<% if customer_authenticated? %>
+  <% if (item_id = wishlist_item_id_for(product)) %>
+    <%= button_to "♥", wishlist_item_path(item_id), method: :delete,
+          class: "flex h-9 w-9 items-center justify-center rounded-full bg-white text-brand-500 shadow hover:bg-brand-50 cursor-pointer",
+          aria: { label: "Remover #{product.name} dos favoritos" } %>
+  <% else %>
+    <%= button_to "♡", wishlist_items_path(product_id: product.id), method: :post,
+          class: "flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink shadow hover:text-brand-500 cursor-pointer",
+          aria: { label: "Adicionar #{product.name} aos favoritos" } %>
+  <% end %>
+<% end %>

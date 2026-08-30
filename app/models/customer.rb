@@ -3,6 +3,8 @@ class Customer < ApplicationRecord
   has_many :customer_sessions, dependent: :destroy
   has_many :addresses, dependent: :destroy
   has_many :orders
+  has_many :wishlist_items, dependent: :destroy
+  has_many :wishlist_products, through: :wishlist_items, source: :product
 
   normalizes :email, with: ->(e) { e.strip.downcase }
 

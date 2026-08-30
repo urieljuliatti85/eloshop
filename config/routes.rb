@@ -22,6 +22,12 @@ Rails.application.routes.draw do
 
   resources :products, only: %i[index show], param: :slug, path: "produtos"
 
+  namespace :api do
+    namespace :v1 do
+      resources :products, only: %i[index show], param: :slug
+    end
+  end
+
   resource :cart, only: %i[show]
   resources :cart_items, only: %i[create update destroy]
 
@@ -32,6 +38,11 @@ Rails.application.routes.draw do
   resources :addresses, only: %i[new create]
   resources :orders, only: %i[new create show] do
     resource :payment, only: %i[new]
+  end
+
+  resource :wishlist, only: %i[show]
+  resources :wishlist_items, only: %i[create destroy] do
+    member { post :move_to_cart }
   end
 
   post "webhooks/fake_gateway", to: "payment_webhooks#create", as: :fake_gateway_webhook

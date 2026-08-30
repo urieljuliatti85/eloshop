@@ -9,3 +9,8 @@ end
 # sem isso, choose/check/uncheck tentam clicar no input em si e falham com
 # ElementClickInterceptedError.
 Capybara.automatic_label_click = true
+
+# Botões só com ícone (ex.: coração de favoritar) dependem do aria-label
+# para nome acessível — sem isso, click_button/find_button não os localiza
+# pelo texto visível para o usuário de leitor de tela.
+Capybara.enable_aria_label = true
