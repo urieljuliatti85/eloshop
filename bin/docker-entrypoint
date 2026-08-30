@@ -6,7 +6,14 @@ if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   # db:prepare só executa db:seed na criação inicial do banco. Reaplicar
   # o seed em todo boot é seguro: em produção só cria SKUs que ainda não
   # existem e anexa imagem se a peça ainda não tiver capa.
-  ./bin/rails db:seed
+  #
+  # Falha de seed NÃO derruba a aplicação. Com `set -e`, qualquer exceção
+  # aqui matava o container e a Railway entrava em crash loop — foi o que
+  # aconteceu quando o seed passou a escrever de fato no volume e esbarrou
+  # em EACCES (o container roda como uid 1000 e o volume é montado como
+  # root). Catálogo desatualizado é um problema menor que a loja fora do ar,
+  # então o erro é registrado e o boot continua.
+  ./bin/rails db:seed || echo "AVISO: db:seed falhou; seguindo com o boot. Catálogo pode estar desatualizado."
 
   # Railway (Fase 20) atribui a porta dinamicamente via $PORT — o Thruster
   # (bin/thrust) escuta em HTTP_PORT (padrão 80), então precisa apontar pra
