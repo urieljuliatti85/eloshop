@@ -111,4 +111,49 @@ class Admin::ProductsControllerTest < ActionDispatch::IntegrationTest
     assert product.availability_type_made_to_order?
     assert_equal "15 a 20 dias úteis", product.production_time_range
   end
+
+  test "attaches gallery images on update" do
+    sign_in_as(@user)
+
+    patch admin_product_path(@product), params: {
+      product: { name: @product.name, images: [ fixture_file_upload("sample.png", "image/png") ] }
+    }
+
+    assert_redirected_to admin_product_path(@product)
+    assert_equal 1, @product.reload.images.count
+  end
+
+  test "attaching gallery images does not remove previously attached ones" do
+    sign_in_as(@user)
+    @product.images.attach(io: File.open(file_fixture("sample.png")), filename: "first.png", content_type: "image/png")
+
+    patch admin_product_path(@product), params: {
+      product: { name: @product.name, images: [ fixture_file_upload("sample.png", "image/png") ] }
+    }
+
+    assert_equal 2, @product.reload.images.count
+  end
+
+  test "rejects a gallery image with a disallowed content type without discarding the rest of the update" do
+    sign_in_as(@user)
+
+    patch admin_product_path(@product), params: {
+      product: { name: "Nome novo", images: [ fixture_file_upload("sample.png", "text/plain") ] }
+    }
+
+    assert_redirected_to admin_product_path(@product)
+    assert_equal "Nome novo", @product.reload.name
+    assert_equal 0, @product.images.count
+  end
+
+  test "removes a gallery image" do
+    sign_in_as(@user)
+    @product.images.attach(io: File.open(file_fixture("sample.png")), filename: "first.png", content_type: "image/png")
+    attachment = @product.images.attachments.first
+
+    delete admin_product_product_image_path(@product, attachment)
+
+    assert_redirected_to admin_product_path(@product)
+    assert_equal 0, @product.reload.images.count
+  end
 end

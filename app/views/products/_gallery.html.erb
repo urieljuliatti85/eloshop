@@ -1,0 +1,22 @@
+<%
+  photos = product.gallery_images
+%>
+
+<div data-controller="gallery" class="flex flex-col gap-4">
+  <div class="aspect-square overflow-hidden rounded-2xl bg-brand-100">
+    <% if photos.any? %>
+      <%= image_tag photos.first, class: "h-full w-full object-cover", alt: product.name, data: { "gallery-target": "main" } %>
+    <% end %>
+  </div>
+
+  <% if photos.size > 1 %>
+    <div class="flex gap-3 overflow-x-auto">
+      <% photos.each do |photo| %>
+        <button type="button" data-action="gallery#show" data-gallery-src-param="<%= url_for(photo) %>"
+                class="h-16 w-16 flex-none overflow-hidden rounded-lg border-2 border-transparent hover:border-brand-500">
+          <%= image_tag photo, class: "h-full w-full object-cover", alt: product.name %>
+        </button>
+      <% end %>
+    </div>
+  <% end %>
+</div>

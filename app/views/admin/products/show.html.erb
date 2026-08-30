@@ -13,6 +13,22 @@
     <%= image_tag @product.main_image, class: "mb-4 max-w-xs" %>
   <% end %>
 
+  <% if @product.images.attached? %>
+    <div class="mb-6">
+      <p class="font-semibold mb-2">Galeria (<%= @product.images.count %>/<%= Product::IMAGES_MAX_COUNT %>)</p>
+      <div class="flex flex-wrap gap-3">
+        <% @product.images.each do |image| %>
+          <div class="relative">
+            <%= image_tag image, class: "h-24 w-24 object-cover rounded border" %>
+            <%= button_to "×", admin_product_product_image_path(@product, image),
+                  method: :delete, class: "absolute -right-2 -top-2 h-6 w-6 rounded-full bg-white border text-red-700",
+                  form: { data: { turbo_confirm: "Remover esta imagem?" } } %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
   <dl class="grid grid-cols-2 gap-y-2 mb-6">
     <dt class="font-semibold">SKU</dt>
     <dd><%= @product.sku %></dd>

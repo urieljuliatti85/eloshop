@@ -65,5 +65,11 @@
     <%= form.file_field :main_image, accept: "image/png,image/jpeg,image/webp" %>
   </div>
 
+  <div>
+    <%= form.label :images, "Adicionar fotos à galeria" %>
+    <%= form.file_field :images, multiple: true, accept: "image/png,image/jpeg,image/webp" %>
+    <p class="text-sm text-gray-600">Máximo de <%= Product::IMAGES_MAX_COUNT %> fotos no total. Envios somam às fotos já cadastradas.</p>
+  </div>
+
   <%= form.submit "Salvar", class: "bg-black text-white px-4 py-2 rounded w-fit" %>
 <% end %>

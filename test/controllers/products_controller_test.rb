@@ -80,4 +80,25 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input#personalization_#{personalization_options(:message).id}"
     assert_select "input#personalization_#{personalization_options(:message).id}[required]", count: 0
   end
+
+  test "shows thumbnails when the product has more than one photo" do
+    product = products(:one)
+    product.main_image.attach(io: File.open(file_fixture("sample.png")), filename: "cover.png", content_type: "image/png")
+    product.images.attach(io: File.open(file_fixture("sample.png")), filename: "extra.png", content_type: "image/png")
+
+    get product_path(product.slug)
+
+    assert_response :success
+    assert_select "button[data-action='gallery#show']", count: 2
+  end
+
+  test "does not show thumbnails when the product has a single photo" do
+    product = products(:one)
+    product.main_image.attach(io: File.open(file_fixture("sample.png")), filename: "cover.png", content_type: "image/png")
+
+    get product_path(product.slug)
+
+    assert_response :success
+    assert_select "button[data-action='gallery#show']", count: 0
+  end
 end

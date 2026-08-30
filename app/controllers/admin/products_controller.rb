@@ -17,7 +17,11 @@ module Admin
       @product = Product.new(product_params)
 
       if @product.save
-        redirect_to admin_product_path(@product), notice: "Produto criado com sucesso."
+        if attach_images
+          redirect_to admin_product_path(@product), notice: "Produto criado com sucesso."
+        else
+          redirect_to admin_product_path(@product), alert: images_error_message
+        end
       else
         render :new, status: :unprocessable_entity
       end
@@ -28,7 +32,11 @@ module Admin
 
     def update
       if @product.update(product_params)
-        redirect_to admin_product_path(@product), notice: "Produto atualizado com sucesso."
+        if attach_images
+          redirect_to admin_product_path(@product), notice: "Produto atualizado com sucesso."
+        else
+          redirect_to admin_product_path(@product), alert: images_error_message
+        end
       else
         render :edit, status: :unprocessable_entity
       end
@@ -68,6 +76,39 @@ module Admin
         :name, :description, :price_cents, :currency, :sku, :stock_quantity, :main_image,
         :availability_type, :production_time_min_days, :production_time_max_days
       ])
+    end
+
+    # Anexa (não substitui) as fotos novas enviadas — diferente do
+    # main_image, a galeria precisa acumular ao longo de várias edições, e
+    # cada foto é removida individualmente (ver Admin::ProductImagesController).
+    # Validado antes de anexar: has_many_attached#attach não passa pelas
+    # validações do Product (elas só disparam em save/valid?), então o
+    # produto poderia ficar com uma imagem inválida anexada sem isso.
+    def attach_images
+      new_images = Array(params.dig(:product, :images)).reject(&:blank?)
+      return true if new_images.empty?
+
+      if @product.images.size + new_images.size > Product::IMAGES_MAX_COUNT
+        @images_error = "não pode ter mais de #{Product::IMAGES_MAX_COUNT} imagens no total"
+        return false
+      end
+
+      if new_images.any? { |file| !Product::MAIN_IMAGE_ALLOWED_CONTENT_TYPES.include?(file.content_type) }
+        @images_error = "deve conter apenas arquivos PNG, JPEG ou WEBP"
+        return false
+      end
+
+      if new_images.any? { |file| file.size > Product::MAIN_IMAGE_MAX_BYTES }
+        @images_error = "cada imagem deve ter no máximo 5MB"
+        return false
+      end
+
+      @product.images.attach(new_images)
+      true
+    end
+
+    def images_error_message
+      "Produto salvo, mas as imagens não foram anexadas: #{@images_error}"
     end
   end
 end

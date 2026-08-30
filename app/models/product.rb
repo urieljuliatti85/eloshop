@@ -16,6 +16,7 @@ class Product < ApplicationRecord
 
   MAIN_IMAGE_MAX_BYTES = 5.megabytes
   MAIN_IMAGE_ALLOWED_CONTENT_TYPES = %w[image/png image/jpeg image/webp].freeze
+  IMAGES_MAX_COUNT = 8
 
   enum :status, {
     draft: "draft",
@@ -33,6 +34,9 @@ class Product < ApplicationRecord
   }, default: "standard", prefix: true
 
   has_one_attached :main_image
+  # Fotos adicionais (galeria) — main_image continua sendo a capa,
+  # explicitamente definida, ver docs/catalog.md "Imagens".
+  has_many_attached :images
   has_many :product_variants, dependent: :destroy
   has_many :personalization_options, dependent: :destroy
 
@@ -54,6 +58,9 @@ class Product < ApplicationRecord
 
   validate :main_image_content_type_allowed
   validate :main_image_size_within_limit
+  validate :images_content_type_allowed
+  validate :images_size_within_limit
+  validate :images_count_within_limit
 
   def publish!
     transition_to!("active")
@@ -105,6 +112,16 @@ class Product < ApplicationRecord
     slug
   end
 
+  # Capa (main_image) primeiro, depois o resto da galeria — main_image
+  # continua sendo a foto explicitamente definida como principal, nunca
+  # depende da ordem acidental dos anexos (ver docs/catalog.md, "Imagens").
+  def gallery_images
+    photos = []
+    photos << main_image if main_image.attached?
+    photos.concat(images.to_a)
+    photos
+  end
+
   private
 
   def allowed_status_transitions
@@ -142,6 +159,26 @@ class Product < ApplicationRecord
     return if main_image.byte_size <= MAIN_IMAGE_MAX_BYTES
 
     errors.add(:main_image, "deve ter no máximo 5MB")
+  end
+
+  def images_content_type_allowed
+    return unless images.attached?
+    return if images.all? { |image| MAIN_IMAGE_ALLOWED_CONTENT_TYPES.include?(image.content_type) }
+
+    errors.add(:images, "deve conter apenas arquivos PNG, JPEG ou WEBP")
+  end
+
+  def images_size_within_limit
+    return unless images.attached?
+    return if images.all? { |image| image.byte_size <= MAIN_IMAGE_MAX_BYTES }
+
+    errors.add(:images, "cada imagem deve ter no máximo 5MB")
+  end
+
+  def images_count_within_limit
+    return if images.size <= IMAGES_MAX_COUNT
+
+    errors.add(:images, "não pode ter mais de #{IMAGES_MAX_COUNT} imagens")
   end
 
   def availability_type_immutable_while_has_variants

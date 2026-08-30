@@ -213,4 +213,49 @@ class ProductTest < ActiveSupport::TestCase
 
     assert product.valid?
   end
+
+  test "rejects a gallery image with disallowed content type" do
+    product = products(:one)
+    product.images.attach(io: StringIO.new("plain text"), filename: "doc.txt", content_type: "text/plain")
+
+    assert_not product.valid?
+    assert_includes product.errors[:images], "deve conter apenas arquivos PNG, JPEG ou WEBP"
+  end
+
+  test "rejects a gallery image larger than 5MB" do
+    product = products(:one)
+    large_content = "a" * (Product::MAIN_IMAGE_MAX_BYTES + 1)
+    product.images.attach(io: StringIO.new(large_content), filename: "big.png", content_type: "image/png")
+
+    assert_not product.valid?
+    assert_includes product.errors[:images], "cada imagem deve ter no máximo 5MB"
+  end
+
+  test "rejects more than IMAGES_MAX_COUNT gallery images" do
+    product = products(:one)
+    (Product::IMAGES_MAX_COUNT + 1).times do |i|
+      product.images.attach(io: StringIO.new("fake image bytes"), filename: "photo#{i}.png", content_type: "image/png")
+    end
+
+    assert_not product.valid?
+    assert_includes product.errors[:images], "não pode ter mais de #{Product::IMAGES_MAX_COUNT} imagens"
+  end
+
+  test "accepts valid gallery images" do
+    product = products(:one)
+    product.images.attach(io: StringIO.new("fake image bytes"), filename: "photo.png", content_type: "image/png")
+
+    assert product.valid?
+  end
+
+  test "gallery_images returns main_image first, then the rest of the gallery" do
+    product = products(:one)
+    product.main_image.attach(io: StringIO.new("cover"), filename: "cover.png", content_type: "image/png")
+    product.images.attach(io: StringIO.new("extra"), filename: "extra.png", content_type: "image/png")
+
+    photos = product.gallery_images
+    assert_equal 2, photos.size
+    assert_equal "cover.png", photos.first.filename.to_s
+    assert_equal "extra.png", photos.second.filename.to_s
+  end
 end

@@ -8,11 +8,7 @@
   </nav>
 
   <div class="grid grid-cols-1 gap-16 md:grid-cols-2">
-    <div class="aspect-square overflow-hidden rounded-2xl bg-brand-100">
-      <% if @product.main_image.attached? %>
-        <%= image_tag @product.main_image, class: "h-full w-full object-cover", alt: @product.name %>
-      <% end %>
-    </div>
+    <%= render "gallery", product: @product %>
 
     <div>
       <% if @product.availability_type_one_of_a_kind? %>
