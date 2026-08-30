@@ -15,6 +15,21 @@
   </div>
 
   <div>
+    <%= form.label :tag_names, "Tags (separadas por vírgula)" %>
+    <%= form.text_field :tag_names, value: product.tags.map(&:name).join(", "), class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= form.label :material_names, "Materiais (separados por vírgula)" %>
+    <%= form.text_field :material_names, value: product.materials.map(&:name).join(", "), class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= form.label :technique_names, "Técnicas (separadas por vírgula)" %>
+    <%= form.text_field :technique_names, value: product.techniques.map(&:name).join(", "), class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
     <%= form.label :description, "Descrição" %>
     <%= form.text_area :description, class: "border rounded w-full px-2 py-1" %>
   </div>
@@ -32,6 +47,13 @@
   <div>
     <%= form.label :sku, "SKU" %>
     <%= form.text_field :sku, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= form.label :category_id, "Categoria (opcional)" %>
+    <%= form.select :category_id,
+          options_for_select(Category.order(:name).map { |c| [ c.breadcrumb_name, c.id ] }, form.object.category_id),
+          { include_blank: "Sem categoria" }, class: "border rounded w-full px-2 py-1" %>
   </div>
 
   <div>

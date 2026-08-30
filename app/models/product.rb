@@ -41,6 +41,13 @@ class Product < ApplicationRecord
   has_many :personalization_options, dependent: :destroy
   has_many :wishlist_items, dependent: :destroy
   has_many :reviews, dependent: :destroy
+  has_many :product_tags, dependent: :destroy
+  has_many :tags, through: :product_tags
+  has_many :product_materials, dependent: :destroy
+  has_many :materials, through: :product_materials
+  has_many :product_techniques, dependent: :destroy
+  has_many :techniques, through: :product_techniques
+  belongs_to :category, optional: true
 
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 
@@ -132,6 +139,23 @@ class Product < ApplicationRecord
   def to_param
     slug
   end
+
+  scope :matching_query, ->(query) {
+    term = "%#{sanitize_sql_like(query.to_s.strip)}%"
+    left_joins(:category, :tags, :materials, :techniques)
+      .where(
+        <<~SQL.squish,
+          products.name ILIKE :term OR
+          products.description ILIKE :term OR
+          categories.name ILIKE :term OR
+          tags.name ILIKE :term OR
+          materials.name ILIKE :term OR
+          techniques.name ILIKE :term
+        SQL
+        term: term
+      )
+      .distinct
+  }
 
   RELATED_PRODUCTS_LIMIT = 4
 

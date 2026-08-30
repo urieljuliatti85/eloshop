@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_30_004743) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_30_013000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -80,6 +80,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_004743) do
     t.index ["session_token"], name: "index_carts_on_session_token", unique: true
   end
 
+  create_table "categories", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "parent_id"
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["parent_id", "name"], name: "index_categories_on_parent_id_and_name", unique: true
+    t.index ["parent_id"], name: "index_categories_on_parent_id"
+    t.index ["slug"], name: "index_categories_on_slug", unique: true
+  end
+
   create_table "customer_sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "customer_id", null: false
@@ -96,6 +107,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_004743) do
     t.string "password_digest", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_customers_on_email", unique: true
+  end
+
+  create_table "materials", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((name)::text)", name: "index_materials_on_lower_name", unique: true
+    t.index ["slug"], name: "index_materials_on_slug", unique: true
   end
 
   create_table "order_items", force: :cascade do |t|
@@ -167,6 +187,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_004743) do
     t.check_constraint "max_length > 0", name: "personalization_options_max_length_check"
   end
 
+  create_table "product_materials", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "material_id", null: false
+    t.bigint "product_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["material_id"], name: "index_product_materials_on_material_id"
+    t.index ["product_id", "material_id"], name: "index_product_materials_on_product_id_and_material_id", unique: true
+    t.index ["product_id"], name: "index_product_materials_on_product_id"
+  end
+
+  create_table "product_tags", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "product_id", null: false
+    t.bigint "tag_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "tag_id"], name: "index_product_tags_on_product_id_and_tag_id", unique: true
+    t.index ["product_id"], name: "index_product_tags_on_product_id"
+    t.index ["tag_id"], name: "index_product_tags_on_tag_id"
+  end
+
+  create_table "product_techniques", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "product_id", null: false
+    t.bigint "technique_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "technique_id"], name: "index_product_techniques_on_product_id_and_technique_id", unique: true
+    t.index ["product_id"], name: "index_product_techniques_on_product_id"
+    t.index ["technique_id"], name: "index_product_techniques_on_technique_id"
+  end
+
   create_table "product_variants", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "color"
@@ -187,6 +237,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_004743) do
 
   create_table "products", force: :cascade do |t|
     t.string "availability_type", default: "standard", null: false
+    t.bigint "category_id"
     t.datetime "created_at", null: false
     t.string "currency", default: "BRL", null: false
     t.text "description"
@@ -200,6 +251,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_004743) do
     t.integer "stock_quantity", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["availability_type"], name: "index_products_on_availability_type"
+    t.index ["category_id"], name: "index_products_on_category_id"
     t.index ["sku"], name: "index_products_on_sku", unique: true
     t.index ["slug"], name: "index_products_on_slug", unique: true
     t.index ["status"], name: "index_products_on_status"
@@ -231,6 +283,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_004743) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
+  create_table "tags", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((name)::text)", name: "index_tags_on_lower_name", unique: true
+    t.index ["slug"], name: "index_tags_on_slug", unique: true
+  end
+
+  create_table "techniques", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((name)::text)", name: "index_techniques_on_lower_name", unique: true
+    t.index ["slug"], name: "index_techniques_on_slug", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email_address", null: false
@@ -256,6 +326,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_004743) do
   add_foreign_key "cart_items", "product_variants"
   add_foreign_key "cart_items", "products"
   add_foreign_key "carts", "customers"
+  add_foreign_key "categories", "categories", column: "parent_id"
   add_foreign_key "customer_sessions", "customers"
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "product_variants"
@@ -264,7 +335,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_004743) do
   add_foreign_key "payment_events", "payments"
   add_foreign_key "payments", "orders"
   add_foreign_key "personalization_options", "products"
+  add_foreign_key "product_materials", "materials"
+  add_foreign_key "product_materials", "products"
+  add_foreign_key "product_tags", "products"
+  add_foreign_key "product_tags", "tags"
+  add_foreign_key "product_techniques", "products"
+  add_foreign_key "product_techniques", "techniques"
   add_foreign_key "product_variants", "products"
+  add_foreign_key "products", "categories"
   add_foreign_key "reviews", "customers"
   add_foreign_key "reviews", "products"
   add_foreign_key "sessions", "users"

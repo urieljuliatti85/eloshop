@@ -41,6 +41,9 @@
 
     <dt class="font-semibold">Descrição</dt>
     <dd><%= @product.description %></dd>
+
+    <dt class="font-semibold">Categoria</dt>
+    <dd><%= @product.category&.breadcrumb_name || "Sem categoria" %></dd>
   </dl>
 
   <div class="flex gap-2">

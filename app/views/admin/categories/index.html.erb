@@ -1,0 +1,41 @@
+<div class="w-full">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Categorias</h1>
+    <%= link_to "Nova categoria", new_admin_category_path, class: "bg-black text-white px-4 py-2 rounded" %>
+  </div>
+
+  <% if notice %>
+    <p class="mb-4 text-green-700"><%= notice %></p>
+  <% end %>
+  <% if alert %>
+    <p class="mb-4 text-red-700"><%= alert %></p>
+  <% end %>
+
+  <table class="w-full text-left border-collapse">
+    <thead>
+      <tr class="border-b">
+        <th class="py-2">Nome</th>
+        <th class="py-2">Categoria pai</th>
+        <th class="py-2">Produtos</th>
+        <th class="py-2"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @categories.each do |category| %>
+        <tr class="border-b">
+          <td class="py-2"><%= category.breadcrumb_name %></td>
+          <td class="py-2"><%= category.parent&.name %></td>
+          <td class="py-2"><%= category.products.count %></td>
+          <td class="py-2">
+            <%= link_to "Editar", edit_admin_category_path(category), class: "underline" %>
+            <%= button_to "Excluir", admin_category_path(category), method: :delete, class: "text-red-700 underline ml-2", form: { data: { turbo_confirm: "Excluir esta categoria?" } } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% if @categories.none? %>
+    <p class="text-sm text-gray-600 mt-4">Nenhuma categoria cadastrada.</p>
+  <% end %>
+</div>

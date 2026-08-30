@@ -1,0 +1,32 @@
+<%
+  # Não oferece a própria categoria nem descendentes dela como opção de pai
+  # (evitaria um ciclo, já bloqueado no model, mas é melhor nem oferecer).
+  invalid_parent_ids = category.persisted? ? category.self_and_descendant_ids : []
+  parent_options = Category.order(:name).reject { |c| invalid_parent_ids.include?(c.id) }
+%>
+
+<%= form_with model: [ :admin, category ], class: "flex flex-col gap-4 w-full max-w-xl" do |form| %>
+  <% if category.errors.any? %>
+    <div class="text-red-700">
+      <ul>
+        <% category.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :name, "Nome" %>
+    <%= form.text_field :name, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= form.label :parent_id, "Categoria pai (opcional)" %>
+    <%= form.select :parent_id,
+          options_for_select(parent_options.map { |c| [ c.breadcrumb_name, c.id ] }, form.object.parent_id),
+          { include_blank: "Nenhuma — categoria de topo" }, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <%= form.submit "Salvar", class: "bg-black text-white px-4 py-2 rounded w-fit" %>
+<% end %>

@@ -20,6 +20,64 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a", text: /#{@draft_product.name}/, count: 0
   end
 
+  test "filters active products by category including descendants" do
+    casa = Category.create!(name: "Casa")
+    decoracao = casa.children.create!(name: "Decoração")
+    @active_product.update!(category: decoracao)
+
+    get products_path, params: { category: casa.slug }
+
+    assert_response :success
+    assert_select "a", text: /#{@active_product.name}/
+  end
+
+  test "returns not found for an unknown category filter" do
+    get products_path, params: { category: "categoria-inexistente" }
+
+    assert_response :not_found
+  end
+
+  test "searches by product name and filters by taxonomy" do
+    tag = Tag.create!(name: "feito a mao")
+    @active_product.tags << tag
+
+    get products_path, params: { q: "Vaso", tag: tag.slug }
+
+    assert_response :success
+    assert_select "a", text: /#{@active_product.name}/
+  end
+
+  test "searches by category, material, and technique" do
+    category = Category.create!(name: "Decoração")
+    material = Material.create!(name: "Cerâmica")
+    technique = Technique.create!(name: "Pintura")
+    @active_product.update!(category: category)
+    @active_product.materials << material
+    @active_product.techniques << technique
+
+    get products_path, params: { q: "Cerâmica" }
+    assert_select "a", text: /#{@active_product.name}/
+
+    get products_path, params: { q: "Pintura" }
+    assert_select "a", text: /#{@active_product.name}/
+
+    get products_path, params: { q: "Decoração" }
+    assert_select "a", text: /#{@active_product.name}/
+  end
+
+  test "filters products by availability type" do
+    made_to_order = Product.create!(
+      name: "Encomenda especial", sku: "ENCOMENDA-001", price_cents: 1000,
+      stock_quantity: 0, status: "active", availability_type: "made_to_order",
+      production_time_min_days: 2, production_time_max_days: 4
+    )
+
+    get products_path, params: { availability: "made_to_order" }
+
+    assert_select "a", text: /#{made_to_order.name}/
+    assert_select "a", text: /#{@active_product.name}/, count: 0
+  end
+
   test "shows an active product without requiring authentication" do
     get product_path(@active_product.slug)
 

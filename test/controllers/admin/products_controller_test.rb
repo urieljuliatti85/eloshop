@@ -44,6 +44,24 @@ class Admin::ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to admin_product_path(Product.last)
   end
 
+  test "creates a product with discovery taxonomies" do
+    sign_in_as(@user)
+
+    post admin_products_path, params: {
+      product: {
+        name: "Cesto catalogado", description: "Cesto", price_cents: 5990,
+        currency: "BRL", sku: "CESTO-CATALOGADO-001", stock_quantity: 2,
+        tag_names: "feito a mao, presente", material_names: "Vime",
+        technique_names: "Trançado"
+      }
+    }
+
+    product = Product.find_by!(sku: "CESTO-CATALOGADO-001")
+    assert_equal %w[feito-a-mao presente], product.tags.order(:slug).pluck(:slug)
+    assert_equal [ "vime" ], product.materials.pluck(:slug)
+    assert_equal [ "trancado" ], product.techniques.pluck(:slug)
+  end
+
   test "does not create a product with invalid params" do
     sign_in_as(@user)
 

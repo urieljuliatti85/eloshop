@@ -24,6 +24,8 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :categories, except: %i[show]
+
     resources :orders, only: %i[index show]
   end
 

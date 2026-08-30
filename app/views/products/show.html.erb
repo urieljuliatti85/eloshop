@@ -80,6 +80,13 @@
               <dt class="w-24 text-ink-muted">SKU</dt>
               <dd class="text-ink"><%= @product.sku %></dd>
             </div>
+
+            <% if @product.category %>
+              <div class="flex gap-2">
+                <dt class="w-24 text-ink-muted">Categoria</dt>
+                <dd class="text-ink"><%= @product.category.breadcrumb_name %></dd>
+              </div>
+            <% end %>
           </dl>
         </details>
 

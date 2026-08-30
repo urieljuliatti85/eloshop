@@ -17,6 +17,7 @@ module Admin
       @product = Product.new(product_params)
 
       if @product.save
+        sync_taxonomies
         if attach_images
           redirect_to admin_product_path(@product), notice: "Produto criado com sucesso."
         else
@@ -32,6 +33,7 @@ module Admin
 
     def update
       if @product.update(product_params)
+        sync_taxonomies
         if attach_images
           redirect_to admin_product_path(@product), notice: "Produto atualizado com sucesso."
         else
@@ -74,8 +76,21 @@ module Admin
     def product_params
       params.expect(product: [
         :name, :description, :price_cents, :currency, :sku, :stock_quantity, :main_image,
-        :availability_type, :production_time_min_days, :production_time_max_days
-      ])
+        :availability_type, :production_time_min_days, :production_time_max_days, :category_id,
+        :tag_names, :material_names, :technique_names
+      ]).except(:tag_names, :material_names, :technique_names)
+    end
+
+    def sync_taxonomies
+      @product.tags = taxonomy_records(Tag, params.dig(:product, :tag_names))
+      @product.materials = taxonomy_records(Material, params.dig(:product, :material_names))
+      @product.techniques = taxonomy_records(Technique, params.dig(:product, :technique_names))
+    end
+
+    def taxonomy_records(model, names)
+      Array(names).flat_map { |value| value.to_s.split(",") }.map(&:strip).reject(&:blank?).uniq(&:downcase).map do |name|
+        model.find_or_create_by!(name: name)
+      end
     end
 
     # Anexa (não substitui) as fotos novas enviadas — diferente do
