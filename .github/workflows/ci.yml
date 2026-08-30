@@ -107,7 +107,7 @@ jobs:
       - name: Regenerate Swagger documentation
         env:
           RAILS_ENV: test
-          DATABASE_URL: ******localhost:5432
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432
         run: bin/rails rswag:specs:swaggerize
 
   system-test:
