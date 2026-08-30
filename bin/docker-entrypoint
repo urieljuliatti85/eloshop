@@ -1,5 +1,33 @@
 #!/bin/bash -e
 
+# A Railway monta o volume persistente pertencendo ao root, mas a aplicação
+# roda como uid 1000 e precisa escrever nele (Active Storage). Sem isto,
+# /rails/storage nunca é gravável: as imagens de produto ficam órfãs no banco
+# e respondem 404, e o seed falha com EACCES.
+#
+# O container inicia como root apenas para ajustar o dono do mount e larga o
+# privilégio em seguida — nada da aplicação, nem db:prepare, nem db:seed, roda
+# como root.
+#
+# Detalhes que importam:
+#   * `exec` preserva o PID 1; sem ele o setpriv viraria processo intermediário
+#     e o SIGTERM do shutdown deixaria de chegar ao Rails.
+#   * a guarda de uid torna o script reentrante: depois do exec ele roda de
+#     novo como uid 1000, cai fora deste bloco e segue o fluxo normal.
+#   * setpriv vem do util-linux, já presente na imagem base — gosu exigiria
+#     instalar pacote, e su/runuser abrem shell intermediário, complicando
+#     sinal e código de saída.
+#   * chown sem -R de propósito: basta o dono do ponto de montagem, porque o
+#     Active Storage cria os subdiretórios e diretório novo herda o dono de
+#     quem o criou. Um -R ficaria lento a cada boot com o volume cheio.
+if [ "$(id -u)" = "0" ]; then
+  storage_path="${RAILS_STORAGE_PATH:-/rails/storage}"
+  mkdir -p "${storage_path}"
+  chown rails:rails "${storage_path}"
+
+  exec setpriv --reuid=1000 --regid=1000 --init-groups -- "$0" "$@"
+fi
+
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare

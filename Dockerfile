@@ -63,7 +63,11 @@ FROM base
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \
     useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash
-USER 1000:1000
+
+# Sem `USER 1000:1000` de propósito: o entrypoint precisa iniciar como root
+# para ajustar o dono do volume da Railway (montado como root) e então largar
+# o privilégio com setpriv. A aplicação continua rodando como uid 1000 — ver
+# bin/docker-entrypoint.
 
 # Copy built artifacts: gems, application
 COPY --chown=rails:rails --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
