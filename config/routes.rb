@@ -26,6 +26,8 @@ Rails.application.routes.draw do
 
     resources :categories, except: %i[show]
 
+    resources :coupons, except: %i[show]
+
     resources :orders, only: %i[index show]
   end
 
@@ -39,7 +41,10 @@ Rails.application.routes.draw do
     end
   end
 
-  resource :cart, only: %i[show]
+  resource :cart, only: %i[show] do
+    post :apply_coupon
+    delete :remove_coupon
+  end
   resources :cart_items, only: %i[create update destroy]
 
   resource :contact, only: %i[new create]

@@ -24,6 +24,9 @@
   </table>
 
   <p>Subtotal: <%= number_to_currency(@order.subtotal_cents / 100.0, unit: "BRL") %></p>
+  <% if @order.coupon %>
+    <p>Cupom <%= @order.coupon.code %>: -<%= number_to_currency(@order.discount_cents / 100.0, unit: "BRL") %></p>
+  <% end %>
   <p>Frete: <%= number_to_currency(@order.shipping_cents / 100.0, unit: "BRL") %></p>
   <p class="font-semibold mb-6">Total: <%= number_to_currency(@order.total_cents / 100.0, unit: "BRL") %></p>
 

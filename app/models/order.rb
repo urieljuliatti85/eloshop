@@ -8,6 +8,7 @@ class Order < ApplicationRecord
   }.freeze
 
   belongs_to :customer
+  belongs_to :coupon, optional: true
   has_many :order_items, dependent: :destroy
   has_many :payments, dependent: :destroy
   has_one :shipment, dependent: :destroy
@@ -18,7 +19,7 @@ class Order < ApplicationRecord
     cancelled: "cancelled"
   }, default: "pending"
 
-  validates :subtotal_cents, :shipping_cents, :total_cents, numericality: { greater_than_or_equal_to: 0 }
+  validates :subtotal_cents, :shipping_cents, :total_cents, :discount_cents, numericality: { greater_than_or_equal_to: 0 }
   validates :shipping_address_snapshot, presence: true
   validates :idempotency_key, presence: true, uniqueness: true
 

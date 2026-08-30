@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_30_013102) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_30_121626) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -72,10 +72,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_013102) do
   end
 
   create_table "carts", force: :cascade do |t|
+    t.bigint "coupon_id"
     t.datetime "created_at", null: false
     t.bigint "customer_id"
     t.string "session_token", null: false
     t.datetime "updated_at", null: false
+    t.index ["coupon_id"], name: "index_carts_on_coupon_id"
     t.index ["customer_id"], name: "index_carts_on_customer_id"
     t.index ["session_token"], name: "index_carts_on_session_token", unique: true
   end
@@ -89,6 +91,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_013102) do
     t.index ["parent_id", "name"], name: "index_categories_on_parent_id_and_name", unique: true
     t.index ["parent_id"], name: "index_categories_on_parent_id"
     t.index ["slug"], name: "index_categories_on_slug", unique: true
+  end
+
+  create_table "coupons", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.integer "amount_cents"
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.string "discount_type", null: false
+    t.datetime "expires_at"
+    t.integer "max_uses"
+    t.integer "minimum_subtotal_cents"
+    t.integer "percentage"
+    t.datetime "starts_at"
+    t.datetime "updated_at", null: false
+    t.integer "uses_count", default: 0, null: false
+    t.index ["code"], name: "index_coupons_on_code", unique: true
   end
 
   create_table "customer_sessions", force: :cascade do |t|
@@ -140,8 +158,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_013102) do
   end
 
   create_table "orders", force: :cascade do |t|
+    t.bigint "coupon_id"
     t.datetime "created_at", null: false
     t.bigint "customer_id", null: false
+    t.integer "discount_cents", default: 0, null: false
     t.string "idempotency_key", null: false
     t.jsonb "shipping_address_snapshot", null: false
     t.integer "shipping_cents", null: false
@@ -149,6 +169,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_013102) do
     t.integer "subtotal_cents", null: false
     t.integer "total_cents", null: false
     t.datetime "updated_at", null: false
+    t.index ["coupon_id"], name: "index_orders_on_coupon_id"
     t.index ["customer_id"], name: "index_orders_on_customer_id"
     t.index ["idempotency_key"], name: "index_orders_on_idempotency_key", unique: true
   end
@@ -345,12 +366,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_30_013102) do
   add_foreign_key "cart_items", "carts"
   add_foreign_key "cart_items", "product_variants"
   add_foreign_key "cart_items", "products"
+  add_foreign_key "carts", "coupons"
   add_foreign_key "carts", "customers"
   add_foreign_key "categories", "categories", column: "parent_id"
   add_foreign_key "customer_sessions", "customers"
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "product_variants"
   add_foreign_key "order_items", "products"
+  add_foreign_key "orders", "coupons"
   add_foreign_key "orders", "customers"
   add_foreign_key "payment_events", "payments"
   add_foreign_key "payments", "orders"

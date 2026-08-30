@@ -1,0 +1,59 @@
+<div class="w-full">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Cupons</h1>
+    <%= link_to "Novo cupom", new_admin_coupon_path, class: "bg-black text-white px-4 py-2 rounded" %>
+  </div>
+
+  <% if notice %>
+    <p class="mb-4 text-green-700"><%= notice %></p>
+  <% end %>
+  <% if alert %>
+    <p class="mb-4 text-red-700"><%= alert %></p>
+  <% end %>
+
+  <table class="w-full text-left border-collapse">
+    <thead>
+      <tr class="border-b">
+        <th class="py-2">Código</th>
+        <th class="py-2">Desconto</th>
+        <th class="py-2">Mínimo</th>
+        <th class="py-2">Usos</th>
+        <th class="py-2">Validade</th>
+        <th class="py-2">Status</th>
+        <th class="py-2"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @coupons.each do |coupon| %>
+        <tr class="border-b">
+          <td class="py-2 font-mono"><%= coupon.code %></td>
+          <td class="py-2">
+            <% if coupon.discount_type_percentage? %>
+              <%= coupon.percentage %>%
+            <% else %>
+              <%= number_to_currency(coupon.amount_cents / 100.0, unit: "BRL") %>
+            <% end %>
+          </td>
+          <td class="py-2"><%= coupon.minimum_subtotal_cents ? number_to_currency(coupon.minimum_subtotal_cents / 100.0, unit: "BRL") : "—" %></td>
+          <td class="py-2"><%= coupon.uses_count %>/<%= coupon.max_uses || "∞" %></td>
+          <td class="py-2">
+            <% if coupon.starts_at || coupon.expires_at %>
+              <%= coupon.starts_at&.to_date %> – <%= coupon.expires_at&.to_date %>
+            <% else %>
+              sem prazo
+            <% end %>
+          </td>
+          <td class="py-2"><%= coupon.active? ? "Ativo" : "Inativo" %></td>
+          <td class="py-2">
+            <%= link_to "Editar", edit_admin_coupon_path(coupon), class: "underline" %>
+            <%= button_to "Excluir", admin_coupon_path(coupon), method: :delete, class: "text-red-700 underline ml-2", form: { data: { turbo_confirm: "Excluir este cupom?" } } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% if @coupons.none? %>
+    <p class="text-sm text-gray-600 mt-4">Nenhum cupom cadastrado.</p>
+  <% end %>
+</div>

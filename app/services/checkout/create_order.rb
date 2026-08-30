@@ -29,16 +29,21 @@ module Checkout
         cart_items = lock_and_revalidate_cart_items!
         subtotal = subtotal_cents(cart_items)
         shipping = Shipping::Calculator.new(cart: @cart, address: @address).call
+        coupon = lock_and_revalidate_coupon!(subtotal)
+        discount = coupon ? coupon.discount_cents_for(subtotal) : 0
 
         order = Order.create!(
           customer: @customer,
           status: "pending",
           subtotal_cents: subtotal,
           shipping_cents: shipping.shipping_cents,
-          total_cents: subtotal + shipping.shipping_cents,
+          discount_cents: discount,
+          total_cents: subtotal + shipping.shipping_cents - discount,
           shipping_address_snapshot: address_snapshot,
-          idempotency_key: @idempotency_key
+          idempotency_key: @idempotency_key,
+          coupon: coupon
         )
+        coupon&.increment!(:uses_count)
         order.create_shipment!(
           carrier: shipping.carrier,
           service: shipping.service,
@@ -49,6 +54,7 @@ module Checkout
         cart_items.each { |cart_item| create_order_item_and_debit_stock!(order, cart_item) }
 
         @cart.cart_items.destroy_all
+        @cart.update!(coupon: nil)
 
         order
       end
@@ -84,6 +90,20 @@ module Checkout
       end
 
       cart_items
+    end
+
+    # Trava o cupom (SELECT ... FOR UPDATE) e revalida contra o subtotal
+    # final, para que dois checkouts simultâneos não ultrapassem o
+    # max_uses de um cupom com uso limitado — ver CLAUDE.md §47.
+    def lock_and_revalidate_coupon!(subtotal_cents)
+      return nil if @cart.coupon.blank?
+
+      coupon = @cart.coupon
+      coupon.lock!
+
+      raise Failed, "O cupom #{coupon.code} não é mais válido." unless coupon.valid_for?(subtotal_cents)
+
+      coupon
     end
 
     def lock_and_validate_variant!(cart_item)

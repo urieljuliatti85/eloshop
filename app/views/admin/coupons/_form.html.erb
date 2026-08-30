@@ -1,0 +1,60 @@
+<%= form_with model: [ :admin, coupon ], class: "flex flex-col gap-4 w-full max-w-xl" do |form| %>
+  <% if coupon.errors.any? %>
+    <div class="text-red-700">
+      <ul>
+        <% coupon.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :code, "Código" %>
+    <%= form.text_field :code, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= form.label :discount_type, "Tipo de desconto" %>
+    <%= form.select :discount_type,
+          options_for_select([ [ "Percentual", "percentage" ], [ "Valor fixo", "fixed" ] ], form.object.discount_type),
+          {}, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= form.label :percentage, "Percentual (1 a 100, quando percentual)" %>
+    <%= form.number_field :percentage, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= form.label :amount_cents, "Valor fixo em centavos (quando valor fixo)" %>
+    <%= form.number_field :amount_cents, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= form.label :minimum_subtotal_cents, "Subtotal mínimo em centavos (opcional)" %>
+    <%= form.number_field :minimum_subtotal_cents, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= form.label :max_uses, "Limite total de usos (opcional)" %>
+    <%= form.number_field :max_uses, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= form.label :starts_at, "Início da validade (opcional)" %>
+    <%= form.datetime_field :starts_at, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div>
+    <%= form.label :expires_at, "Fim da validade (opcional)" %>
+    <%= form.datetime_field :expires_at, class: "border rounded w-full px-2 py-1" %>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <%= form.check_box :active %>
+    <%= form.label :active, "Ativo" %>
+  </div>
+
+  <%= form.submit "Salvar", class: "bg-black text-white px-4 py-2 rounded w-fit" %>
+<% end %>

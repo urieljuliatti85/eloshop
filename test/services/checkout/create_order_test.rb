@@ -34,6 +34,14 @@ module Checkout
       }.merge(attrs))
     end
 
+    def build_coupon(**attrs)
+      Coupon.create!({
+        code: "PROMO#{SecureRandom.hex(4)}",
+        discount_type: "percentage",
+        percentage: 10
+      }.merge(attrs))
+    end
+
     test "creates the order and items, debits stock, and empties the cart" do
       product = build_product(stock_quantity: 5)
       cart = build_cart_with_item(product, quantity: 2)
@@ -248,6 +256,63 @@ module Checkout
       option.destroy!
 
       assert_equal [ { label: "Nome gravado", value: "Maria" } ], item.reload.personalization_entries
+    end
+
+    test "applies a valid coupon and increments its uses_count" do
+      product = build_product(price_cents: 10_000)
+      cart = build_cart_with_item(product, quantity: 1)
+      coupon = build_coupon(discount_type: "percentage", percentage: 10)
+      cart.update!(coupon: coupon)
+
+      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+
+      assert_equal coupon, order.coupon
+      assert_equal 1_000, order.discount_cents
+      assert_equal 10_000 - 1_000 + CreateOrder::SHIPPING_CENTS, order.total_cents
+      assert_equal 1, coupon.reload.uses_count
+      assert_nil cart.reload.coupon
+    end
+
+    test "a fixed coupon never makes the total negative" do
+      product = build_product(price_cents: 1_000)
+      cart = build_cart_with_item(product, quantity: 1)
+      coupon = build_coupon(discount_type: "fixed", percentage: nil, amount_cents: 50_000)
+      cart.update!(coupon: coupon)
+
+      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+
+      assert_equal 1_000, order.discount_cents
+      assert_equal CreateOrder::SHIPPING_CENTS, order.total_cents
+    end
+
+    test "raises when the coupon expired after being applied to the cart" do
+      product = build_product
+      cart = build_cart_with_item(product, quantity: 1)
+      coupon = build_coupon(expires_at: 1.day.from_now)
+      cart.update!(coupon: coupon)
+
+      travel_to 2.days.from_now do
+        assert_no_difference("Order.count") do
+          assert_raises(CreateOrder::Failed) do
+            CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+          end
+        end
+      end
+
+      assert_equal 0, coupon.reload.uses_count
+    end
+
+    test "raises when the coupon reached its usage limit before checkout completes" do
+      product = build_product
+      cart = build_cart_with_item(product, quantity: 1)
+      coupon = build_coupon(max_uses: 1, uses_count: 1)
+      cart.update!(coupon: coupon)
+
+      assert_no_difference("Order.count") do
+        assert_raises(CreateOrder::Failed) do
+          CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+        end
+      end
     end
   end
 end

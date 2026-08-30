@@ -36,6 +36,12 @@
       <span>Subtotal</span>
       <span><%= number_to_currency(@order.subtotal_cents / 100.0, unit: "BRL") %></span>
     </div>
+    <% if @order.coupon %>
+      <div class="flex justify-between text-ink-muted">
+        <span>Cupom <%= @order.coupon.code %></span>
+        <span>-<%= number_to_currency(@order.discount_cents / 100.0, unit: "BRL") %></span>
+      </div>
+    <% end %>
     <div class="flex justify-between text-ink-muted">
       <span>Frete</span>
       <span><%= number_to_currency(@order.shipping_cents / 100.0, unit: "BRL") %></span>

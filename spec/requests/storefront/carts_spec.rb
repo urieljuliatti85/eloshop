@@ -23,4 +23,50 @@ RSpec.describe "Carts", type: :request do
       expect(response.body).to include(product.name)
     end
   end
+
+  describe "POST /cart/apply_coupon" do
+    it "applies a valid coupon" do
+      Coupon.create!(code: "PROMO10", discount_type: "percentage", percentage: 10)
+      post cart_items_path, params: { product_id: product.id, quantity: 1 }
+
+      post apply_coupon_cart_path, params: { code: "promo10" }
+
+      expect(response).to redirect_to(cart_path)
+      follow_redirect!
+      expect(response.body).to include("PROMO10")
+    end
+
+    it "rejects an invalid coupon" do
+      post apply_coupon_cart_path, params: { code: "DOES-NOT-EXIST" }
+
+      expect(response).to redirect_to(cart_path)
+      follow_redirect!
+      expect(response.body).to include("inválido")
+    end
+
+    it "rejects an expired coupon" do
+      Coupon.create!(code: "EXPIRADO", discount_type: "percentage", percentage: 10, expires_at: 1.day.ago)
+      post cart_items_path, params: { product_id: product.id, quantity: 1 }
+
+      post apply_coupon_cart_path, params: { code: "EXPIRADO" }
+
+      expect(response).to redirect_to(cart_path)
+      follow_redirect!
+      expect(response.body).to include("inválido")
+    end
+  end
+
+  describe "DELETE /cart/remove_coupon" do
+    it "removes the applied coupon" do
+      coupon = Coupon.create!(code: "PROMO10", discount_type: "percentage", percentage: 10)
+      post cart_items_path, params: { product_id: product.id, quantity: 1 }
+      post apply_coupon_cart_path, params: { code: coupon.code }
+
+      delete remove_coupon_cart_path
+
+      expect(response).to redirect_to(cart_path)
+      follow_redirect!
+      expect(response.body).not_to include("PROMO10")
+    end
+  end
 end
