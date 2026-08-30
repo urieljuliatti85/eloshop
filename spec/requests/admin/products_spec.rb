@@ -69,4 +69,61 @@ RSpec.describe "Admin products", type: :request do
       expect(product.reload.name).to eq("Vaso artesanal azul (edição limitada)")
     end
   end
+
+  describe "GET /admin/products/:id" do
+    it "shows the product" do
+      sign_in_as(user)
+      product = Product.create!(name: "Vaso detalhe", sku: "SHOW-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL")
+
+      get admin_product_path(product)
+
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "PATCH /admin/products/:id/publish" do
+    it "publishes a draft product" do
+      sign_in_as(user)
+      product = Product.create!(name: "Vaso publicar", sku: "PUB-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "draft")
+
+      patch publish_admin_product_path(product)
+
+      expect(response).to redirect_to(admin_product_path(product))
+      expect(product.reload).to be_active
+    end
+
+    it "rejects an invalid status transition" do
+      sign_in_as(user)
+      product = Product.create!(name: "Vaso descontinuado", sku: "PUB-002", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "discontinued")
+
+      patch publish_admin_product_path(product)
+
+      expect(response).to redirect_to(admin_product_path(product))
+      expect(product.reload).to be_discontinued
+    end
+  end
+
+  describe "PATCH /admin/products/:id/unpublish" do
+    it "unpublishes an active product" do
+      sign_in_as(user)
+      product = Product.create!(name: "Vaso ativo", sku: "UNPUB-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "active")
+
+      patch unpublish_admin_product_path(product)
+
+      expect(response).to redirect_to(admin_product_path(product))
+      expect(product.reload).to be_draft
+    end
+  end
+
+  describe "PATCH /admin/products/:id/discontinue" do
+    it "discontinues a product" do
+      sign_in_as(user)
+      product = Product.create!(name: "Vaso descontinuar", sku: "DISC-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "active")
+
+      patch discontinue_admin_product_path(product)
+
+      expect(response).to redirect_to(admin_product_path(product))
+      expect(product.reload).to be_discontinued
+    end
+  end
 end
