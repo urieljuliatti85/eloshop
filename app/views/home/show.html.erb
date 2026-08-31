@@ -1,0 +1,41 @@
+<% content_for :canonical_url, root_url %>
+
+<div class="w-full">
+  <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-500 to-brand-300">
+    <div class="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl"></div>
+    <div class="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
+
+    <div class="relative flex flex-col items-start gap-6 px-8 py-20 md:px-16 md:py-28">
+      <span class="rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white">Feito à mão</span>
+      <h1 class="max-w-2xl text-5xl font-black leading-[1.05] text-white md:text-7xl">
+        Peças com história, feitas à mão
+      </h1>
+      <p class="max-w-md text-lg text-white/90">
+        Cada produto é feito à mão, em pequenas tiragens ou sob encomenda. Conheça o processo antes de comprar.
+      </p>
+      <%= link_to "Ver produtos", products_path, class: "rounded-full bg-white px-8 py-4 text-sm font-semibold text-brand-600 transition hover:bg-brand-50" %>
+    </div>
+  </section>
+
+  <% if @categories.any? %>
+    <section class="mt-20">
+      <div class="text-center">
+        <h2 class="text-3xl font-bold text-ink md:text-4xl">Explore por categoria</h2>
+        <p class="mt-2 text-ink-muted">As peças organizadas do jeito que você procura.</p>
+      </div>
+
+      <div class="mt-10 grid grid-cols-2 gap-6 md:grid-cols-3">
+        <% @categories.each do |category| %>
+          <%= link_to products_path(category: category.slug), class: "group block text-center" do %>
+            <div class="aspect-[4/5] overflow-hidden rounded-2xl bg-sand-100">
+              <% if (cover = @category_covers[category]) %>
+                <%= image_tag cover.main_image, class: "h-full w-full object-cover transition duration-300 group-hover:scale-105", alt: "", loading: "lazy" %>
+              <% end %>
+            </div>
+            <p class="mt-4 text-lg font-semibold text-ink group-hover:text-brand-600"><%= category.name %></p>
+          <% end %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</div>

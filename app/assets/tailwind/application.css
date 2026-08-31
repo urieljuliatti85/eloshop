@@ -13,4 +13,10 @@
 
   --color-ink: #1d2026;
   --color-ink-muted: #6b7280;
+
+  /* Neutros quentes da vitrine (faixas de topo, rodapé de destaques e
+     fundo dos cards do catálogo). */
+  --color-sand-50: #faf3ea;
+  --color-sand-100: #f9f1e7;
+  --color-mist-100: #f4f5f7;
 }

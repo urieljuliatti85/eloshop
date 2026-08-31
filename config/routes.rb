@@ -84,5 +84,6 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  root "products#index"
+  # A home é só a apresentação da loja; o catálogo vive em /produtos.
+  root "home#show"
 end
