@@ -7,7 +7,7 @@
       color: variant.color,
       material: variant.material,
       stockQuantity: variant.stock_quantity,
-      formattedPrice: number_to_currency(variant.price_cents / 100.0, unit: product.currency)
+      formattedPrice: number_to_currency(variant.price_cents / 100.0)
     }
   }
   sizes = active_variants.filter_map(&:size).uniq
@@ -17,7 +17,7 @@
 
 <div data-controller="variant-selector" data-variant-selector-variants-value="<%= variants_json.to_json %>">
   <p id="variant_price" class="mt-2 text-2xl text-brand-600" data-variant-selector-target="price">
-    <%= number_to_currency(product.starting_price_cents / 100.0, unit: product.currency) %>
+    <%= number_to_currency(product.starting_price_cents / 100.0) %>
   </p>
 
   <%= form_with url: cart_items_path, method: :post, class: "mt-6 flex flex-col gap-6" do |form| %>

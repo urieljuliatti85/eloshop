@@ -17,18 +17,18 @@
           </td>
           <td class="py-2"><%= item.sku %></td>
           <td class="py-2"><%= item.quantity %>x</td>
-          <td class="py-2"><%= number_to_currency(item.subtotal_cents / 100.0, unit: "BRL") %></td>
+          <td class="py-2"><%= number_to_currency(item.subtotal_cents / 100.0) %></td>
         </tr>
       <% end %>
     </tbody>
   </table>
 
-  <p>Subtotal: <%= number_to_currency(@order.subtotal_cents / 100.0, unit: "BRL") %></p>
+  <p>Subtotal: <%= number_to_currency(@order.subtotal_cents / 100.0) %></p>
   <% if @order.coupon %>
-    <p>Cupom <%= @order.coupon.code %>: -<%= number_to_currency(@order.discount_cents / 100.0, unit: "BRL") %></p>
+    <p>Cupom <%= @order.coupon.code %>: -<%= number_to_currency(@order.discount_cents / 100.0) %></p>
   <% end %>
-  <p>Frete: <%= number_to_currency(@order.shipping_cents / 100.0, unit: "BRL") %></p>
-  <p class="font-semibold mb-6">Total: <%= number_to_currency(@order.total_cents / 100.0, unit: "BRL") %></p>
+  <p>Frete: <%= number_to_currency(@order.shipping_cents / 100.0) %></p>
+  <p class="font-semibold mb-6">Total: <%= number_to_currency(@order.total_cents / 100.0) %></p>
 
   <h2 class="font-semibold mb-2">Endereço de entrega</h2>
   <p>

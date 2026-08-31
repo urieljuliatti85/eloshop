@@ -24,10 +24,10 @@
             <% if coupon.discount_type_percentage? %>
               <%= coupon.percentage %>%
             <% else %>
-              <%= number_to_currency(coupon.amount_cents / 100.0, unit: "BRL") %>
+              <%= number_to_currency(coupon.amount_cents / 100.0) %>
             <% end %>
           </td>
-          <td class="py-2"><%= coupon.minimum_subtotal_cents ? number_to_currency(coupon.minimum_subtotal_cents / 100.0, unit: "BRL") : "—" %></td>
+          <td class="py-2"><%= coupon.minimum_subtotal_cents ? number_to_currency(coupon.minimum_subtotal_cents / 100.0) : "—" %></td>
           <td class="py-2"><%= coupon.uses_count %>/<%= coupon.max_uses || "∞" %></td>
           <td class="py-2">
             <% if coupon.starts_at || coupon.expires_at %>

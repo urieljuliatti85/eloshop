@@ -3,7 +3,9 @@
 %>
 
 <div data-controller="gallery" class="flex flex-col gap-4">
-  <div class="aspect-square overflow-hidden rounded-2xl bg-brand-100">
+  <%# 4:3 no celular: a foto quadrada empurrava nome, preço e botão de compra
+      para fora da primeira tela. No desktop, onde há espaço, segue quadrada. %>
+  <div class="aspect-[4/3] overflow-hidden rounded-2xl bg-brand-100 md:aspect-square">
     <% if photos.any? %>
       <%= image_tag photos.first, class: "h-full w-full object-cover", alt: product.name, data: { "gallery-target": "main" } %>
     <% end %>

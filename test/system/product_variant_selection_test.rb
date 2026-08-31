@@ -34,6 +34,6 @@ class ProductVariantSelectionTest < ApplicationSystemTestCase
   private
 
   def formatted_price(variant)
-    ActionController::Base.helpers.number_to_currency(variant.price_cents / 100.0, unit: variant.product.currency)
+    ActionController::Base.helpers.number_to_currency(variant.price_cents / 100.0)
   end
 end

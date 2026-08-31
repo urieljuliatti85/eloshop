@@ -2,11 +2,13 @@
   subtitle = product.category&.name.presence || truncate(product.description.to_s.squish, length: 52)
   available = product.available_for_purchase?
 %>
-<article class="group relative flex flex-col bg-mist-100">
+<%# Sem moldura: a peça aparece sobre um neutro claro e o texto vem centrado
+    abaixo dela, com o preço fechando o bloco. %>
+<article class="group relative flex flex-col">
   <%= link_to product_path(product), class: "flex flex-1 flex-col" do %>
-    <div class="relative aspect-square overflow-hidden bg-brand-50">
+    <div class="relative aspect-square overflow-hidden rounded-2xl bg-mist-100">
       <% if product.main_image.attached? %>
-        <%= image_tag product.main_image, class: "h-full w-full object-cover", alt: product.name, loading: "lazy" %>
+        <%= image_tag product.main_image, class: "h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]", alt: product.name, loading: "lazy" %>
       <% end %>
 
       <% unless available %>
@@ -14,45 +16,48 @@
           <span class="rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white">Indisponível</span>
         </div>
       <% end %>
+
+      <% if product.availability_type_one_of_a_kind? %>
+        <span class="pointer-events-none absolute left-3 top-3 rounded-full bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white">Peça única</span>
+      <% elsif product.availability_type_made_to_order? %>
+        <span class="pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-ink">Sob encomenda</span>
+      <% end %>
     </div>
 
-    <div class="flex flex-1 flex-col gap-1.5 px-4 py-4 sm:gap-2 sm:py-5">
-      <h3 class="text-lg font-semibold leading-tight text-ink sm:text-xl"><%= product.name %></h3>
+    <div class="flex flex-1 flex-col items-center gap-1.5 px-2 pt-5 text-center">
+      <%# Altura de duas linhas reservada para o nome: sem isso, subtítulo e
+          preço dançam de card para card conforme o nome quebra ou não. %>
+      <h3 class="text-lg font-semibold leading-tight text-ink sm:min-h-[3.25rem]"><%= product.name %></h3>
       <% if subtitle.present? %>
         <p class="text-sm text-ink-muted"><%= subtitle %></p>
       <% end %>
       <%# data-product-price dá ao teste de sistema um alvo estável para
           verificar a ordem exibida, sem depender de classe de estilo. %>
-      <p data-product-price class="mt-auto pt-2 text-lg font-semibold text-ink">
+      <p data-product-price class="mt-auto pt-3 text-base text-ink">
         <% if product.has_variants? %>
-          <span class="text-sm font-normal text-ink-muted">a partir de</span>
+          <span class="text-ink-muted">A partir de</span>
         <% end %>
-        <%= number_to_currency(product.starting_price_cents / 100.0, unit: product.currency) %>
+        <%= number_to_currency(product.starting_price_cents / 100.0) %>
       </p>
     </div>
   <% end %>
 
-  <% if product.availability_type_one_of_a_kind? %>
-    <span class="pointer-events-none absolute left-3 top-3 rounded-full bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white">Peça única</span>
-  <% elsif product.availability_type_made_to_order? %>
-    <span class="pointer-events-none absolute left-3 top-3 rounded-full bg-ink px-3 py-1.5 text-xs font-semibold text-white">Sob encomenda</span>
-  <% end %>
-
-  <%# Ações rápidas do card: aparecem no hover, em telas grandes. Em telas
-      pequenas (sem hover) e no teclado o card inteiro leva à página do produto,
-      onde as mesmas ações existem — ver CLAUDE.md §61. Fica em `invisible`
-      (não só opacity-0) para que os botões escondidos não sejam focáveis nem
-      anunciados por leitor de tela enquanto o card está em repouso. %>
-  <div class="invisible absolute inset-0 hidden flex-col items-center justify-center gap-4 bg-ink/70 opacity-0 transition group-hover:visible group-hover:opacity-100 md:flex">
+  <%# Ação rápida: aparece no hover, em telas grandes. Em telas pequenas (sem
+      hover) e no teclado o card inteiro leva à página do produto, onde as
+      mesmas ações existem — ver CLAUDE.md §61. Fica em `invisible` (não só
+      opacity-0) para que o botão escondido não seja focável nem anunciado por
+      leitor de tela enquanto o card está em repouso. %>
+  <%# aspect-square casa a altura da área da imagem, para o botão pousar dentro
+      dela e não por cima do nome e do preço. Fica fora do <a> porque um
+      button_to é um <form>, que não pode aninhar dentro de um link. %>
+  <div class="invisible absolute inset-x-0 top-0 hidden aspect-square items-end justify-center pb-5 opacity-0 transition group-hover:visible group-hover:opacity-100 md:flex">
     <% if available && product.directly_purchasable? %>
       <%= button_to "Adicionar ao carrinho", cart_items_path, method: :post, params: { product_id: product.id },
-            class: "bg-white px-9 py-3 text-sm font-semibold text-brand-600 transition hover:bg-brand-50 cursor-pointer" %>
+            class: "cursor-pointer rounded-full bg-ink px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600" %>
     <% elsif available %>
       <%= link_to "Escolher opções", product_path(product),
-            class: "bg-white px-9 py-3 text-sm font-semibold text-brand-600 transition hover:bg-brand-50" %>
+            class: "rounded-full bg-ink px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600" %>
     <% end %>
-
-    <%= link_to "Ver detalhes", product_path(product), class: "text-sm font-semibold text-white underline-offset-4 hover:underline" %>
   </div>
 
   <div class="absolute right-3 top-3 z-10">

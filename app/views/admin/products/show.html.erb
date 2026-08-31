@@ -27,7 +27,7 @@
     <dd><%= @product.sku %></dd>
 
     <dt class="font-semibold">Preço</dt>
-    <dd><%= number_to_currency(@product.price_cents / 100.0, unit: @product.currency) %></dd>
+    <dd><%= number_to_currency(@product.price_cents / 100.0) %></dd>
 
     <dt class="font-semibold">Estoque</dt>
     <dd><%= @product.stock_quantity %></dd>
@@ -79,7 +79,7 @@
               <tr class="border-b">
                 <td class="py-2"><%= variant.to_label %></td>
                 <td class="py-2"><%= variant.sku %></td>
-                <td class="py-2"><%= number_to_currency(variant.price_cents / 100.0, unit: @product.currency) %></td>
+                <td class="py-2"><%= number_to_currency(variant.price_cents / 100.0) %></td>
                 <td class="py-2"><%= variant.stock_quantity %></td>
                 <td class="py-2"><%= variant.active? ? "Sim" : "Não" %></td>
                 <td class="py-2">

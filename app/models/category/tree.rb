@@ -1,60 +1,58 @@
-class Category
-  # A árvore de categorias inteira em uma leitura, respondida em memória.
-  #
-  # As perguntas de hierarquia do `Category` (breadcrumb, descendentes) sobem
-  # ou descem a árvore um nível por vez, e cada nível é uma ida ao banco. Isso
-  # é barato para uma categoria só — a PDP resolve com `includes(category:
-  # :parent)` — e caro para uma página que renderiza todas: o filtro do
-  # catálogo mostra o breadcrumb de cada categoria, e o custo era uma query
-  # por nível, por categoria.
-  #
-  # Carrega sempre a árvore completa de propósito: um `breadcrumb_name` sobre
-  # um recorte da árvore devolveria um caminho truncado, sem erro nenhum.
-  class Tree
-    def self.load(order: :name)
-      new(Category.order(order).to_a)
-    end
+# A árvore de categorias inteira em uma leitura, respondida em memória.
+#
+# As perguntas de hierarquia do `Category` (breadcrumb, descendentes) sobem
+# ou descem a árvore um nível por vez, e cada nível é uma ida ao banco. Isso
+# é barato para uma categoria só — a PDP resolve com `includes(category:
+# :parent)` — e caro para uma página que renderiza todas: o filtro do
+# catálogo mostra o breadcrumb de cada categoria, e o custo era uma query
+# por nível, por categoria.
+#
+# Carrega sempre a árvore completa de propósito: um `breadcrumb_name` sobre
+# um recorte da árvore devolveria um caminho truncado, sem erro nenhum.
+class Category::Tree
+  def self.load(order: :name)
+    new(Category.order(order).to_a)
+  end
 
-    attr_reader :categories
+  attr_reader :categories
 
-    def initialize(categories)
-      @categories = categories
-      @children = categories.group_by(&:parent_id)
-      @by_id = categories.index_by(&:id)
-    end
+  def initialize(categories)
+    @categories = categories
+    @children = categories.group_by(&:parent_id)
+    @by_id = categories.index_by(&:id)
+  end
 
-    # Categorias de topo, na ordem em que a árvore foi carregada.
-    def roots
-      Array(@children[nil])
-    end
+  # Categorias de topo, na ordem em que a árvore foi carregada.
+  def roots
+    Array(@children[nil])
+  end
 
-    # A própria categoria mais toda a subárvore abaixo dela — usado para
-    # filtrar produtos: uma categoria pai deve mostrar também os produtos das
-    # subcategorias, senão uma categoria só com filhas apareceria vazia.
-    def self_and_descendant_ids(category)
-      ids = [ category.id ]
-      queue = [ category.id ]
+  # A própria categoria mais toda a subárvore abaixo dela — usado para
+  # filtrar produtos: uma categoria pai deve mostrar também os produtos das
+  # subcategorias, senão uma categoria só com filhas apareceria vazia.
+  def self_and_descendant_ids(category)
+    ids = [ category.id ]
+    queue = [ category.id ]
 
-      until queue.empty?
-        Array(@children[queue.shift]).each do |child|
-          ids << child.id
-          queue << child.id
-        end
+    until queue.empty?
+      Array(@children[queue.shift]).each do |child|
+        ids << child.id
+        queue << child.id
       end
-
-      ids
     end
 
-    # Nome completo com a hierarquia, ex.: "Casa > Decoração".
-    def breadcrumb_name(category)
-      names = [ category.name ]
-      current = category
+    ids
+  end
 
-      while (current = @by_id[current.parent_id])
-        names.unshift(current.name)
-      end
+  # Nome completo com a hierarquia, ex.: "Casa > Decoração".
+  def breadcrumb_name(category)
+    names = [ category.name ]
+    current = category
 
-      names.join(" > ")
+    while (current = @by_id[current.parent_id])
+      names.unshift(current.name)
     end
+
+    names.join(" > ")
   end
 end

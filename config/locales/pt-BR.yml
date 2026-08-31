@@ -1,0 +1,12 @@
+pt-BR:
+  number:
+    currency:
+      format:
+        unit: "R$"
+        format: "%u %n"
+        separator: ","
+        delimiter: "."
+        precision: 2
+    format:
+      separator: ","
+      delimiter: "."
