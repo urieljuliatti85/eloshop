@@ -17,7 +17,7 @@
           <td class="py-2"><%= order.id %></td>
           <td class="py-2"><%= order.customer.name %></td>
           <td class="py-2"><%= order.status %></td>
-          <td class="py-2"><%= number_to_currency(order.total_cents / 100.0, unit: "BRL") %></td>
+          <td class="py-2"><%= number_to_currency(order.total_cents / 100.0) %></td>
           <td class="py-2"><%= link_to "Ver", admin_order_path(order) %></td>
         </tr>
       <% end %>

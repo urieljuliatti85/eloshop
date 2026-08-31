@@ -19,7 +19,7 @@
           <div>
             <%= link_to product.name, product_path(product), class: "font-semibold text-ink hover:text-brand-600" %>
             <p class="text-sm text-ink-muted">
-              <% if product.has_variants? %>a partir de <% end %><%= number_to_currency(product.starting_price_cents / 100.0, unit: product.currency) %>
+              <% if product.has_variants? %>a partir de <% end %><%= number_to_currency(product.starting_price_cents / 100.0) %>
             </p>
             <% unless product.available_for_purchase? %>
               <p class="mt-1 text-sm font-medium text-red-700">Indisponível no momento</p>

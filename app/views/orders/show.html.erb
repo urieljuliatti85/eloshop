@@ -26,7 +26,7 @@
             <p class="text-ink-muted">Prazo de produção: <%= item.production_time_snapshot %></p>
           <% end %>
         </div>
-        <p class="text-ink"><%= number_to_currency(item.subtotal_cents / 100.0, unit: "BRL") %></p>
+        <p class="text-ink"><%= number_to_currency(item.subtotal_cents / 100.0) %></p>
       </div>
     <% end %>
   </div>
@@ -34,17 +34,17 @@
   <div class="mt-4 space-y-2 text-sm">
     <div class="flex justify-between text-ink-muted">
       <span>Subtotal</span>
-      <span><%= number_to_currency(@order.subtotal_cents / 100.0, unit: "BRL") %></span>
+      <span><%= number_to_currency(@order.subtotal_cents / 100.0) %></span>
     </div>
     <% if @order.coupon %>
       <div class="flex justify-between text-ink-muted">
         <span>Cupom <%= @order.coupon.code %></span>
-        <span>-<%= number_to_currency(@order.discount_cents / 100.0, unit: "BRL") %></span>
+        <span>-<%= number_to_currency(@order.discount_cents / 100.0) %></span>
       </div>
     <% end %>
     <div class="flex justify-between text-ink-muted">
       <span>Frete</span>
-      <span><%= number_to_currency(@order.shipping_cents / 100.0, unit: "BRL") %></span>
+      <span><%= number_to_currency(@order.shipping_cents / 100.0) %></span>
     </div>
     <% if @order.shipment %>
       <div class="flex justify-between text-ink-muted">
@@ -54,7 +54,7 @@
     <% end %>
     <div class="flex justify-between text-base font-semibold text-ink">
       <span>Total</span>
-      <span><%= number_to_currency(@order.total_cents / 100.0, unit: "BRL") %></span>
+      <span><%= number_to_currency(@order.total_cents / 100.0) %></span>
     </div>
   </div>
 

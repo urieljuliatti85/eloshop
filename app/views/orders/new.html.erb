@@ -46,7 +46,7 @@
               <% end %>
               <span class="text-ink-muted">x<%= item.quantity %></span>
             </span>
-            <span class="text-ink"><%= number_to_currency(item.subtotal_cents / 100.0, unit: item.product.currency) %></span>
+            <span class="text-ink"><%= number_to_currency(item.subtotal_cents / 100.0) %></span>
           </div>
         <% end %>
       </div>
@@ -55,16 +55,16 @@
         <% if @cart.coupon %>
           <div class="flex justify-between text-ink-muted">
             <span>Cupom <%= @cart.coupon.code %></span>
-            <span>-<%= number_to_currency(@cart.discount_cents / 100.0, unit: "BRL") %></span>
+            <span>-<%= number_to_currency(@cart.discount_cents / 100.0) %></span>
           </div>
         <% end %>
         <div class="flex justify-between text-ink-muted">
           <span>Frete</span>
-          <span><%= @shipping ? number_to_currency(@shipping_cents / 100.0, unit: "BRL") : "Selecione um endereço" %></span>
+          <span><%= @shipping ? number_to_currency(@shipping_cents / 100.0) : "Selecione um endereço" %></span>
         </div>
         <div class="flex justify-between text-base font-semibold text-ink">
           <span>Total</span>
-          <span><%= @shipping ? number_to_currency((@cart.subtotal_cents - @cart.discount_cents + @shipping_cents) / 100.0, unit: "BRL") : "—" %></span>
+          <span><%= @shipping ? number_to_currency((@cart.subtotal_cents - @cart.discount_cents + @shipping_cents) / 100.0) : "—" %></span>
         </div>
       </div>
     </div>

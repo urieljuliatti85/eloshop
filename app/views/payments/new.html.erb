@@ -1,6 +1,6 @@
 <div class="w-full max-w-md">
   <h1 class="mb-2 text-2xl font-bold text-ink">Pagamento — Pedido #<%= @order.id %></h1>
-  <p class="mb-6 text-sm text-ink-muted">Valor: <%= number_to_currency(@payment.amount_cents / 100.0, unit: "BRL") %></p>
+  <p class="mb-6 text-sm text-ink-muted">Valor: <%= number_to_currency(@payment.amount_cents / 100.0) %></p>
 
   <% if @payment.paid? %>
     <p class="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">Pagamento aprovado.</p>

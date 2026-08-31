@@ -23,5 +23,17 @@ module Eloshop
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # A loja vende em reais para o Brasil: o locale define o símbolo e a
+    # pontuação do dinheiro em um lugar só. Antes cada view passava
+    # `unit: product.currency`, o que punha o código ISO no lugar do símbolo
+    # e imprimia "BRL249.00" em vez de "R$ 249,00".
+    config.i18n.default_locale = :"pt-BR"
+    config.i18n.available_locales = [ :"pt-BR", :en ]
+
+    # pt-BR.yml traduz só o formato do dinheiro. Sem este fallback, toda
+    # mensagem de validação viraria "Translation missing" — o Rails traz as
+    # dela apenas em inglês, e é de lá que elas continuam vindo.
+    config.i18n.fallbacks = [ :en ]
   end
 end
