@@ -40,15 +40,21 @@ class ProductsController < StorefrontController
     @total_pages = (@total_count / @per_page.to_f).ceil
     @page = [ params[:page].to_i, 1 ].max
     @products = scope
-      .includes(:product_variants, :personalization_options)
+      # :category entra porque o card do produto mostra o nome da categoria —
+      # sem isso é uma query por card (medido: 7 no catálogo com 10 produtos).
+      .includes(:product_variants, :personalization_options, category: :parent)
       .with_attached_main_image
       .limit(@per_page)
       .offset((@page - 1) * @per_page)
   end
 
   def show
-    @product = Product.active.includes(:product_variants).find_by!(slug: params[:slug])
-    @related_products = @product.related_products.includes(:product_variants, :personalization_options).with_attached_main_image
+    # category: :parent porque a PDP usa breadcrumb_name, que sobe a árvore de
+    # categorias — cada nível seria outra query.
+    @product = Product.active.includes(:product_variants, category: :parent).find_by!(slug: params[:slug])
+    @related_products = @product.related_products
+      .includes(:product_variants, :personalization_options, category: :parent)
+      .with_attached_main_image
     @reviews = @product.approved_reviews.includes(:customer)
     @existing_review = customer_authenticated? ? @product.reviews.find_by(customer: Current.customer) : nil
   end
