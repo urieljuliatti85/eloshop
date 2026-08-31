@@ -2,47 +2,45 @@ class HomeController < StorefrontController
   allow_unauthenticated_customer_access
 
   def show
-    categories = Category.order(:name).to_a
-    @categories = categories.select { |category| category.parent_id.nil? }
+    tree = Category::Tree.load
+    @categories = tree.roots
 
     # A categoria não tem imagem própria (não há necessidade de negócio para
     # mais um upload — CLAUDE.md §5): a capa é a foto do produto ativo mais
     # recente da categoria ou de alguma subcategoria dela.
-    descendants = descendant_ids_by_category(categories)
-    @category_covers = @categories.index_with do |category|
-      cover_product_for(descendants.fetch(category.id))
-    end
+    @category_covers = cover_products_by_category(tree)
   end
 
   private
 
-  # Category#self_and_descendant_ids consulta `children` a cada nível da
-  # recursão: na home, com 3 categorias de topo, isso custava 22 queries. Aqui
-  # a árvore inteira vem em uma leitura e é percorrida em memória.
-  def descendant_ids_by_category(categories)
-    children = categories.group_by(&:parent_id)
+  # Duas leituras fixas, independentes do número de categorias de topo: uma
+  # escolhe as capas, a outra carrega as escolhidas já com o anexo.
+  #
+  # Antes era uma busca por categoria, e cada uma arrastava o anexo, o blob e
+  # os variant records atrás de si — 5 queries por categoria (medido: 18 na
+  # home com 3 categorias de topo, +5 a cada categoria nova).
+  def cover_products_by_category(tree)
+    subtrees = @categories.index_with { |category| tree.self_and_descendant_ids(category) }
+    newest = newest_product_by_category(subtrees.values.flatten.uniq)
 
-    categories.index_by(&:id).transform_values do |category|
-      ids = [ category.id ]
-      queue = [ category.id ]
-
-      until queue.empty?
-        Array(children[queue.shift]).each do |child|
-          ids << child.id
-          queue << child.id
-        end
-      end
-
-      ids
+    cover_ids = subtrees.transform_values do |category_ids|
+      category_ids.filter_map { |id| newest[id] }.max_by(&:created_at)&.id
     end
+
+    covers = Product.where(id: cover_ids.values.compact).with_attached_main_image.index_by(&:id)
+    cover_ids.transform_values { |id| covers[id] }
   end
 
-  def cover_product_for(category_ids)
+  # DISTINCT ON devolve no máximo uma linha por categoria: o custo acompanha o
+  # número de categorias, não o tamanho do catálogo. A escolha entre as
+  # candidatas de uma subárvore é feita em memória porque "categoria de topo"
+  # é uma relação transitiva, que o GROUP BY não alcança.
+  def newest_product_by_category(category_ids)
     Product.active
       .where(category_id: category_ids)
       .where.associated(:main_image_attachment)
-      .with_attached_main_image
-      .order(created_at: :desc)
-      .first
+      .select("DISTINCT ON (products.category_id) products.id, products.category_id, products.created_at")
+      .order("products.category_id", "products.created_at DESC")
+      .index_by(&:category_id)
   end
 end
