@@ -20,12 +20,16 @@ class ProductsController < StorefrontController
     @per_page = PER_PAGE_OPTIONS.include?(params[:per_page].to_i) ? params[:per_page].to_i : PER_PAGE
 
     scope = Product.active.order(SORT_OPTIONS.fetch(@sort)[:order])
-    @categories = Category.order(:name)
+    # A árvore inteira em uma leitura: o filtro lateral mostra o breadcrumb de
+    # cada categoria, e resolver isso pelo Active Record custava uma query por
+    # nível, por categoria (medido: 5 das 24 queries do catálogo filtrado).
+    @category_tree = Category::Tree.load
+    @categories = @category_tree.categories
     @tags = Tag.order(:name)
     @materials = Material.order(:name)
     @techniques = Technique.order(:name)
-    @category = Category.find_by!(slug: params[:category]) if params[:category].present?
-    scope = scope.where(category_id: @category.self_and_descendant_ids) if @category
+    @category = find_category!(params[:category]) if params[:category].present?
+    scope = scope.where(category_id: @category_tree.self_and_descendant_ids(@category)) if @category
     scope = scope.matching_query(params[:q]) if params[:q].present?
     scope = scope.joins(:tags).where(tags: { slug: params[:tag] }) if params[:tag].present?
     scope = scope.joins(:materials).where(materials: { slug: params[:material] }) if params[:material].present?
@@ -46,6 +50,9 @@ class ProductsController < StorefrontController
       .with_attached_main_image
       .limit(@per_page)
       .offset((@page - 1) * @per_page)
+      # A view pergunta `@products.any?` antes de renderizar a grade; sem
+      # carregar aqui, isso vira um SELECT ... LIMIT 1 a mais por página.
+      .load
   end
 
   def show
@@ -55,7 +62,17 @@ class ProductsController < StorefrontController
     @related_products = @product.related_products
       .includes(:product_variants, :personalization_options, category: :parent)
       .with_attached_main_image
-    @reviews = @product.approved_reviews.includes(:customer)
+      .load
+    # `.load` porque o parcial pergunta `reviews.any?` antes de iterar; sem
+    # isso, a pergunta é um SELECT ... LIMIT 1 a mais.
+    @reviews = @product.approved_reviews.includes(:customer).load
     @existing_review = customer_authenticated? ? @product.reviews.find_by(customer: Current.customer) : nil
+  end
+  private
+
+  # A categoria do filtro sai da árvore já carregada: buscá-la por slug no
+  # banco seria uma query a mais para um registro que já está em memória.
+  def find_category!(slug)
+    @categories.find { |category| category.slug == slug } || raise(ActiveRecord::RecordNotFound)
   end
 end

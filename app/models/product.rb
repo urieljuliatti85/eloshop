@@ -117,6 +117,11 @@ class Product < ApplicationRecord
     reviews.visible.order(created_at: :desc)
   end
 
+  # A PDP e o JSON-LD pedem nota e contagem mais de uma vez cada, e cada
+  # chamada é uma agregação nova. Medido: das 6 chamadas em uma PDP com
+  # avaliações, o query cache do Active Record serve 4 — sobram 2 idas ao
+  # banco. Combinar as duas agregações economizaria 1 query ao custo de SQL
+  # cru e de uma memoização que envelhece no objeto; não compensa (§3, §51).
   def average_rating
     approved_reviews.average(:rating)&.round(1)
   end

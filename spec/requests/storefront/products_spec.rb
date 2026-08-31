@@ -129,4 +129,27 @@ RSpec.describe "Storefront products", type: :request do
       expect(data["offers"]["availability"]).to eq("https://schema.org/OutOfStock")
     end
   end
+  describe "custo de consulta" do
+    # O filtro lateral do catálogo mostra o breadcrumb de cada categoria, e
+    # resolvê-lo pelo Active Record custava uma query por nível, por
+    # categoria. A asserção é sobre o crescimento, não sobre um total
+    # absoluto: o número muda quando a página muda, a inclinação é que não
+    # pode voltar.
+    it "does not grow the catalog query count when categories are added" do
+      Product.create!(name: "Vaso do custo", sku: "PERF-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+      Category.create!(name: "Casa do custo").children.create!(name: "Decoração do custo")
+
+      get products_path
+      before = count_queries { get products_path }
+
+      raiz = Category.create!(name: "Moda do custo")
+      filha = raiz.children.create!(name: "Bolsas do custo")
+      filha.children.create!(name: "Bolsas de couro do custo")
+
+      get products_path
+      after = count_queries { get products_path }
+
+      expect(after).to eq(before)
+    end
+  end
 end

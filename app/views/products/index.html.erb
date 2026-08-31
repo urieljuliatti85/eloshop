@@ -1,12 +1,12 @@
 <%
   index_title = if @category
-    "#{@category.breadcrumb_name} | EloShop"
+    "#{@category_tree.breadcrumb_name(@category)} | EloShop"
   elsif params[:q].present?
     "Busca por \"#{params[:q]}\" | EloShop"
   else
     "Loja | EloShop — Artesanato e produtos feitos à mão"
   end
-  index_description = @category ? "Produtos artesanais da categoria #{@category.breadcrumb_name} na EloShop." : SeoHelper::DEFAULT_DESCRIPTION
+  index_description = @category ? "Produtos artesanais da categoria #{@category_tree.breadcrumb_name(@category)} na EloShop." : SeoHelper::DEFAULT_DESCRIPTION
 
   heading = @category&.name || (params[:q].present? ? "Busca por \"#{params[:q]}\"" : "Loja")
   first_result = @total_count.zero? ? 0 : (@page - 1) * @per_page + 1
@@ -29,7 +29,7 @@
         <% if @category %>
           <%= link_to "Loja", products_path, class: "font-medium text-ink hover:text-brand-600" %>
           <span class="mx-2" aria-hidden="true">&rsaquo;</span>
-          <span><%= @category.breadcrumb_name %></span>
+          <span><%= @category_tree.breadcrumb_name(@category) %></span>
         <% else %>
           <span><%= heading %></span>
         <% end %>
@@ -80,7 +80,7 @@
               <div class="flex flex-wrap gap-2">
                 <%= link_to "Todos", products_path, class: "rounded-full border border-gray-300 px-4 py-1.5 text-sm text-ink hover:border-brand-500 hover:text-brand-600" %>
                 <% @categories.each do |category| %>
-                  <%= link_to category.breadcrumb_name, products_path(request.query_parameters.merge(category: category.slug, page: nil)), class: "rounded-full border border-gray-300 px-4 py-1.5 text-sm text-ink hover:border-brand-500 hover:text-brand-600" %>
+                  <%= link_to @category_tree.breadcrumb_name(category), products_path(request.query_parameters.merge(category: category.slug, page: nil)), class: "rounded-full border border-gray-300 px-4 py-1.5 text-sm text-ink hover:border-brand-500 hover:text-brand-600" %>
                 <% end %>
               </div>
 

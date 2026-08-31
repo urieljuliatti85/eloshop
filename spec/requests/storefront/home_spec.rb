@@ -47,5 +47,65 @@ RSpec.describe "Storefront home", type: :request do
       expect(response.body).to include(%(<meta name="description" content="#{SeoHelper::DEFAULT_DESCRIPTION}">))
       expect(response.body).to include(%(<link rel="canonical" href="http://www.example.com/">))
     end
+
+    it "uses the newest active product of the subtree as the category cover" do
+      parent = Category.create!(name: "Casa da capa")
+      child = Category.create!(name: "Cozinha da capa", parent: parent)
+
+      product_with_cover(category: child, sku: "COVER-OLD", filename: "antiga.png", created_at: 2.days.ago)
+      product_with_cover(category: parent, sku: "COVER-NEW", filename: "recente.png", created_at: 1.hour.ago)
+
+      get root_path
+
+      expect(response.body).to include("recente.png")
+      expect(response.body).not_to include("antiga.png")
+    end
+
+    it "falls back to an older product when the newest one has no image" do
+      category = Category.create!(name: "Sala da capa")
+
+      product_with_cover(category: category, sku: "COVER-IMG", filename: "com-foto.png", created_at: 2.days.ago)
+      Product.create!(name: "Sem foto", sku: "COVER-NOIMG", price_cents: 1_000, stock_quantity: 1,
+                      currency: "BRL", status: :active, category: category, created_at: 1.hour.ago)
+
+      get root_path
+
+      expect(response.body).to include("com-foto.png")
+    end
+
+    it "ignores products that are not active" do
+      category = Category.create!(name: "Quarto da capa")
+
+      product_with_cover(category: category, sku: "COVER-DRAFT", filename: "rascunho.png",
+                         created_at: 1.hour.ago, status: :draft)
+
+      get root_path
+
+      expect(response.body).not_to include("rascunho.png")
+    end
+
+    # O custo da home crescia 5 queries por categoria de topo: cada capa era
+    # buscada sozinha e arrastava anexo, blob e variant records atrás de si.
+    # A asserção é sobre a invariante, não sobre um número absoluto — o total
+    # muda quando a página muda, o crescimento com o catálogo é que não pode
+    # voltar.
+    it "does not issue more queries when another top-level category is added" do
+      2.times { |i| product_with_cover(category: Category.create!(name: "Topo #{i}"), sku: "COVER-N#{i}", filename: "topo#{i}.png") }
+      get root_path
+      before = count_queries { get root_path }
+
+      3.upto(6) { |i| product_with_cover(category: Category.create!(name: "Topo #{i}"), sku: "COVER-N#{i}", filename: "topo#{i}.png") }
+      get root_path
+      after = count_queries { get root_path }
+
+      expect(after).to eq(before)
+    end
+  end
+
+  def product_with_cover(category:, sku:, filename:, created_at: Time.current, status: :active)
+    product = Product.create!(name: "Produto #{sku}", sku: sku, price_cents: 5_000, stock_quantity: 2,
+                              currency: "BRL", status: status, category: category, created_at: created_at)
+    product.main_image.attach(io: file_fixture("sample.png").open, filename: filename, content_type: "image/png")
+    product
   end
 end

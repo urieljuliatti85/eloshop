@@ -110,6 +110,42 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
         run: bin/rails rswag:specs:swaggerize
 
+  # Job separado do `test` de propósito: as duas suítes cobrem camadas
+  # diferentes (Minitest = models, services e integração; RSpec = endpoints e
+  # o OpenAPI), e juntas no mesmo job a primeira a falhar esconderia a outra.
+  minitest:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips
+
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      # Sem os testes de sistema: eles têm job próprio (`system-test`), com
+      # Chrome e a repetição que o flake conhecido exige.
+      - name: Run tests
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432
+        run: bin/rails db:test:prepare && bin/rails test
+
   system-test:
     runs-on: ubuntu-latest
 
