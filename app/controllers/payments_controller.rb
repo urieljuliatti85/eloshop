@@ -2,8 +2,10 @@ class PaymentsController < StorefrontController
   before_action :set_order
 
   def new
-    @payment = Payments::Authorize.new(order: @order).call
-    @webhook_secret = Gateways::FakeGateway::WEBHOOK_SECRET
+    gateway = Gateways.build
+    @payment = Payments::Authorize.new(order: @order, gateway: gateway).call
+    @simulated_gateway = gateway.is_a?(Gateways::FakeGateway)
+    @webhook_secret = Gateways::FakeGateway::WEBHOOK_SECRET if @simulated_gateway
   end
 
   private
