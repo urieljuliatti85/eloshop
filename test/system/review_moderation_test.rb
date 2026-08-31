@@ -24,6 +24,11 @@ class ReviewModerationTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Peças com história"
 
     visit admin_reviews_path
+    # ESTRESSOR TEMPORARIO: um execute_script imediatamente antes do clique.
+    # Ele amplifica a falha de ~5% para ~70%, com a mesma assinatura (nenhum
+    # evento de clique disparado), o que dá poder estatistico para comparar os
+    # perfis do Chrome. O vencedor precisa ser revalidado sem ele.
+    page.execute_script("window.__probe = true;")
     click_button "Aprovar"
     assert_text "Avaliação aprovada"
 
