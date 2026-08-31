@@ -24,8 +24,15 @@ class ReviewModerationTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Peças com história"
 
     visit admin_reviews_path
+    install_flake_probe
     click_button "Aprovar"
-    assert_text "Avaliação aprovada"
+    begin
+      assert_text "Avaliação aprovada"
+    rescue Minitest::Assertion
+      puts "== DIAGNOSTICO DO FLAKE =="
+      puts read_flake_probe
+      raise
+    end
 
     visit product_path(product.slug)
     assert_text "Chegou rápido e muito bem embalado"
@@ -33,6 +40,52 @@ class ReviewModerationTest < ApplicationSystemTestCase
   end
 
   private
+
+  # DIAGNOSTICO TEMPORARIO. Registra, no navegador, se o clique vira um evento
+  # submit e se alguem chamou preventDefault nele. Isso separa duas hipoteses
+  # que o log do servidor nao distingue: o clique nao alcancou o formulario, ou
+  # alcancou e o submit foi engolido antes de virar requisicao.
+  #
+  # Se a pagina navegar (caso de sucesso), a sonda se perde junto - o que ja e
+  # informacao: significa que o submit funcionou.
+  def install_flake_probe
+    page.execute_script(<<~JS)
+      window.__diag = {
+        turbo: !!window.Turbo,
+        started: !!(window.Turbo && window.Turbo.session && window.Turbo.session.started),
+        forms: document.querySelectorAll("form").length,
+        submits: [],
+        clicks: []
+      };
+      document.addEventListener("submit", function (e) {
+        window.__diag.submits.push({
+          fase: "capture",
+          action: e.target && e.target.action,
+          prevented: e.defaultPrevented
+        });
+      }, true);
+      document.addEventListener("submit", function (e) {
+        window.__diag.submits.push({
+          fase: "bubble",
+          action: e.target && e.target.action,
+          prevented: e.defaultPrevented
+        });
+      }, false);
+      document.addEventListener("click", function (e) {
+        window.__diag.clicks.push({
+          tag: e.target && e.target.tagName,
+          type: e.target && e.target.type,
+          texto: ((e.target && e.target.value) || "").slice(0, 20)
+        });
+      }, true);
+    JS
+  end
+
+  def read_flake_probe
+    page.evaluate_script("JSON.stringify(window.__diag || 'PAGINA NAVEGOU (sonda perdida)')")
+  rescue StandardError => e
+    "sonda ilegivel: #{e.class}"
+  end
 
   def sign_in_as_customer(customer)
     visit new_customer_session_path
