@@ -22,6 +22,19 @@ RSpec.describe "Carts", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(product.name)
     end
+
+    # A validação do CartItem barra a entrada, mas não reroda sozinha: um
+    # item adicionado enquanto o produto era active permanecia na tela
+    # depois da descontinuação, até o checkout recusar.
+    it "omits a product discontinued after it was added" do
+      post cart_items_path, params: { product_id: product.id, quantity: 1 }
+      product.discontinue!
+
+      get cart_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(product.name)
+    end
   end
 
   describe "POST /cart/apply_coupon" do

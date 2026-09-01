@@ -7,6 +7,7 @@ class CartsController < StorefrontController
 
   def show
     @cart = Current.cart
+    drop_discontinued_items
   end
 
   def apply_coupon
@@ -23,5 +24,24 @@ class CartsController < StorefrontController
   def remove_coupon
     Current.cart.update!(coupon: nil)
     redirect_to cart_path, notice: "Cupom removido."
+  end
+
+  private
+
+  # O CartItem valida a disponibilidade na entrada, mas nada reroda essa
+  # validação depois: um produto descontinuado enquanto já estava no
+  # carrinho continuava visível até o checkout recusar. Remove aqui, com
+  # aviso — o cliente precisa saber por que o item sumiu (§60). O aviso não
+  # nomeia o produto: descontinuado não pode aparecer em lugar nenhum, e o
+  # nome na tela é justamente o que se quer eliminar.
+  def drop_discontinued_items
+    removed = @cart.cart_items.joins(:product).merge(Product.discontinued).destroy_all
+    return if removed.empty?
+
+    flash.now[:alert] = if removed.one?
+      "Um item do seu carrinho não está mais à venda e foi removido."
+    else
+      "Alguns itens do seu carrinho não estão mais à venda e foram removidos."
+    end
   end
 end

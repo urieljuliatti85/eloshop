@@ -181,6 +181,14 @@ class Product < ApplicationRecord
 
   scope :publicly_visible, -> { active.joins(:seller).merge(Seller.approved) }
 
+  # Descontinuado é saída definitiva do catálogo: o produto não pode
+  # aparecer em lugar nenhum voltado ao cliente. `publicly_visible` já o
+  # exclui por exigir `active`, mas listas que partem de um vínculo do
+  # próprio cliente — favoritos, itens de carrinho — não passam por lá.
+  # Fonte única para esses casos (§19); nunca espalhar `where.not(status:
+  # :discontinued)` pela aplicação.
+  scope :not_discontinued, -> { where.not(status: :discontinued) }
+
   RELATED_PRODUCTS_LIMIT = 4
 
   # Sem categorias/tags (Fase 11 ainda não implementada) para basear uma
