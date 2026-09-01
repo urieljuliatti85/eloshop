@@ -55,4 +55,26 @@ RSpec.describe "Payments", type: :request do
       expect(response.body).not_to include('name="cvv"')
     end
   end
+
+  describe "GET /orders/:order_id/payment/status" do
+    it "returns the owner's current payment without creating a charge" do
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+
+      expect {
+        get status_order_payment_path(order)
+      }.not_to change(Payment, :count)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("payment-status")
+    end
+
+    it "does not expose another customer's payment" do
+      other_customer = Customer.create!(name: "Outro", email: "other-status@example.com", password: "password123")
+      post customer_session_path, params: { email: other_customer.email, password: "password123" }
+
+      get status_order_payment_path(order)
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end

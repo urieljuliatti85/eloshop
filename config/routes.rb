@@ -61,7 +61,9 @@ Rails.application.routes.draw do
   resource :customer_session, only: %i[new create destroy]
   resources :addresses, only: %i[new create]
   resources :orders, only: %i[new create show] do
-    resource :payment, only: %i[new]
+    resource :payment, only: %i[new] do
+      get :status
+    end
   end
 
   resource :wishlist, only: %i[show]

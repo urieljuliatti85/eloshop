@@ -5,7 +5,7 @@ module Gateways
     setup { @gateway = FakeGateway.new }
 
     test "authorize returns an intent with an external_id" do
-      intent = @gateway.authorize(order: orders(:one))
+      intent = @gateway.authorize(order: orders(:one), idempotency_key: SecureRandom.uuid)
 
       assert intent.external_id.present?
       assert_not intent.pix?, "o gateway simulado não emite PIX"

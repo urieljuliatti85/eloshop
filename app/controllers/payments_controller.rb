@@ -8,6 +8,11 @@ class PaymentsController < StorefrontController
     @webhook_secret = Gateways::FakeGateway::WEBHOOK_SECRET if @simulated_gateway
   end
 
+  def status
+    @payment = @order.payments.order(:created_at).last!
+    render partial: "payment", locals: { payment: @payment, order: @order, simulated_gateway: false, webhook_secret: nil }
+  end
+
   private
 
   def set_order

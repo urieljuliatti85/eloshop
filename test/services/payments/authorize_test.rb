@@ -2,6 +2,32 @@ require "test_helper"
 
 module Payments
   class AuthorizeTest < ActiveSupport::TestCase
+    class PixGateway
+      attr_reader :keys
+
+      def initialize(expires_at: 30.minutes.from_now, fail_once: false)
+        @expires_at = expires_at
+        @fail_once = fail_once
+        @keys = []
+      end
+
+      def name = "mercado_pago"
+
+      def authorize(order:, idempotency_key:)
+        @keys << idempotency_key
+        if @fail_once
+          @fail_once = false
+          raise Net::ReadTimeout
+        end
+
+        Gateways::Intent.new(
+          external_id: "mp-#{idempotency_key}",
+          qr_code: "pix-code",
+          expires_at: @expires_at
+        )
+      end
+    end
+
     def build_order
       customer = Customer.create!(name: "Cliente", email: "#{SecureRandom.hex(4)}@example.com", password: "password123")
       address = customer.addresses.create!(street: "Rua", number: "1", neighborhood: "B", city: "C", state: "SP", zip_code: "00000-000")
@@ -42,6 +68,35 @@ module Payments
 
       assert_not_equal failed_payment.id, retry_payment.id
       assert_equal 2, order.payments.count
+    end
+
+    test "replaces an expired pending payment with a new attempt" do
+      order = build_order
+      expired_gateway = PixGateway.new(expires_at: 1.minute.ago)
+      expired = Authorize.new(order: order, gateway: expired_gateway).call
+
+      current_gateway = PixGateway.new
+      current = Authorize.new(order: order, gateway: current_gateway).call
+
+      assert expired.reload.failed?
+      assert current.pending?
+      assert_not_equal expired.id, current.id
+      assert_not_equal expired.idempotency_key, current.idempotency_key
+    end
+
+    test "resumes a processing attempt with the same key after timeout" do
+      order = build_order
+      gateway = PixGateway.new(fail_once: true)
+
+      assert_raises(Net::ReadTimeout) { Authorize.new(order: order, gateway: gateway).call }
+      processing = order.payments.processing.sole
+
+      payment = Authorize.new(order: order, gateway: gateway).call
+
+      assert_equal processing.id, payment.id
+      assert_equal [ processing.idempotency_key, processing.idempotency_key ], gateway.keys
+      assert payment.pending?
+      assert_equal 1, order.payments.count
     end
   end
 end

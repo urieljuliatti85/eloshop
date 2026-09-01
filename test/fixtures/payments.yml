@@ -2,6 +2,7 @@ one:
   order: one
   gateway: fake
   external_id: fake_order_one_payment
+  idempotency_key: fixture-payment-one
   status: pending
   amount_cents: 10490
 
@@ -9,5 +10,6 @@ two:
   order: two
   gateway: fake
   external_id: fake_order_two_payment
+  idempotency_key: fixture-payment-two
   status: pending
   amount_cents: 11480

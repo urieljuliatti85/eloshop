@@ -1,0 +1,52 @@
+<div id="payment-status"
+     <% if payment.processing? || (payment.pending? && payment.pix_qr_code.present? && !payment.expired?) %>
+       data-controller="payment-status"
+       data-payment-status-url-value="<%= status_order_payment_path(order) %>"
+     <% end %>>
+  <% if payment.paid? %>
+    <p class="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">Pagamento aprovado.</p>
+  <% elsif payment.failed? || (payment.pending? && payment.expired?) %>
+    <p class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">Pagamento recusado ou expirado.</p>
+    <%= link_to "Tentar novamente", new_order_payment_path(order), class: "text-brand-600 hover:underline" %>
+  <% elsif payment.processing? %>
+    <p class="rounded-xl bg-brand-50 px-4 py-3 text-sm text-ink-muted" role="status">
+      Preparando a cobrança. Aguarde alguns instantes.
+    </p>
+  <% elsif payment.pix_qr_code.present? %>
+    <h2 class="mb-2 text-lg font-semibold text-ink">Pague com PIX</h2>
+    <p class="mb-6 text-sm text-ink-muted">
+      Escaneie o código no app do seu banco ou use o código copia-e-cola.
+      A confirmação é automática e pode levar alguns instantes.
+    </p>
+
+    <% if payment.pix_qr_code_base64.present? %>
+      <%= image_tag "data:image/png;base64,#{payment.pix_qr_code_base64}",
+                    alt: "QR code para pagamento via PIX",
+                    class: "mb-6 w-56 rounded-xl border border-gray-200" %>
+    <% end %>
+
+    <p class="mb-2 text-sm font-semibold text-ink">Código copia-e-cola</p>
+    <p class="mb-6 break-all rounded-xl bg-gray-50 px-4 py-3 font-mono text-xs text-ink-muted"><%= payment.pix_qr_code %></p>
+
+    <% if payment.expires_at.present? %>
+      <p class="text-sm text-ink-muted">Válido até <%= l payment.expires_at, format: :short %>.</p>
+    <% end %>
+  <% elsif simulated_gateway %>
+    <p class="mb-6 rounded-xl bg-brand-50 px-4 py-3 text-sm text-ink-muted">
+      Este é um gateway de pagamento simulado. Use os botões abaixo para simular a resposta do gateway.
+    </p>
+
+    <div class="flex gap-4">
+      <% %w[approved declined].each do |status| %>
+        <%= form_with url: fake_gateway_webhook_path, method: :post do |form| %>
+          <%= form.hidden_field :event_id, value: SecureRandom.hex(10) %>
+          <%= form.hidden_field :external_id, value: payment.external_id %>
+          <%= form.hidden_field :status, value: status %>
+          <%= form.hidden_field :secret, value: webhook_secret %>
+          <%= form.submit(status == "approved" ? "Aprovar pagamento" : "Recusar pagamento",
+                          class: "rounded-full px-6 py-3 text-sm font-semibold text-white cursor-pointer #{status == 'approved' ? 'bg-green-700 hover:bg-green-800' : 'bg-red-700 hover:bg-red-800'}") %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

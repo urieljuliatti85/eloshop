@@ -46,10 +46,10 @@ module Gateways
 
     # Cria uma cobrança PIX e devolve o QR code para exibir ao cliente.
     #
-    # A chave de idempotência é o idempotency_key do próprio pedido: se a
-    # requisição for repetida (timeout, retry), o Mercado Pago devolve a
-    # cobrança já criada em vez de cobrar de novo.
-    def authorize(order:)
+    # A chave pertence à tentativa de pagamento, não ao checkout. Ela continua
+    # estável quando a mesma tentativa é retomada após timeout, mas muda quando
+    # um PIX expirado exige uma cobrança nova.
+    def authorize(order:, idempotency_key:)
       require_access_token!
 
       response = post(
@@ -61,7 +61,7 @@ module Gateways
           external_reference: order.id.to_s,
           payer: { email: order.customer.email }
         },
-        headers: { "X-Idempotency-Key" => order.idempotency_key }
+        headers: { "X-Idempotency-Key" => idempotency_key }
       )
 
       pix = response.dig("point_of_interaction", "transaction_data") || {}

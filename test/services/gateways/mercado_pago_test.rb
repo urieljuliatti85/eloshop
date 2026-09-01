@@ -30,7 +30,7 @@ module Gateways
           }
         }
       ) do
-        intent = @gateway.authorize(order: @order)
+        intent = @gateway.authorize(order: @order, idempotency_key: "attempt-1")
 
         assert_equal "12345", intent.external_id
         assert_equal "00020126580014BR.GOV.BCB.PIX", intent.qr_code
@@ -40,14 +40,14 @@ module Gateways
       end
     end
 
-    # A chave de idempotência precisa ser estável por pedido: é ela que impede
-    # uma requisição repetida (timeout, retry) de virar segunda cobrança.
-    test "authorize sends the order idempotency key" do
+    # A chave é estável dentro da tentativa, mas uma tentativa nova recebe
+    # outra chave para não recuperar um PIX anterior já expirado.
+    test "authorize sends the payment attempt idempotency key" do
       captured = stub_request("id" => 1, "point_of_interaction" => {}) do
-        @gateway.authorize(order: @order)
+        @gateway.authorize(order: @order, idempotency_key: "attempt-2")
       end
 
-      assert_equal @order.idempotency_key, captured["X-Idempotency-Key"]
+      assert_equal "attempt-2", captured["X-Idempotency-Key"]
       body = JSON.parse(captured.body)
       assert_equal "pix", body["payment_method_id"]
       assert_equal @order.id.to_s, body["external_reference"]
@@ -56,7 +56,9 @@ module Gateways
     test "authorize fails loudly without an access token" do
       gateway = MercadoPago.new(access_token: nil, webhook_secret: WEBHOOK_SECRET)
 
-      assert_raises(MercadoPago::ConfigurationError) { gateway.authorize(order: @order) }
+      assert_raises(MercadoPago::ConfigurationError) do
+        gateway.authorize(order: @order, idempotency_key: "attempt-3")
+      end
     end
 
     test "payment_status translates gateway vocabulary into the domain's" do

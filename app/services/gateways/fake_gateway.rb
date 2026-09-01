@@ -15,7 +15,7 @@ module Gateways
       "fake"
     end
 
-    def authorize(order:)
+    def authorize(order:, idempotency_key:)
       Intent.new(external_id: "fake_#{SecureRandom.hex(10)}")
     end
 

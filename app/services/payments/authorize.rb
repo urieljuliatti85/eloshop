@@ -1,8 +1,7 @@
 module Payments
-  # Cria (ou reaproveita) o pagamento de um pedido. Idempotente em relação ao
-  # pedido: uma tentativa de pagamento repetida não gera múltiplas cobranças
-  # (ver docs/payments.md, "Idempotência") — mas uma tentativa recusada
-  # (`failed`) permite uma nova tentativa.
+  # Cria ou retoma uma tentativa de pagamento. A tentativa é persistida antes
+  # da chamada externa para que um timeout possa reutilizar a mesma chave de
+  # idempotência sem criar outra cobrança no gateway.
   class Authorize
     def initialize(order:, gateway: Gateways.build)
       @order = order
@@ -10,16 +9,14 @@ module Payments
     end
 
     def call
-      existing = @order.payments.where(status: %w[pending authorized paid]).order(:created_at).last
-      return existing if existing
+      payment = prepare_attempt
+      return payment unless payment.processing?
 
-      intent = @gateway.authorize(order: @order)
+      intent = @gateway.authorize(order: @order, idempotency_key: payment.idempotency_key)
 
-      @order.payments.create!(
-        gateway: @gateway.name,
+      payment.update!(
         external_id: intent.external_id,
         status: "pending",
-        amount_cents: @order.total_cents,
         # Só preenchido em meios de pagamento com QR (PIX). O domínio guarda o
         # código porque o cliente precisa vê-lo de novo ao recarregar a página,
         # e refazer a cobrança no gateway a cada visita geraria cobranças
@@ -28,6 +25,34 @@ module Payments
         pix_qr_code_base64: intent.qr_code_base64,
         expires_at: intent.expires_at
       )
+
+      payment
+    end
+
+    private
+
+    def prepare_attempt
+      @order.with_lock do
+        reusable = @order.payments.where(status: %w[authorized paid]).order(:created_at).last
+        return reusable if reusable
+
+        pending = @order.payments.pending.order(:created_at).last
+        if pending && !pending.expired?
+          return pending
+        elsif pending
+          pending.update!(status: "failed")
+        end
+
+        processing = @order.payments.processing.find_by(gateway: @gateway.name)
+        return processing if processing
+
+        @order.payments.create!(
+          gateway: @gateway.name,
+          status: "processing",
+          amount_cents: @order.total_cents,
+          idempotency_key: SecureRandom.uuid
+        )
+      end
     end
   end
 end

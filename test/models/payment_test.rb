@@ -23,4 +23,24 @@ class PaymentTest < ActiveSupport::TestCase
     payment = Payment.create!(order: orders(:one), gateway: "fake", external_id: SecureRandom.hex(10), amount_cents: 100)
     assert payment.pending?
   end
+
+  test "generates a unique idempotency key" do
+    payment = Payment.create!(order: orders(:one), gateway: "fake", external_id: SecureRandom.hex(10), amount_cents: 100)
+
+    assert payment.idempotency_key.present?
+    assert_not_equal payments(:one).idempotency_key, payment.idempotency_key
+  end
+
+  test "only considers a payment expired after its expiration time" do
+    payment = payments(:one)
+
+    payment.expires_at = 1.second.ago
+    assert payment.expired?
+
+    payment.expires_at = 1.second.from_now
+    assert_not payment.expired?
+
+    payment.expires_at = nil
+    assert_not payment.expired?
+  end
 end
