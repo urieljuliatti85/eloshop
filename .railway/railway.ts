@@ -47,7 +47,9 @@ export default defineRailway(() => {
     // plan, que é o detector de drift. O comportamento é o mesmo; só o
     // maxRetries precisa ser explícito, porque o default é 10.
     deploy: {
-      healthcheckPath: "/up",
+      // /up prova que o processo iniciou; /ready também confirma que o banco
+      // primário, dependência essencial de toda compra, aceita consultas.
+      healthcheckPath: "/ready",
       healthcheckTimeout: 30,
       restartPolicyMaxRetries: 3,
     },

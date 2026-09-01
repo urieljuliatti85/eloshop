@@ -41,7 +41,15 @@ module Payments
     test "creates a payment for the order" do
       order = build_order
 
-      payment = Authorize.new(order: order).call
+      payment = nil
+      capture_rails_events("payment.attempt_created") do |events|
+        payment = Authorize.new(order: order).call
+
+        assert_equal 1, events.size
+        assert_equal payment.id, events.first.dig(:payload, :payment_id)
+        assert_equal order.id, events.first.dig(:payload, :order_id)
+        assert_equal "fake", events.first.dig(:payload, :gateway)
+      end
 
       assert payment.persisted?
       assert_equal order.total_cents, payment.amount_cents

@@ -15,6 +15,7 @@ module Payments
     def call
       return if PaymentEvent.exists?(gateway_event_id: @event_id)
 
+      payment = nil
       ActiveRecord::Base.transaction do
         payment = Payment.find_by(external_id: @external_id)
         raise OrderNotFound, "pagamento não encontrado para external_id=#{@external_id}" unless payment
@@ -27,6 +28,16 @@ module Payments
 
         apply_status!(payment)
       end
+
+      Rails.event.notify(
+        "payment.webhook_applied",
+        payment_id: payment.id,
+        order_id: payment.order_id,
+        gateway: payment.gateway,
+        status: payment.status
+      )
+
+      payment
     rescue ActiveRecord::RecordNotUnique
       nil # evento concorrente já processado por outra requisição
     end

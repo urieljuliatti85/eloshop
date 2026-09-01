@@ -46,7 +46,15 @@ module Checkout
       product = build_product(stock_quantity: 5)
       cart = build_cart_with_item(product, quantity: 2)
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = nil
+      capture_rails_events("checkout.order_created") do |events|
+        order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+
+        assert_equal 1, events.size
+        assert_equal order.id, events.first.dig(:payload, :order_id)
+        assert_equal order.total_cents, events.first.dig(:payload, :amount_cents)
+        assert_equal 1, events.first.dig(:payload, :item_count)
+      end
 
       assert order.persisted?
       assert_equal 2000, order.subtotal_cents

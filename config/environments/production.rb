@@ -33,7 +33,7 @@ Rails.application.configure do
   config.force_ssl = true
 
   # Não redireciona o healthcheck (usado pelo load balancer/Kamal antes do TLS estar pronto).
-  config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
+  config.ssl_options = { redirect: { exclude: ->(request) { request.path.in?([ "/up", "/ready" ]) } } }
 
   # Log to STDOUT with the current request id as a default log tag.
   config.log_tags = [ :request_id ]
@@ -43,7 +43,7 @@ Rails.application.configure do
   config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
 
   # Prevent health checks from clogging up the logs.
-  config.silence_healthcheck_path = "/up"
+  config.silence_healthcheck_path = "/ready"
 
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
@@ -53,6 +53,9 @@ Rails.application.configure do
 
   # Replace the default in-process and non-durable queuing backend for Active Job.
   config.active_job.queue_adapter = :solid_queue
+  # Argumentos de jobs podem carregar e-mail, mensagem de contato ou outros
+  # dados pessoais. IDs, classe, fila, duração e falhas continuam nos eventos.
+  config.active_job.log_arguments = false
   config.solid_queue.connects_to = { database: { writing: :queue } }
 
   # Ignore bad email addresses and do not raise email delivery errors.

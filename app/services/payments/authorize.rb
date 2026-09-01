@@ -26,6 +26,15 @@ module Payments
         expires_at: intent.expires_at
       )
 
+      Rails.event.notify(
+        "payment.attempt_created",
+        payment_id: payment.id,
+        order_id: @order.id,
+        gateway: payment.gateway,
+        amount_cents: payment.amount_cents,
+        expires_at: payment.expires_at&.iso8601
+      )
+
       payment
     end
 

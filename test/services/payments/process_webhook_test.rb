@@ -16,7 +16,13 @@ module Payments
     test "approved event marks the payment as paid and confirms the order" do
       order, payment = build_order_with_payment
 
-      ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: payment.external_id, status: "approved").call
+      capture_rails_events("payment.webhook_applied") do |events|
+        ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: payment.external_id, status: "approved").call
+
+        assert_equal 1, events.size
+        assert_equal payment.id, events.first.dig(:payload, :payment_id)
+        assert_equal "paid", events.first.dig(:payload, :status)
+      end
 
       assert payment.reload.paid?
       assert order.reload.confirmed?

@@ -19,6 +19,15 @@ module ActiveSupport
     # um teste vazariam para o próximo (mesmo IP de teste em todos).
     setup { Rails.cache.clear }
 
-    # Add more helper methods to be used by all tests here...
+    def capture_rails_events(name)
+      events = []
+      subscriber = Object.new
+      subscriber.define_singleton_method(:emit) { |event| events << event }
+      Rails.event.subscribe(subscriber) { |event| event[:name] == name }
+
+      yield events
+    ensure
+      Rails.event.unsubscribe(subscriber) if subscriber
+    end
   end
 end

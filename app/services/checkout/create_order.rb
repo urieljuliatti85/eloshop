@@ -17,7 +17,14 @@ module Checkout
       existing_order = Order.find_by(idempotency_key: @idempotency_key)
       return existing_order if existing_order
 
-      create_order!
+      create_order!.tap do |order|
+        Rails.event.notify(
+          "checkout.order_created",
+          order_id: order.id,
+          amount_cents: order.total_cents,
+          item_count: order.order_items.size
+        )
+      end
     rescue ActiveRecord::RecordNotUnique
       Order.find_by!(idempotency_key: @idempotency_key)
     end
