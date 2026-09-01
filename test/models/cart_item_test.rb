@@ -36,6 +36,16 @@ class CartItemTest < ActiveSupport::TestCase
     assert_includes duplicate.errors[:product_id], "has already been taken"
   end
 
+  test "invalid when the cart already contains a product from another seller" do
+    cart = carts(:one)
+    product = products(:two)
+    product.update!(seller: sellers(:other), status: :active, stock_quantity: 1)
+    item = CartItem.new(cart: cart, product: product, quantity: 1)
+
+    assert_not item.valid?
+    assert_includes item.errors[:product], "deve ser do mesmo artesão dos outros itens do carrinho"
+  end
+
   test "invalid without a variant when the product has variants" do
     item = CartItem.new(cart: carts(:one), product: products(:with_variants), quantity: 1)
     assert_not item.valid?
@@ -49,7 +59,7 @@ class CartItemTest < ActiveSupport::TestCase
   end
 
   test "invalid with a variant that belongs to a different product" do
-    other_product = Product.create!(name: "Outro produto", sku: "OUTRO-VAR-001", price_cents: 1000, stock_quantity: 1, currency: "BRL", status: "active")
+    other_product = Product.create!(seller: sellers(:approved), name: "Outro produto", sku: "OUTRO-VAR-001", price_cents: 1000, stock_quantity: 1, currency: "BRL", status: "active")
     item = CartItem.new(cart: carts(:one), product: other_product, product_variant: product_variants(:one), quantity: 1)
     assert_not item.valid?
     assert_includes item.errors[:product_variant], "não pertence a este produto"

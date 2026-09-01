@@ -895,22 +895,15 @@ Essas informações devem ser fornecidas pelo negócio.
 Isso implica, no mínimo:
 
 - todo `Product` pertence a um `Seller`; a unicidade de `sku`/`slug` deixa de ser global e passa a ser escopada por vendedor
-- `Order`/carrinho podem conter itens de vendedores diferentes — o pedido precisa ser dividido por vendedor (frete/fulfillment)
-- `Payment` precisa suportar split/comissão entre plataforma e vendedor(es)
+- `Order` usa um `SellerOrder` por vendedor para isolar frete/fulfillment; no primeiro lançamento, cada checkout aceita apenas um vendedor porque o split público do Mercado Pago é 1:1. Checkout multi-vendedor só pode ser habilitado depois de acesso comercial ao split 1:N
+- `Payment` precisa suportar split: a plataforma recebe 15% do subtotal dos produtos após descontos, sem frete; a tarifa do Mercado Pago é separada e suportada pelo vendedor; reembolsos devolvem a comissão proporcionalmente
 - autorização precisa de um papel de vendedor, escopado ao próprio catálogo/pedidos, distinto do admin de plataforma (ver §37, §38)
 
 Ver Fases 22 e 23 do `ROADMAP.md` para a sequência de implementação.
 
-Decisões de negócio ainda pendentes, que não devem ser assumidas na implementação (ver §69):
+Decisões de negócio confirmadas: repasse automático; aprovação/KYC obrigatórios antes de publicar; nota fiscal e impostos sob responsabilidade do vendedor; cancelamentos, reembolsos e disputas decididos pela plataforma.
 
-- percentual/estrutura de comissão da plataforma
-- forma e periodicidade de repasse ao vendedor
-- onboarding e verificação (KYC) do vendedor
-- responsabilidade por nota fiscal/impostos por vendedor
-- se um pedido pode conter itens de vendedores diferentes ou o checkout separa em um pedido por vendedor
-- atribuição de cancelamento/reembolso/disputa entre vendedor e plataforma
-
-Não inicie a implementação das Fases 22/23 sem essas decisões estarem respondidas pelo negócio.
+Não contorne a limitação 1:1 criando múltiplos PIX para o mesmo checkout nem recebendo todo o valor na conta da plataforma para repasse manual.
 
 ## 35. Wishlist
 
@@ -1625,5 +1618,3 @@ Dependências desnecessárias
 O objetivo não é produzir a maior quantidade de código.
 
 O objetivo é construir um e-commerce confiável, simples de evoluir e adequado ao negócio de artesanato.
-
-

@@ -74,7 +74,7 @@ RSpec.describe "Admin categories", type: :request do
 
     it "does not destroy a category that still has products" do
       post session_path, params: { email_address: user.email_address, password: "password" }
-      product = Product.create!(name: "Vaso categoria", sku: "CAT-DEL-001", price_cents: 8_990, stock_quantity: 2, currency: "BRL", status: :active, category: category)
+      product = Product.create!(seller: approved_seller, name: "Vaso categoria", sku: "CAT-DEL-001", price_cents: 8_990, stock_quantity: 2, currency: "BRL", status: :active, category: category)
 
       expect do
         delete admin_category_path(category)

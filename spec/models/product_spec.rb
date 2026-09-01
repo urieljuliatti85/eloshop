@@ -10,6 +10,7 @@ RSpec.describe Product, type: :model do
 
   let(:valid_attributes) do
     {
+      seller: approved_seller,
       name: "Vaso artesanal azul",
       sku: "VASO-ARTE-001",
       price_cents: 8_990,
@@ -239,10 +240,10 @@ RSpec.describe Product, type: :model do
   end
 
   describe "metadata helpers" do
-    it "returns the slug in to_param" do
+    it "returns the stable id in to_param" do
       product = described_class.create!(valid_attributes.merge(slug: "slug-para-param", sku: "PARAM-001"))
 
-      expect(product.to_param).to eq(product.slug)
+      expect(product.to_param).to eq(product.id.to_s)
     end
 
     it "formats production time range" do

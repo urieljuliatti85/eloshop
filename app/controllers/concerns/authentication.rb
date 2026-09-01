@@ -40,7 +40,14 @@ module Authentication
     end
 
     def after_authentication_url
-      session.delete(:return_to_after_authenticating) || root_url
+      session.delete(:return_to_after_authenticating) || default_authenticated_url
+    end
+
+    def default_authenticated_url
+      return admin_root_url if Current.user.admin?
+      return seller_root_url if Current.user.seller?
+
+      root_url
     end
 
     def start_new_session_for(user)

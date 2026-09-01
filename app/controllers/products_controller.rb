@@ -19,7 +19,7 @@ class ProductsController < StorefrontController
     @sort = SORT_OPTIONS.key?(params[:sort]) ? params[:sort] : DEFAULT_SORT
     @per_page = PER_PAGE_OPTIONS.include?(params[:per_page].to_i) ? params[:per_page].to_i : PER_PAGE
 
-    scope = Product.active.order(SORT_OPTIONS.fetch(@sort)[:order])
+    scope = Product.publicly_visible.order(SORT_OPTIONS.fetch(@sort)[:order])
     # A árvore inteira em uma leitura: o filtro lateral mostra o breadcrumb de
     # cada categoria, e resolver isso pelo Active Record custava uma query por
     # nível, por categoria (medido: 5 das 24 queries do catálogo filtrado).
@@ -46,7 +46,7 @@ class ProductsController < StorefrontController
     @products = scope
       # :category entra porque o card do produto mostra o nome da categoria —
       # sem isso é uma query por card (medido: 7 no catálogo com 10 produtos).
-      .includes(:product_variants, :personalization_options, category: :parent)
+      .includes(:seller, :product_variants, :personalization_options, category: :parent)
       .with_attached_main_image
       .limit(@per_page)
       .offset((@page - 1) * @per_page)
@@ -58,9 +58,10 @@ class ProductsController < StorefrontController
   def show
     # category: :parent porque a PDP usa breadcrumb_name, que sobe a árvore de
     # categorias — cada nível seria outra query.
-    @product = Product.active.includes(:product_variants, category: :parent).find_by!(slug: params[:slug])
+    seller = Seller.approved.find_by!(slug: params[:seller_slug])
+    @product = seller.products.publicly_visible.includes(:product_variants, category: :parent).find_by!(slug: params[:slug])
     @related_products = @product.related_products
-      .includes(:product_variants, :personalization_options, category: :parent)
+      .includes(:seller, :product_variants, :personalization_options, category: :parent)
       .with_attached_main_image
       .load
     # `.load` porque o parcial pergunta `reviews.any?` antes de iterar; sem
@@ -68,6 +69,15 @@ class ProductsController < StorefrontController
     @reviews = @product.approved_reviews.includes(:customer).load
     @existing_review = customer_authenticated? ? @product.reviews.find_by(customer: Current.customer) : nil
   end
+
+  def legacy_show
+    matches = Product.publicly_visible.where(slug: params[:slug]).limit(2).to_a
+    raise ActiveRecord::RecordNotFound unless matches.one?
+
+    product = matches.first
+    redirect_to product_path(product.seller, product.slug), status: :moved_permanently
+  end
+
   private
 
   # A categoria do filtro sai da árvore já carregada: buscá-la por slug no

@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Admin reviews", type: :request do
   let(:user) { User.create!(email_address: "reviews-admin@example.com", password: "password", password_confirmation: "password") }
-  let(:product) { Product.create!(name: "Vaso review admin", sku: "REV-ADMIN-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active) }
+  let(:product) { Product.create!(seller: approved_seller, name: "Vaso review admin", sku: "REV-ADMIN-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active) }
   let(:review) { customer.reviews.create!(product: product, rating: 5, comment: "Ótimo") }
   let(:customer) { Customer.create!(name: "Cliente review admin", email: "review-admin@example.com", password: "password123") }
 
@@ -25,7 +25,7 @@ RSpec.describe "Admin reviews", type: :request do
 
     it "filters reviews by status" do
       post session_path, params: { email_address: user.email_address, password: "password" }
-      other_product = Product.create!(name: "Cesto review admin", sku: "REV-ADMIN-002", price_cents: 5_990, stock_quantity: 3, currency: "BRL", status: :active)
+      other_product = Product.create!(seller: approved_seller, name: "Cesto review admin", sku: "REV-ADMIN-002", price_cents: 5_990, stock_quantity: 3, currency: "BRL", status: :active)
       approved = customer.reviews.create!(product: other_product, rating: 4, comment: "Bom", status: "approved")
 
       get admin_reviews_path(status: "approved")

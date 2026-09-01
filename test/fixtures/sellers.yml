@@ -1,0 +1,16 @@
+approved:
+  name: EloShop
+  slug: eloshop
+  status: approved
+  approved_at: <%= 1.day.ago %>
+
+pending:
+  name: Ateliê Pendente
+  slug: atelier-pendente
+  status: pending
+
+other:
+  name: Outro Ateliê
+  slug: outro-atelie
+  status: approved
+  approved_at: <%= 2.days.ago %>

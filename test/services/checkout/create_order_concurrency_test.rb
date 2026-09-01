@@ -10,6 +10,7 @@ module Checkout
 
     test "only one of two simultaneous checkouts succeeds for the last unit" do
       product = Product.create!(
+        seller: sellers(:approved),
         name: "Peça única", sku: "CONC-#{SecureRandom.hex(4)}",
         price_cents: 1000, stock_quantity: 1, currency: "BRL", status: "active"
       )

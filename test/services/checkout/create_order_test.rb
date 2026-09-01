@@ -15,6 +15,7 @@ module Checkout
 
     def build_product(**attrs)
       Product.create!({
+        seller: sellers(:approved),
         name: "Produto de teste",
         sku: "SKU-#{SecureRandom.hex(4)}",
         price_cents: 1000,
@@ -64,6 +65,22 @@ module Checkout
       assert_equal 5, order.shipment.estimated_days
       assert_equal 3, product.reload.stock_quantity
       assert_empty cart.cart_items.reload
+    end
+
+    test "rejects a legacy or concurrently modified cart with more than one seller" do
+      first_product = build_product
+      second_product = build_product(name: "Segundo produto de teste")
+      cart = build_cart_with_item(first_product, quantity: 1)
+      cart.cart_items.create!(product: second_product, quantity: 1)
+      second_product.update!(seller: sellers(:other))
+      idempotency_key = SecureRandom.hex(10)
+
+      error = assert_raises(CreateOrder::Failed) do
+        CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: idempotency_key).call
+      end
+
+      assert_equal "O carrinho deve conter produtos de um único artesão.", error.message
+      assert_not Order.exists?(idempotency_key: idempotency_key)
     end
 
     test "uses the product's current price, not the price when it was added to the cart" do

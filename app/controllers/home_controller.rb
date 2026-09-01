@@ -27,7 +27,7 @@ class HomeController < StorefrontController
       category_ids.filter_map { |id| newest[id] }.max_by(&:created_at)&.id
     end
 
-    covers = Product.where(id: cover_ids.values.compact).with_attached_main_image.index_by(&:id)
+    covers = Product.where(id: cover_ids.values.compact).includes(:seller).with_attached_main_image.index_by(&:id)
     cover_ids.transform_values { |id| covers[id] }
   end
 
@@ -36,7 +36,7 @@ class HomeController < StorefrontController
   # candidatas de uma subárvore é feita em memória porque "categoria de topo"
   # é uma relação transitiva, que o GROUP BY não alcança.
   def newest_product_by_category(category_ids)
-    Product.active
+    Product.publicly_visible
       .where(category_id: category_ids)
       .where.associated(:main_image_attachment)
       .select("DISTINCT ON (products.category_id) products.id, products.category_id, products.created_at")

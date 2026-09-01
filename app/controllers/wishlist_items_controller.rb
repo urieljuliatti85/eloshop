@@ -23,7 +23,7 @@ class WishlistItemsController < StorefrontController
     product = item.product
 
     unless product.directly_purchasable?
-      redirect_to product_path(product), alert: "Escolha as opções do produto antes de adicionar ao carrinho."
+      redirect_to product_path(product.seller, product.slug), alert: "Escolha as opções do produto antes de adicionar ao carrinho."
       return
     end
 

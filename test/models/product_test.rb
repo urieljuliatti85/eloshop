@@ -2,6 +2,36 @@ require "test_helper"
 require "stringio"
 
 class ProductTest < ActiveSupport::TestCase
+  test "requires a seller" do
+    product = Product.new(name: "Peça", sku: "PECA-SEM-VENDEDOR", price_cents: 1000, stock_quantity: 1)
+
+    assert_not product.valid?
+    assert_includes product.errors[:seller], "must exist"
+  end
+
+  test "slug and SKU are unique per seller" do
+    original = products(:one)
+    duplicate = original.dup
+    duplicate.seller = sellers(:other)
+
+    assert duplicate.valid?
+    assert duplicate.save
+  end
+
+  test "seller must be approved before publishing" do
+    product = products(:two)
+    product.update!(seller: sellers(:pending))
+
+    error = assert_raises(Product::InvalidStatusTransition) { product.publish! }
+    assert_equal "o vendedor precisa estar aprovado antes da publicação", error.message
+  end
+
+  test "seller cannot change after the product participates in an order" do
+    product = products(:one)
+
+    assert_not product.update(seller: sellers(:other))
+    assert_includes product.errors[:seller], "não pode ser alterado depois que o produto participa de um pedido"
+  end
   test "invalid without name" do
     product = Product.new(products(:one).attributes.except("id", "name"))
     assert_not product.valid?
@@ -89,8 +119,8 @@ class ProductTest < ActiveSupport::TestCase
     assert_not out_of_stock.available_for_purchase?
   end
 
-  test "to_param returns the slug" do
-    assert_equal products(:one).slug, products(:one).to_param
+  test "to_param uses the stable id outside the seller-scoped storefront route" do
+    assert_equal products(:one).id.to_s, products(:one).to_param
   end
 
   test "has_variants? reflects whether the product has product_variants" do
@@ -289,25 +319,25 @@ class ProductTest < ActiveSupport::TestCase
   end
 
   test "low_stock includes active standard products at or below the threshold" do
-    product = Product.create!(name: "Baixo estoque", sku: "LOW-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: Product::LOW_STOCK_THRESHOLD, currency: "BRL", status: "active", availability_type: "standard")
+    product = Product.create!(seller: sellers(:approved), name: "Baixo estoque", sku: "LOW-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: Product::LOW_STOCK_THRESHOLD, currency: "BRL", status: "active", availability_type: "standard")
 
     assert_includes Product.low_stock, product
   end
 
   test "low_stock excludes products above the threshold" do
-    product = Product.create!(name: "Estoque normal", sku: "LOW-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: Product::LOW_STOCK_THRESHOLD + 1, currency: "BRL", status: "active", availability_type: "standard")
+    product = Product.create!(seller: sellers(:approved), name: "Estoque normal", sku: "LOW-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: Product::LOW_STOCK_THRESHOLD + 1, currency: "BRL", status: "active", availability_type: "standard")
 
     assert_not_includes Product.low_stock, product
   end
 
   test "low_stock excludes sold out products" do
-    product = Product.create!(name: "Esgotado", sku: "LOW-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 0, currency: "BRL", status: "sold_out", availability_type: "standard")
+    product = Product.create!(seller: sellers(:approved), name: "Esgotado", sku: "LOW-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 0, currency: "BRL", status: "sold_out", availability_type: "standard")
 
     assert_not_includes Product.low_stock, product
   end
 
   test "low_stock excludes made_to_order products" do
-    product = Product.create!(name: "Sob encomenda", sku: "LOW-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 0, currency: "BRL", status: "active", availability_type: "made_to_order", production_time_min_days: 1, production_time_max_days: 2)
+    product = Product.create!(seller: sellers(:approved), name: "Sob encomenda", sku: "LOW-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 0, currency: "BRL", status: "active", availability_type: "made_to_order", production_time_min_days: 1, production_time_max_days: 2)
 
     assert_not_includes Product.low_stock, product
   end

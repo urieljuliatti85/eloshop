@@ -1,0 +1,13 @@
+<div class="space-y-6">
+  <header><p class="admin-section-label">Marketplace</p><h1>Artesãos</h1><p class="mt-2 text-sm text-slate-500">Aprove ou suspenda vendedores antes que seus produtos sejam publicados.</p></header>
+  <div class="admin-card overflow-hidden">
+    <table class="admin-table">
+      <thead><tr><th>Ateliê</th><th>Contato</th><th>Status</th><th>Produtos</th><th></th></tr></thead>
+      <tbody>
+        <% @sellers.each do |seller| %>
+          <tr><td class="font-semibold"><%= seller.name %></td><td><%= seller.users.first&.email_address || "—" %></td><td><%= admin_status_badge(seller.status) %></td><td><%= seller.products.size %></td><td class="text-right"><%= link_to "Detalhes", admin_seller_path(seller), class: "admin-link" %></td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

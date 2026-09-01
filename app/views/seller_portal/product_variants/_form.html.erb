@@ -1,0 +1,24 @@
+<%= form_with model: [ :seller, product, product_variant ], class: "grid gap-5 rounded-2xl bg-white p-6 shadow-sm" do |form| %>
+  <% if product_variant.errors.any? %>
+    <div class="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+      <ul class="list-disc pl-5">
+        <% product_variant.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="grid gap-5 sm:grid-cols-2">
+    <div><%= form.label :sku, "SKU" %><%= form.text_field :sku, required: true, class: "mt-2 w-full rounded-xl border-gray-300" %></div>
+    <div><%= form.label :price_cents, "Preço em centavos" %><%= form.number_field :price_cents, min: 0, required: true, class: "mt-2 w-full rounded-xl border-gray-300" %></div>
+  </div>
+  <div class="grid gap-5 sm:grid-cols-3">
+    <div><%= form.label :size, "Tamanho" %><%= form.text_field :size, class: "mt-2 w-full rounded-xl border-gray-300" %></div>
+    <div><%= form.label :color, "Cor" %><%= form.text_field :color, class: "mt-2 w-full rounded-xl border-gray-300" %></div>
+    <div><%= form.label :material, "Material" %><%= form.text_field :material, class: "mt-2 w-full rounded-xl border-gray-300" %></div>
+  </div>
+  <div><%= form.label :stock_quantity, "Estoque" %><%= form.number_field :stock_quantity, min: 0, required: true, class: "mt-2 w-full rounded-xl border-gray-300" %></div>
+  <label class="flex items-center gap-3"><%= form.checkbox :active, class: "rounded border-gray-300" %><span>Variante ativa</span></label>
+  <%= form.submit "Salvar variante", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 font-semibold text-white" %>
+<% end %>

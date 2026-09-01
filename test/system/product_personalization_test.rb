@@ -5,7 +5,7 @@ class ProductPersonalizationTest < ApplicationSystemTestCase
     product = products(:with_personalization)
     customer = customers(:one)
 
-    visit product_path(product.slug)
+    visit product_path(product.seller, product.slug)
     fill_in "Nome gravado", with: "Maria"
     click_button "Adicionar ao carrinho"
 
@@ -25,10 +25,10 @@ class ProductPersonalizationTest < ApplicationSystemTestCase
   test "submitting without the required personalization field does not add the item to the cart" do
     product = products(:with_personalization)
 
-    visit product_path(product.slug)
+    visit product_path(product.seller, product.slug)
     click_button "Adicionar ao carrinho"
 
-    assert_current_path product_path(product.slug)
+    assert_current_path product_path(product.seller, product.slug)
     assert_no_current_path cart_path
   end
 

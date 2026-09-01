@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Painel do artesão | EloShop" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="min-h-screen bg-stone-100 text-ink">
+    <header class="border-b border-gray-200 bg-white">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div><p class="text-sm text-ink-muted">Painel do artesão</p><p class="font-bold"><%= current_seller.name %></p></div>
+        <nav class="flex items-center gap-5 text-sm font-semibold"><%= link_to "Visão geral", seller_root_path %><%= link_to "Produtos", seller_products_path %><%= link_to "Pedidos", seller_orders_path %><%= button_to "Sair", session_path, method: :delete, class: "text-ink-muted hover:text-ink" %></nav>
+      </div>
+    </header>
+    <main class="mx-auto max-w-6xl px-6 py-8">
+      <% if notice = flash[:notice] %><p class="mb-6 rounded-xl bg-green-50 p-4 text-green-800"><%= notice %></p><% end %>
+      <% if alert = flash[:alert] %><p class="mb-6 rounded-xl bg-red-50 p-4 text-red-800"><%= alert %></p><% end %>
+      <%= yield %>
+    </main>
+  </body>
+</html>

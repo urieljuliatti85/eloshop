@@ -1,6 +1,7 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  seller: approved
   name: Vaso artesanal azul
   slug: vaso-artesanal-azul
   description: Peça feita à mão em cerâmica.
@@ -11,6 +12,7 @@ one:
   status: active
 
 two:
+  seller: approved
   name: Caneca de cerâmica
   slug: caneca-ceramica
   description: Caneca artesanal pintada à mão.
@@ -21,6 +23,7 @@ two:
   status: draft
 
 three:
+  seller: approved
   name: Cesto de vime esgotado
   slug: cesto-de-vime-esgotado
   description: Cesto trançado à mão, sem estoque no momento.
@@ -31,6 +34,7 @@ three:
   status: active
 
 with_variants:
+  seller: approved
   name: Camiseta artesanal
   slug: camiseta-artesanal
   description: Camiseta feita à mão, disponível em mais de um tamanho.
@@ -41,6 +45,7 @@ with_variants:
   status: active
 
 with_personalization:
+  seller: approved
   name: Caneca personalizada
   slug: caneca-personalizada
   description: Caneca artesanal com nome gravado.

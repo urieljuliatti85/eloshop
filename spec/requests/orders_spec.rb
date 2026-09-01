@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Orders", type: :request do
   let(:customer) { Customer.create!(name: "Cliente checkout", email: "checkout@example.com", password: "password123") }
-  let(:product) { Product.create!(name: "Vaso checkout", sku: "CHK-001", price_cents: 10_000, stock_quantity: 3, currency: "BRL", status: :active) }
+  let(:product) { Product.create!(seller: approved_seller, name: "Vaso checkout", sku: "CHK-001", price_cents: 10_000, stock_quantity: 3, currency: "BRL", status: :active) }
 
   def sign_in_customer
     post customer_session_path, params: { email: customer.email, password: "password123" }

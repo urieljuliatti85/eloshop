@@ -6,16 +6,17 @@ class ReviewsController < StorefrontController
     @review.customer = Current.customer
 
     if @review.save
-      redirect_to product_path(@product), notice: "Obrigado! Sua avaliação foi enviada e será exibida após aprovação."
+      redirect_to product_path(@product.seller, @product.slug), notice: "Obrigado! Sua avaliação foi enviada e será exibida após aprovação."
     else
-      redirect_to product_path(@product), alert: @review.errors.full_messages.to_sentence
+      redirect_to product_path(@product.seller, @product.slug), alert: @review.errors.full_messages.to_sentence
     end
   end
 
   private
 
   def set_product
-    @product = Product.active.find_by!(slug: params[:product_slug])
+    seller = Seller.approved.find_by!(slug: params[:seller_slug])
+    @product = seller.products.publicly_visible.find_by!(slug: params[:product_slug])
   end
 
   def review_params

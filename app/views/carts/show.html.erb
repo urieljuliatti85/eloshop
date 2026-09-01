@@ -17,7 +17,7 @@
         </div>
 
         <div class="divide-y divide-gray-100">
-          <% @cart.cart_items.includes(:product, :product_variant).each do |item| %>
+          <% @cart.cart_items.includes({ product: :seller }, :product_variant).each do |item| %>
             <div class="grid grid-cols-[88px_1fr] items-center gap-4 py-8 sm:grid-cols-[88px_1fr_110px_140px_100px]">
               <div class="relative h-22 w-22 flex-none overflow-hidden rounded-xl bg-gray-50">
                 <% if item.product.main_image.attached? %>
@@ -30,7 +30,7 @@
               </div>
 
               <div>
-                <%= link_to item.product.name, product_path(item.product), class: "font-semibold text-ink hover:text-brand-600" %>
+                <%= link_to item.product.name, product_path(item.product.seller, item.product.slug), class: "font-semibold text-ink hover:text-brand-600" %>
                 <% if item.product_variant %>
                   <p class="text-sm text-ink-muted"><%= item.product_variant.to_label %></p>
                 <% end %>

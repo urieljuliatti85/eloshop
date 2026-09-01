@@ -34,6 +34,7 @@ RSpec.describe "Admin products", type: :request do
       expect do
         post admin_products_path, params: {
           product: {
+            seller_id: approved_seller.id,
             name: "Cesto de vime",
             description: "Cesto trançado à mão",
             price_cents: 5_990,
@@ -61,7 +62,7 @@ RSpec.describe "Admin products", type: :request do
   describe "PATCH /admin/products/:id" do
     it "updates the product name" do
       sign_in_as(user)
-      product = Product.create!(name: "Vaso original", sku: "PATCH-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL")
+      product = Product.create!(seller: approved_seller, name: "Vaso original", sku: "PATCH-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL")
 
       patch admin_product_path(product), params: { product: { name: "Vaso artesanal azul (edição limitada)" } }
 
@@ -73,7 +74,7 @@ RSpec.describe "Admin products", type: :request do
   describe "GET /admin/products/:id" do
     it "shows the product" do
       sign_in_as(user)
-      product = Product.create!(name: "Vaso detalhe", sku: "SHOW-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL")
+      product = Product.create!(seller: approved_seller, name: "Vaso detalhe", sku: "SHOW-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL")
 
       get admin_product_path(product)
 
@@ -84,7 +85,7 @@ RSpec.describe "Admin products", type: :request do
   describe "PATCH /admin/products/:id/publish" do
     it "publishes a draft product" do
       sign_in_as(user)
-      product = Product.create!(name: "Vaso publicar", sku: "PUB-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "draft")
+      product = Product.create!(seller: approved_seller, name: "Vaso publicar", sku: "PUB-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "draft")
 
       patch publish_admin_product_path(product)
 
@@ -94,7 +95,7 @@ RSpec.describe "Admin products", type: :request do
 
     it "rejects an invalid status transition" do
       sign_in_as(user)
-      product = Product.create!(name: "Vaso descontinuado", sku: "PUB-002", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "discontinued")
+      product = Product.create!(seller: approved_seller, name: "Vaso descontinuado", sku: "PUB-002", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "discontinued")
 
       patch publish_admin_product_path(product)
 
@@ -106,7 +107,7 @@ RSpec.describe "Admin products", type: :request do
   describe "PATCH /admin/products/:id/unpublish" do
     it "unpublishes an active product" do
       sign_in_as(user)
-      product = Product.create!(name: "Vaso ativo", sku: "UNPUB-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "active")
+      product = Product.create!(seller: approved_seller, name: "Vaso ativo", sku: "UNPUB-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "active")
 
       patch unpublish_admin_product_path(product)
 
@@ -118,7 +119,7 @@ RSpec.describe "Admin products", type: :request do
   describe "PATCH /admin/products/:id/discontinue" do
     it "discontinues a product" do
       sign_in_as(user)
-      product = Product.create!(name: "Vaso descontinuar", sku: "DISC-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "active")
+      product = Product.create!(seller: approved_seller, name: "Vaso descontinuar", sku: "DISC-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "active")
 
       patch discontinue_admin_product_path(product)
 

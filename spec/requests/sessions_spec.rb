@@ -19,7 +19,7 @@ RSpec.describe "Sessions", type: :request do
     it "creates a session with valid credentials" do
       post session_path, params: { email_address: user.email_address, password: "password" }
 
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(admin_root_path)
       expect(response.cookies).to have_key("session_id")
     end
 

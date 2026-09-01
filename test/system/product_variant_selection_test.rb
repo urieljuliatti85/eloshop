@@ -6,7 +6,7 @@ class ProductVariantSelectionTest < ApplicationSystemTestCase
     large = product_variants(:two)
     large.update!(stock_quantity: 5)
 
-    visit product_path(product.slug)
+    visit product_path(product.seller, product.slug)
 
     choose "G"
 
@@ -25,7 +25,7 @@ class ProductVariantSelectionTest < ApplicationSystemTestCase
     product_variants(:one).update!(stock_quantity: 0)
     product_variants(:two).update!(stock_quantity: 5)
 
-    visit product_path(product.slug)
+    visit product_path(product.seller, product.slug)
 
     assert_text "Sem estoque para esta combinação"
     assert_selector "input[type='submit'][disabled]"

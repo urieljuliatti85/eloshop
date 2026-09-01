@@ -25,7 +25,7 @@ class CartItemsControllerTest < ActionDispatch::IntegrationTest
       post cart_items_path, params: { product_id: products(:two).id, quantity: 1 }
     end
 
-    assert_redirected_to product_path(products(:two))
+    assert_redirected_to product_path(products(:two).seller, products(:two).slug)
   end
 
   test "does not add a quantity greater than available stock" do
@@ -76,7 +76,7 @@ class CartItemsControllerTest < ActionDispatch::IntegrationTest
       post cart_items_path, params: { product_id: products(:with_variants).id, quantity: 1 }
     end
 
-    assert_redirected_to product_path(products(:with_variants))
+    assert_redirected_to product_path(products(:with_variants).seller, products(:with_variants).slug)
   end
 
   test "adding two different variants of the same product creates two cart items" do
@@ -110,7 +110,7 @@ class CartItemsControllerTest < ActionDispatch::IntegrationTest
       post cart_items_path, params: { product_id: products(:with_personalization).id, quantity: 1 }
     end
 
-    assert_redirected_to product_path(products(:with_personalization))
+    assert_redirected_to product_path(products(:with_personalization).seller, products(:with_personalization).slug)
   end
 
   test "adding the same personalization twice sums the quantity" do

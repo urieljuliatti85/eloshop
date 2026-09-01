@@ -11,6 +11,12 @@ if Rails.env.local?
   end
 end
 
+seed_seller = Seller.find_or_create_by!(slug: "eloshop") do |seller|
+  seller.name = "EloShop"
+  seller.status = "approved"
+  seller.approved_at = Time.current
+end
+
 def find_or_create_named!(klass, name)
   klass.find_or_create_by!(name: name)
 end
@@ -360,7 +366,7 @@ catalog = [
 ]
 
 catalog.each do |item|
-  product = Product.find_or_initialize_by(sku: item[:sku])
+  product = seed_seller.products.find_or_initialize_by(sku: item[:sku])
   seed_existing_record = !product.new_record?
 
   # Em produção, um seed repetido não pode repor estoque nem preço de peça

@@ -9,7 +9,7 @@ class ReviewModerationTest < ApplicationSystemTestCase
     sign_in_as_customer(customer)
     assert_text "Login realizado com sucesso"
 
-    visit product_path(product.slug)
+    visit product_path(product.seller, product.slug)
     choose "5"
     fill_in "Comentário", with: "Chegou rápido e muito bem embalado"
     click_button "Enviar avaliação"
@@ -27,7 +27,7 @@ class ReviewModerationTest < ApplicationSystemTestCase
     click_button "Aprovar"
     assert_text "Avaliação aprovada"
 
-    visit product_path(product.slug)
+    visit product_path(product.seller, product.slug)
     assert_text "Chegou rápido e muito bem embalado"
     assert_text "★ 5.0"
   end

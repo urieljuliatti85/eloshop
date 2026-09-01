@@ -36,7 +36,7 @@ module Admin
     private
 
     def set_product
-      @product = Product.find_by!(slug: params[:product_id])
+      @product = Product.find(params[:product_id])
     end
 
     def set_personalization_option

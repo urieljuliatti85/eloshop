@@ -29,7 +29,7 @@
     <% elsif customer_authenticated? %>
       <h3 class="mb-3 font-semibold text-ink">Deixe sua avaliação</h3>
 
-      <%= form_with model: Review.new, url: product_reviews_path(product), class: "flex flex-col gap-4" do |form| %>
+      <%= form_with model: Review.new, url: product_reviews_path(product.seller, product.slug), class: "flex flex-col gap-4" do |form| %>
         <div>
           <label class="mb-1 block text-sm font-medium text-ink">Nota</label>
           <div class="flex gap-4">

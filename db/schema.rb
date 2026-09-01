@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_235900) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_01_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -273,6 +273,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_235900) do
     t.integer "price_cents", null: false
     t.integer "production_time_max_days"
     t.integer "production_time_min_days"
+    t.bigint "seller_id", null: false
     t.string "sku", null: false
     t.string "slug", null: false
     t.string "status", default: "draft", null: false
@@ -282,8 +283,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_235900) do
     t.integer "width_cm"
     t.index ["availability_type"], name: "index_products_on_availability_type"
     t.index ["category_id"], name: "index_products_on_category_id"
-    t.index ["sku"], name: "index_products_on_sku", unique: true
-    t.index ["slug"], name: "index_products_on_slug", unique: true
+    t.index ["seller_id", "sku"], name: "index_products_on_seller_id_and_sku", unique: true
+    t.index ["seller_id", "slug"], name: "index_products_on_seller_id_and_slug", unique: true
+    t.index ["seller_id"], name: "index_products_on_seller_id"
     t.index ["status"], name: "index_products_on_status"
     t.check_constraint "stock_quantity >= 0", name: "products_stock_quantity_check"
   end
@@ -302,6 +304,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_235900) do
     t.index ["product_id"], name: "index_reviews_on_product_id"
     t.index ["status"], name: "index_reviews_on_status"
     t.check_constraint "rating >= 1 AND rating <= 5", name: "reviews_rating_range_check"
+  end
+
+  create_table "sellers", force: :cascade do |t|
+    t.datetime "approved_at"
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["slug"], name: "index_sellers_on_slug", unique: true
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'approved'::character varying, 'suspended'::character varying]::text[])", name: "sellers_status_check"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -352,8 +365,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_235900) do
     t.string "email_address", null: false
     t.string "password_digest", null: false
     t.string "role", default: "admin", null: false
+    t.bigint "seller_id"
     t.datetime "updated_at", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
+    t.index ["seller_id"], name: "index_users_on_seller_id"
+    t.check_constraint "role::text = 'admin'::text AND seller_id IS NULL OR role::text = 'seller'::text AND seller_id IS NOT NULL", name: "users_role_seller_check"
   end
 
   create_table "wishlist_items", force: :cascade do |t|
@@ -392,10 +408,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_235900) do
   add_foreign_key "product_techniques", "techniques"
   add_foreign_key "product_variants", "products"
   add_foreign_key "products", "categories"
+  add_foreign_key "products", "sellers"
   add_foreign_key "reviews", "customers"
   add_foreign_key "reviews", "products"
   add_foreign_key "sessions", "users"
   add_foreign_key "shipments", "orders", on_delete: :cascade
+  add_foreign_key "users", "sellers"
   add_foreign_key "wishlist_items", "customers"
   add_foreign_key "wishlist_items", "products"
 end

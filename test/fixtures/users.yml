@@ -3,7 +3,21 @@
 one:
   email_address: one@example.com
   password_digest: <%= password_digest %>
+  role: admin
 
 two:
   email_address: two@example.com
   password_digest: <%= password_digest %>
+  role: admin
+
+seller:
+  email_address: seller@example.com
+  password_digest: <%= password_digest %>
+  role: seller
+  seller: approved
+
+other_seller:
+  email_address: other-seller@example.com
+  password_digest: <%= password_digest %>
+  role: seller
+  seller: other

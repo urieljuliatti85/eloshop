@@ -21,6 +21,7 @@ class CartItem < ApplicationRecord
   validate :variant_belongs_to_product
   validate :product_available_for_requested_quantity
   validate :personalizations_valid_for_product
+  validate :same_seller_as_cart
 
   def unit_price_cents
     product_variant&.price_cents || product.price_cents
@@ -148,5 +149,14 @@ class CartItem < ApplicationRecord
 
       errors.add(:personalizations, "#{option.label} é obrigatório")
     end
+  end
+
+  def same_seller_as_cart
+    return if cart.blank? || product.blank?
+
+    other_seller_ids = cart.cart_items.where.not(id: id).joins(:product).distinct.pluck("products.seller_id")
+    return if other_seller_ids.empty? || other_seller_ids == [ product.seller_id ]
+
+    errors.add(:product, "deve ser do mesmo artesão dos outros itens do carrinho")
   end
 end

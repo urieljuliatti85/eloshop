@@ -11,7 +11,7 @@
   <% if @products.any? %>
     <div class="admin-table-wrap">
       <table>
-        <thead><tr><th>Produto</th><th>SKU</th><th>Preço</th><th>Estoque</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>
+        <thead><tr><th>Produto</th><th>Artesão</th><th>SKU</th><th>Preço</th><th>Estoque</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>
         <tbody>
           <% @products.each do |product| %>
             <tr>
@@ -30,6 +30,7 @@
                   </span>
                 </div>
               </td>
+              <td><%= link_to product.seller.name, admin_seller_path(product.seller), class: "admin-link" %></td>
               <td class="font-mono text-xs"><%= product.sku %></td>
               <td class="font-semibold text-slate-900"><%= number_to_currency(product.price_cents.fdiv(100)) %></td>
               <td><span class="font-semibold <%= product.stock_quantity <= Product::LOW_STOCK_THRESHOLD ? 'text-amber-700' : 'text-slate-800' %>"><%= product.stock_quantity %></span></td>

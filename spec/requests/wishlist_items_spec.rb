@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Wishlist items", type: :request do
   let(:customer) { Customer.create!(name: "Cliente wishlist item", email: "wish-item@example.com", password: "password123") }
-  let(:product) { Product.create!(name: "Vaso wish item", sku: "WISH-ITEM-001", price_cents: 8_990, stock_quantity: 2, currency: "BRL", status: :active) }
+  let(:product) { Product.create!(seller: approved_seller, name: "Vaso wish item", sku: "WISH-ITEM-001", price_cents: 8_990, stock_quantity: 2, currency: "BRL", status: :active) }
 
   describe "POST /wishlist_items" do
     it "redirects unauthenticated visitors to customer login" do
@@ -63,7 +63,7 @@ RSpec.describe "Wishlist items", type: :request do
 
     it "does not move a product that requires choosing a variant" do
       post customer_session_path, params: { email: customer.email, password: "password123" }
-      variant_product = Product.create!(name: "Camisa variante", sku: "VAR-WISH-001", price_cents: 7_500, stock_quantity: 5, currency: "BRL", status: :active)
+      variant_product = Product.create!(seller: approved_seller, name: "Camisa variante", sku: "VAR-WISH-001", price_cents: 7_500, stock_quantity: 5, currency: "BRL", status: :active)
       ProductVariant.create!(product: variant_product, sku: "VAR-WISH-001-A", price_cents: 7_500, stock_quantity: 3, color: "Azul")
       item = customer.wishlist_items.create!(product: variant_product)
 
@@ -71,7 +71,7 @@ RSpec.describe "Wishlist items", type: :request do
         post move_to_cart_wishlist_item_path(item)
       end.not_to change(CartItem, :count)
 
-      expect(response).to redirect_to(product_path(variant_product))
+      expect(response).to redirect_to(product_path(variant_product.seller, variant_product.slug))
       expect(customer.wishlist_items.count).to eq(1)
     end
   end

@@ -1,0 +1,10 @@
+<div class="space-y-6">
+  <header class="flex items-start justify-between gap-4">
+    <div><%= link_to "← Voltar para artesãos", admin_sellers_path, class: "admin-link mb-3 inline-block text-sm" %><p class="admin-section-label">Marketplace</p><h1><%= @seller.name %></h1><p class="mt-2 text-sm text-slate-500"><%= @seller.users.first&.email_address %></p></div>
+    <div class="flex gap-2">
+      <% if @seller.approved? %><%= button_to "Suspender", suspend_admin_seller_path(@seller), method: :patch, class: "admin-button admin-button--danger" %><% else %><%= button_to "Aprovar", approve_admin_seller_path(@seller), method: :patch, class: "admin-button admin-button--brand" %><% end %>
+    </div>
+  </header>
+  <div class="admin-card p-6"><p class="admin-section-label">Status</p><div class="mt-2"><%= admin_status_badge(@seller.status) %></div><p class="mt-4 text-sm text-slate-500">Aprovado em: <%= @seller.approved_at ? l(@seller.approved_at, format: :short) : "—" %></p></div>
+  <div class="admin-card overflow-hidden"><div class="admin-card-header"><h2>Produtos</h2></div><table class="admin-table"><thead><tr><th>Produto</th><th>SKU</th><th>Status</th></tr></thead><tbody><% @products.each do |product| %><tr><td><%= link_to product.name, admin_product_path(product), class: "admin-link" %></td><td><%= product.sku %></td><td><%= admin_status_badge(product.status) %></td></tr><% end %></tbody></table></div>
+</div>

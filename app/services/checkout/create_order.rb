@@ -75,7 +75,7 @@ module Checkout
     # estável (product_id, depois product_variant_id) para evitar deadlock
     # quando um carrinho tem mais de um item.
     def lock_and_revalidate_cart_items!
-      cart_items = @cart.cart_items.includes(:product, :product_variant)
+      cart_items = @cart.cart_items.includes({ product: :seller }, :product_variant)
                         .order(:product_id, :product_variant_id).to_a
       raise Failed, "Carrinho vazio." if cart_items.empty?
 
@@ -84,7 +84,7 @@ module Checkout
         product.lock!
 
         if cart_item.product_variant
-          raise Failed, "#{product.name} não está mais disponível." unless product.active?
+          raise Failed, "#{product.name} não está mais disponível." unless product.available_for_purchase?
 
           lock_and_validate_variant!(cart_item)
         else
@@ -94,6 +94,10 @@ module Checkout
             raise Failed, "Estoque insuficiente para #{product.name}."
           end
         end
+      end
+
+      if cart_items.map { |cart_item| cart_item.product.seller_id }.uniq.many?
+        raise Failed, "O carrinho deve conter produtos de um único artesão."
       end
 
       cart_items

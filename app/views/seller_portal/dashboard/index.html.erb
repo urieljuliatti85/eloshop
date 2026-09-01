@@ -1,0 +1,19 @@
+<div class="flex flex-col gap-8">
+  <div>
+    <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Visão geral</p>
+    <h1 class="mt-2 text-3xl font-bold">Olá, <%= current_seller.name %></h1>
+  </div>
+
+  <% unless current_seller.approved? %>
+    <div class="rounded-2xl border border-amber-200 bg-amber-50 p-6">
+      <h2 class="font-bold text-amber-900">Cadastro em análise</h2>
+      <p class="mt-2 text-sm text-amber-800">A plataforma ainda precisa concluir a validação. Produtos não podem ser publicados enquanto o cadastro estiver <%= current_seller.status %>.</p>
+    </div>
+  <% end %>
+
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Produtos</p><p class="mt-2 text-3xl font-bold"><%= @products_count %></p></div>
+    <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Publicados</p><p class="mt-2 text-3xl font-bold"><%= @active_products_count %></p></div>
+    <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Estoque baixo</p><p class="mt-2 text-3xl font-bold"><%= @low_stock_count %></p></div>
+  </div>
+</div>

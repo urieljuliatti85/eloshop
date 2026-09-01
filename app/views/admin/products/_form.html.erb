@@ -10,6 +10,13 @@
   <% end %>
 
   <div>
+    <%= form.label :seller_id, "Artesão" %>
+    <%= form.select :seller_id,
+          options_for_select(Seller.order(:name).map { |seller| [ seller.name, seller.id ] }, form.object.seller_id),
+          { include_blank: "Selecione o artesão" }, class: "w-full", required: true %>
+  </div>
+
+  <div>
     <%= form.label :name, "Nome" %>
     <%= form.text_field :name, class: "w-full" %>
   </div>

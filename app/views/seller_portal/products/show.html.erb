@@ -1,0 +1,72 @@
+<div class="space-y-6">
+  <header class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <%= link_to "← Produtos", seller_products_path, class: "text-sm font-semibold text-brand-600" %>
+      <h1 class="mt-3 text-3xl font-bold"><%= @product.name %></h1>
+      <p class="mt-2 text-ink-muted">SKU <%= @product.sku %> · <%= @product.status.humanize %></p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <%= link_to "Editar", edit_seller_product_path(@product), class: "rounded-full border border-gray-300 bg-white px-5 py-2 text-sm font-semibold" %>
+      <% if @product.draft? %>
+        <%= button_to "Publicar", publish_seller_product_path(@product), method: :patch, class: "rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white" %>
+      <% elsif @product.active? %>
+        <%= button_to "Despublicar", unpublish_seller_product_path(@product), method: :patch, class: "rounded-full border border-gray-300 bg-white px-5 py-2 text-sm font-semibold" %>
+      <% end %>
+    </div>
+  </header>
+
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Preço</p><p class="mt-2 text-2xl font-bold"><%= number_to_currency(@product.price_cents.fdiv(100)) %></p></div>
+    <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Estoque</p><p class="mt-2 text-2xl font-bold"><%= @product.stock_quantity %></p></div>
+    <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Disponibilidade</p><p class="mt-2 text-lg font-bold"><%= @product.availability_type.humanize %></p></div>
+  </div>
+
+  <section class="rounded-2xl bg-white p-6 shadow-sm">
+    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Variantes</h2><p class="mt-1 text-sm text-ink-muted">Combinações comerciais reais de tamanho, cor ou material.</p></div><%= link_to "Nova variante", new_seller_product_product_variant_path(@product), class: "rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white" %></div>
+    <% if @product.product_variants.any? %>
+      <div class="mt-5 divide-y divide-gray-100">
+        <% @product.product_variants.order(:sku).each do |variant| %>
+          <div class="flex flex-wrap items-center justify-between gap-3 py-4">
+            <div><p class="font-semibold"><%= variant.sku %></p><p class="text-sm text-ink-muted"><%= [variant.size, variant.color, variant.material].compact_blank.join(" · ").presence || "Sem atributos" %> · Estoque <%= variant.stock_quantity %> · <%= variant.active? ? "Ativa" : "Inativa" %></p></div>
+            <div class="flex gap-2"><%= link_to "Editar", edit_seller_product_product_variant_path(@product, variant), class: "text-sm font-semibold text-brand-600" %><%= button_to "Remover", seller_product_product_variant_path(@product, variant), method: :delete, class: "text-sm font-semibold text-red-600", form: { data: { turbo_confirm: "Remover esta variante?" } } %></div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="mt-5 text-sm text-ink-muted">Este produto é vendido sem variantes.</p>
+    <% end %>
+  </section>
+
+  <section class="rounded-2xl bg-white p-6 shadow-sm">
+    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Personalizações</h2><p class="mt-1 text-sm text-ink-muted">Informações que o comprador deverá fornecer.</p></div><%= link_to "Novo campo", new_seller_product_personalization_option_path(@product), class: "rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white" %></div>
+    <% if @product.personalization_options.any? %>
+      <div class="mt-5 divide-y divide-gray-100">
+        <% @product.personalization_options.order(:label).each do |option| %>
+          <div class="flex flex-wrap items-center justify-between gap-3 py-4">
+            <div><p class="font-semibold"><%= option.label %></p><p class="text-sm text-ink-muted"><%= option.required? ? "Obrigatório" : "Opcional" %><%= " · até #{option.max_length} caracteres" if option.max_length.present? %></p></div>
+            <div class="flex gap-2"><%= link_to "Editar", edit_seller_product_personalization_option_path(@product, option), class: "text-sm font-semibold text-brand-600" %><%= button_to "Remover", seller_product_personalization_option_path(@product, option), method: :delete, class: "text-sm font-semibold text-red-600", form: { data: { turbo_confirm: "Remover este campo?" } } %></div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="mt-5 text-sm text-ink-muted">Nenhuma personalização solicitada.</p>
+    <% end %>
+  </section>
+
+  <section class="rounded-2xl bg-white p-6 shadow-sm">
+    <h2 class="text-xl font-bold">Galeria</h2>
+    <p class="mt-1 text-sm text-ink-muted">Adicione novas fotos ao editar o produto. A imagem principal é gerenciada separadamente.</p>
+    <% if @product.images.attached? %>
+      <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <% @product.images.each do |image| %>
+          <div class="overflow-hidden rounded-xl border border-gray-200">
+            <%= image_tag image, alt: "Foto de #{@product.name}", class: "aspect-square w-full object-cover" %>
+            <%= button_to "Remover foto", seller_product_product_image_path(@product, image), method: :delete, class: "w-full px-3 py-2 text-sm font-semibold text-red-600", form: { data: { turbo_confirm: "Remover esta foto?" } } %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="mt-5 text-sm text-ink-muted">Nenhuma foto adicional.</p>
+    <% end %>
+  </section>
+</div>

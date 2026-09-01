@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Cart items", type: :request do
   let(:product) do
-    Product.create!(name: "Vaso cart item", sku: "CI-001", price_cents: 5_000, stock_quantity: 3, currency: "BRL", status: :active)
+    Product.create!(seller: approved_seller, name: "Vaso cart item", sku: "CI-001", price_cents: 5_000, stock_quantity: 3, currency: "BRL", status: :active)
   end
 
   describe "POST /cart_items" do
@@ -31,7 +31,7 @@ RSpec.describe "Cart items", type: :request do
         post cart_items_path, params: { product_id: product.id, quantity: 10 }
       end.not_to change(CartItem, :count)
 
-      expect(response).to redirect_to(product_path(product))
+      expect(response).to redirect_to(product_path(product.seller, product.slug))
     end
 
     it "requires a variant when the product has variants" do

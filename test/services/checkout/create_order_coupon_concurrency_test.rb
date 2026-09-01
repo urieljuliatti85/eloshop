@@ -48,7 +48,7 @@ module Checkout
     def build_attempt(coupon)
       customer = Customer.create!(name: "Cliente #{SecureRandom.hex(4)}", email: "#{SecureRandom.hex(4)}@example.com", password: "password123")
       address = customer.addresses.create!(street: "Rua", number: "1", neighborhood: "B", city: "C", state: "SP", zip_code: "00000-000")
-      product = Product.create!(name: "Produto #{SecureRandom.hex(4)}", sku: "SKU-#{SecureRandom.hex(4)}", price_cents: 10_000, stock_quantity: 5, currency: "BRL", status: "active")
+      product = Product.create!(seller: sellers(:approved), name: "Produto #{SecureRandom.hex(4)}", sku: "SKU-#{SecureRandom.hex(4)}", price_cents: 10_000, stock_quantity: 5, currency: "BRL", status: "active")
       cart = Cart.create!(session_token: SecureRandom.hex(10), coupon: coupon)
       cart.cart_items.create!(product: product, quantity: 1)
       [ cart, customer, address, product ]
@@ -56,6 +56,8 @@ module Checkout
 
     def cleanup(coupon, attempts)
       return if coupon.nil?
+
+      attempts ||= []
 
       customer_ids = attempts.to_a.filter_map { |attempt| attempt[1]&.id }
       orders = Order.where(customer_id: customer_ids)

@@ -67,6 +67,7 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
 
   test "filters products by availability type" do
     made_to_order = Product.create!(
+      seller: sellers(:approved),
       name: "Encomenda especial", sku: "ENCOMENDA-001", price_cents: 1000,
       stock_quantity: 0, status: "active", availability_type: "made_to_order",
       production_time_min_days: 2, production_time_max_days: 4
@@ -79,14 +80,14 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "shows an active product without requiring authentication" do
-    get product_path(@active_product.slug)
+    get product_path(@active_product.seller, @active_product.slug)
 
     assert_response :success
     assert_select "h1", text: @active_product.name
   end
 
   test "returns 404 for a draft product accessed directly by slug" do
-    get product_path(@draft_product.slug)
+    get product_path(@draft_product.seller, @draft_product.slug)
 
     assert_response :not_found
   end
@@ -94,7 +95,7 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
   test "returns 404 for a discontinued product accessed directly by slug" do
     @active_product.discontinue!
 
-    get product_path(@active_product.slug)
+    get product_path(@active_product.seller, @active_product.slug)
 
     assert_response :not_found
   end
@@ -102,7 +103,7 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
   test "marks an out-of-stock active product as unavailable" do
     @active_product.update!(stock_quantity: 0)
 
-    get product_path(@active_product.slug)
+    get product_path(@active_product.seller, @active_product.slug)
 
     assert_response :success
     assert_select "p", text: "Indisponível"
@@ -111,7 +112,7 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
   test "shows a product with variants including the variant selector" do
     product = products(:with_variants)
 
-    get product_path(product.slug)
+    get product_path(product.seller, product.slug)
 
     assert_response :success
     assert_select "input[type='radio'][data-variant-selector-target='size']"
@@ -122,7 +123,7 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     product = products(:with_variants)
     product.product_variants.update_all(stock_quantity: 0)
 
-    get product_path(product.slug)
+    get product_path(product.seller, product.slug)
 
     assert_response :success
     assert_select "p", text: "Indisponível"
@@ -131,7 +132,7 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
   test "shows a product with personalization fields, marking the required one" do
     product = products(:with_personalization)
 
-    get product_path(product.slug)
+    get product_path(product.seller, product.slug)
 
     assert_response :success
     assert_select "input#personalization_#{personalization_options(:name_engraving).id}[required]"
@@ -144,7 +145,7 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     product.main_image.attach(io: File.open(file_fixture("sample.png")), filename: "cover.png", content_type: "image/png")
     product.images.attach(io: File.open(file_fixture("sample.png")), filename: "extra.png", content_type: "image/png")
 
-    get product_path(product.slug)
+    get product_path(product.seller, product.slug)
 
     assert_response :success
     assert_select "button[data-action='gallery#show']", count: 2
@@ -154,17 +155,17 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     product = products(:one)
     product.main_image.attach(io: File.open(file_fixture("sample.png")), filename: "cover.png", content_type: "image/png")
 
-    get product_path(product.slug)
+    get product_path(product.seller, product.slug)
 
     assert_response :success
     assert_select "button[data-action='gallery#show']", count: 0
   end
 
   test "shows related products excluding the current one" do
-    get product_path(@active_product.slug)
+    get product_path(@active_product.seller, @active_product.slug)
 
     assert_response :success
     assert_select "h2", text: "Você também pode gostar"
-    assert_select "a[href='#{product_path(@active_product.slug)}']", count: 0
+    assert_select "a[href='#{product_path(@active_product.seller, @active_product.slug)}']", count: 0
   end
 end

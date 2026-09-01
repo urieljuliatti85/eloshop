@@ -11,7 +11,7 @@ class ReviewsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "redirects an unauthenticated visitor to customer login" do
-    post product_reviews_path(@product), params: { review: { rating: 5, comment: "Ótimo" } }
+    post product_reviews_path(@product.seller, @product.slug), params: { review: { rating: 5, comment: "Ótimo" } }
     assert_redirected_to new_customer_session_path
   end
 
@@ -19,23 +19,23 @@ class ReviewsControllerTest < ActionDispatch::IntegrationTest
     sign_in
 
     assert_difference("Review.count", 1) do
-      post product_reviews_path(@product), params: { review: { rating: 5, comment: "Chegou rápido e bem embalado" } }
+      post product_reviews_path(@product.seller, @product.slug), params: { review: { rating: 5, comment: "Chegou rápido e bem embalado" } }
     end
 
     review = Review.last
     assert review.pending?
     assert_equal @customer, review.customer
-    assert_redirected_to product_path(@product)
+    assert_redirected_to product_path(@product.seller, @product.slug)
   end
 
   test "does not create a review with an invalid rating" do
     sign_in
 
     assert_no_difference("Review.count") do
-      post product_reviews_path(@product), params: { review: { rating: 9, comment: "Ótimo" } }
+      post product_reviews_path(@product.seller, @product.slug), params: { review: { rating: 9, comment: "Ótimo" } }
     end
 
-    assert_redirected_to product_path(@product)
+    assert_redirected_to product_path(@product.seller, @product.slug)
   end
 
   test "does not let a customer review the same product twice" do
@@ -43,14 +43,14 @@ class ReviewsControllerTest < ActionDispatch::IntegrationTest
     @customer.reviews.create!(product: @product, rating: 4, comment: "Bom")
 
     assert_no_difference("Review.count") do
-      post product_reviews_path(@product), params: { review: { rating: 5, comment: "De novo" } }
+      post product_reviews_path(@product.seller, @product.slug), params: { review: { rating: 5, comment: "De novo" } }
     end
   end
 
   test "a customer cannot set the status or verified_purchase directly" do
     sign_in
 
-    post product_reviews_path(@product), params: { review: { rating: 5, comment: "Ótimo", status: "approved", verified_purchase: true } }
+    post product_reviews_path(@product.seller, @product.slug), params: { review: { rating: 5, comment: "Ótimo", status: "approved", verified_purchase: true } }
 
     review = Review.last
     assert review.pending?

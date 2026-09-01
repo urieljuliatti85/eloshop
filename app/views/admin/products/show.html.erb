@@ -4,7 +4,7 @@
       <%= link_to "← Voltar para produtos", admin_products_path, class: "admin-link mb-3 inline-block text-sm" %>
       <p class="admin-section-label mb-2">Produto</p>
       <div class="flex flex-wrap items-center gap-3"><h1><%= @product.name %></h1><%= admin_status_badge(@product.status) %></div>
-      <p class="mt-2 text-sm text-slate-500">SKU <%= @product.sku %></p>
+      <p class="mt-2 text-sm text-slate-500">SKU <%= @product.sku %> · <%= link_to @product.seller.name, admin_seller_path(@product.seller), class: "admin-link" %></p>
     </div>
     <div class="flex flex-wrap gap-2">
       <%= link_to "Editar", edit_admin_product_path(@product), class: "admin-button admin-button--secondary" %>

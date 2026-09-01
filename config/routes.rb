@@ -7,6 +7,13 @@ Rails.application.routes.draw do
   namespace :admin do
     root to: "dashboard#index"
 
+    resources :sellers, only: %i[index show] do
+      member do
+        patch :approve
+        patch :suspend
+      end
+    end
+
     resources :customers, only: %i[index show]
 
     resources :products, only: %i[index show new create edit update] do
@@ -35,13 +42,39 @@ Rails.application.routes.draw do
     resources :orders, only: %i[index show]
   end
 
-  resources :products, only: %i[index show], param: :slug, path: "produtos" do
-    resources :reviews, only: %i[create]
+  resources :products, only: :index, path: "produtos"
+  scope "artesaos/:seller_slug" do
+    resources :products, only: :show, param: :slug, path: "produtos" do
+      resources :reviews, only: :create
+    end
+  end
+  get "produtos/:slug", to: "products#legacy_show", as: :legacy_product
+
+  get "seja-um-artesao", to: "seller_registrations#new", as: :new_seller_registration
+  post "seja-um-artesao", to: "seller_registrations#create", as: :seller_registration
+
+  scope module: :seller_portal, as: :seller, path: "painel" do
+    root to: "dashboard#index"
+    resources :products, except: :destroy do
+      member do
+        patch :publish
+        patch :unpublish
+        patch :discontinue
+      end
+
+      resources :product_variants, path: "variantes", except: %i[index show]
+      resources :personalization_options, path: "personalizacoes", except: %i[index show]
+      resources :product_images, path: "imagens", only: %i[destroy]
+    end
+    resources :orders, only: %i[index show]
   end
 
   namespace :api do
     namespace :v1 do
-      resources :products, only: %i[index show], param: :slug
+      resources :products, only: :index
+      scope "sellers/:seller_slug" do
+        resources :products, only: :show, param: :slug
+      end
     end
   end
 

@@ -19,7 +19,7 @@ xml.urlset "xmlns" => "http://www.sitemaps.org/schemas/sitemap/0.9" do
 
   @products.each do |product|
     xml.url do
-      xml.loc product_url(product)
+      xml.loc product_url(product.seller, product.slug)
       xml.lastmod product.updated_at.iso8601
       xml.changefreq "weekly"
     end

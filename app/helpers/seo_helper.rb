@@ -30,7 +30,7 @@ module SeoHelper
       "sku" => product.sku,
       "offers" => {
         "@type" => "Offer",
-        "url" => product_url(product),
+        "url" => product_url(product.seller, product.slug),
         "priceCurrency" => product.currency,
         "price" => product.starting_price_cents / 100.0,
         "availability" => product.available_for_purchase? ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"

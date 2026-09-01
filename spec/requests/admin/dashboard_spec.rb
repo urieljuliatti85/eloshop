@@ -15,8 +15,8 @@ RSpec.describe "Admin dashboard", type: :request do
     it "shows pending orders, low stock and sold out products, and pending reviews" do
       post session_path, params: { email_address: user.email_address, password: "password" }
       customer = Customer.create!(name: "Cliente dashboard", email: "dash@example.com", password: "password123")
-      pending_product = Product.create!(name: "Vaso baixo estoque", sku: "DASH-001", price_cents: 5_000, stock_quantity: 2, currency: "BRL", status: :active)
-      sold_out_product = Product.create!(name: "Vaso esgotado", sku: "DASH-002", price_cents: 5_000, stock_quantity: 0, currency: "BRL", status: :sold_out)
+      pending_product = Product.create!(seller: approved_seller, name: "Vaso baixo estoque", sku: "DASH-001", price_cents: 5_000, stock_quantity: 2, currency: "BRL", status: :active)
+      sold_out_product = Product.create!(seller: approved_seller, name: "Vaso esgotado", sku: "DASH-002", price_cents: 5_000, stock_quantity: 0, currency: "BRL", status: :sold_out)
       order = Order.create!(
         customer: customer, status: "pending", subtotal_cents: 1_000, shipping_cents: 500, total_cents: 1_500,
         shipping_address_snapshot: { street: "Rua", number: "1" }, idempotency_key: SecureRandom.uuid

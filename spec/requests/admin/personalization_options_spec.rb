@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Admin personalization options", type: :request do
   let(:user) { User.create!(email_address: "personalization-admin@example.com", password: "password", password_confirmation: "password") }
-  let(:product) { Product.create!(name: "Vaso personalização", sku: "PERS-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active) }
+  let(:product) { Product.create!(seller: approved_seller, name: "Vaso personalização", sku: "PERS-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active) }
   let(:option) { product.personalization_options.create!(label: "Nome gravado", required: true, max_length: 20) }
 
   describe "GET /admin/products/:product_id/personalization_options/new" do

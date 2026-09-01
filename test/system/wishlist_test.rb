@@ -8,7 +8,7 @@ class WishlistTest < ApplicationSystemTestCase
     sign_in_as_customer(customer)
     assert_text "Login realizado com sucesso"
 
-    visit product_path(product.slug)
+    visit product_path(product.seller, product.slug)
     click_button "Adicionar #{product.name} aos favoritos"
 
     visit wishlist_path

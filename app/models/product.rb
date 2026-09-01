@@ -46,19 +46,21 @@ class Product < ApplicationRecord
   has_many :personalization_options, dependent: :destroy
   has_many :wishlist_items, dependent: :destroy
   has_many :reviews, dependent: :destroy
+  has_many :order_items, dependent: :restrict_with_error
   has_many :product_tags, dependent: :destroy
   has_many :tags, through: :product_tags
   has_many :product_materials, dependent: :destroy
   has_many :materials, through: :product_materials
   has_many :product_techniques, dependent: :destroy
   has_many :techniques, through: :product_techniques
+  belongs_to :seller
   belongs_to :category, optional: true
 
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 
   validates :name, presence: true
-  validates :slug, presence: true, uniqueness: true
-  validates :sku, presence: true, uniqueness: true
+  validates :slug, presence: true, uniqueness: { scope: :seller_id }
+  validates :sku, presence: true, uniqueness: { scope: :seller_id }
   validates :currency, presence: true
   validates :price_cents, numericality: { greater_than_or_equal_to: 0 }
   validates :stock_quantity, numericality: { greater_than_or_equal_to: 0 }
@@ -71,6 +73,7 @@ class Product < ApplicationRecord
   validate :production_time_range_valid, if: :availability_type_made_to_order?
 
   validate :availability_type_immutable_while_has_variants, if: :availability_type_changed?
+  validate :seller_immutable_after_sale, if: :seller_id_changed?
 
   validate :main_image_content_type_allowed
   validate :main_image_size_within_limit
@@ -79,6 +82,8 @@ class Product < ApplicationRecord
   validate :images_count_within_limit
 
   def publish!
+    raise InvalidStatusTransition, "o vendedor precisa estar aprovado antes da publicação" unless seller.approved?
+
     transition_to!("active")
   end
 
@@ -95,6 +100,7 @@ class Product < ApplicationRecord
   # variantes (Fase 9) nunca é comprado "cru" — a decisão passa sempre pela
   # variante escolhida, então aqui só reflete se existe alguma opção comprável.
   def available_for_purchase?
+    return false unless seller&.approved?
     return false unless active?
     return product_variants.any?(&:available_for_purchase?) if has_variants?
     return true if availability_type_made_to_order?
@@ -148,10 +154,6 @@ class Product < ApplicationRecord
     "#{production_time_min_days} a #{production_time_max_days} dias úteis"
   end
 
-  def to_param
-    slug
-  end
-
   scope :matching_query, ->(query) {
     term = "%#{sanitize_sql_like(query.to_s.strip)}%"
     left_joins(:category, :tags, :materials, :techniques)
@@ -173,13 +175,15 @@ class Product < ApplicationRecord
     active.availability_type_standard.where(stock_quantity: 1..LOW_STOCK_THRESHOLD)
   }
 
+  scope :publicly_visible, -> { active.joins(:seller).merge(Seller.approved) }
+
   RELATED_PRODUCTS_LIMIT = 4
 
   # Sem categorias/tags (Fase 11 ainda não implementada) para basear uma
   # recomendação real — decisão do negócio: outros produtos ativos, mais
   # recentes primeiro. Reavaliar quando a Fase 11 existir.
   def related_products(limit: RELATED_PRODUCTS_LIMIT)
-    Product.active.where.not(id: id).order(created_at: :desc).limit(limit)
+    seller.products.publicly_visible.where.not(id: id).order(created_at: :desc).limit(limit)
   end
 
   # Capa (main_image) primeiro, depois o resto da galeria — main_image
@@ -256,5 +260,11 @@ class Product < ApplicationRecord
     return unless persisted? && has_variants?
 
     errors.add(:availability_type, "não pode ser alterado enquanto o produto tiver variantes cadastradas")
+  end
+
+  def seller_immutable_after_sale
+    return unless persisted? && order_items.exists?
+
+    errors.add(:seller, "não pode ser alterado depois que o produto participa de um pedido")
   end
 end

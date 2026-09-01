@@ -34,4 +34,12 @@ module AuthenticationHelpers
   def sign_out
     delete session_path if respond_to?(:delete)
   end
+
+  def approved_seller
+    @approved_seller ||= Seller.create!(
+      name: "Ateliê Spec #{SecureRandom.hex(4)}",
+      status: :approved,
+      approved_at: Time.current
+    )
+  end
 end

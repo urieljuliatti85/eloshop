@@ -7,6 +7,11 @@ RSpec.describe "api/v1/products", type: :request do
       id: { type: :integer },
       name: { type: :string },
       slug: { type: :string },
+      seller: {
+        type: :object,
+        properties: { name: { type: :string }, slug: { type: :string } },
+        required: %w[name slug]
+      },
       description: { type: :string, nullable: true },
       price_cents: { type: :integer },
       currency: { type: :string },
@@ -37,8 +42,8 @@ RSpec.describe "api/v1/products", type: :request do
       response "200", "produtos ativos encontrados" do
         schema LIST_SCHEMA
 
-        let!(:active_product) { Product.create!(name: "Vaso rswag spec", sku: "RSWAG-VASO-001", price_cents: 8990, stock_quantity: 3, status: :active) }
-        let!(:draft_product) { Product.create!(name: "Caneca rswag spec", sku: "RSWAG-CANECA-001", price_cents: 4990, stock_quantity: 5, status: :draft) }
+        let!(:active_product) { Product.create!(seller: approved_seller, name: "Vaso rswag spec", sku: "RSWAG-VASO-001", price_cents: 8990, stock_quantity: 3, status: :active) }
+        let!(:draft_product) { Product.create!(seller: approved_seller, name: "Caneca rswag spec", sku: "RSWAG-CANECA-001", price_cents: 4990, stock_quantity: 5, status: :draft) }
 
         run_test! do |response|
           body = JSON.parse(response.body)
@@ -59,7 +64,7 @@ RSpec.describe "api/v1/products", type: :request do
       response "200", "produtos ativos encontrados" do
         schema LIST_SCHEMA
 
-        let!(:sold_out_product) { Product.create!(name: "Vaso esgotado rswag spec", sku: "RSWAG-SOLDOUT-001", price_cents: 8990, stock_quantity: 0, status: :sold_out) }
+        let!(:sold_out_product) { Product.create!(seller: approved_seller, name: "Vaso esgotado rswag spec", sku: "RSWAG-SOLDOUT-001", price_cents: 8990, stock_quantity: 0, status: :sold_out) }
 
         run_test! do |response|
           body = JSON.parse(response.body)
@@ -72,7 +77,7 @@ RSpec.describe "api/v1/products", type: :request do
       response "200", "produtos ativos encontrados" do
         schema LIST_SCHEMA
 
-        let!(:discontinued_product) { Product.create!(name: "Produto descontinuado rswag spec", sku: "RSWAG-DISC-001", price_cents: 3990, stock_quantity: 0, status: :discontinued) }
+        let!(:discontinued_product) { Product.create!(seller: approved_seller, name: "Produto descontinuado rswag spec", sku: "RSWAG-DISC-001", price_cents: 3990, stock_quantity: 0, status: :discontinued) }
 
         run_test! do |response|
           body = JSON.parse(response.body)
@@ -91,7 +96,7 @@ RSpec.describe "api/v1/products", type: :request do
 
         let!(:products) do
           13.times.map do |i|
-            Product.create!(
+            Product.create!(seller: approved_seller,
               name: "Produto paginação rswag #{i}",
               sku: "RSWAG-PAGE-#{i}",
               price_cents: 1000 + i,
@@ -116,7 +121,7 @@ RSpec.describe "api/v1/products", type: :request do
       response "200", "produtos ativos encontrados" do
         schema LIST_SCHEMA
 
-        let!(:variant_product) { Product.create!(name: "Camiseta rswag spec", sku: "RSWAG-CAMISETA-001", price_cents: 5000, stock_quantity: 0, status: :active) }
+        let!(:variant_product) { Product.create!(seller: approved_seller, name: "Camiseta rswag spec", sku: "RSWAG-CAMISETA-001", price_cents: 5000, stock_quantity: 0, status: :active) }
         let!(:cheaper_variant) { ProductVariant.create!(product: variant_product, sku: "RSWAG-CAMISETA-001-P", price_cents: 4200, stock_quantity: 2, active: true, size: "P") }
         let!(:pricier_variant) { ProductVariant.create!(product: variant_product, sku: "RSWAG-CAMISETA-001-G", price_cents: 4800, stock_quantity: 2, active: true, size: "G") }
 
@@ -132,7 +137,7 @@ RSpec.describe "api/v1/products", type: :request do
         schema LIST_SCHEMA
 
         let!(:made_to_order_product) do
-          Product.create!(
+          Product.create!(seller: approved_seller,
             name: "Luminária sob encomenda rswag spec",
             sku: "RSWAG-MTO-001",
             price_cents: 15_000,
@@ -156,16 +161,18 @@ RSpec.describe "api/v1/products", type: :request do
     end
   end
 
-  path "/api/v1/products/{slug}" do
+  path "/api/v1/sellers/{seller_slug}/products/{slug}" do
     get "Exibe um produto ativo pelo slug" do
       tags "Products"
       produces "application/json"
       parameter name: :slug, in: :path, type: :string
+      parameter name: :seller_slug, in: :path, type: :string
+      let(:seller_slug) { approved_seller.slug }
 
       response "200", "produto encontrado" do
         schema PRODUCT_SCHEMA
 
-        let(:product) { Product.create!(name: "Vaso rswag spec", sku: "RSWAG-VASO-001", price_cents: 8990, stock_quantity: 3, status: :active) }
+        let(:product) { Product.create!(seller: approved_seller, name: "Vaso rswag spec", sku: "RSWAG-VASO-001", price_cents: 8990, stock_quantity: 3, status: :active) }
         let(:slug) { product.slug }
 
         run_test!
@@ -186,7 +193,7 @@ RSpec.describe "api/v1/products", type: :request do
       response "404", "produto não encontrado ou não disponível publicamente" do
         schema type: :object, properties: { error: { type: :string } }, required: %w[error]
 
-        let(:draft_product) { Product.create!(name: "Caneca rswag spec", sku: "RSWAG-CANECA-001", price_cents: 4990, stock_quantity: 5, status: :draft) }
+        let(:draft_product) { Product.create!(seller: approved_seller, name: "Caneca rswag spec", sku: "RSWAG-CANECA-001", price_cents: 4990, stock_quantity: 5, status: :draft) }
         let(:slug) { draft_product.slug }
 
         run_test!
@@ -195,7 +202,7 @@ RSpec.describe "api/v1/products", type: :request do
       response "404", "produto não encontrado ou não disponível publicamente" do
         schema type: :object, properties: { error: { type: :string } }, required: %w[error]
 
-        let(:sold_out_product) { Product.create!(name: "Vaso esgotado rswag show", sku: "RSWAG-SOLDOUT-SHOW-001", price_cents: 8990, stock_quantity: 0, status: :sold_out) }
+        let(:sold_out_product) { Product.create!(seller: approved_seller, name: "Vaso esgotado rswag show", sku: "RSWAG-SOLDOUT-SHOW-001", price_cents: 8990, stock_quantity: 0, status: :sold_out) }
         let(:slug) { sold_out_product.slug }
 
         run_test!
@@ -204,7 +211,7 @@ RSpec.describe "api/v1/products", type: :request do
       response "404", "produto não encontrado ou não disponível publicamente" do
         schema type: :object, properties: { error: { type: :string } }, required: %w[error]
 
-        let(:discontinued_product) { Product.create!(name: "Produto descontinuado rswag show", sku: "RSWAG-DISC-SHOW-001", price_cents: 3990, stock_quantity: 0, status: :discontinued) }
+        let(:discontinued_product) { Product.create!(seller: approved_seller, name: "Produto descontinuado rswag show", sku: "RSWAG-DISC-SHOW-001", price_cents: 3990, stock_quantity: 0, status: :discontinued) }
         let(:slug) { discontinued_product.slug }
 
         run_test!
@@ -213,7 +220,7 @@ RSpec.describe "api/v1/products", type: :request do
       response "200", "produto encontrado" do
         schema PRODUCT_SCHEMA
 
-        let!(:variant_product) { Product.create!(name: "Camiseta rswag show spec", sku: "RSWAG-CAMISETA-SHOW-001", price_cents: 5000, stock_quantity: 0, status: :active) }
+        let!(:variant_product) { Product.create!(seller: approved_seller, name: "Camiseta rswag show spec", sku: "RSWAG-CAMISETA-SHOW-001", price_cents: 5000, stock_quantity: 0, status: :active) }
         let!(:cheaper_variant) { ProductVariant.create!(product: variant_product, sku: "RSWAG-CAMISETA-SHOW-001-P", price_cents: 4200, stock_quantity: 2, active: true, size: "P") }
         let!(:pricier_variant) { ProductVariant.create!(product: variant_product, sku: "RSWAG-CAMISETA-SHOW-001-G", price_cents: 4800, stock_quantity: 2, active: true, size: "G") }
         let(:slug) { variant_product.slug }
@@ -229,7 +236,7 @@ RSpec.describe "api/v1/products", type: :request do
         schema PRODUCT_SCHEMA
 
         let(:made_to_order_product) do
-          Product.create!(
+          Product.create!(seller: approved_seller,
             name: "Luminária sob encomenda rswag show",
             sku: "RSWAG-MTO-SHOW-001",
             price_cents: 15_000,

@@ -9,7 +9,7 @@ RSpec.describe "Storefront home", type: :request do
 
   describe "GET /" do
     it "renders the storefront presentation without the catalog listing" do
-      product = Product.create!(name: "Vaso da home", sku: "HOME-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+      product = Product.create!(seller: approved_seller, name: "Vaso da home", sku: "HOME-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
 
       get root_path
 
@@ -65,7 +65,7 @@ RSpec.describe "Storefront home", type: :request do
       category = Category.create!(name: "Sala da capa")
 
       product_with_cover(category: category, sku: "COVER-IMG", filename: "com-foto.png", created_at: 2.days.ago)
-      Product.create!(name: "Sem foto", sku: "COVER-NOIMG", price_cents: 1_000, stock_quantity: 1,
+      Product.create!(seller: approved_seller, name: "Sem foto", sku: "COVER-NOIMG", price_cents: 1_000, stock_quantity: 1,
                       currency: "BRL", status: :active, category: category, created_at: 1.hour.ago)
 
       get root_path
@@ -103,7 +103,7 @@ RSpec.describe "Storefront home", type: :request do
   end
 
   def product_with_cover(category:, sku:, filename:, created_at: Time.current, status: :active)
-    product = Product.create!(name: "Produto #{sku}", sku: sku, price_cents: 5_000, stock_quantity: 2,
+    product = Product.create!(seller: approved_seller, name: "Produto #{sku}", sku: sku, price_cents: 5_000, stock_quantity: 2,
                               currency: "BRL", status: status, category: category, created_at: created_at)
     product.main_image.attach(io: file_fixture("sample.png").open, filename: filename, content_type: "image/png")
     product

@@ -3,7 +3,7 @@ require "test_helper"
 class FullPurchaseFlowTest < ActionDispatch::IntegrationTest
   test "product published to order confirmed, end to end" do
     admin = users(:one)
-    product = Product.create!(name: "Vaso de cerâmica", sku: "E2E-#{SecureRandom.hex(4)}", price_cents: 5000, stock_quantity: 3, currency: "BRL", status: "draft")
+    product = Product.create!(seller: sellers(:approved), name: "Vaso de cerâmica", sku: "E2E-#{SecureRandom.hex(4)}", price_cents: 5000, stock_quantity: 3, currency: "BRL", status: "draft")
 
     # Admin publica o produto
     sign_in_admin(admin)
@@ -15,7 +15,7 @@ class FullPurchaseFlowTest < ActionDispatch::IntegrationTest
     get products_path
     assert_select "a", text: /#{product.name}/
 
-    get product_path(product.slug)
+    get product_path(product.seller, product.slug)
     assert_response :success
 
     # Cliente se identifica

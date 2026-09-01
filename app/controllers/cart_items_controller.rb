@@ -28,7 +28,7 @@ class CartItemsController < StorefrontController
     if item.save
       redirect_to cart_path, notice: "Produto adicionado ao carrinho."
     else
-      fallback_path = item.product ? product_path(item.product) : products_path
+      fallback_path = item.product ? product_path(item.product.seller, item.product.slug) : products_path
       redirect_to fallback_path, alert: item.errors.full_messages.to_sentence
     end
   end

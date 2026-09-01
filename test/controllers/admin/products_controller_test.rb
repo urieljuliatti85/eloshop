@@ -31,6 +31,7 @@ class Admin::ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_difference("Product.count", 1) do
       post admin_products_path, params: {
         product: {
+          seller_id: sellers(:approved).id,
           name: "Cesto de vime",
           description: "Cesto trançado à mão",
           price_cents: 5990,
@@ -49,6 +50,7 @@ class Admin::ProductsControllerTest < ActionDispatch::IntegrationTest
 
     post admin_products_path, params: {
       product: {
+        seller_id: sellers(:approved).id,
         name: "Cesto catalogado", description: "Cesto", price_cents: 5990,
         currency: "BRL", sku: "CESTO-CATALOGADO-001", stock_quantity: 2,
         tag_names: "feito a mao, presente", material_names: "Vime",
@@ -106,6 +108,7 @@ class Admin::ProductsControllerTest < ActionDispatch::IntegrationTest
 
     post admin_products_path, params: {
       product: {
+        seller_id: sellers(:approved).id,
         name: "Escultura única", description: "Peça única", price_cents: 15_000,
         currency: "BRL", sku: "UNICA-ADMIN-001", stock_quantity: 1, availability_type: "one_of_a_kind"
       }
@@ -119,6 +122,7 @@ class Admin::ProductsControllerTest < ActionDispatch::IntegrationTest
 
     post admin_products_path, params: {
       product: {
+        seller_id: sellers(:approved).id,
         name: "Cadeira sob encomenda", description: "Feita sob encomenda", price_cents: 30_000,
         currency: "BRL", sku: "ENCOMENDA-ADMIN-001", stock_quantity: 0,
         availability_type: "made_to_order", production_time_min_days: 15, production_time_max_days: 20

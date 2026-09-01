@@ -71,7 +71,7 @@ class WishlistItemsControllerTest < ActionDispatch::IntegrationTest
       post move_to_cart_wishlist_item_path(item)
     end
 
-    assert_redirected_to product_path(products(:with_variants))
+    assert_redirected_to product_path(products(:with_variants).seller, products(:with_variants).slug)
     assert_equal 1, @customer.wishlist_items.count
   end
 end

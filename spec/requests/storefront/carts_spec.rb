@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Carts", type: :request do
   let(:product) do
-    Product.create!(name: "Vaso cart", sku: "CART-001", price_cents: 8_990, stock_quantity: 2, currency: "BRL", status: :active)
+    Product.create!(seller: approved_seller, name: "Vaso cart", sku: "CART-001", price_cents: 8_990, stock_quantity: 2, currency: "BRL", status: :active)
   end
 
   describe "GET /cart" do

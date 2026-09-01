@@ -5,7 +5,7 @@
 <%# Sem moldura: a peça aparece sobre um neutro claro e o texto vem centrado
     abaixo dela, com o preço fechando o bloco. %>
 <article class="group relative flex flex-col">
-  <%= link_to product_path(product), class: "flex flex-1 flex-col" do %>
+  <%= link_to product_path(product.seller, product.slug), class: "flex flex-1 flex-col" do %>
     <div class="relative aspect-square overflow-hidden rounded-2xl bg-mist-100">
       <% if product.main_image.attached? %>
         <%= image_tag product.main_image, class: "h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]", alt: product.name, loading: "lazy" %>
@@ -55,7 +55,7 @@
       <%= button_to "Adicionar ao carrinho", cart_items_path, method: :post, params: { product_id: product.id },
             class: "cursor-pointer rounded-full bg-ink px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600" %>
     <% elsif available %>
-      <%= link_to "Escolher opções", product_path(product),
+      <%= link_to "Escolher opções", product_path(product.seller, product.slug),
             class: "rounded-full bg-ink px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600" %>
     <% end %>
   </div>

@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Admin product variants", type: :request do
   let(:user) { User.create!(email_address: "variant-admin@example.com", password: "password", password_confirmation: "password") }
-  let(:product) { Product.create!(name: "Camiseta variante", sku: "VAR-ADMIN-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active, availability_type: "standard") }
+  let(:product) { Product.create!(seller: approved_seller, name: "Camiseta variante", sku: "VAR-ADMIN-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active, availability_type: "standard") }
   let(:variant) { product.product_variants.create!(sku: "VAR-ADMIN-001-M", price_cents: 7_500, stock_quantity: 4, size: "M") }
 
   describe "GET /admin/products/:product_id/product_variants/new" do
