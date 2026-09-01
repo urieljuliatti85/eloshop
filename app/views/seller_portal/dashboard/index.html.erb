@@ -29,7 +29,7 @@
         <% if current_seller.mercado_pago_connected? %>
           <%= button_to "Desconectar", seller_mercado_pago_connection_path, method: :delete, class: "rounded-full border border-red-200 px-5 py-2 text-sm font-semibold text-red-700", form: { data: { turbo_confirm: "Desconectar a conta e suspender a publicação dos produtos?" } } %>
         <% elsif @mercado_pago_oauth_configured %>
-          <%= button_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, method: :post, class: "rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white", form: { data: { turbo: false } } %>
+          <%= link_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, class: "inline-flex rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white", data: { turbo: false } %>
         <% end %>
       </div>
     </div>

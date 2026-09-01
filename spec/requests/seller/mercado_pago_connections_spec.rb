@@ -14,9 +14,9 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     get seller_root_path
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("Conectar Mercado Pago")
-    connect_form = Nokogiri::HTML(response.body).at_css("form[action='#{seller_mercado_pago_connect_path}']")
-    expect(connect_form["data-turbo"]).to eq("false")
+    connect_link = Nokogiri::HTML(response.body).at_css("a[href='#{seller_mercado_pago_connect_path}']")
+    expect(connect_link.text).to eq("Conectar Mercado Pago")
+    expect(connect_link["data-turbo"]).to eq("false")
   end
 
   it "starts authorization with an unpredictable state" do
@@ -24,7 +24,7 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
       "https://auth.mercadopago.com.br/authorization?state=#{CGI.escape(state)}"
     end
 
-    post seller_mercado_pago_connect_path
+    get seller_mercado_pago_connect_path
 
     expect(response).to redirect_to(%r{\Ahttps://auth\.mercadopago\.com\.br/authorization})
     expect(response.location).to include("state=")
@@ -100,7 +100,7 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     allow(oauth).to receive(:authorization_url) do |state:|
       "https://auth.mercadopago.com.br/authorization?state=#{CGI.escape(state)}"
     end
-    post seller_mercado_pago_connect_path
+    get seller_mercado_pago_connect_path
     Rack::Utils.parse_query(URI(response.location).query).fetch("state")
   end
 end
