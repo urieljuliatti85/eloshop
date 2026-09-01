@@ -21,7 +21,10 @@ class ReviewModerationTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Dashboard"
 
     visit admin_reviews_path
-    click_button "Aprovar"
+    # O click por coordenadas do Selenium era engolido intermitentemente no
+    # runner do GitHub sem sequer enviar o PATCH. Submeter o botão nativo
+    # continua exercitando formulário, controller, redirect e flash completos.
+    find_button("Aprovar").native.submit
     assert_text "Avaliação aprovada"
 
     visit product_path(product.seller, product.slug)
