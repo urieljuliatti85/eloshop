@@ -37,6 +37,16 @@ module AdminHelper
     tag.span(text, class: "admin-badge #{ADMIN_STATUS_TONES.fetch(value, 'admin-badge--neutral')}")
   end
 
+  def admin_inventory_item_label(item)
+    return item.name unless item.is_a?(ProductVariant)
+
+    "#{item.product.name} — #{item.to_label}"
+  end
+
+  def admin_inventory_item_path(item)
+    admin_product_path(item.is_a?(ProductVariant) ? item.product : item)
+  end
+
   def admin_icon(name, class_name: "size-5")
     paths = case name.to_sym
     when :dashboard

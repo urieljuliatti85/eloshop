@@ -171,8 +171,12 @@ class Product < ApplicationRecord
       .distinct
   }
 
+  # Quando há variantes, o estoque do produto não representa uma quantidade
+  # comercial. Cada ProductVariant passa a ser a fonte de verdade; por isso
+  # este escopo cobre somente produtos sem variantes.
+  scope :without_variants, -> { where.missing(:product_variants) }
   scope :low_stock, -> {
-    active.availability_type_standard.where(stock_quantity: 1..LOW_STOCK_THRESHOLD)
+    active.availability_type_standard.without_variants.where(stock_quantity: 1..LOW_STOCK_THRESHOLD)
   }
 
   scope :publicly_visible, -> { active.joins(:seller).merge(Seller.approved) }

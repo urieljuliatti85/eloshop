@@ -66,4 +66,13 @@ class ProductVariantTest < ActiveSupport::TestCase
     variant = ProductVariant.new(size: "P", color: "Azul", material: nil)
     assert_equal "P / Azul", variant.to_label
   end
+
+  test "inventory scopes use active variant stock, not the parent product stock" do
+    low_stock_variant = product_variants(:one)
+    sold_out_variant = product_variants(:two)
+    low_stock_variant.product.update!(status: :active, stock_quantity: 0)
+
+    assert_includes ProductVariant.low_stock, low_stock_variant
+    assert_includes ProductVariant.out_of_stock, sold_out_variant
+  end
 end

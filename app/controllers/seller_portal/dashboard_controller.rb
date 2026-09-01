@@ -6,7 +6,7 @@ module SellerPortal
 
       @products_count = products.count
       @active_products_count = products.active.count
-      @low_stock_count = products.low_stock.count
+      @low_stock_count = products.low_stock.count + ProductVariant.low_stock.where(products: { seller_id: current_seller.id }).count
       @orders_count = seller_orders.count
       @pending_orders_count = seller_orders.pending.count
       @seller_revenue_cents = seller_orders.sum(:seller_amount_cents) -

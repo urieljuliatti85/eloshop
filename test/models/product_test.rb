@@ -341,4 +341,11 @@ class ProductTest < ActiveSupport::TestCase
 
     assert_not_includes Product.low_stock, product
   end
+
+  test "low_stock excludes a product whose variants own the stock" do
+    product = Product.create!(seller: sellers(:approved), name: "Produto com variantes", sku: "LOW-VAR-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 0, currency: "BRL", status: "active")
+    product.product_variants.create!(sku: "LOW-VAR-P-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 2, size: "P")
+
+    assert_not_includes Product.low_stock, product
+  end
 end
