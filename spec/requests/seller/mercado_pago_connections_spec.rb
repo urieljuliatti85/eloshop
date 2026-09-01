@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe "Seller Mercado Pago connection", type: :request do
   let(:seller) { Seller.create!(name: "Ateliê OAuth") }
   let(:user) { User.create!(email_address: "oauth-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
-  let(:oauth) { instance_double(Marketplace::MercadoPagoOauth, configured?: true) }
+  let(:oauth) { instance_double(Marketplace::MercadoPagoOauth, configured?: true, sandbox?: false) }
 
   before do
     sign_in_as(user)
@@ -17,6 +17,16 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     connect_link = Nokogiri::HTML(response.body).at_css("a[href='#{seller_mercado_pago_connect_path}']")
     expect(connect_link.text).to eq("Conectar Mercado Pago")
     expect(connect_link["data-turbo"]).to eq("false")
+  end
+
+  it "identifies sandbox connections before the seller leaves the dashboard" do
+    allow(oauth).to receive(:sandbox?).and_return(true)
+
+    get seller_root_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Ambiente de teste")
+    expect(response.body).to include("Conectar conta de teste")
   end
 
   it "starts authorization with an unpredictable state" do

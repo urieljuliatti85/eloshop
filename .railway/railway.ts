@@ -64,6 +64,10 @@ export default defineRailway(() => {
     // segredo nenhum para o repositório.
     env: {
       DATABASE_URL: preserve(),
+      MERCADO_PAGO_MARKETPLACE_APP_ID: preserve(),
+      MERCADO_PAGO_MARKETPLACE_CLIENT_SECRET: preserve(),
+      MERCADO_PAGO_MARKETPLACE_REDIRECT_URI: preserve(),
+      MERCADO_PAGO_MARKETPLACE_SANDBOX: preserve(),
       RAILS_MASTER_KEY: preserve(),
       RAILS_STORAGE_PATH: preserve(),
     },

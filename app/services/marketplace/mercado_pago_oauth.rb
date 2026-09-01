@@ -13,17 +13,24 @@ module Marketplace
     TOKEN_PATH = "/oauth/token"
     OPEN_TIMEOUT = 5
     READ_TIMEOUT = 15
+    TRUE_VALUES = %w[1 true yes on].freeze
 
     def initialize(app_id: ENV["MERCADO_PAGO_MARKETPLACE_APP_ID"],
                    client_secret: ENV["MERCADO_PAGO_MARKETPLACE_CLIENT_SECRET"],
-                   redirect_uri: ENV["MERCADO_PAGO_MARKETPLACE_REDIRECT_URI"])
+                   redirect_uri: ENV["MERCADO_PAGO_MARKETPLACE_REDIRECT_URI"],
+                   sandbox: ENV["MERCADO_PAGO_MARKETPLACE_SANDBOX"])
       @app_id = app_id
       @client_secret = client_secret
       @redirect_uri = redirect_uri
+      @sandbox = TRUE_VALUES.include?(sandbox.to_s.downcase)
     end
 
     def configured?
       @app_id.present? && @client_secret.present? && @redirect_uri.present?
+    end
+
+    def sandbox?
+      @sandbox
     end
 
     def authorization_url(state:)
@@ -45,13 +52,15 @@ module Marketplace
 
       request = Net::HTTP::Post.new(TOKEN_PATH)
       request["Accept"] = "application/json"
-      request.set_form_data(
+      form_data = {
         client_id: @app_id,
         client_secret: @client_secret,
         grant_type: "authorization_code",
         code: code,
         redirect_uri: @redirect_uri
-      )
+      }
+      form_data[:test_token] = "true" if sandbox?
+      request.set_form_data(form_data)
 
       response = http.request(request)
       raise RequestFailed, "Mercado Pago recusou a vinculação (HTTP #{response.code})" unless response.is_a?(Net::HTTPSuccess)

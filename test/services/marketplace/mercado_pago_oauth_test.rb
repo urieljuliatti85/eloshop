@@ -23,13 +23,13 @@ module Marketplace
     end
 
     test "exchange returns the seller identifiers and token expiration" do
-      captured = stub_request(
+      captured = stub_request({
         "user_id" => 123_456,
         "access_token" => "seller-access-token",
         "refresh_token" => "seller-refresh-token",
         "expires_in" => 15_552_000,
         "live_mode" => true
-      ) do
+      }) do
         credentials = @oauth.exchange(code: "authorization-code")
 
         assert_equal "123456", credentials.user_id
@@ -43,6 +43,28 @@ module Marketplace
       assert_equal "authorization_code", body["grant_type"]
       assert_equal "authorization-code", body["code"]
       assert_equal "client-secret", body["client_secret"]
+      assert_nil body["test_token"]
+    end
+
+    test "sandbox exchange requests a test token explicitly" do
+      oauth = MercadoPagoOauth.new(
+        app_id: "app-123",
+        client_secret: "client-secret",
+        redirect_uri: "https://eloshop.example/painel/mercado-pago/callback",
+        sandbox: "true"
+      )
+
+      captured = stub_request({
+        "user_id" => 123_456,
+        "access_token" => "seller-test-access-token",
+        "refresh_token" => "seller-test-refresh-token",
+        "expires_in" => 15_552_000,
+        "live_mode" => false
+      }, oauth: oauth) { oauth.exchange(code: "sandbox-authorization-code") }
+
+      body = Rack::Utils.parse_query(captured.body)
+      assert oauth.sandbox?
+      assert_equal "true", body["test_token"]
     end
 
     test "fails safely when configuration is absent" do
@@ -82,7 +104,7 @@ module Marketplace
 
     private
 
-    def stub_request(payload)
+    def stub_request(payload, oauth: @oauth)
       captured = nil
       fake_http = Object.new
       fake_http.define_singleton_method(:request) do |request|
@@ -91,7 +113,7 @@ module Marketplace
           response.define_singleton_method(:body) { payload.to_json }
         end
       end
-      @oauth.instance_variable_set(:@http, fake_http)
+      oauth.instance_variable_set(:@http, fake_http)
 
       yield
       captured
