@@ -1,4 +1,14 @@
 pt-BR:
+  activerecord:
+    attributes:
+      user:
+        email_address: "E-mail"
+    errors:
+      models:
+        user:
+          attributes:
+            email_address:
+              taken: "já está em uso"
   number:
     currency:
       format:

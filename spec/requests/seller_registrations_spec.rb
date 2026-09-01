@@ -29,4 +29,19 @@ RSpec.describe "Seller registrations", type: :request do
     expect(User.count).to eq(user_count)
     expect(response).to have_http_status(:unprocessable_entity)
   end
+
+  it "shows a translated error when the email address is already registered" do
+    User.create!(email_address: "existing@example.com", password: "password123")
+
+    expect do
+      post seller_registration_path, params: {
+        seller: { name: "Ateliê Existente" },
+        user: { email_address: "existing@example.com", password: "password123", password_confirmation: "password123" }
+      }
+    end.not_to change(Seller, :count)
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.body).to include("E-mail já está em uso")
+    expect(response.body).not_to include("Translation missing")
+  end
 end
