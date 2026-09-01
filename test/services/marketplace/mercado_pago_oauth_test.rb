@@ -100,7 +100,7 @@ module Marketplace
       name, payload = events.fetch(0)
       assert_equal "marketplace.mercado_pago_oauth.failed", name
       assert_equal "invalid_payload", payload[:failure_reason]
-      assert_equal %w[access_token expires_in live_mode user_id], payload[:response_keys]
+      assert_equal %w[access_token expires_in live_mode user_id], payload[:response_fields]
       assert_not_includes payload.to_s, "secret-access-token"
     end
 

@@ -76,7 +76,7 @@ class Observability::JsonEventSubscriberTest < ActiveSupport::TestCase
       name: "marketplace.mercado_pago_oauth.failed",
       payload: {
         failure_reason: "invalid_payload",
-        response_keys: %w[access_token expires_in user_id]
+        response_fields: %w[access_token expires_in user_id]
       },
       tags: {},
       context: { request_id: "request-1" }
@@ -84,7 +84,15 @@ class Observability::JsonEventSubscriberTest < ActiveSupport::TestCase
 
     event = JSON.parse(output.string)
     assert_equal "warn", event["level"]
-    assert_equal %w[access_token expires_in user_id], event["response_keys"]
+    assert_equal %w[access_token expires_in user_id], event["response_fields"]
     assert_not_includes output.string, "secret-access-token"
+  end
+
+  test "keeps safe OAuth field names visible after parameter filtering" do
+    filter = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
+
+    filtered = filter.filter(response_fields: %w[access_token expires_in user_id])
+
+    assert_equal %w[access_token expires_in user_id], filtered[:response_fields]
   end
 end

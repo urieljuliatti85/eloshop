@@ -80,7 +80,7 @@ module Marketplace
     private
 
     def log_invalid_payload(payload)
-      response_keys = if payload.is_a?(Hash)
+      response_fields = if payload.is_a?(Hash)
         payload.keys.map { |key| key.to_s.first(100) }.sort.first(50)
       else
         []
@@ -89,7 +89,7 @@ module Marketplace
       @event_reporter.notify(
         "marketplace.mercado_pago_oauth.failed",
         failure_reason: "invalid_payload",
-        response_keys: response_keys
+        response_fields: response_fields
       )
     rescue StandardError
       nil
