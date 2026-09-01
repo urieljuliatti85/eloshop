@@ -1,8 +1,8 @@
 <%
   # Não oferece a própria categoria nem descendentes dela como opção de pai
   # (evitaria um ciclo, já bloqueado no model, mas é melhor nem oferecer).
-  invalid_parent_ids = category.persisted? ? @category_tree.self_and_descendant_ids(category) : []
-  parent_options = @category_tree.categories.reject { |c| invalid_parent_ids.include?(c.id) }
+  invalid_parent_ids = category.persisted? ? category_tree.self_and_descendant_ids(category) : []
+  parent_options = category_tree.categories.reject { |c| invalid_parent_ids.include?(c.id) }
 %>
 
 <%= form_with model: [ :admin, category ], class: "admin-form" do |form| %>
@@ -24,7 +24,7 @@
   <div>
     <%= form.label :parent_id, "Categoria pai (opcional)" %>
     <%= form.select :parent_id,
-          options_for_select(parent_options.map { |c| [ @category_tree.breadcrumb_name(c), c.id ] }, form.object.parent_id),
+          options_for_select(parent_options.map { |c| [ category_tree.breadcrumb_name(c), c.id ] }, form.object.parent_id),
           { include_blank: "Nenhuma — categoria de topo" }, class: "w-full" %>
   </div>
 

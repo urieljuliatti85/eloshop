@@ -1,4 +1,4 @@
 <div class="space-y-6">
   <header><%= link_to "← Voltar para categorias", admin_categories_path, class: "admin-link mb-3 inline-block text-sm" %><p class="admin-section-label mb-2">Catálogo</p><h1>Editar categoria</h1></header>
-  <%= render "form", category: @category %>
+  <%= render "form", category: @category, category_tree: @category_tree %>
 </div>
