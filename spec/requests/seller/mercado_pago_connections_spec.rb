@@ -57,6 +57,11 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     expect(seller.reload).to be_mercado_pago_connected
     expect(seller.mercado_pago_user_id).to eq("mp-123")
     expect(seller.mercado_pago_access_token_ciphertext).not_to include("access-token-secret")
+
+    follow_redirect!
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Conta conectada em")
+    expect(response.body).to include("Ambiente: produção")
   end
 
   it "rejects a callback with an invalid state without exchanging the code" do
