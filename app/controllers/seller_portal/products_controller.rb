@@ -6,6 +6,7 @@ module SellerPortal
 
     def index
       @products = current_seller.products.includes(:category).order(created_at: :desc)
+      @products = @products.matching_query(params[:q]) if params[:q].present?
     end
 
     def show

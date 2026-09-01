@@ -20,6 +20,18 @@ RSpec.describe "Seller products", type: :request do
     expect(response.body).not_to include("Vaso alheio")
   end
 
+  it "searches only within the authenticated seller catalog" do
+    own_product
+    Product.create!(seller: seller, name: "Caneca própria", sku: "OWN-002", price_cents: 3_000, stock_quantity: 2)
+    other_product
+
+    get seller_products_path, params: { q: "Caneca" }
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Caneca própria")
+    expect(response.body).not_to include("Vaso próprio", "Vaso alheio")
+  end
+
   it "does not expose another seller product by changing the id" do
     get seller_product_path(other_product)
 

@@ -31,3 +31,21 @@ pt-BR:
       pending: "Aguardando pagamento"
       confirmed: "Confirmado"
       cancelled: "Cancelado"
+  sellers:
+    statuses:
+      pending: "Em análise"
+      approved: "Aprovado"
+      suspended: "Suspenso"
+  products:
+    statuses:
+      draft: "Rascunho"
+      active: "Publicado"
+      sold_out: "Esgotado"
+      discontinued: "Descontinuado"
+  seller_orders:
+    statuses:
+      pending: "Pendente"
+      confirmed: "Confirmado"
+      cancelled: "Cancelado"
+      partially_refunded: "Reembolso parcial"
+      refunded: "Reembolsado"
