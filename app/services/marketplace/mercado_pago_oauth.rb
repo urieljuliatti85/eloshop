@@ -113,7 +113,7 @@ module Marketplace
         access_token: access_token,
         refresh_token: refresh_token,
         expires_at: Time.current + expires_in.seconds,
-        live_mode: payload.fetch("live_mode") == true
+        live_mode: payload["live_mode"] == true
       )
     end
 

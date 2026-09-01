@@ -54,17 +54,18 @@ module Marketplace
         sandbox: "true"
       )
 
+      credentials = nil
       captured = stub_request({
         "user_id" => 123_456,
         "access_token" => "seller-test-access-token",
         "refresh_token" => "seller-test-refresh-token",
-        "expires_in" => 15_552_000,
-        "live_mode" => false
-      }, oauth: oauth) { oauth.exchange(code: "sandbox-authorization-code") }
+        "expires_in" => 15_552_000
+      }, oauth: oauth) { credentials = oauth.exchange(code: "sandbox-authorization-code") }
 
       body = Rack::Utils.parse_query(captured.body)
       assert oauth.sandbox?
       assert_equal "true", body["test_token"]
+      assert_not credentials.live_mode
     end
 
     test "fails safely when configuration is absent" do
