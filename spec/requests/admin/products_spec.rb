@@ -30,6 +30,20 @@ RSpec.describe "Admin products", type: :request do
   # O seletor de categoria renderiza o breadcrumb de cada opção; sem a árvore
   # carregada, cada uma sobe a hierarquia com uma query por nível. Asserção
   # sobre crescimento, não sobre total.
+  describe "GET /admin/products/:id/edit" do
+    it "renders the form with the category selector" do
+      sign_in_as(user)
+      top = Category.create!(name: "Casa")
+      child = Category.create!(name: "Decoração", parent: top)
+      product = Product.create!(seller: approved_seller, name: "Vaso", sku: "EDIT-1", price_cents: 1_000, stock_quantity: 1, category: child)
+
+      get edit_admin_product_path(product)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Casa &gt; Decoração")
+    end
+  end
+
   describe "custo por categoria" do
     def build_branch(name)
       top = Category.create!(name: name)

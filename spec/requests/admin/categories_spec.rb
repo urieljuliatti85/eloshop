@@ -25,6 +25,20 @@ RSpec.describe "Admin categories", type: :request do
   # A listagem e o seletor de categoria pai renderizam o breadcrumb de cada
   # categoria, e `Category#breadcrumb_name` sobe a árvore uma query por nível.
   # A asserção é sobre o crescimento, não sobre um total absoluto.
+  # O formulário monta o seletor de pai a partir da árvore carregada; sem
+  # cobertura de `edit`, uma quebra aqui passaria a suíte inteira.
+  describe "GET /admin/categories/:id/edit" do
+    it "renders the form with the parent breadcrumb" do
+      post session_path, params: { email_address: user.email_address, password: "password" }
+      child = Category.create!(name: "Decoração", parent: category)
+
+      get edit_admin_category_path(child)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Casa")
+    end
+  end
+
   describe "custo por categoria" do
     def build_branch(name)
       top = Category.create!(name: name)

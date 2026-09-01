@@ -20,6 +20,17 @@ RSpec.describe "Seller products", type: :request do
     expect(response.body).not_to include("Vaso alheio")
   end
 
+  it "renders the edit form with the category breadcrumb" do
+    top = Category.create!(name: "Casa")
+    child = Category.create!(name: "Decoração", parent: top)
+    own_product.update!(category: child)
+
+    get edit_seller_product_path(own_product)
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Casa &gt; Decoração")
+  end
+
   # O seletor de categoria do formulário renderiza o breadcrumb de cada opção,
   # e `Category#breadcrumb_name` sobe a árvore uma query por nível. A asserção é
   # sobre o crescimento: o total muda quando a página muda, a inclinação não
