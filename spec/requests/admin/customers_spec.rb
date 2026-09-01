@@ -16,10 +16,11 @@ RSpec.describe "Admin customers", type: :request do
     it "lists customers" do
       post session_path, params: { email_address: user.email_address, password: "password" }
 
-      get admin_customers_path
+      I18n.with_locale(:"pt-BR") { get admin_customers_path }
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(customer.name)
+      expect(response.body).to include(I18n.l(customer.created_at.to_date, format: :short, locale: :"pt-BR"))
     end
 
     it "filters by name or email" do
