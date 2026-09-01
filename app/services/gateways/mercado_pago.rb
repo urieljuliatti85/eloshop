@@ -19,7 +19,7 @@ module Gateways
     OPEN_TIMEOUT = 5
     READ_TIMEOUT = 15
 
-    # O Mercado Pago tem muitos status; o domínio só conhece três desfechos.
+    # O Mercado Pago tem muitos status; o domínio usa um vocabulário menor.
     # Mapear aqui evita que vocabulário do fornecedor vaze para
     # Payments::ProcessWebhook.
     STATUS_MAP = {
@@ -30,13 +30,13 @@ module Gateways
       "in_mediation" => "pending",
       "rejected" => "declined",
       "cancelled" => "declined",
-      "refunded" => "declined",
+      "refunded" => "refunded",
       "charged_back" => "declined"
     }.freeze
 
-    def initialize(access_token: ENV["MERCADO_PAGO_ACCESS_TOKEN"],
+    def initialize(access_token: nil,
                    webhook_secret: ENV["MERCADO_PAGO_WEBHOOK_SECRET"])
-      @access_token = access_token
+      @access_token_override = access_token
       @webhook_secret = webhook_secret
     end
 
@@ -49,19 +49,21 @@ module Gateways
     # A chave pertence à tentativa de pagamento, não ao checkout. Ela continua
     # estável quando a mesma tentativa é retomada após timeout, mas muda quando
     # um PIX expirado exige uma cobrança nova.
-    def authorize(order:, idempotency_key:)
-      require_access_token!
+    def authorize(order:, idempotency_key:, application_fee_cents:)
+      access_token = access_token_for(order)
 
       response = post(
         "/v1/payments",
         body: {
           transaction_amount: (order.total_cents / 100.0).round(2),
+          application_fee: (application_fee_cents / 100.0).round(2),
           payment_method_id: "pix",
           description: "Pedido #{order.id} — EloShop",
           external_reference: order.id.to_s,
           payer: { email: order.customer.email }
         },
-        headers: { "X-Idempotency-Key" => idempotency_key }
+        headers: { "X-Idempotency-Key" => idempotency_key },
+        access_token: access_token
       )
 
       pix = response.dig("point_of_interaction", "transaction_data") || {}
@@ -78,10 +80,22 @@ module Gateways
     # ela avisa "o pagamento X mudou" e espera que a aplicação consulte. Sem
     # isso, bastaria forjar um POST para marcar um pedido como pago.
     def payment_status(external_id:)
-      require_access_token!
+      payment_details(external_id: external_id)[:status]
+    end
 
-      response = get("/v1/payments/#{external_id}")
-      STATUS_MAP.fetch(response["status"].to_s, "pending")
+    def refund(payment:, amount_cents:, idempotency_key:)
+      access_token = access_token_for(payment.order)
+      response = post(
+        "/v1/payments/#{payment.external_id}/refunds",
+        body: { amount: (amount_cents / 100.0).round(2) },
+        headers: { "X-Idempotency-Key" => idempotency_key },
+        access_token: access_token
+      )
+
+      RefundIntent.new(
+        external_id: response["id"].to_s,
+        status: refund_status(response["status"])
+      )
     end
 
     # Autenticidade via HMAC-SHA256 sobre um manifesto montado com o id do
@@ -110,21 +124,59 @@ module Gateways
       external_id = request.params.dig("data", "id") || request.params["data.id"]
       return nil if external_id.blank?
 
-      status = payment_status(external_id: external_id)
+      details = payment_details(external_id: external_id)
 
       {
-        event_id: "mp-#{external_id}-#{status}",
+        event_id: "mp-#{external_id}-#{details[:status]}-fee-#{details[:processor_fee_cents]}",
         external_id: external_id.to_s,
-        status: status
+        status: details[:status],
+        processor_fee_cents: details[:processor_fee_cents]
       }
     end
 
     private
 
-    def require_access_token!
-      return if @access_token.present?
+    def access_token_for(order)
+      token = @access_token_override || seller_access_token(order.seller_order.seller)
+      return token if token.present?
 
-      raise ConfigurationError, "MERCADO_PAGO_ACCESS_TOKEN não configurado"
+      raise ConfigurationError, "a conta Mercado Pago do artesão não está conectada"
+    end
+
+    def payment_details(external_id:)
+      payment = Payment.find_by(external_id: external_id)
+      seller = payment&.order&.seller_order&.seller
+      access_token = @access_token_override || (seller_access_token(seller) if seller)
+      raise ConfigurationError, "a conta Mercado Pago do artesão não está conectada" if access_token.blank?
+
+      response = get("/v1/payments/#{external_id}", access_token: access_token)
+      {
+        status: STATUS_MAP.fetch(response["status"].to_s, "pending"),
+        processor_fee_cents: processor_fee_cents(response)
+      }
+    end
+
+    def processor_fee_cents(response)
+      amount = Array(response["fee_details"])
+        .select { |fee| fee["type"].to_s == "mercadopago_fee" }
+        .sum { |fee| BigDecimal(fee["amount"].to_s) }
+      (amount * 100).round.to_i
+    end
+
+    def refund_status(remote_status)
+      case remote_status.to_s
+      when "approved" then "approved"
+      when "pending", "in_process" then "processing"
+      else "failed"
+      end
+    end
+
+    def seller_access_token(seller)
+      Marketplace::MercadoPagoAccessToken.new(seller: seller).call
+    rescue Marketplace::MercadoPagoOauth::ConfigurationError => e
+      raise ConfigurationError, e.message
+    rescue Marketplace::MercadoPagoOauth::RequestFailed => e
+      raise RequestFailed, e.message
     end
 
     def parse_signature(header)
@@ -140,20 +192,20 @@ module Gateways
       nil
     end
 
-    def get(path)
+    def get(path, access_token:)
       request = Net::HTTP::Get.new(path)
-      perform(request)
+      perform(request, access_token: access_token)
     end
 
-    def post(path, body:, headers: {})
+    def post(path, body:, headers: {}, access_token:)
       request = Net::HTTP::Post.new(path)
       headers.each { |key, value| request[key] = value }
       request.body = body.to_json
-      perform(request)
+      perform(request, access_token: access_token)
     end
 
-    def perform(request)
-      request["Authorization"] = "Bearer #{@access_token}"
+    def perform(request, access_token:)
+      request["Authorization"] = "Bearer #{access_token}"
       request["Content-Type"] = "application/json"
 
       response = http.request(request)

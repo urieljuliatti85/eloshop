@@ -68,6 +68,21 @@ module Marketplace
       assert_not credentials.live_mode
     end
 
+    test "refresh exchanges the stored refresh token" do
+      captured = stub_request({
+        "user_id" => 123_456,
+        "access_token" => "renewed-access-token",
+        "refresh_token" => "renewed-refresh-token",
+        "expires_in" => 15_552_000,
+        "live_mode" => true
+      }) { @oauth.refresh(refresh_token: "old-refresh-token") }
+
+      body = Rack::Utils.parse_query(captured.body)
+      assert_equal "refresh_token", body["grant_type"]
+      assert_equal "old-refresh-token", body["refresh_token"]
+      assert_equal "client-secret", body["client_secret"]
+    end
+
     test "fails safely when configuration is absent" do
       oauth = MercadoPagoOauth.new(app_id: nil, client_secret: nil, redirect_uri: nil)
 

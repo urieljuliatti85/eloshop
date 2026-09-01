@@ -51,7 +51,8 @@ class ReviewTest < ActiveSupport::TestCase
       shipping_address_snapshot: address.attributes.slice("street", "number", "city", "state", "zip_code"),
       idempotency_key: SecureRandom.hex(10)
     )
-    order.order_items.create!(product: product, product_name: product.name, sku: product.sku, unit_price_cents: 1000, quantity: 1)
+    seller_order = order.seller_orders.create!(seller: product.seller, status: :confirmed, subtotal_cents: 1000, shipping_cents: 0, total_cents: 1000, platform_fee_cents: 150, seller_amount_cents: 850)
+    order.order_items.create!(seller_order: seller_order, product: product, product_name: product.name, sku: product.sku, unit_price_cents: 1000, quantity: 1)
 
     review = customer.reviews.create!(product: product, rating: 5, comment: "Chegou rápido")
 

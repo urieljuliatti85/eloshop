@@ -13,7 +13,7 @@ module Payments
 
       def name = "mercado_pago"
 
-      def authorize(order:, idempotency_key:)
+      def authorize(order:, idempotency_key:, application_fee_cents:)
         @keys << idempotency_key
         if @fail_once
           @fail_once = false
@@ -53,6 +53,7 @@ module Payments
 
       assert payment.persisted?
       assert_equal order.total_cents, payment.amount_cents
+      assert_equal order.seller_order.platform_fee_cents, payment.application_fee_cents
       assert payment.pending?
     end
 
@@ -76,6 +77,16 @@ module Payments
 
       assert_not_equal failed_payment.id, retry_payment.id
       assert_equal 2, order.payments.count
+    end
+
+    test "does not create another charge for a partially refunded payment" do
+      order = build_order
+      payment = Authorize.new(order: order).call
+      payment.update!(status: "partially_refunded", refunded_amount_cents: 100)
+
+      assert_no_difference("Payment.count") do
+        assert_equal payment, Authorize.new(order: order).call
+      end
     end
 
     test "replaces an expired pending payment with a new attempt" do

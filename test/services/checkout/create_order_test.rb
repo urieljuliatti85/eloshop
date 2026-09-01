@@ -61,6 +61,11 @@ module Checkout
       assert_equal 2000, order.subtotal_cents
       assert_equal CreateOrder::SHIPPING_CENTS, order.shipping_cents
       assert_equal 2000 + CreateOrder::SHIPPING_CENTS, order.total_cents
+      assert_equal 1, order.seller_orders.count
+      assert_equal product.seller, order.seller_order.seller
+      assert_equal 300, order.seller_order.platform_fee_cents
+      assert_equal order.total_cents - 300, order.seller_order.seller_amount_cents
+      assert_equal order.seller_order, order.order_items.first.seller_order
       assert_equal "Entrega padrão", order.shipment.service
       assert_equal 5, order.shipment.estimated_days
       assert_equal 3, product.reload.stock_quantity

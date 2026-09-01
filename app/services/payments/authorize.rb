@@ -12,7 +12,11 @@ module Payments
       payment = prepare_attempt
       return payment unless payment.processing?
 
-      intent = @gateway.authorize(order: @order, idempotency_key: payment.idempotency_key)
+      intent = @gateway.authorize(
+        order: @order,
+        idempotency_key: payment.idempotency_key,
+        application_fee_cents: payment.application_fee_cents
+      )
 
       payment.update!(
         external_id: intent.external_id,
@@ -42,7 +46,7 @@ module Payments
 
     def prepare_attempt
       @order.with_lock do
-        reusable = @order.payments.where(status: %w[authorized paid]).order(:created_at).last
+        reusable = @order.payments.where(status: %w[authorized paid partially_refunded refunded]).order(:created_at).last
         return reusable if reusable
 
         pending = @order.payments.pending.order(:created_at).last
@@ -59,6 +63,7 @@ module Payments
           gateway: @gateway.name,
           status: "processing",
           amount_cents: @order.total_cents,
+          application_fee_cents: @order.seller_order.platform_fee_cents,
           idempotency_key: SecureRandom.uuid
         )
       end

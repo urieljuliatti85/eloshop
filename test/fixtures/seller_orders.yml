@@ -1,0 +1,29 @@
+one:
+  order: one
+  seller: approved
+  status: pending
+  currency: BRL
+  subtotal_cents: 8990
+  discount_cents: 0
+  shipping_cents: 1500
+  total_cents: 10490
+  platform_fee_rate_bps: 1500
+  platform_fee_cents: 1349
+  seller_amount_cents: 9141
+  refunded_amount_cents: 0
+  platform_fee_refunded_cents: 0
+
+two:
+  order: two
+  seller: approved
+  status: pending
+  currency: BRL
+  subtotal_cents: 9980
+  discount_cents: 0
+  shipping_cents: 1500
+  total_cents: 11480
+  platform_fee_rate_bps: 1500
+  platform_fee_cents: 1497
+  seller_amount_cents: 9983
+  refunded_amount_cents: 0
+  platform_fee_refunded_cents: 0

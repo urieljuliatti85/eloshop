@@ -52,9 +52,6 @@ module Marketplace
     def exchange(code:)
       require_configuration!
 
-      payload = nil
-      request = Net::HTTP::Post.new(TOKEN_PATH)
-      request["Accept"] = "application/json"
       form_data = {
         client_id: @app_id,
         client_secret: @client_secret,
@@ -63,10 +60,34 @@ module Marketplace
         redirect_uri: @redirect_uri
       }
       form_data[:test_token] = "true" if sandbox?
+
+      request_credentials(form_data, failure_message: "Mercado Pago recusou a vinculação")
+    end
+
+    def refresh(refresh_token:)
+      require_configuration!
+
+      request_credentials(
+        {
+          client_id: @app_id,
+          client_secret: @client_secret,
+          grant_type: "refresh_token",
+          refresh_token: refresh_token
+        },
+        failure_message: "Mercado Pago recusou a renovação da conexão"
+      )
+    end
+
+    private
+
+    def request_credentials(form_data, failure_message:)
+      payload = nil
+      request = Net::HTTP::Post.new(TOKEN_PATH)
+      request["Accept"] = "application/json"
       request.set_form_data(form_data)
 
       response = http.request(request)
-      raise RequestFailed, "Mercado Pago recusou a vinculação (HTTP #{response.code})" unless response.is_a?(Net::HTTPSuccess)
+      raise RequestFailed, "#{failure_message} (HTTP #{response.code})" unless response.is_a?(Net::HTTPSuccess)
 
       payload = JSON.parse(response.body.to_s)
       build_credentials(payload)
@@ -76,8 +97,6 @@ module Marketplace
     rescue Timeout::Error, SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError
       raise RequestFailed, "Não foi possível conectar ao Mercado Pago. Tente novamente."
     end
-
-    private
 
     def log_invalid_payload(payload)
       response_fields = if payload.is_a?(Hash)

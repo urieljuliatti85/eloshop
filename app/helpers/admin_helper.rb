@@ -2,7 +2,7 @@ module AdminHelper
   ADMIN_STATUS_LABELS = {
     "pending" => "Pendente", "confirmed" => "Confirmado", "processing" => "Em produção",
     "ready_to_ship" => "Pronto para envio", "shipped" => "Enviado", "delivered" => "Entregue",
-    "cancelled" => "Cancelado", "refunded" => "Reembolsado", "paid" => "Pago",
+    "cancelled" => "Cancelado", "refunded" => "Reembolsado", "partially_refunded" => "Reembolso parcial", "paid" => "Pago",
     "authorized" => "Autorizado", "failed" => "Falhou", "active" => "Ativo",
     "inactive" => "Inativo", "draft" => "Rascunho", "sold_out" => "Esgotado",
     "discontinued" => "Descontinuado", "approved" => "Aprovado", "rejected" => "Rejeitada",
@@ -16,7 +16,7 @@ module AdminHelper
     "active" => "admin-badge--success", "approved" => "admin-badge--success",
     "processing" => "admin-badge--info", "ready_to_ship" => "admin-badge--info",
     "shipped" => "admin-badge--info", "cancelled" => "admin-badge--danger",
-    "refunded" => "admin-badge--danger", "failed" => "admin-badge--danger",
+    "refunded" => "admin-badge--danger", "partially_refunded" => "admin-badge--warning", "failed" => "admin-badge--danger",
     "sold_out" => "admin-badge--danger", "discontinued" => "admin-badge--danger",
     "rejected" => "admin-badge--danger", "suspended" => "admin-badge--danger",
     "inactive" => "admin-badge--neutral"

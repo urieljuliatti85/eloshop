@@ -1,18 +1,15 @@
 module SellerPortal
   class OrdersController < BaseController
     def index
-      @orders = seller_orders.includes(:customer).order(created_at: :desc)
+      @seller_orders = current_seller.seller_orders.includes(order: :customer).order(created_at: :desc)
     end
 
     def show
-      @order = seller_orders.includes(:customer, :shipment, order_items: :product).find(params[:id])
-      @order_items = @order.order_items.select { |item| item.product.seller_id == current_seller.id }
-    end
-
-    private
-
-    def seller_orders
-      Order.joins(order_items: :product).where(products: { seller_id: current_seller.id }).distinct
+      @seller_order = current_seller.seller_orders
+        .includes(:shipment, order: :customer, order_items: :product)
+        .find_by!(order_id: params[:id])
+      @order = @seller_order.order
+      @order_items = @seller_order.order_items
     end
   end
 end

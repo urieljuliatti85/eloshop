@@ -1,11 +1,13 @@
 class OrderItem < ApplicationRecord
   belongs_to :order
+  belongs_to :seller_order
   belongs_to :product
   belongs_to :product_variant, optional: true
 
   validates :product_name, :sku, presence: true
   validates :unit_price_cents, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity, numericality: { greater_than: 0 }
+  validate :seller_order_matches_order_and_product
 
   def subtotal_cents
     unit_price_cents * quantity
@@ -21,5 +23,14 @@ class OrderItem < ApplicationRecord
   # valor prontos, sem depender de PersonalizationOption continuar existindo.
   def personalization_entries
     personalizations.map { |entry| { label: entry["label"], value: entry["value"] } }
+  end
+
+  private
+
+  def seller_order_matches_order_and_product
+    return if seller_order.blank? || order.blank? || product.blank?
+
+    errors.add(:seller_order, "não pertence ao pedido") if seller_order.order_id != order_id
+    errors.add(:seller_order, "não pertence ao vendedor do produto") if seller_order.seller_id != product.seller_id
   end
 end

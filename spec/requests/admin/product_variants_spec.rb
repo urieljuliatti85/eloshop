@@ -84,7 +84,8 @@ RSpec.describe "Admin product variants", type: :request do
         shipping_address_snapshot: { street: "Rua Teste", number: "123", city: "São Paulo", state: "SP", zip: "01000-000" },
         idempotency_key: SecureRandom.uuid
       )
-      OrderItem.create!(order: order, product: product, product_variant: variant, product_name: product.name, sku: variant.sku, unit_price_cents: variant.price_cents, quantity: 1)
+      seller_order = order.seller_orders.create!(seller: product.seller, subtotal_cents: 1000, shipping_cents: 500, total_cents: 1500, platform_fee_cents: 150, seller_amount_cents: 1350)
+      OrderItem.create!(order: order, seller_order: seller_order, product: product, product_variant: variant, product_name: product.name, sku: variant.sku, unit_price_cents: variant.price_cents, quantity: 1)
 
       expect do
         delete admin_product_product_variant_path(product, variant)

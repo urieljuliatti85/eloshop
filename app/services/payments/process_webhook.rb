@@ -6,10 +6,11 @@ module Payments
   class ProcessWebhook
     class OrderNotFound < StandardError; end
 
-    def initialize(event_id:, external_id:, status:)
+    def initialize(event_id:, external_id:, status:, processor_fee_cents: nil)
       @event_id = event_id
       @external_id = external_id
       @status = status
+      @processor_fee_cents = processor_fee_cents
     end
 
     def call
@@ -47,9 +48,15 @@ module Payments
     def apply_status!(payment)
       case @status
       when "approved"
-        payment.update!(status: "paid")
+        return if payment.partially_refunded? || payment.refunded?
+
+        attributes = { status: "paid" }
+        attributes[:processor_fee_cents] = @processor_fee_cents unless @processor_fee_cents.nil?
+        payment.update!(attributes)
         payment.order.confirm! unless payment.order.confirmed?
       when "declined"
+        return if payment.paid? || payment.partially_refunded? || payment.refunded?
+
         payment.update!(status: "failed")
       end
     end

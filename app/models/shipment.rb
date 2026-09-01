@@ -1,5 +1,6 @@
 class Shipment < ApplicationRecord
-  belongs_to :order
+  belongs_to :seller_order
+  delegate :order, to: :seller_order
 
   enum :status, {
     pending: "pending",

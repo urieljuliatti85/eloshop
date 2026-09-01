@@ -41,7 +41,18 @@ RSpec.describe "Seller orders", type: :request do
       shipping_address_snapshot: { "street" => "Rua Um", "number" => "1" },
       idempotency_key: SecureRandom.hex(12)
     ).tap do |order|
+      platform_fee = SellerOrder.platform_fee_cents_for(subtotal_cents: order.subtotal_cents, discount_cents: 0)
+      seller_order = order.seller_orders.create!(
+        seller: product.seller,
+        subtotal_cents: order.subtotal_cents,
+        discount_cents: 0,
+        shipping_cents: order.shipping_cents,
+        total_cents: order.total_cents,
+        platform_fee_cents: platform_fee,
+        seller_amount_cents: order.total_cents - platform_fee
+      )
       order.order_items.create!(
+        seller_order: seller_order,
         product: product,
         product_name: product.name,
         sku: product.sku,

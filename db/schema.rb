@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_01_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_01_050002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -147,6 +147,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_020000) do
     t.bigint "product_variant_id"
     t.string "production_time_snapshot"
     t.integer "quantity", null: false
+    t.bigint "seller_order_id", null: false
     t.string "size_snapshot"
     t.string "sku", null: false
     t.integer "unit_price_cents", null: false
@@ -155,6 +156,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_020000) do
     t.index ["order_id"], name: "index_order_items_on_order_id"
     t.index ["product_id"], name: "index_order_items_on_product_id"
     t.index ["product_variant_id"], name: "index_order_items_on_product_variant_id"
+    t.index ["seller_order_id"], name: "index_order_items_on_seller_order_id"
   end
 
   create_table "orders", force: :cascade do |t|
@@ -185,8 +187,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_020000) do
     t.index ["payment_id"], name: "index_payment_events_on_payment_id"
   end
 
+  create_table "payment_refunds", force: :cascade do |t|
+    t.integer "amount_cents", null: false
+    t.integer "application_fee_amount_cents", null: false
+    t.datetime "created_at", null: false
+    t.string "external_id"
+    t.string "idempotency_key", null: false
+    t.bigint "payment_id", null: false
+    t.string "status", default: "processing", null: false
+    t.datetime "updated_at", null: false
+    t.index ["idempotency_key"], name: "index_payment_refunds_on_idempotency_key", unique: true
+    t.index ["payment_id"], name: "index_payment_refunds_on_payment_id"
+    t.check_constraint "amount_cents > 0", name: "payment_refunds_amount_check"
+    t.check_constraint "application_fee_amount_cents >= 0 AND application_fee_amount_cents <= amount_cents", name: "payment_refunds_fee_check"
+    t.check_constraint "status::text = ANY (ARRAY['processing'::character varying, 'approved'::character varying, 'failed'::character varying]::text[])", name: "payment_refunds_status_check"
+  end
+
   create_table "payments", force: :cascade do |t|
     t.integer "amount_cents", null: false
+    t.integer "application_fee_cents", default: 0, null: false
+    t.integer "application_fee_refunded_cents", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "expires_at"
     t.string "external_id"
@@ -195,10 +215,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_020000) do
     t.bigint "order_id", null: false
     t.text "pix_qr_code"
     t.text "pix_qr_code_base64"
+    t.integer "processor_fee_cents"
+    t.integer "refunded_amount_cents", default: 0, null: false
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
     t.index ["idempotency_key"], name: "index_payments_on_idempotency_key", unique: true
     t.index ["order_id"], name: "index_payments_on_order_id"
+    t.check_constraint "application_fee_cents >= 0 AND application_fee_cents <= amount_cents", name: "payments_application_fee_check"
+    t.check_constraint "application_fee_refunded_cents >= 0 AND application_fee_refunded_cents <= application_fee_cents", name: "payments_application_fee_refunded_check"
+    t.check_constraint "processor_fee_cents IS NULL OR processor_fee_cents >= 0", name: "payments_processor_fee_check"
+    t.check_constraint "refunded_amount_cents >= 0 AND refunded_amount_cents <= amount_cents", name: "payments_refunded_amount_check"
   end
 
   create_table "personalization_options", force: :cascade do |t|
@@ -306,6 +332,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_020000) do
     t.check_constraint "rating >= 1 AND rating <= 5", name: "reviews_rating_range_check"
   end
 
+  create_table "seller_orders", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "currency", default: "BRL", null: false
+    t.integer "discount_cents", default: 0, null: false
+    t.bigint "order_id", null: false
+    t.integer "platform_fee_cents", null: false
+    t.integer "platform_fee_rate_bps", default: 1500, null: false
+    t.integer "platform_fee_refunded_cents", default: 0, null: false
+    t.integer "refunded_amount_cents", default: 0, null: false
+    t.integer "seller_amount_cents", null: false
+    t.bigint "seller_id", null: false
+    t.integer "shipping_cents", null: false
+    t.string "status", default: "pending", null: false
+    t.integer "subtotal_cents", null: false
+    t.integer "total_cents", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id", "seller_id"], name: "index_seller_orders_on_order_id_and_seller_id", unique: true
+    t.index ["order_id"], name: "index_seller_orders_on_order_id"
+    t.index ["seller_id"], name: "index_seller_orders_on_seller_id"
+    t.check_constraint "discount_cents >= 0 AND discount_cents <= subtotal_cents", name: "seller_orders_discount_check"
+    t.check_constraint "platform_fee_cents >= 0 AND platform_fee_cents <= (subtotal_cents - discount_cents)", name: "seller_orders_fee_check"
+    t.check_constraint "platform_fee_rate_bps >= 0 AND platform_fee_rate_bps <= 10000", name: "seller_orders_fee_rate_check"
+    t.check_constraint "platform_fee_refunded_cents >= 0 AND platform_fee_refunded_cents <= platform_fee_cents", name: "seller_orders_fee_refunded_check"
+    t.check_constraint "refunded_amount_cents >= 0 AND refunded_amount_cents <= total_cents", name: "seller_orders_refunded_amount_check"
+    t.check_constraint "seller_amount_cents = (total_cents - platform_fee_cents)", name: "seller_orders_seller_amount_check"
+    t.check_constraint "shipping_cents >= 0", name: "seller_orders_shipping_check"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'confirmed'::character varying, 'cancelled'::character varying, 'partially_refunded'::character varying, 'refunded'::character varying]::text[])", name: "seller_orders_status_check"
+    t.check_constraint "subtotal_cents >= 0", name: "seller_orders_subtotal_check"
+    t.check_constraint "total_cents = (subtotal_cents - discount_cents + shipping_cents)", name: "seller_orders_total_check"
+  end
+
   create_table "sellers", force: :cascade do |t|
     t.datetime "approved_at"
     t.datetime "created_at", null: false
@@ -338,14 +395,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_020000) do
     t.datetime "created_at", null: false
     t.datetime "delivered_at"
     t.integer "estimated_days", null: false
-    t.bigint "order_id", null: false
+    t.bigint "seller_order_id", null: false
     t.string "service", null: false
     t.datetime "shipped_at"
     t.integer "shipping_cents", null: false
     t.string "status", default: "pending", null: false
     t.string "tracking_code"
     t.datetime "updated_at", null: false
-    t.index ["order_id"], name: "index_shipments_on_order_id"
+    t.index ["seller_order_id"], name: "index_shipments_on_seller_order_id"
     t.index ["tracking_code"], name: "index_shipments_on_tracking_code", unique: true
   end
 
@@ -402,9 +459,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_020000) do
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "product_variants"
   add_foreign_key "order_items", "products"
+  add_foreign_key "order_items", "seller_orders", on_delete: :cascade
   add_foreign_key "orders", "coupons"
   add_foreign_key "orders", "customers"
   add_foreign_key "payment_events", "payments"
+  add_foreign_key "payment_refunds", "payments", on_delete: :cascade
   add_foreign_key "payments", "orders"
   add_foreign_key "personalization_options", "products"
   add_foreign_key "product_materials", "materials"
@@ -418,8 +477,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_01_020000) do
   add_foreign_key "products", "sellers"
   add_foreign_key "reviews", "customers"
   add_foreign_key "reviews", "products"
+  add_foreign_key "seller_orders", "orders", on_delete: :cascade
+  add_foreign_key "seller_orders", "sellers"
   add_foreign_key "sessions", "users"
-  add_foreign_key "shipments", "orders", on_delete: :cascade
+  add_foreign_key "shipments", "seller_orders", on_delete: :cascade
   add_foreign_key "users", "sellers"
   add_foreign_key "wishlist_items", "customers"
   add_foreign_key "wishlist_items", "products"

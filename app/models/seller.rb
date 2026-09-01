@@ -9,6 +9,7 @@ class Seller < ApplicationRecord
 
   has_many :users, dependent: :restrict_with_error
   has_many :products, dependent: :restrict_with_error
+  has_many :seller_orders, dependent: :restrict_with_error
 
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 

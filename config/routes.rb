@@ -39,7 +39,9 @@ Rails.application.routes.draw do
 
     resources :coupons, except: %i[show]
 
-    resources :orders, only: %i[index show]
+    resources :orders, only: %i[index show] do
+      member { post :refund }
+    end
   end
 
   resources :products, only: :index, path: "produtos"

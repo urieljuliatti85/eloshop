@@ -15,8 +15,12 @@ module Gateways
       "fake"
     end
 
-    def authorize(order:, idempotency_key:)
+    def authorize(order:, idempotency_key:, application_fee_cents:)
       Intent.new(external_id: "fake_#{SecureRandom.hex(10)}")
+    end
+
+    def refund(payment:, amount_cents:, idempotency_key:)
+      RefundIntent.new(external_id: "fake_refund_#{SecureRandom.hex(10)}", status: "approved")
     end
 
     def verify_webhook(request)

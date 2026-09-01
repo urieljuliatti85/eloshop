@@ -30,7 +30,7 @@ module Gateways
           }
         }
       ) do
-        intent = @gateway.authorize(order: @order, idempotency_key: "attempt-1")
+        intent = @gateway.authorize(order: @order, idempotency_key: "attempt-1", application_fee_cents: 1_349)
 
         assert_equal "12345", intent.external_id
         assert_equal "00020126580014BR.GOV.BCB.PIX", intent.qr_code
@@ -44,29 +44,58 @@ module Gateways
     # outra chave para não recuperar um PIX anterior já expirado.
     test "authorize sends the payment attempt idempotency key" do
       captured = stub_request("id" => 1, "point_of_interaction" => {}) do
-        @gateway.authorize(order: @order, idempotency_key: "attempt-2")
+        @gateway.authorize(order: @order, idempotency_key: "attempt-2", application_fee_cents: 1_349)
       end
 
       assert_equal "attempt-2", captured["X-Idempotency-Key"]
       body = JSON.parse(captured.body)
       assert_equal "pix", body["payment_method_id"]
       assert_equal @order.id.to_s, body["external_reference"]
+      assert_equal 13.49, body["application_fee"]
     end
 
     test "authorize fails loudly without an access token" do
       gateway = MercadoPago.new(access_token: nil, webhook_secret: WEBHOOK_SECRET)
 
       assert_raises(MercadoPago::ConfigurationError) do
-        gateway.authorize(order: @order, idempotency_key: "attempt-3")
+        gateway.authorize(order: @order, idempotency_key: "attempt-3", application_fee_cents: 1_349)
       end
     end
 
     test "payment_status translates gateway vocabulary into the domain's" do
       { "approved" => "approved", "authorized" => "approved", "rejected" => "declined",
-        "cancelled" => "declined", "in_process" => "pending" }.each do |remoto, esperado|
+        "cancelled" => "declined", "in_process" => "pending", "refunded" => "refunded" }.each do |remoto, esperado|
         stub_request("status" => remoto) do
           assert_equal esperado, @gateway.payment_status(external_id: "1"), "status #{remoto}"
         end
+      end
+    end
+
+    test "webhook records the Mercado Pago processor fee separately" do
+      stub_request("status" => "approved", "fee_details" => [ { "type" => "mercadopago_fee", "amount" => 4.37 } ]) do
+        event = @gateway.webhook_event(signed_request)
+
+        assert_equal 437, event[:processor_fee_cents]
+      end
+    end
+
+    test "refund sends amount and idempotency key" do
+      payment = payments(:one)
+      captured = stub_request("id" => 99, "status" => "approved") do
+        intent = @gateway.refund(payment: payment, amount_cents: 500, idempotency_key: "refund-1")
+        assert_equal "99", intent.external_id
+        assert_equal "approved", intent.status
+      end
+
+      assert_equal "refund-1", captured["X-Idempotency-Key"]
+      assert_equal 5.0, JSON.parse(captured.body)["amount"]
+    end
+
+    test "refund maps a rejected response to failed" do
+      stub_request("id" => 100, "status" => "rejected") do
+        intent = @gateway.refund(payment: payments(:one), amount_cents: 500, idempotency_key: "refund-rejected")
+
+        assert_equal "failed", intent.status
       end
     end
 

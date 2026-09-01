@@ -72,7 +72,8 @@ RSpec.describe "Admin personalization options", type: :request do
         shipping_address_snapshot: { street: "Rua Teste", number: "123", city: "São Paulo", state: "SP", zip: "01000-000" },
         idempotency_key: SecureRandom.uuid
       )
-      item = OrderItem.create!(order: order, product: product, product_name: product.name, sku: product.sku, unit_price_cents: product.price_cents, quantity: 1, personalizations: [ { label: option.label, value: "Maria" } ])
+      seller_order = order.seller_orders.create!(seller: product.seller, subtotal_cents: 1000, shipping_cents: 500, total_cents: 1500, platform_fee_cents: 150, seller_amount_cents: 1350)
+      item = OrderItem.create!(order: order, seller_order: seller_order, product: product, product_name: product.name, sku: product.sku, unit_price_cents: product.price_cents, quantity: 1, personalizations: [ { label: option.label, value: "Maria" } ])
 
       expect do
         delete admin_product_personalization_option_path(product, option)

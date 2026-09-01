@@ -50,15 +50,16 @@ module Checkout
           idempotency_key: @idempotency_key,
           coupon: coupon
         )
+        seller_order = create_seller_order!(order, cart_items.first.product.seller, shipping)
         coupon&.increment!(:uses_count)
-        order.create_shipment!(
+        seller_order.create_shipment!(
           carrier: shipping.carrier,
           service: shipping.service,
           shipping_cents: shipping.shipping_cents,
           estimated_days: shipping.estimated_days
         )
 
-        cart_items.each { |cart_item| create_order_item_and_debit_stock!(order, cart_item) }
+        cart_items.each { |cart_item| create_order_item_and_debit_stock!(order, seller_order, cart_item) }
 
         @cart.cart_items.destroy_all
         @cart.update!(coupon: nil)
@@ -127,11 +128,31 @@ module Checkout
       raise Failed, "Estoque insuficiente para #{label}." if cart_item.quantity > variant.stock_quantity
     end
 
-    def create_order_item_and_debit_stock!(order, cart_item)
+    def create_seller_order!(order, seller, shipping)
+      platform_fee_cents = SellerOrder.platform_fee_cents_for(
+        subtotal_cents: order.subtotal_cents,
+        discount_cents: order.discount_cents
+      )
+
+      order.seller_orders.create!(
+        seller: seller,
+        status: order.status,
+        currency: "BRL",
+        subtotal_cents: order.subtotal_cents,
+        discount_cents: order.discount_cents,
+        shipping_cents: shipping.shipping_cents,
+        total_cents: order.total_cents,
+        platform_fee_cents: platform_fee_cents,
+        seller_amount_cents: order.total_cents - platform_fee_cents
+      )
+    end
+
+    def create_order_item_and_debit_stock!(order, seller_order, cart_item)
       product = cart_item.product
       variant = cart_item.product_variant
 
       order.order_items.create!(
+        seller_order: seller_order,
         product: product,
         product_variant: variant,
         product_name: product.name,

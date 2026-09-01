@@ -1,5 +1,6 @@
 one:
   order: one
+  seller_order: one
   product: one
   product_name: Vaso artesanal azul
   sku: VASO-AZUL-001
@@ -8,6 +9,7 @@ one:
 
 two:
   order: two
+  seller_order: two
   product: one
   product_name: Vaso artesanal azul
   sku: VASO-AZUL-001

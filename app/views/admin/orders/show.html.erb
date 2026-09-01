@@ -104,7 +104,24 @@
           <dl class="mt-4 space-y-3 text-sm">
             <div class="flex justify-between gap-4"><dt class="text-slate-500">Gateway</dt><dd class="font-semibold text-slate-800"><%= payment.gateway.humanize %></dd></div>
             <div class="flex justify-between gap-4"><dt class="text-slate-500">Valor</dt><dd class="font-semibold text-slate-800"><%= number_to_currency(payment.amount_cents.fdiv(100)) %></dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão EloShop</dt><dd class="font-semibold text-slate-800"><%= number_to_currency(payment.application_fee_cents.fdiv(100)) %></dd></div>
+            <% if payment.processor_fee_cents.present? %>
+              <div class="flex justify-between gap-4"><dt class="text-slate-500">Tarifa Mercado Pago</dt><dd class="font-semibold text-slate-800"><%= number_to_currency(payment.processor_fee_cents.fdiv(100)) %></dd></div>
+            <% end %>
+            <% if payment.refunded_amount_cents.positive? %>
+              <div class="flex justify-between gap-4"><dt class="text-slate-500">Reembolsado</dt><dd class="font-semibold text-rose-700">− <%= number_to_currency(payment.refunded_amount_cents.fdiv(100)) %></dd></div>
+              <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão devolvida</dt><dd class="font-semibold text-slate-800"><%= number_to_currency(payment.application_fee_refunded_cents.fdiv(100)) %></dd></div>
+            <% end %>
           </dl>
+          <% if payment.paid? || payment.partially_refunded? %>
+            <%= form_with url: refund_admin_order_path(@order), method: :post, class: "mt-5 space-y-3 border-t border-slate-100 pt-5" do |form| %>
+              <%= form.hidden_field :idempotency_key, value: SecureRandom.uuid %>
+              <%= form.label :amount, "Reembolso (R$)", class: "block text-sm font-semibold text-slate-700" %>
+              <%= form.text_field :amount, inputmode: "decimal", placeholder: number_with_precision(payment.remaining_refundable_cents.fdiv(100), precision: 2, separator: ","), class: "w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" %>
+              <p class="text-xs text-slate-500">Em branco, reembolsa o saldo total de <%= number_to_currency(payment.remaining_refundable_cents.fdiv(100)) %>.</p>
+              <%= form.submit "Solicitar reembolso", class: "rounded-xl bg-rose-700 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-800", data: { turbo_confirm: "Confirma o reembolso deste pagamento?" } %>
+            <% end %>
+          <% end %>
         <% else %>
           <p class="mt-4 text-sm text-slate-500">Nenhuma tentativa de pagamento registrada.</p>
         <% end %>
@@ -120,6 +137,14 @@
           <div class="flex justify-between gap-4"><dt class="text-slate-500">Frete</dt><dd class="font-medium"><%= number_to_currency(@order.shipping_cents.fdiv(100)) %></dd></div>
           <div class="flex justify-between gap-4 border-t border-slate-200 pt-4 text-base"><dt class="font-semibold text-slate-900">Total</dt><dd class="text-xl font-semibold text-slate-950"><%= number_to_currency(@order.total_cents.fdiv(100)) %></dd></div>
         </dl>
+        <% if @order.seller_orders.one? %>
+          <% seller_order = @order.seller_order %>
+          <dl class="mt-5 space-y-3 border-t border-slate-200 pt-4 text-sm">
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Artesão</dt><dd class="font-medium"><%= seller_order.seller.name %></dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão (15%)</dt><dd class="font-medium"><%= number_to_currency(seller_order.platform_fee_cents.fdiv(100)) %></dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Valor do artesão</dt><dd class="font-medium"><%= number_to_currency(seller_order.seller_amount_cents.fdiv(100)) %></dd></div>
+          </dl>
+        <% end %>
       </div>
     </aside>
   </div>

@@ -26,6 +26,15 @@ module Payments
 
       assert payment.reload.paid?
       assert order.reload.confirmed?
+      assert order.seller_order.confirmed?
+    end
+
+    test "records the processor fee returned by the gateway" do
+      _order, payment = build_order_with_payment
+
+      ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: payment.external_id, status: "approved", processor_fee_cents: 123).call
+
+      assert_equal 123, payment.reload.processor_fee_cents
     end
 
     test "declined event marks the payment as failed and leaves the order pending" do
@@ -60,6 +69,18 @@ module Payments
       end
 
       assert order.reload.confirmed?
+    end
+
+    test "an approved retry does not overwrite a refunded payment" do
+      order, payment = build_order_with_payment
+      payment.update!(status: :refunded, refunded_amount_cents: payment.amount_cents, application_fee_refunded_cents: payment.application_fee_cents)
+      order.seller_order.update!(status: :refunded, refunded_amount_cents: payment.amount_cents, platform_fee_refunded_cents: payment.application_fee_cents)
+      order.update!(status: :refunded)
+
+      ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: payment.external_id, status: "approved").call
+
+      assert payment.reload.refunded?
+      assert order.reload.refunded?
     end
 
     test "raises OrderNotFound for an unknown external_id" do
