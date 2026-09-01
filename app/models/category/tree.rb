@@ -44,6 +44,12 @@ class Category::Tree
     ids
   end
 
+  # A categoria pai, ou nil quando é de topo. Responde da árvore já carregada,
+  # evitando o `belongs_to` ir ao banco linha a linha.
+  def parent(category)
+    @by_id[category.parent_id]
+  end
+
   # Nome completo com a hierarquia, ex.: "Casa > Decoração".
   def breadcrumb_name(category)
     names = [ category.name ]

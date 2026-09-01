@@ -27,6 +27,31 @@ RSpec.describe "Admin products", type: :request do
     end
   end
 
+  # O seletor de categoria renderiza o breadcrumb de cada opção; sem a árvore
+  # carregada, cada uma sobe a hierarquia com uma query por nível. Asserção
+  # sobre crescimento, não sobre total.
+  describe "custo por categoria" do
+    def build_branch(name)
+      top = Category.create!(name: name)
+      child = Category.create!(name: "#{name} filha", parent: top)
+      Category.create!(name: "#{name} neta", parent: child)
+    end
+
+    it "does not issue more queries on the form when categories are added" do
+      sign_in_as(user)
+      build_branch("Ramo A")
+
+      get new_admin_product_path
+      before = count_queries { get new_admin_product_path }
+
+      build_branch("Ramo B")
+      get new_admin_product_path
+      after = count_queries { get new_admin_product_path }
+
+      expect(after).to eq(before)
+    end
+  end
+
   describe "POST /admin/products" do
     it "creates a product with valid attributes" do
       sign_in_as(user)

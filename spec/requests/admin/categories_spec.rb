@@ -22,6 +22,43 @@ RSpec.describe "Admin categories", type: :request do
     end
   end
 
+  # A listagem e o seletor de categoria pai renderizam o breadcrumb de cada
+  # categoria, e `Category#breadcrumb_name` sobe a árvore uma query por nível.
+  # A asserção é sobre o crescimento, não sobre um total absoluto.
+  describe "custo por categoria" do
+    def build_branch(name)
+      top = Category.create!(name: name)
+      child = Category.create!(name: "#{name} filha", parent: top)
+      Category.create!(name: "#{name} neta", parent: child)
+    end
+
+    before { post session_path, params: { email_address: user.email_address, password: "password" } }
+
+    it "does not issue more queries on the index when categories are added" do
+      build_branch("Ramo A")
+      get admin_categories_path
+      before = count_queries { get admin_categories_path }
+
+      build_branch("Ramo B")
+      get admin_categories_path
+      after = count_queries { get admin_categories_path }
+
+      expect(after).to eq(before)
+    end
+
+    it "does not issue more queries on the form when categories are added" do
+      build_branch("Ramo A")
+      get new_admin_category_path
+      before = count_queries { get new_admin_category_path }
+
+      build_branch("Ramo B")
+      get new_admin_category_path
+      after = count_queries { get new_admin_category_path }
+
+      expect(after).to eq(before)
+    end
+  end
+
   describe "POST /admin/categories" do
     it "creates a top-level category" do
       post session_path, params: { email_address: user.email_address, password: "password" }

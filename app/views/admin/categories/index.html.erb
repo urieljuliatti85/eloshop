@@ -15,9 +15,9 @@
         <tbody>
           <% @categories.each do |category| %>
             <tr>
-              <td class="font-semibold text-slate-900"><%= category.breadcrumb_name %></td>
-              <td><%= category.parent&.name || "Categoria principal" %></td>
-              <td><span class="admin-badge admin-badge--neutral"><%= category.products.size %></span></td>
+              <td class="font-semibold text-slate-900"><%= @category_tree.breadcrumb_name(category) %></td>
+              <td><%= @category_tree.parent(category)&.name || "Categoria principal" %></td>
+              <td><span class="admin-badge admin-badge--neutral"><%= product_counts.fetch(category.id, 0) %></span></td>
               <td>
                 <div class="flex justify-end gap-2">
                   <%= link_to "Editar", edit_admin_category_path(category), class: "admin-button admin-button--secondary" %>
