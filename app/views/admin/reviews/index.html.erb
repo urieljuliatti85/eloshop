@@ -28,10 +28,10 @@
               <td>
                 <div class="flex justify-end gap-2">
                   <% if review.pending? || review.rejected? %>
-                    <%= button_to "Aprovar", approve_admin_review_path(review), method: :patch, class: "admin-button admin-button--secondary" %>
+                    <%= button_to "Aprovar", approve_admin_review_path(review), method: :patch, class: "admin-button admin-button--secondary", form: { data: { turbo: false } } %>
                   <% end %>
                   <% if review.pending? || review.approved? %>
-                    <%= button_to "Rejeitar", reject_admin_review_path(review), method: :patch, class: "admin-button admin-button--danger" %>
+                    <%= button_to "Rejeitar", reject_admin_review_path(review), method: :patch, class: "admin-button admin-button--danger", form: { data: { turbo: false } } %>
                   <% end %>
                 </div>
               </td>
