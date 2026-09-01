@@ -20,6 +20,29 @@ RSpec.describe "Seller products", type: :request do
     expect(response.body).not_to include("Vaso alheio")
   end
 
+  # O seletor de categoria do formulário renderiza o breadcrumb de cada opção,
+  # e `Category#breadcrumb_name` sobe a árvore uma query por nível. A asserção é
+  # sobre o crescimento: o total muda quando a página muda, a inclinação não
+  # pode voltar. Diferente do admin, este painel tem tráfego proporcional ao
+  # número de artesãos.
+  it "does not issue more queries on the product form when categories are added" do
+    top = Category.create!(name: "Casa")
+    child = Category.create!(name: "Decoração", parent: top)
+    Category.create!(name: "Vasos", parent: child)
+
+    get new_seller_product_path
+    before = count_queries { get new_seller_product_path }
+
+    other = Category.create!(name: "Moda")
+    sub = Category.create!(name: "Acessórios", parent: other)
+    Category.create!(name: "Colares", parent: sub)
+
+    get new_seller_product_path
+    after = count_queries { get new_seller_product_path }
+
+    expect(after).to eq(before)
+  end
+
   it "searches only within the authenticated seller catalog" do
     own_product
     Product.create!(seller: seller, name: "Caneca própria", sku: "OWN-002", price_cents: 3_000, stock_quantity: 2)

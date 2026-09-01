@@ -57,6 +57,23 @@ Nenhuma.
 * Suite de testes (Minitest) executando, mesmo vazia
 * CI executando com sucesso em um commit trivial
 
+### Painel do vendedor e admin
+
+Medição posterior, mesma metodologia (requisição real, warmup, `payload[:cached]` descontado), sobre uma árvore de profundidade 3 crescendo de 20 para 115 categorias:
+
+| página | antes (20 → 115 cat.) | crescimento | depois |
+| --- | --- | --- | --- |
+| `admin/categories/index` | 11 → 30 | +0,20/categoria | 5 → 5 |
+| `admin/products/new` | 18 → 75 | +0,60/categoria | 6 → 6 |
+| `admin/categories/new` | 16 → 73 | +0,60/categoria | 4 → 4 |
+
+O achado corrigiu duas suposições registradas antes:
+
+* `admin/categories/index`, apontado como o alvo principal, era o **menos** afetado — o `includes(:parent, :products)` do controller já absorvia a maior parte, e o resto vinha de `breadcrumb_name` subindo além do pai (só categorias de profundidade ≥ 3 pagavam).
+* Os **formulários** eram o problema real, a 3× a taxa: montavam `Category.order(:name).map(&:breadcrumb_name)` na própria view, sem `includes`. O mesmo código estava em `seller_portal/products/_form`, introduzido pela Fase 22 — esse não é admin de baixo tráfego, e foi o que derrubou a justificativa original para não corrigir.
+
+A correção move a consulta para os controllers (§54) e usa o `Category::Tree` que já existia; `Tree#parent` foi acrescentado para a coluna "categoria pai" da listagem, e a contagem de produtos virou um `group(:category_id).count` no lugar de `category.products.size` por linha.
+
 ### Critérios de aceite
 
 * [x] Aplicação Rails criada
@@ -906,7 +923,7 @@ O método instância `Category#breadcrumb_name` continua existindo e em uso: a P
 * **Combinar as agregações de avaliação** (`average_rating` + `reviews_count`): a PDP pede as duas na marcação da página e o JSON-LD pede de novo — 6 chamadas. Chegou a ser implementado como uma leitura só, memoizada. A medição corrigida mostrou que o query cache já serve 4 das 6: o ganho real era **1 query**, ao custo de SQL cru (`pick(Arel.sql(...))`) e de uma memoização que envelhece no objeto. Revertido (§3, §51, §70).
 * **Índices para as colunas de ordenação da vitrine** (`price_cents`, `name`): com o volume atual o plano é Seq Scan + Sort e o PostgreSQL ignoraria o índice. Reavaliar quando o catálogo crescer o suficiente para o plano mudar (§53).
 * **Contadores materializados de avaliação** (counter cache + nota média em coluna): resolveria as agregações de vez, mas é mudança de schema mais callback (§57) sem necessidade medida.
-* **N+1 de `breadcrumb_name` no admin** (`admin/categories/index`, seletor de categoria do formulário de produto): é o mesmo padrão, e `Category::Tree` já resolveria. Não foi feito porque não foi medido — o admin é de baixo tráfego e não estava no escopo da medição.
+* ~~**N+1 de `breadcrumb_name` no admin**~~ — medido e corrigido depois (ver "Painel do vendedor e admin" abaixo). A suposição de que era só o admin estava errada: o mesmo padrão existia no painel do vendedor, cujo tráfego cresce com o número de artesãos.
 
 ### Testes
 
@@ -1231,7 +1248,7 @@ FASE 20, Etapa A (infraestrutura de deploy) CONCLUÍDA: a aplicação está no a
 
 FASE 20, Etapa B (Mercado Pago real via PIX) INICIADA e parcial: o adapter `Gateways::MercadoPago` existe e só é selecionado com `PAYMENT_GATEWAY=mercado_pago`; em produção, configuração ausente ou gateway fake falha explicitamente. As três lacunas locais foram fechadas: PIX vencido gera nova tentativa, cada tentativa persiste uma chave de idempotência própria (inclusive através de timeout/retry), e a página acompanha a confirmação do webhook automaticamente sem criar cobranças no polling. A integração NUNCA rodou contra o sandbox (falta credencial); os testes stubam HTTP e cobrem o contrato do adapter, não a API real. Detalhes em `docs/payments.md`.
 
-FASE 17 — Performance em andamento, com medição real (ver a seção da fase): N+1 da home e do catálogo eliminados — com 23 categorias de topo, a home caiu de 118 para 9 queries e o catálogo de 40 para 17. Achado de método registrado: contar toda notificação de `sql.active_record` superestima o problema, porque o query cache do Active Record serve repetições dentro da mesma requisição — isso derrubou uma otimização já escrita, que foi revertida. A primeira amostra de 24 horas em produção teve apenas 20 requisições fora dos healthchecks (3 na home e nenhuma no catálogo), insuficiente para concluir a fase.
+FASE 17 — Performance em andamento, com medição real (ver a seção da fase): N+1 da home, do catálogo, dos formulários do admin e do formulário de produto do painel do vendedor eliminados — com 23 categorias de topo, a home caiu de 118 para 9 queries e o catálogo de 40 para 17. Achado de método registrado: contar toda notificação de `sql.active_record` superestima o problema, porque o query cache do Active Record serve repetições dentro da mesma requisição — isso derrubou uma otimização já escrita, que foi revertida. A medição do admin (2026-09-01) desmentiu a suposição registrada em "deliberadamente não feito": o alvo apontado era o menos afetado, e o custo real estava nos formulários — inclusive no do painel do vendedor, cujo tráfego cresce com o número de artesãos. Corrigido com `Category::Tree`, zerando o crescimento nas três páginas. A primeira amostra de 24 horas em produção teve apenas 20 requisições fora dos healthchecks (3 na home e nenhuma no catálogo), insuficiente para concluir a fase — a medição sob tráfego real segue sendo o único critério em aberto.
 
 INFRAESTRUTURA DE CI corrigida: a suíte Minitest (343 runs, 952 asserções — models, services, integração) NÃO rodava em CI nenhum. Nem no job `test` do `.github/workflows/ci.yml` (só `bundle exec rspec`), nem no `bin/ci`, nem no hook de pre-commit. Toda a camada de domínio, onde o CLAUDE.md manda pôr regra de negócio, seguia sem verificação em push ou PR. Agora roda como job `minitest` separado do `test` (uma falha não mascara a outra) e como etapa do `bin/ci`. Com "Wait for CI" ligado, uma falha do Minitest passa a bloquear deploy — que é a intenção. Achado colateral, pré-existente e só local: a etapa "Tests: Seeds" do `bin/ci` usava `db:seed:replant`, cujo TRUNCATE pega ACCESS EXCLUSIVE e entrava em deadlock contra conexão remanescente do banco de teste (observado em 2 de 3 execuções, como deadlock e como violação de FK sobre linha de fixture sobrevivente) — trocado por `db:test:prepare db:seed`, mais um `db:test:prepare` final que devolve o banco vazio, porque o seed deixado para trás fazia a rodada seguinte da suíte falhar sozinha. Três execuções seguidas de `bin/ci` verdes depois da mudança.
 

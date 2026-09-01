@@ -3,6 +3,7 @@ module Admin
     include ProductGalleryUploads
 
     before_action :set_product, only: %i[show edit update publish unpublish discontinue]
+    before_action :set_category_tree, only: %i[new create edit update]
 
     def index
       @products = Product.includes(:seller, :category, :main_image_attachment).order(created_at: :desc)
@@ -68,6 +69,12 @@ module Admin
     end
 
     private
+
+    # O seletor de categoria renderiza o breadcrumb de cada opção; sem a árvore
+    # carregada, cada uma sobe a hierarquia com uma query por nível.
+    def set_category_tree
+      @category_tree = Category::Tree.load
+    end
 
     def set_product
       @product = Product.find(params[:id])

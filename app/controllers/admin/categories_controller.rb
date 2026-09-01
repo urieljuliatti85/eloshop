@@ -1,9 +1,10 @@
 module Admin
   class CategoriesController < BaseController
     before_action :set_category, only: %i[edit update destroy]
+    before_action :set_category_tree, only: %i[index new create edit update]
 
     def index
-      @categories = Category.order(:name).includes(:parent, :products)
+      @categories = @category_tree.categories
     end
 
     def new
@@ -40,6 +41,20 @@ module Admin
     end
 
     private
+
+    # A árvore inteira em uma leitura: a listagem e o seletor de pai renderizam
+    # o breadcrumb de cada categoria, e `Category#breadcrumb_name` sobe a árvore
+    # uma query por nível (ver Category::Tree).
+    def set_category_tree
+      @category_tree = Category::Tree.load
+    end
+
+    # Contagem por categoria em uma query, no lugar de `category.products.size`
+    # por linha.
+    def product_counts
+      @product_counts ||= Product.group(:category_id).count
+    end
+    helper_method :product_counts
 
     def set_category
       @category = Category.find_by!(slug: params[:id])

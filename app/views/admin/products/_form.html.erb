@@ -59,7 +59,7 @@
   <div>
     <%= form.label :category_id, "Categoria (opcional)" %>
     <%= form.select :category_id,
-          options_for_select(Category.order(:name).map { |c| [ c.breadcrumb_name, c.id ] }, form.object.category_id),
+          options_for_select(@category_tree.categories.map { |c| [ @category_tree.breadcrumb_name(c), c.id ] }, form.object.category_id),
           { include_blank: "Sem categoria" }, class: "w-full" %>
   </div>
 
