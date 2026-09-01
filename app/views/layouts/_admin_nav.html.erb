@@ -1,17 +1,60 @@
-<nav class="border-b border-gray-200 bg-white">
-  <div class="container mx-auto flex flex-wrap items-center justify-between gap-4 px-5 py-4">
-    <%= link_to "EloShop Admin", admin_root_path, class: "font-bold" %>
+<header class="admin-mobile-header">
+  <%= link_to admin_root_path, class: "admin-brand" do %>
+    <span class="admin-brand-mark">E</span>
+    <span>
+      <span class="block text-base font-bold text-white">EloShop</span>
+      <span class="block text-[0.65rem] uppercase tracking-[0.18em] text-slate-400">Administração</span>
+    </span>
+  <% end %>
 
-    <div class="flex flex-wrap items-center gap-1 text-sm">
-      <%= link_to "Dashboard", admin_root_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
-      <%= link_to "Produtos", admin_products_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
-      <%= link_to "Pedidos", admin_orders_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
-      <%= link_to "Clientes", admin_customers_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
-      <%= link_to "Categorias", admin_categories_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
-      <%= link_to "Cupons", admin_coupons_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
-      <%= link_to "Reviews", admin_reviews_path, class: "rounded px-3 py-1.5 hover:bg-gray-100" %>
-    </div>
+  <details class="admin-mobile-menu">
+    <summary aria-label="Abrir menu administrativo">
+      <span></span><span></span><span></span>
+    </summary>
+    <nav aria-label="Navegação administrativa">
+      <%= admin_nav_link "Dashboard", admin_root_path, icon: :dashboard, controllers: %w[dashboard] %>
+      <%= admin_nav_link "Produtos", admin_products_path, icon: :products, controllers: %w[products product_variants personalization_options product_images] %>
+      <%= admin_nav_link "Pedidos", admin_orders_path, icon: :orders, controllers: %w[orders] %>
+      <%= admin_nav_link "Clientes", admin_customers_path, icon: :customers, controllers: %w[customers] %>
+      <%= admin_nav_link "Categorias", admin_categories_path, icon: :categories, controllers: %w[categories] %>
+      <%= admin_nav_link "Cupons", admin_coupons_path, icon: :coupons, controllers: %w[coupons] %>
+      <%= admin_nav_link "Avaliações", admin_reviews_path, icon: :reviews, controllers: %w[reviews] %>
+      <div class="mt-2 border-t border-white/10 pt-2">
+        <%= link_to root_path, class: "admin-nav-link" do %><%= admin_icon :store %><span>Ver loja</span><% end %>
+        <%= button_to session_path, method: :delete, class: "admin-nav-link w-full" do %><%= admin_icon :logout %><span>Sair</span><% end %>
+      </div>
+    </nav>
+  </details>
+</header>
 
-    <%= button_to "Sair", session_path, method: :delete, class: "text-sm underline cursor-pointer" %>
+<aside class="admin-sidebar">
+  <%= link_to admin_root_path, class: "admin-brand" do %>
+    <span class="admin-brand-mark">E</span>
+    <span>
+      <span class="block text-lg font-bold text-white">EloShop</span>
+      <span class="block text-[0.65rem] uppercase tracking-[0.2em] text-slate-400">Administração</span>
+    </span>
+  <% end %>
+
+  <nav class="admin-nav" aria-label="Navegação administrativa">
+    <p class="admin-nav-label">Gestão</p>
+    <%= admin_nav_link "Dashboard", admin_root_path, icon: :dashboard, controllers: %w[dashboard] %>
+    <%= admin_nav_link "Produtos", admin_products_path, icon: :products, controllers: %w[products product_variants personalization_options product_images] %>
+    <%= admin_nav_link "Pedidos", admin_orders_path, icon: :orders, controllers: %w[orders] %>
+    <%= admin_nav_link "Clientes", admin_customers_path, icon: :customers, controllers: %w[customers] %>
+    <%= admin_nav_link "Categorias", admin_categories_path, icon: :categories, controllers: %w[categories] %>
+    <%= admin_nav_link "Cupons", admin_coupons_path, icon: :coupons, controllers: %w[coupons] %>
+    <%= admin_nav_link "Avaliações", admin_reviews_path, icon: :reviews, controllers: %w[reviews] %>
+  </nav>
+
+  <div class="admin-sidebar-footer">
+    <%= link_to root_path, class: "admin-nav-link" do %>
+      <%= admin_icon :store %>
+      <span>Ver loja</span>
+    <% end %>
+    <%= button_to session_path, method: :delete, class: "admin-nav-link w-full" do %>
+      <%= admin_icon :logout %>
+      <span>Sair</span>
+    <% end %>
   </div>
-</nav>
+</aside>

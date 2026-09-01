@@ -3,7 +3,7 @@ module Admin
     before_action :set_product, only: %i[show edit update publish unpublish discontinue]
 
     def index
-      @products = Product.order(created_at: :desc)
+      @products = Product.includes(:category, :main_image_attachment).order(created_at: :desc)
     end
 
     def show

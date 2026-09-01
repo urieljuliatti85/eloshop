@@ -3,7 +3,7 @@ module Admin
     before_action :set_category, only: %i[edit update destroy]
 
     def index
-      @categories = Category.order(:name).includes(:parent)
+      @categories = Category.order(:name).includes(:parent, :products)
     end
 
     def new

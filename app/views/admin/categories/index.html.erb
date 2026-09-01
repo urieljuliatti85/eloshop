@@ -1,34 +1,35 @@
-<div class="w-full">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">Categorias</h1>
-    <%= link_to "Nova categoria", new_admin_category_path, class: "bg-black text-white px-4 py-2 rounded" %>
-  </div>
+<div class="space-y-8">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="admin-section-label mb-2">Organização do catálogo</p>
+      <h1>Categorias</h1>
+      <p class="mt-2 text-sm text-slate-500">Estruture como os clientes encontram os produtos.</p>
+    </div>
+    <%= link_to "Nova categoria", new_admin_category_path, class: "admin-button admin-button--brand" %>
+  </header>
 
-  <table class="w-full text-left border-collapse">
-    <thead>
-      <tr class="border-b">
-        <th class="py-2">Nome</th>
-        <th class="py-2">Categoria pai</th>
-        <th class="py-2">Produtos</th>
-        <th class="py-2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @categories.each do |category| %>
-        <tr class="border-b">
-          <td class="py-2"><%= category.breadcrumb_name %></td>
-          <td class="py-2"><%= category.parent&.name %></td>
-          <td class="py-2"><%= category.products.count %></td>
-          <td class="py-2">
-            <%= link_to "Editar", edit_admin_category_path(category), class: "underline" %>
-            <%= button_to "Excluir", admin_category_path(category), method: :delete, class: "text-red-700 underline ml-2", form: { data: { turbo_confirm: "Excluir esta categoria?" } } %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-
-  <% if @categories.none? %>
-    <p class="text-sm text-gray-600 mt-4">Nenhuma categoria cadastrada.</p>
+  <% if @categories.any? %>
+    <div class="admin-table-wrap">
+      <table>
+        <thead><tr><th>Categoria</th><th>Categoria pai</th><th>Produtos</th><th><span class="sr-only">Ações</span></th></tr></thead>
+        <tbody>
+          <% @categories.each do |category| %>
+            <tr>
+              <td class="font-semibold text-slate-900"><%= category.breadcrumb_name %></td>
+              <td><%= category.parent&.name || "Categoria principal" %></td>
+              <td><span class="admin-badge admin-badge--neutral"><%= category.products.size %></span></td>
+              <td>
+                <div class="flex justify-end gap-2">
+                  <%= link_to "Editar", edit_admin_category_path(category), class: "admin-button admin-button--secondary" %>
+                  <%= button_to "Excluir", admin_category_path(category), method: :delete, class: "admin-button admin-button--danger", form: { data: { turbo_confirm: "Excluir esta categoria?" } } %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="admin-empty-state">Nenhuma categoria cadastrada.</div>
   <% end %>
 </div>

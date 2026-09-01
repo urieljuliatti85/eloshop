@@ -1,6 +1,6 @@
-<%= form_with model: [ :admin, product, product_variant ], class: "flex flex-col gap-4 w-full max-w-xl" do |form| %>
+<%= form_with model: [ :admin, product, product_variant ], class: "admin-form" do |form| %>
   <% if product_variant.errors.any? %>
-    <div class="text-red-700">
+    <div class="admin-flash admin-flash--danger">
       <ul>
         <% product_variant.errors.full_messages.each do |message| %>
           <li><%= message %></li>
@@ -11,32 +11,32 @@
 
   <div>
     <%= form.label :sku, "SKU" %>
-    <%= form.text_field :sku, class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_field :sku, class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :price_cents, "Preço (em centavos)" %>
-    <%= form.number_field :price_cents, class: "border rounded w-full px-2 py-1" %>
+    <%= form.number_field :price_cents, class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :stock_quantity, "Estoque" %>
-    <%= form.number_field :stock_quantity, class: "border rounded w-full px-2 py-1" %>
+    <%= form.number_field :stock_quantity, class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :size, "Tamanho" %>
-    <%= form.text_field :size, class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_field :size, class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :color, "Cor" %>
-    <%= form.text_field :color, class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_field :color, class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :material, "Material" %>
-    <%= form.text_field :material, class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_field :material, class: "w-full" %>
   </div>
 
   <p class="text-sm text-gray-600">Preencha ao menos um entre tamanho, cor e material.</p>
@@ -46,5 +46,5 @@
     <%= form.check_box :active %>
   </div>
 
-  <%= form.submit "Salvar", class: "bg-black text-white px-4 py-2 rounded w-fit" %>
+  <%= form.submit "Salvar variante", class: "admin-button admin-button--brand" %>
 <% end %>

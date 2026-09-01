@@ -1,6 +1,6 @@
-<%= form_with model: [ :admin, product ], class: "flex flex-col gap-4 w-full max-w-xl" do |form| %>
+<%= form_with model: [ :admin, product ], class: "admin-form" do |form| %>
   <% if product.errors.any? %>
-    <div class="text-red-700">
+    <div class="admin-flash admin-flash--danger">
       <ul>
         <% product.errors.full_messages.each do |message| %>
           <li><%= message %></li>
@@ -11,49 +11,49 @@
 
   <div>
     <%= form.label :name, "Nome" %>
-    <%= form.text_field :name, class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_field :name, class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :tag_names, "Tags (separadas por vírgula)" %>
-    <%= form.text_field :tag_names, value: product.tags.map(&:name).join(", "), class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_field :tag_names, value: product.tags.map(&:name).join(", "), class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :material_names, "Materiais (separados por vírgula)" %>
-    <%= form.text_field :material_names, value: product.materials.map(&:name).join(", "), class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_field :material_names, value: product.materials.map(&:name).join(", "), class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :technique_names, "Técnicas (separadas por vírgula)" %>
-    <%= form.text_field :technique_names, value: product.techniques.map(&:name).join(", "), class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_field :technique_names, value: product.techniques.map(&:name).join(", "), class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :description, "Descrição" %>
-    <%= form.text_area :description, class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_area :description, class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :price_cents, "Preço (em centavos)" %>
-    <%= form.number_field :price_cents, class: "border rounded w-full px-2 py-1" %>
+    <%= form.number_field :price_cents, class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :currency, "Moeda" %>
-    <%= form.text_field :currency, value: form.object.currency || "BRL", class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_field :currency, value: form.object.currency || "BRL", class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :sku, "SKU" %>
-    <%= form.text_field :sku, class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_field :sku, class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :category_id, "Categoria (opcional)" %>
     <%= form.select :category_id,
           options_for_select(Category.order(:name).map { |c| [ c.breadcrumb_name, c.id ] }, form.object.category_id),
-          { include_blank: "Sem categoria" }, class: "border rounded w-full px-2 py-1" %>
+          { include_blank: "Sem categoria" }, class: "w-full" %>
   </div>
 
   <div>
@@ -62,36 +62,36 @@
           options_for_select(
             [["Estoque padrão", "standard"], ["Peça única", "one_of_a_kind"], ["Sob encomenda", "made_to_order"]],
             form.object.availability_type
-          ), {}, class: "border rounded w-full px-2 py-1" %>
+          ), {}, class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :stock_quantity, "Estoque" %>
-    <%= form.number_field :stock_quantity, class: "border rounded w-full px-2 py-1" %>
+    <%= form.number_field :stock_quantity, class: "w-full" %>
     <p class="text-sm text-gray-600">Ignorado para produtos sob encomenda. Peça única aceita no máximo 1.</p>
   </div>
 
   <div>
     <%= form.label :production_time_min_days, "Prazo de produção — mínimo (dias úteis)" %>
-    <%= form.number_field :production_time_min_days, class: "border rounded w-full px-2 py-1" %>
+    <%= form.number_field :production_time_min_days, class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :production_time_max_days, "Prazo de produção — máximo (dias úteis)" %>
-    <%= form.number_field :production_time_max_days, class: "border rounded w-full px-2 py-1" %>
+    <%= form.number_field :production_time_max_days, class: "w-full" %>
     <p class="text-sm text-gray-600">Obrigatório apenas para produtos sob encomenda.</p>
   </div>
 
   <div>
     <%= form.label :weight_grams, "Peso para frete (gramas)" %>
-    <%= form.number_field :weight_grams, min: 1, class: "border rounded w-full px-2 py-1" %>
+    <%= form.number_field :weight_grams, min: 1, class: "w-full" %>
   </div>
 
   <div class="grid grid-cols-3 gap-3">
     <% { length_cm: "Comprimento", width_cm: "Largura", height_cm: "Altura" }.each do |field, label| %>
       <div>
         <%= form.label field, "#{label} (cm)" %>
-        <%= form.number_field field, min: 1, class: "border rounded w-full px-2 py-1" %>
+        <%= form.number_field field, min: 1, class: "w-full" %>
       </div>
     <% end %>
   </div>
@@ -107,5 +107,5 @@
     <p class="text-sm text-gray-600">Máximo de <%= Product::IMAGES_MAX_COUNT %> fotos no total. Envios somam às fotos já cadastradas.</p>
   </div>
 
-  <%= form.submit "Salvar", class: "bg-black text-white px-4 py-2 rounded w-fit" %>
+  <%= form.submit "Salvar produto", class: "admin-button admin-button--brand" %>
 <% end %>

@@ -12,6 +12,10 @@ class Admin::OrdersControllerTest < ActionDispatch::IntegrationTest
     get admin_orders_path
 
     assert_response :success
+    assert_select "aside.admin-sidebar"
+    assert_select "a[aria-current='page']", text: "Pedidos", minimum: 1
+    assert_select ".admin-badge", text: "Pendente", minimum: 1
+    assert_select "th", text: "Pagamento"
   end
 
   test "an authenticated admin can view any order" do
@@ -20,5 +24,8 @@ class Admin::OrdersControllerTest < ActionDispatch::IntegrationTest
     get admin_order_path(orders(:one))
 
     assert_response :success
+    assert_select "h2", text: "Itens do pedido"
+    assert_select ".admin-section-label", text: "Resumo"
+    assert_select "a", text: "Ver cliente"
   end
 end

@@ -1,48 +1,62 @@
-<div class="w-full max-w-2xl">
-  <h1 class="text-2xl font-bold mb-2"><%= @customer.name %></h1>
-  <p class="mb-6 text-sm text-gray-600">
-    <%= @customer.email %> — cliente desde <%= @customer.created_at.to_date %>
-  </p>
+<div class="space-y-8">
+  <header>
+    <%= link_to "← Voltar para clientes", admin_customers_path, class: "admin-link mb-3 inline-block text-sm" %>
+    <p class="admin-section-label mb-2">Perfil do cliente</p>
+    <div class="flex items-center gap-4">
+      <span class="grid size-14 place-items-center rounded-full bg-amber-100 text-lg font-bold text-amber-800"><%= @customer.name.first.upcase %></span>
+      <div class="min-w-0">
+        <h1 class="truncate"><%= @customer.name %></h1>
+        <p class="mt-1 truncate text-sm text-slate-500"><%= @customer.email %> · cliente desde <%= l(@customer.created_at.to_date, format: :short) %></p>
+      </div>
+    </div>
+  </header>
 
-  <h2 class="font-semibold mb-2">Endereços</h2>
-  <% if @customer.addresses.any? %>
-    <ul class="mb-6 space-y-2 text-sm">
-      <% @customer.addresses.each do |address| %>
-        <li class="border rounded p-3">
-          <%= address.street %>, <%= address.number %>
-          <% if address.complement.present? %> - <%= address.complement %><% end %>
-          — <%= address.neighborhood %>, <%= address.city %>/<%= address.state %>
-          — CEP <%= address.zip_code %>
-        </li>
+  <div class="grid items-start gap-6 xl:grid-cols-[minmax(18rem,0.6fr)_minmax(0,1.4fr)]">
+    <section class="admin-card p-5 sm:p-6">
+      <p class="admin-section-label">Entrega</p>
+      <h2 class="mt-1">Endereços</h2>
+      <% if @customer.addresses.any? %>
+        <ul class="mt-5 divide-y divide-slate-100">
+          <% @customer.addresses.each do |address| %>
+            <li class="py-4 first:pt-0 last:pb-0 text-sm leading-6 text-slate-600">
+              <p class="font-semibold text-slate-900"><%= address.street %>, <%= address.number %></p>
+              <% if address.complement.present? %><p><%= address.complement %></p><% end %>
+              <p><%= address.neighborhood %> — <%= address.city %>/<%= address.state %></p>
+              <p>CEP <%= address.zip_code %></p>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="mt-5 text-sm text-slate-500">Nenhum endereço cadastrado.</p>
       <% end %>
-    </ul>
-  <% else %>
-    <p class="mb-6 text-sm text-gray-600">Nenhum endereço cadastrado.</p>
-  <% end %>
+    </section>
 
-  <h2 class="font-semibold mb-2">Pedidos</h2>
-  <% if @orders.any? %>
-    <table class="w-full text-left border-collapse">
-      <thead>
-        <tr class="border-b">
-          <th class="py-2">#</th>
-          <th class="py-2">Status</th>
-          <th class="py-2">Total</th>
-          <th class="py-2"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @orders.each do |order| %>
-          <tr class="border-b">
-            <td class="py-2"><%= order.id %></td>
-            <td class="py-2"><%= order.status %></td>
-            <td class="py-2"><%= number_to_currency(order.total_cents / 100.0) %></td>
-            <td class="py-2"><%= link_to "Ver", admin_order_path(order) %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  <% else %>
-    <p class="text-sm text-gray-600">Nenhum pedido ainda.</p>
-  <% end %>
+    <section class="admin-card overflow-hidden">
+      <div class="admin-card-header">
+        <div><p class="admin-section-label">Histórico</p><h2 class="mt-1">Pedidos</h2></div>
+        <span class="admin-badge admin-badge--neutral"><%= @orders.size %></span>
+      </div>
+      <% if @orders.any? %>
+        <div class="overflow-x-auto">
+          <table>
+            <thead><tr><th>Pedido</th><th>Status</th><th>Pagamento</th><th>Total</th><th></th></tr></thead>
+            <tbody>
+              <% @orders.each do |order| %>
+                <% payment = order.payments.max_by(&:created_at) %>
+                <tr>
+                  <td class="font-semibold text-slate-900">#<%= order.id %></td>
+                  <td><%= admin_status_badge(order.status) %></td>
+                  <td><%= payment ? admin_status_badge(payment.status) : "—" %></td>
+                  <td class="font-semibold text-slate-900"><%= number_to_currency(order.total_cents.fdiv(100)) %></td>
+                  <td class="text-right"><%= link_to "Detalhes", admin_order_path(order), class: "admin-link" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <p class="m-5 admin-empty-state">Nenhum pedido ainda.</p>
+      <% end %>
+    </section>
+  </div>
 </div>

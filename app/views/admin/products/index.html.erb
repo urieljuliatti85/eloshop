@@ -1,31 +1,49 @@
-<div class="w-full">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">Produtos</h1>
-    <%= link_to "Novo produto", new_admin_product_path, class: "bg-black text-white px-4 py-2 rounded" %>
-  </div>
+<div class="space-y-8">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="admin-section-label mb-2">Catálogo</p>
+      <h1>Produtos</h1>
+      <p class="mt-2 text-sm text-slate-500">Gerencie disponibilidade, preço e estoque das peças.</p>
+    </div>
+    <%= link_to "Novo produto", new_admin_product_path, class: "admin-button admin-button--brand" %>
+  </header>
 
-  <table class="w-full text-left border-collapse">
-    <thead>
-      <tr class="border-b">
-        <th class="py-2">Nome</th>
-        <th class="py-2">SKU</th>
-        <th class="py-2">Preço</th>
-        <th class="py-2">Estoque</th>
-        <th class="py-2">Status</th>
-        <th class="py-2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @products.each do |product| %>
-        <tr class="border-b">
-          <td class="py-2"><%= product.name %></td>
-          <td class="py-2"><%= product.sku %></td>
-          <td class="py-2"><%= number_to_currency(product.price_cents / 100.0) %></td>
-          <td class="py-2"><%= product.stock_quantity %></td>
-          <td class="py-2"><%= product.status %></td>
-          <td class="py-2"><%= link_to "Ver", admin_product_path(product) %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+  <% if @products.any? %>
+    <div class="admin-table-wrap">
+      <table>
+        <thead><tr><th>Produto</th><th>SKU</th><th>Preço</th><th>Estoque</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>
+        <tbody>
+          <% @products.each do |product| %>
+            <tr>
+              <td>
+                <div class="flex items-center gap-3">
+                  <span class="grid size-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#f5f1e8] text-sm font-bold text-slate-400">
+                    <% if product.main_image.attached? %>
+                      <%= image_tag product.main_image, class: "h-full w-full object-cover", alt: "" %>
+                    <% else %>
+                      <%= product.name.first.upcase %>
+                    <% end %>
+                  </span>
+                  <span class="min-w-0">
+                    <span class="block max-w-72 truncate font-semibold text-slate-900"><%= product.name %></span>
+                    <span class="block text-xs text-slate-500"><%= product.category&.breadcrumb_name || "Sem categoria" %></span>
+                  </span>
+                </div>
+              </td>
+              <td class="font-mono text-xs"><%= product.sku %></td>
+              <td class="font-semibold text-slate-900"><%= number_to_currency(product.price_cents.fdiv(100)) %></td>
+              <td><span class="font-semibold <%= product.stock_quantity <= Product::LOW_STOCK_THRESHOLD ? 'text-amber-700' : 'text-slate-800' %>"><%= product.stock_quantity %></span></td>
+              <td><%= admin_status_badge(product.status) %></td>
+              <td class="text-right"><%= link_to "Detalhes", admin_product_path(product), class: "admin-button admin-button--secondary" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="admin-empty-state">
+      <p>Nenhum produto cadastrado.</p>
+      <%= link_to "Cadastrar primeiro produto", new_admin_product_path, class: "admin-button admin-button--brand mt-4" %>
+    </div>
+  <% end %>
 </div>

@@ -1,4 +1,8 @@
-<div class="w-full">
-  <h1 class="text-2xl font-bold mb-6">Novo produto</h1>
+<div class="space-y-6">
+  <header>
+    <%= link_to "← Voltar para produtos", admin_products_path, class: "admin-link mb-3 inline-block text-sm" %>
+    <p class="admin-section-label mb-2">Catálogo</p>
+    <h1>Novo produto</h1>
+  </header>
   <%= render "form", product: @product %>
 </div>

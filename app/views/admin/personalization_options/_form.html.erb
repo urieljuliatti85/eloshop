@@ -1,6 +1,6 @@
-<%= form_with model: [ :admin, product, personalization_option ], class: "flex flex-col gap-4 w-full max-w-xl" do |form| %>
+<%= form_with model: [ :admin, product, personalization_option ], class: "admin-form" do |form| %>
   <% if personalization_option.errors.any? %>
-    <div class="text-red-700">
+    <div class="admin-flash admin-flash--danger">
       <ul>
         <% personalization_option.errors.full_messages.each do |message| %>
           <li><%= message %></li>
@@ -11,12 +11,12 @@
 
   <div>
     <%= form.label :label, "Nome do campo" %>
-    <%= form.text_field :label, placeholder: "Ex: Nome gravado", class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_field :label, placeholder: "Ex: Nome gravado", class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :max_length, "Limite de caracteres" %>
-    <%= form.number_field :max_length, class: "border rounded w-full px-2 py-1" %>
+    <%= form.number_field :max_length, class: "w-full" %>
   </div>
 
   <div>
@@ -24,5 +24,5 @@
     <%= form.check_box :required %>
   </div>
 
-  <%= form.submit "Salvar", class: "bg-black text-white px-4 py-2 rounded w-fit" %>
+  <%= form.submit "Salvar campo", class: "admin-button admin-button--brand" %>
 <% end %>

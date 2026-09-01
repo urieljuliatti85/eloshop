@@ -1,33 +1,42 @@
-<div class="w-full">
-  <h1 class="text-2xl font-bold mb-6">Clientes</h1>
+<div class="space-y-8">
+  <header>
+    <p class="admin-section-label mb-2">Relacionamento</p>
+    <h1>Clientes</h1>
+    <p class="mt-2 text-sm text-slate-500">Consulte dados de contato e histórico de compras.</p>
+  </header>
 
-  <%= form_with url: admin_customers_path, method: :get, class: "mb-6 flex gap-2" do %>
-    <%= text_field_tag :query, params[:query], placeholder: "Buscar por nome ou e-mail", class: "border rounded px-2 py-1 flex-1" %>
-    <%= submit_tag "Buscar", class: "border rounded px-4 py-1" %>
+  <%= form_with url: admin_customers_path, method: :get, class: "admin-card flex flex-col gap-3 p-4 sm:flex-row" do %>
+    <div class="flex-1">
+      <%= label_tag :query, "Buscar clientes", class: "sr-only" %>
+      <%= text_field_tag :query, params[:query], placeholder: "Nome ou e-mail" %>
+    </div>
+    <%= submit_tag "Buscar", class: "admin-button admin-button--primary" %>
+    <% if params[:query].present? %><%= link_to "Limpar", admin_customers_path, class: "admin-button admin-button--secondary" %><% end %>
   <% end %>
 
-  <table class="w-full text-left border-collapse">
-    <thead>
-      <tr class="border-b">
-        <th class="py-2">Nome</th>
-        <th class="py-2">E-mail</th>
-        <th class="py-2">Pedidos</th>
-        <th class="py-2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @customers.each do |customer| %>
-        <tr class="border-b">
-          <td class="py-2"><%= customer.name %></td>
-          <td class="py-2"><%= customer.email %></td>
-          <td class="py-2"><%= customer.orders.count %></td>
-          <td class="py-2"><%= link_to "Ver", admin_customer_path(customer) %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-
-  <% if @customers.none? %>
-    <p class="text-sm text-gray-600 mt-4">Nenhum cliente encontrado.</p>
+  <% if @customers.any? %>
+    <div class="admin-table-wrap">
+      <table>
+        <thead><tr><th>Cliente</th><th>E-mail</th><th>Pedidos</th><th>Desde</th><th><span class="sr-only">Ações</span></th></tr></thead>
+        <tbody>
+          <% @customers.each do |customer| %>
+            <tr>
+              <td>
+                <div class="flex items-center gap-3">
+                  <span class="grid size-10 shrink-0 place-items-center rounded-full bg-amber-100 text-xs font-bold text-amber-800"><%= customer.name.first.upcase %></span>
+                  <span class="font-semibold text-slate-900"><%= customer.name %></span>
+                </div>
+              </td>
+              <td><%= customer.email %></td>
+              <td><span class="admin-badge admin-badge--neutral"><%= customer.orders.size %></span></td>
+              <td class="whitespace-nowrap text-slate-500"><%= l(customer.created_at.to_date, format: :short) %></td>
+              <td class="text-right"><%= link_to "Ver cliente", admin_customer_path(customer), class: "admin-button admin-button--secondary" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="admin-empty-state">Nenhum cliente encontrado.</div>
   <% end %>
 </div>

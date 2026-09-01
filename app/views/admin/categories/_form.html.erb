@@ -5,9 +5,9 @@
   parent_options = Category.order(:name).reject { |c| invalid_parent_ids.include?(c.id) }
 %>
 
-<%= form_with model: [ :admin, category ], class: "flex flex-col gap-4 w-full max-w-xl" do |form| %>
+<%= form_with model: [ :admin, category ], class: "admin-form" do |form| %>
   <% if category.errors.any? %>
-    <div class="text-red-700">
+    <div class="admin-flash admin-flash--danger">
       <ul>
         <% category.errors.full_messages.each do |message| %>
           <li><%= message %></li>
@@ -18,15 +18,15 @@
 
   <div>
     <%= form.label :name, "Nome" %>
-    <%= form.text_field :name, class: "border rounded w-full px-2 py-1" %>
+    <%= form.text_field :name, class: "w-full" %>
   </div>
 
   <div>
     <%= form.label :parent_id, "Categoria pai (opcional)" %>
     <%= form.select :parent_id,
           options_for_select(parent_options.map { |c| [ c.breadcrumb_name, c.id ] }, form.object.parent_id),
-          { include_blank: "Nenhuma — categoria de topo" }, class: "border rounded w-full px-2 py-1" %>
+          { include_blank: "Nenhuma — categoria de topo" }, class: "w-full" %>
   </div>
 
-  <%= form.submit "Salvar", class: "bg-black text-white px-4 py-2 rounded w-fit" %>
+  <%= form.submit "Salvar categoria", class: "admin-button admin-button--brand" %>
 <% end %>

@@ -1,26 +1,58 @@
-<div class="w-full">
-  <h1 class="text-2xl font-bold mb-6">Pedidos</h1>
+<div class="space-y-8">
+  <header>
+    <p class="admin-section-label mb-2">Operação</p>
+    <h1>Pedidos</h1>
+    <p class="mt-2 text-sm text-slate-500">Acompanhe compras, pagamentos e dados de entrega.</p>
+  </header>
 
-  <table class="w-full text-left border-collapse">
-    <thead>
-      <tr class="border-b">
-        <th class="py-2">#</th>
-        <th class="py-2">Cliente</th>
-        <th class="py-2">Status</th>
-        <th class="py-2">Total</th>
-        <th class="py-2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @orders.each do |order| %>
-        <tr class="border-b">
-          <td class="py-2"><%= order.id %></td>
-          <td class="py-2"><%= order.customer.name %></td>
-          <td class="py-2"><%= order.status %></td>
-          <td class="py-2"><%= number_to_currency(order.total_cents / 100.0) %></td>
-          <td class="py-2"><%= link_to "Ver", admin_order_path(order) %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+  <section class="grid gap-3 sm:grid-cols-3" aria-label="Resumo dos pedidos">
+    <% [["Pendente", "pending", "admin-badge--warning"], ["Confirmado", "confirmed", "admin-badge--success"], ["Cancelado", "cancelled", "admin-badge--danger"]].each do |label, status, tone| %>
+      <article class="admin-card flex items-center justify-between gap-4 px-5 py-4">
+        <span class="text-sm font-semibold text-slate-600"><%= label %></span>
+        <span class="admin-badge <%= tone %>"><%= @order_counts.fetch(status, 0) %></span>
+      </article>
+    <% end %>
+  </section>
+
+  <% if @orders.any? %>
+    <div class="admin-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th>Status</th>
+            <th>Pagamento</th>
+            <th>Total</th>
+            <th>Data</th>
+            <th><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @orders.each do |order| %>
+            <% payment = order.payments.max_by(&:created_at) %>
+            <tr>
+              <td class="font-semibold text-slate-950">#<%= order.id %></td>
+              <td>
+                <div class="flex items-center gap-3">
+                  <span class="grid size-9 shrink-0 place-items-center rounded-full bg-amber-100 text-xs font-bold text-amber-800"><%= order.customer.name.first.upcase %></span>
+                  <span class="min-w-0">
+                    <span class="block truncate font-semibold text-slate-800"><%= order.customer.name %></span>
+                    <span class="block truncate text-xs text-slate-500"><%= order.customer.email %></span>
+                  </span>
+                </div>
+              </td>
+              <td><%= admin_status_badge(order.status) %></td>
+              <td><%= payment ? admin_status_badge(payment.status) : admin_status_badge("pending", label: "Não iniciado") %></td>
+              <td class="font-semibold text-slate-950"><%= number_to_currency(order.total_cents.fdiv(100)) %></td>
+              <td class="whitespace-nowrap text-slate-500"><%= l(order.created_at.to_date, format: :short) %></td>
+              <td class="text-right"><%= link_to "Detalhes", admin_order_path(order), class: "admin-button admin-button--secondary" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="admin-empty-state">Nenhum pedido foi criado ainda.</div>
+  <% end %>
 </div>

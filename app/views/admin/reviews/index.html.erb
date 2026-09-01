@@ -1,48 +1,46 @@
-<div class="w-full">
-  <h1 class="text-2xl font-bold mb-6">Avaliações</h1>
+<div class="space-y-8">
+  <header>
+    <p class="admin-section-label mb-2">Comunidade</p>
+    <h1>Avaliações</h1>
+    <p class="mt-2 text-sm text-slate-500">Modere comentários e preserve a confiança no catálogo.</p>
+  </header>
 
-  <div class="flex gap-2 mb-4 text-sm">
-    <%= link_to "Todas", admin_reviews_path, class: (params[:status].blank? ? "font-semibold underline" : "underline") %>
-    <%= link_to "Pendentes", admin_reviews_path(status: "pending"), class: (params[:status] == "pending" ? "font-semibold underline" : "underline") %>
-    <%= link_to "Aprovadas", admin_reviews_path(status: "approved"), class: (params[:status] == "approved" ? "font-semibold underline" : "underline") %>
-    <%= link_to "Rejeitadas", admin_reviews_path(status: "rejected"), class: (params[:status] == "rejected" ? "font-semibold underline" : "underline") %>
-  </div>
+  <nav class="flex flex-wrap gap-2" aria-label="Filtrar avaliações">
+    <% [["Todas", nil], ["Pendentes", "pending"], ["Aprovadas", "approved"], ["Rejeitadas", "rejected"]].each do |label, status| %>
+      <% active = params[:status].presence == status %>
+      <%= link_to label, admin_reviews_path(status: status), class: "admin-button #{active ? 'admin-button--primary' : 'admin-button--secondary'}", aria: { current: ("page" if active) } %>
+    <% end %>
+  </nav>
 
-  <table class="w-full text-left border-collapse">
-    <thead>
-      <tr class="border-b">
-        <th class="py-2">Produto</th>
-        <th class="py-2">Cliente</th>
-        <th class="py-2">Nota</th>
-        <th class="py-2">Comentário</th>
-        <th class="py-2">Compra verificada</th>
-        <th class="py-2">Status</th>
-        <th class="py-2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @reviews.each do |review| %>
-        <tr class="border-b">
-          <td class="py-2"><%= review.product.name %></td>
-          <td class="py-2"><%= review.customer.name %></td>
-          <td class="py-2"><%= review.rating %>/5</td>
-          <td class="py-2 max-w-xs"><%= truncate(review.comment, length: 100) %></td>
-          <td class="py-2"><%= review.verified_purchase? ? "Sim" : "Não" %></td>
-          <td class="py-2"><%= review.status %></td>
-          <td class="py-2">
-            <% if review.pending? || review.rejected? %>
-              <%= button_to "Aprovar", approve_admin_review_path(review), method: :patch, class: "underline" %>
-            <% end %>
-            <% if review.pending? || review.approved? %>
-              <%= button_to "Rejeitar", reject_admin_review_path(review), method: :patch, class: "text-red-700 underline ml-2" %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-
-  <% if @reviews.none? %>
-    <p class="text-sm text-gray-600 mt-4">Nenhuma avaliação encontrada.</p>
+  <% if @reviews.any? %>
+    <div class="admin-table-wrap">
+      <table>
+        <thead><tr><th>Produto</th><th>Cliente</th><th>Nota</th><th>Comentário</th><th>Origem</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>
+        <tbody>
+          <% @reviews.each do |review| %>
+            <tr>
+              <td class="font-semibold text-slate-900"><%= review.product.name %></td>
+              <td><%= review.customer.name %></td>
+              <td><span class="whitespace-nowrap text-amber-500" aria-label="<%= review.rating %> de 5 estrelas"><%= "★" * review.rating %><span class="text-slate-200"><%= "★" * (5 - review.rating) %></span></span></td>
+              <td class="max-w-sm text-slate-600"><%= truncate(review.comment, length: 100) %></td>
+              <td><span class="admin-badge <%= review.verified_purchase? ? 'admin-badge--success' : 'admin-badge--neutral' %>"><%= review.verified_purchase? ? "Compra verificada" : "Não verificada" %></span></td>
+              <td><%= admin_status_badge(review.status) %></td>
+              <td>
+                <div class="flex justify-end gap-2">
+                  <% if review.pending? || review.rejected? %>
+                    <%= button_to "Aprovar", approve_admin_review_path(review), method: :patch, class: "admin-button admin-button--secondary" %>
+                  <% end %>
+                  <% if review.pending? || review.approved? %>
+                    <%= button_to "Rejeitar", reject_admin_review_path(review), method: :patch, class: "admin-button admin-button--danger" %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="admin-empty-state">Nenhuma avaliação encontrada.</div>
   <% end %>
 </div>

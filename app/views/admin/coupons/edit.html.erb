@@ -1,5 +1,4 @@
-<div class="w-full max-w-xl">
-  <h1 class="text-2xl font-bold mb-6">Editar cupom</h1>
-
+<div class="space-y-6">
+  <header><%= link_to "← Voltar para cupons", admin_coupons_path, class: "admin-link mb-3 inline-block text-sm" %><p class="admin-section-label mb-2">Promoções</p><h1>Editar cupom</h1></header>
   <%= render "form", coupon: @coupon %>
 </div>

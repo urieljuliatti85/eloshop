@@ -30,6 +30,9 @@ RSpec.describe "Admin dashboard", type: :request do
       expect(response.body).to include(sold_out_product.name)
       expect(response.body).to include(order.customer.name)
       expect(response.body).to include(review.customer.name)
+      expect(response.body).to include("Área administrativa")
+      expect(response.body).to include("Acompanhe o que precisa de atenção")
+      expect(response.body).to include("admin-sidebar")
     end
   end
 end

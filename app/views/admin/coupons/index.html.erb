@@ -1,52 +1,44 @@
-<div class="w-full">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">Cupons</h1>
-    <%= link_to "Novo cupom", new_admin_coupon_path, class: "bg-black text-white px-4 py-2 rounded" %>
-  </div>
+<div class="space-y-8">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="admin-section-label mb-2">Promoções</p>
+      <h1>Cupons</h1>
+      <p class="mt-2 text-sm text-slate-500">Controle descontos, validade e limites de uso.</p>
+    </div>
+    <%= link_to "Novo cupom", new_admin_coupon_path, class: "admin-button admin-button--brand" %>
+  </header>
 
-  <table class="w-full text-left border-collapse">
-    <thead>
-      <tr class="border-b">
-        <th class="py-2">Código</th>
-        <th class="py-2">Desconto</th>
-        <th class="py-2">Mínimo</th>
-        <th class="py-2">Usos</th>
-        <th class="py-2">Validade</th>
-        <th class="py-2">Status</th>
-        <th class="py-2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @coupons.each do |coupon| %>
-        <tr class="border-b">
-          <td class="py-2 font-mono"><%= coupon.code %></td>
-          <td class="py-2">
-            <% if coupon.discount_type_percentage? %>
-              <%= coupon.percentage %>%
-            <% else %>
-              <%= number_to_currency(coupon.amount_cents / 100.0) %>
-            <% end %>
-          </td>
-          <td class="py-2"><%= coupon.minimum_subtotal_cents ? number_to_currency(coupon.minimum_subtotal_cents / 100.0) : "—" %></td>
-          <td class="py-2"><%= coupon.uses_count %>/<%= coupon.max_uses || "∞" %></td>
-          <td class="py-2">
-            <% if coupon.starts_at || coupon.expires_at %>
-              <%= coupon.starts_at&.to_date %> – <%= coupon.expires_at&.to_date %>
-            <% else %>
-              sem prazo
-            <% end %>
-          </td>
-          <td class="py-2"><%= coupon.active? ? "Ativo" : "Inativo" %></td>
-          <td class="py-2">
-            <%= link_to "Editar", edit_admin_coupon_path(coupon), class: "underline" %>
-            <%= button_to "Excluir", admin_coupon_path(coupon), method: :delete, class: "text-red-700 underline ml-2", form: { data: { turbo_confirm: "Excluir este cupom?" } } %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-
-  <% if @coupons.none? %>
-    <p class="text-sm text-gray-600 mt-4">Nenhum cupom cadastrado.</p>
+  <% if @coupons.any? %>
+    <div class="admin-table-wrap">
+      <table>
+        <thead><tr><th>Código</th><th>Desconto</th><th>Mínimo</th><th>Usos</th><th>Validade</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>
+        <tbody>
+          <% @coupons.each do |coupon| %>
+            <tr>
+              <td><span class="rounded-lg bg-slate-100 px-2.5 py-1 font-mono text-xs font-bold text-slate-800"><%= coupon.code %></span></td>
+              <td class="font-semibold text-slate-900"><%= coupon.discount_type_percentage? ? "#{coupon.percentage}%" : number_to_currency(coupon.amount_cents.fdiv(100)) %></td>
+              <td><%= coupon.minimum_subtotal_cents ? number_to_currency(coupon.minimum_subtotal_cents.fdiv(100)) : "—" %></td>
+              <td><%= coupon.uses_count %> / <%= coupon.max_uses || "∞" %></td>
+              <td class="whitespace-nowrap text-slate-500">
+                <% if coupon.starts_at || coupon.expires_at %>
+                  <%= coupon.starts_at ? l(coupon.starts_at.to_date, format: :short) : "Agora" %> – <%= coupon.expires_at ? l(coupon.expires_at.to_date, format: :short) : "Sem fim" %>
+                <% else %>
+                  Sem prazo
+                <% end %>
+              </td>
+              <td><%= admin_status_badge(coupon.active? ? "active" : "inactive") %></td>
+              <td>
+                <div class="flex justify-end gap-2">
+                  <%= link_to "Editar", edit_admin_coupon_path(coupon), class: "admin-button admin-button--secondary" %>
+                  <%= button_to "Excluir", admin_coupon_path(coupon), method: :delete, class: "admin-button admin-button--danger", form: { data: { turbo_confirm: "Excluir este cupom?" } } %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="admin-empty-state">Nenhum cupom cadastrado.</div>
   <% end %>
 </div>

@@ -12,19 +12,38 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="flex min-h-screen flex-col bg-gray-50 text-ink">
-    <%= render "layouts/admin_nav" %>
+  <body class="admin-body">
+    <div class="admin-shell">
+      <%= render "layouts/admin_nav" %>
 
-    <main class="container mx-auto flex-1 px-5 py-10">
-      <% if flash[:notice] %>
-        <p class="mb-6 rounded bg-green-50 px-4 py-3 text-sm text-green-800"><%= flash[:notice] %></p>
-      <% end %>
+      <div class="admin-workspace">
+        <header class="admin-topbar">
+          <div>
+            <p class="admin-eyebrow">EloShop</p>
+            <p class="text-sm font-semibold text-slate-800">Área administrativa</p>
+          </div>
 
-      <% if flash[:alert] %>
-        <p class="mb-6 rounded bg-red-50 px-4 py-3 text-sm text-red-800"><%= flash[:alert] %></p>
-      <% end %>
+          <div class="admin-user-chip">
+            <span class="admin-user-avatar"><%= Current.user.email_address.first.upcase %></span>
+            <span class="min-w-0">
+              <span class="block text-sm font-semibold text-slate-900">Administrador</span>
+              <span class="block max-w-52 truncate text-xs text-slate-500"><%= Current.user.email_address %></span>
+            </span>
+          </div>
+        </header>
 
-      <%= yield %>
-    </main>
+        <main class="admin-main">
+          <% if flash[:notice] %>
+            <div class="admin-flash admin-flash--success" role="status"><%= flash[:notice] %></div>
+          <% end %>
+
+          <% if flash[:alert] %>
+            <div class="admin-flash admin-flash--danger" role="alert"><%= flash[:alert] %></div>
+          <% end %>
+
+          <div class="admin-content"><%= yield %></div>
+        </main>
+      </div>
+    </div>
   </body>
 </html>
