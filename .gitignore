@@ -36,11 +36,6 @@
 # macOS
 .DS_Store
 
-# Documentação interna de planejamento/orientação (não faz parte do código da aplicação).
-/CLAUDE.md
-/ROADMAP.md
-/docs/
-
 # SDK do Railway (railway/iac), necessário só para rodar `railway config
 # plan/apply` sobre .railway/railway.ts — não faz parte do runtime da aplicação.
 /node_modules/

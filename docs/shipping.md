@@ -1,0 +1,65 @@
+# Shipping
+
+Este documento descreve as regras de frete e prazo de entrega.
+
+## Composição do prazo total
+
+O sistema deve sempre separar conceitualmente:
+
+```text
+Tempo de produção
++
+Tempo de preparação
++
+Tempo de transporte
+```
+
+"Tempo de produção" (relevante apenas para produtos feitos sob encomenda — ver `docs/inventory.md`) nunca deve ser confundido com "tempo de transporte". Um produto sob encomenda deve exibir ao cliente, no mínimo, o prazo de produção antes da compra, e esse prazo deve ser registrado no pedido no momento da compra.
+
+## Escopo do MVP
+
+No MVP (Fase 5 do `ROADMAP.md`), não há cálculo real de frete nem produtos sob encomenda. O frete é um valor fixo/manual associado ao pedido, apenas para permitir que o fluxo de checkout seja concluído de ponta a ponta.
+
+**Decisão de negócio**: frete fixo de R$ 15,00 (`Checkout::CreateOrder::SHIPPING_CENTS`) para qualquer pedido, até a Fase 12 trazer o cálculo real via Correios.
+
+## Frete real (Fase 12)
+
+Quando implementado, o cálculo de frete pode depender de:
+
+* CEP de destino
+* peso do produto
+* dimensões
+* quantidade de itens
+* tipo de produto (ex.: embalagem especial — ver `docs/domain.md`)
+* região
+* transportadora
+* modalidade de envio
+
+Nesta fase, o cálculo inicial é feito por `Shipping::Calculator`, sem dependência
+de API externa: usa CEP, peso total dos itens e quantidade. O resultado preserva
+transportadora, modalidade, valor e prazo estimado no `Shipment` associado ao
+`SellerOrder` do artesão. Assim, frete e fulfillment já estão isolados por
+vendedor, embora o primeiro lançamento aceite somente um vendedor por checkout.
+O provedor é isolado para permitir a integração futura com Correios,
+agregador ou transportadora privada quando essa decisão de negócio for tomada.
+
+O produto possui peso e dimensões opcionais. O peso participa do cálculo; as
+dimensões ficam registradas para o próximo provedor que exigir cubagem. CEP
+inválido ou peso acima do limite de envio tornam o frete indisponível e impedem
+a criação do pedido.
+
+Regras de frete não devem ser implementadas diretamente em controllers — devem ficar isoladas no domínio de Shipping.
+
+`TODO — DECISION REQUIRED`: qual(is) transportadora(s) ou serviço(s) de cálculo de frete serão integrados (ex.: Correios, transportadora privada, serviço agregador) não está definido.
+
+## Embalagem
+
+Produtos artesanais podem ter necessidades especiais de embalagem (peso da embalagem, dimensões, fragilidade, necessidade de proteção, instruções especiais). Este domínio não deve ser adicionado até existir uma necessidade real e concreta — não faz parte do MVP nem está agendado em uma fase específica do roadmap ainda.
+
+`TODO — DECISION REQUIRED`: se e quando embalagem especial se tornar uma necessidade real do negócio, isso deve ser adicionado ao `ROADMAP.md` como uma fase própria antes de ser implementado.
+
+## Rastreamento
+
+`Shipment` é criado com o `SellerOrder` em status `pending`, preservando transportadora,
+modalidade, preço e prazo estimado. Código de rastreamento e transições de envio
+serão preenchidos quando houver integração operacional com a transportadora.
