@@ -1,6 +1,6 @@
 # EloShop
 
-E-commerce de artesanato e produtos feitos à mão, construído em Ruby on Rails.
+E-commerce e Marketplace dedicado ao público que fabrica artesanato e produtos feitos à mão.
 
 ## Stack
 
