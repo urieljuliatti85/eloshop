@@ -38,6 +38,15 @@ class MobileNavigationTest < ApplicationSystemTestCase
     assert_current_path new_customer_session_path
   end
 
+  test "the menu offers the artisan dashboard to a visitor" do
+    visit new_contact_path
+
+    click_button "Abrir menu"
+    within("header") { click_link "Painel do Artesão" }
+
+    assert_current_path new_session_path
+  end
+
   test "the menu closes when Escape is pressed" do
     visit new_contact_path
 
