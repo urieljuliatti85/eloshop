@@ -6,9 +6,9 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## Estado atual do projeto
 
-Aplicação Rails 8.1 / Ruby 3.3.11 / PostgreSQL em desenvolvimento ativo. Fases 0–16 e 18 estão implementadas (catálogo, carrinho, checkout, pedidos, pagamento com gateway fake, frete, cupons, admin, variantes, personalizações, avaliações, wishlist, SEO, API v1, segurança). A fase corrente é a **Fase 20 — Produção e deploy** (Railway; Etapa B, integração real com Mercado Pago/PIX, ainda não iniciada).
+Aplicação Rails 8.1 / Ruby 3.3.11 / PostgreSQL em desenvolvimento ativo. Fases 0–16 e 18 estão implementadas; Fases 17, 19, 20 e 22 têm trabalho em andamento. A frente corrente é a **Fase 22 — Fundação do marketplace**: `Seller`, painel escopado e vínculo OAuth com Mercado Pago implementados; falta configurar a aplicação Marketplace e validar o OAuth em ambiente de teste antes da Fase 23.
 
-**Sempre leia a seção "Estado atual" no fim do `ROADMAP.md` antes de começar** — ela é a fonte de verdade sobre a fase corrente, a próxima tarefa e o que foi deliberadamente adiado (Fase 8 pré-venda, Fase 17 performance, Fases 22/23 marketplace). Não assuma que uma fase listada no roadmap já existe no código.
+**Sempre leia a seção "Estado atual" no fim do `ROADMAP.md` antes de começar** — ela é a fonte de verdade sobre a fase corrente, a próxima tarefa e o que foi deliberadamente adiado (Fase 8 pré-venda, medição da Fase 17 e split da Fase 23). Não assuma que uma fase listada no roadmap já existe no código.
 
 ## Comandos
 

@@ -11,6 +11,30 @@
     </div>
   <% end %>
 
+  <section class="rounded-2xl bg-white p-6 shadow-sm">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Recebimentos e verificação</p>
+        <h2 class="mt-2 text-xl font-bold">Mercado Pago</h2>
+        <% if current_seller.mercado_pago_connected? %>
+          <p class="mt-2 text-sm text-ink-muted">Conta conectada em <%= l(current_seller.mercado_pago_connected_at, format: :short) %>. Identificador do vendedor: <%= current_seller.mercado_pago_user_id %>. Ambiente: <%= current_seller.mercado_pago_live_mode? ? "produção" : "teste" %>.</p>
+          <p class="mt-2 text-sm text-ink-muted">A EloShop não armazena RG, selfie ou comprovantes. A verificação de identidade acontece no Mercado Pago.</p>
+        <% elsif @mercado_pago_oauth_configured %>
+          <p class="mt-2 text-sm text-ink-muted">Conclua a identificação da sua conta no Mercado Pago e autorize a EloShop a processar suas vendas.</p>
+        <% else %>
+          <p class="mt-2 text-sm text-amber-700">A conexão aguarda a configuração da aplicação Mercado Pago pela plataforma.</p>
+        <% end %>
+      </div>
+      <div>
+        <% if current_seller.mercado_pago_connected? %>
+          <%= button_to "Desconectar", seller_mercado_pago_connection_path, method: :delete, class: "rounded-full border border-red-200 px-5 py-2 text-sm font-semibold text-red-700", form: { data: { turbo_confirm: "Desconectar a conta e suspender a publicação dos produtos?" } } %>
+        <% elsif @mercado_pago_oauth_configured %>
+          <%= button_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, method: :post, class: "rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white" %>
+        <% end %>
+      </div>
+    </div>
+  </section>
+
   <div class="grid gap-4 sm:grid-cols-3">
     <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Produtos</p><p class="mt-2 text-3xl font-bold"><%= @products_count %></p></div>
     <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Publicados</p><p class="mt-2 text-3xl font-bold"><%= @active_products_count %></p></div>
