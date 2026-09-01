@@ -33,12 +33,12 @@ class FullPurchaseFlowTest < ActionDispatch::IntegrationTest
       post orders_path, params: { address_id: address.id }
     end
     order = Order.last
-    assert_redirected_to order_path(order)
+    assert_redirected_to new_order_payment_path(order)
     assert order.pending?
     assert_equal 2, product.reload.stock_quantity
 
-    # Cliente vai para a página de pagamento
-    get new_order_payment_path(order)
+    # Cliente segue diretamente para a página de pagamento
+    follow_redirect!
     assert_response :success
     payment = order.payments.last
     assert payment.pending?

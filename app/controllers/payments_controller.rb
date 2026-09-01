@@ -6,6 +6,10 @@ class PaymentsController < StorefrontController
     @payment = Payments::Authorize.new(order: @order, gateway: gateway).call
     @simulated_gateway = gateway.is_a?(Gateways::FakeGateway)
     @webhook_secret = Gateways::FakeGateway::WEBHOOK_SECRET if @simulated_gateway
+  rescue Gateways::UnknownGateway, Gateways::SimulatedGatewayInProduction,
+    Gateways::MercadoPago::ConfigurationError, Gateways::MercadoPago::RequestFailed,
+    Timeout::Error, SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError
+    redirect_to order_path(@order), alert: "O pedido foi salvo, mas o pagamento está temporariamente indisponível. Tente novamente em alguns instantes."
   end
 
   def status

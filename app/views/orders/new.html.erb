@@ -1,72 +1,95 @@
-<div class="w-full">
-  <h1 class="mb-8 text-2xl font-bold text-ink">Revisar pedido</h1>
+<div class="mx-auto w-full max-w-6xl">
+  <header class="mb-8">
+    <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Checkout seguro</p>
+    <h1 class="mt-2 text-3xl font-bold text-ink">Revise e confirme seu pedido</h1>
+    <ol class="mt-6 grid grid-cols-3 gap-2 text-xs font-semibold sm:max-w-xl sm:text-sm" aria-label="Etapas do checkout">
+      <li class="rounded-full bg-green-50 px-3 py-2 text-center text-green-800">1. Identificação ✓</li>
+      <li class="rounded-full bg-brand-500 px-3 py-2 text-center text-white" aria-current="step">2. Entrega</li>
+      <li class="rounded-full bg-gray-100 px-3 py-2 text-center text-ink-muted">3. Pagamento</li>
+    </ol>
+  </header>
 
   <% if alert %>
-    <p class="mb-6 rounded bg-red-50 px-4 py-3 text-sm text-red-800"><%= alert %></p>
+    <p class="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800"><%= alert %></p>
   <% end %>
 
-  <div class="grid grid-cols-1 gap-12 md:grid-cols-2">
-    <div>
-      <% if @addresses.empty? %>
-        <p class="text-ink-muted">
-          Você ainda não tem um endereço cadastrado.
-          <%= link_to "Cadastrar endereço", new_address_path, class: "text-brand-600 hover:underline" %>
-        </p>
-      <% else %>
-        <%= form_with url: orders_path, class: "flex flex-col gap-6" do |form| %>
-          <div>
-            <h2 class="mb-3 font-semibold text-ink">Endereço de entrega</h2>
-            <div class="space-y-2">
-              <% @addresses.each do |address| %>
-                <label class="flex items-start gap-2 rounded-2xl border border-gray-300 px-4 py-3 has-[:checked]:border-brand-500">
-                  <%= radio_button_tag :address_id, address.id, address == @addresses.first, class: "mt-1" %>
-                  <span class="text-sm text-ink"><%= "#{address.street}, #{address.number} - #{address.city}/#{address.state}" %></span>
-                </label>
-              <% end %>
+  <% if @addresses.empty? %>
+    <section class="max-w-2xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <h2 class="text-xl font-semibold text-ink">Cadastre o endereço de entrega</h2>
+      <p class="mt-2 text-sm text-ink-muted">Você voltará automaticamente para esta revisão depois de salvar.</p>
+      <%= link_to "Cadastrar endereço", new_address_path(return_to: new_order_path), class: "mt-6 inline-block rounded-full bg-brand-500 px-7 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
+    </section>
+  <% else %>
+    <%= form_with url: orders_path,
+          class: "grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]",
+          data: { controller: "checkout", checkout_subtotal_value: @cart.subtotal_cents - @cart.discount_cents } do |form| %>
+      <div class="space-y-6">
+        <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Entrega</p>
+              <h2 class="mt-1 text-xl font-semibold text-ink">Escolha o endereço</h2>
             </div>
-            <p class="mt-3 text-sm text-ink-muted">O frete é calculado pelo CEP, peso e quantidade dos itens.</p>
+            <%= link_to "+ Novo endereço", new_address_path(return_to: new_order_path), class: "text-sm font-semibold text-brand-600 hover:underline" %>
           </div>
 
-          <%= form.submit "Finalizar pedido", class: "w-fit rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
-        <% end %>
-      <% end %>
-    </div>
-
-    <div class="rounded-2xl bg-brand-50 p-6">
-      <h2 class="mb-4 font-semibold text-ink">Itens</h2>
-
-      <div class="space-y-3">
-        <% @cart.cart_items.includes(:product, :product_variant).each do |item| %>
-          <div class="flex justify-between text-sm">
-            <span class="text-ink">
-              <%= item.product.name %>
-              <% if item.product_variant %> (<%= item.product_variant.to_label %>)<% end %>
-              <% item.personalization_entries.each do |entry| %>
-                <span class="block text-xs text-ink-muted"><%= entry[:label] %>: <%= entry[:value] %></span>
-              <% end %>
-              <span class="text-ink-muted">x<%= item.quantity %></span>
-            </span>
-            <span class="text-ink"><%= number_to_currency(item.subtotal_cents / 100.0) %></span>
+          <div class="mt-5 space-y-3">
+            <% @addresses.each do |address| %>
+              <% quote = @shipping_quotes[address] %>
+              <label class="flex items-start gap-3 rounded-2xl border border-gray-200 px-4 py-4 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 <%= 'opacity-60' unless quote %>">
+                <%= radio_button_tag :address_id, address.id, address == @selected_address,
+                      disabled: quote.nil?, required: true, class: "mt-1",
+                      data: { checkout_target: "address", action: "change->checkout#update", shipping_cents: quote&.shipping_cents } %>
+                <span class="min-w-0 flex-1 text-sm">
+                  <span class="block font-semibold text-ink"><%= address.street %>, <%= address.number %></span>
+                  <span class="mt-1 block text-ink-muted"><%= [address.neighborhood, address.city, address.state].compact_blank.join(" · ") %> · CEP <%= address.zip_code %></span>
+                  <% if quote %>
+                    <span class="mt-2 block font-medium text-ink"><%= quote.service %> · até <%= quote.estimated_days %> dias úteis · <%= number_to_currency(quote.shipping_cents.fdiv(100)) %></span>
+                  <% else %>
+                    <span class="mt-2 block font-medium text-red-700">Entrega indisponível para este endereço.</span>
+                  <% end %>
+                </span>
+              </label>
+            <% end %>
           </div>
-        <% end %>
+        </section>
+
+        <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Produtos</p>
+          <h2 class="mt-1 text-xl font-semibold text-ink">Itens do pedido</h2>
+          <ul class="mt-5 divide-y divide-gray-100">
+            <% @cart.cart_items.includes({ product: :seller }, :product_variant).each do |item| %>
+              <li class="flex justify-between gap-4 py-4 first:pt-0 last:pb-0">
+                <div>
+                  <p class="font-semibold text-ink"><%= item.product.name %></p>
+                  <p class="text-sm text-ink-muted"><%= item.product.seller.name %> · <%= item.quantity %> unidade(s)</p>
+                  <% if item.product_variant %><p class="text-sm text-ink-muted"><%= item.product_variant.to_label %></p><% end %>
+                  <% item.personalization_entries.each do |entry| %>
+                    <p class="text-sm text-ink-muted"><%= entry[:label] %>: <%= entry[:value] %></p>
+                  <% end %>
+                </div>
+                <p class="whitespace-nowrap font-semibold text-ink"><%= number_to_currency(item.subtotal_cents.fdiv(100)) %></p>
+              </li>
+            <% end %>
+          </ul>
+        </section>
       </div>
 
-      <div class="mt-4 space-y-2 border-t border-brand-200 pt-4 text-sm">
-        <% if @cart.coupon %>
-          <div class="flex justify-between text-ink-muted">
-            <span>Cupom <%= @cart.coupon.code %></span>
-            <span>-<%= number_to_currency(@cart.discount_cents / 100.0) %></span>
-          </div>
-        <% end %>
-        <div class="flex justify-between text-ink-muted">
-          <span>Frete</span>
-          <span><%= @shipping ? number_to_currency(@shipping_cents / 100.0) : "Selecione um endereço" %></span>
-        </div>
-        <div class="flex justify-between text-base font-semibold text-ink">
-          <span>Total</span>
-          <span><%= @shipping ? number_to_currency((@cart.subtotal_cents - @cart.discount_cents + @shipping_cents) / 100.0) : "—" %></span>
-        </div>
-      </div>
-    </div>
-  </div>
+      <aside class="rounded-2xl bg-brand-50 p-6 lg:sticky lg:top-24">
+        <h2 class="text-xl font-semibold text-ink">Resumo</h2>
+        <dl class="mt-5 space-y-3 text-sm">
+          <div class="flex justify-between text-ink-muted"><dt>Produtos</dt><dd><%= number_to_currency(@cart.subtotal_cents.fdiv(100)) %></dd></div>
+          <% if @cart.coupon %>
+            <div class="flex justify-between text-green-800"><dt>Cupom <%= @cart.coupon.code %></dt><dd>− <%= number_to_currency(@cart.discount_cents.fdiv(100)) %></dd></div>
+          <% end %>
+          <div class="flex justify-between text-ink-muted"><dt>Frete</dt><dd data-checkout-target="shipping"><%= @shipping ? number_to_currency(@shipping_cents.fdiv(100)) : "Indisponível" %></dd></div>
+          <div class="flex justify-between border-t border-brand-200 pt-4 text-lg font-bold text-ink"><dt>Total</dt><dd data-checkout-target="total"><%= @shipping ? number_to_currency((@cart.subtotal_cents - @cart.discount_cents + @shipping_cents).fdiv(100)) : "—" %></dd></div>
+        </dl>
+
+        <%= form.submit "Ir para pagamento", disabled: @selected_address.nil?, class: "mt-6 w-full cursor-pointer rounded-full bg-brand-500 px-8 py-4 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50" %>
+        <p class="mt-3 text-center text-xs leading-5 text-ink-muted">O estoque, o desconto e o frete serão revalidados antes da criação do pedido.</p>
+        <%= link_to "← Voltar ao carrinho", cart_path, class: "mt-5 block text-center text-sm font-semibold text-brand-600 hover:underline" %>
+      </aside>
+    <% end %>
+  <% end %>
 </div>

@@ -73,7 +73,7 @@ RSpec.describe "Orders", type: :request do
   end
 
   describe "POST /orders" do
-    it "creates the order and redirects to it" do
+    it "creates the order and redirects directly to payment" do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
@@ -83,7 +83,7 @@ RSpec.describe "Orders", type: :request do
       end.to change(Order, :count).by(1)
 
       order = Order.last
-      expect(response).to redirect_to(order_path(order))
+      expect(response).to redirect_to(new_order_payment_path(order))
       expect(order.customer).to eq(customer)
     end
 

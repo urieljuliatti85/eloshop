@@ -2,6 +2,7 @@
   <h1 class="mb-8 text-2xl font-bold text-ink">Endereço de entrega</h1>
 
   <%= form_with model: @address, url: addresses_path, class: "flex flex-col gap-4" do |form| %>
+    <%= hidden_field_tag :return_to, @return_to %>
     <% if @address.errors.any? %>
       <div class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
         <ul class="list-inside list-disc">

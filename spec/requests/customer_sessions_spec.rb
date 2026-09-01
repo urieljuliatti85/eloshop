@@ -16,6 +16,16 @@ RSpec.describe "Customer sessions", type: :request do
       expect(Cart.order(:created_at).last.customer).to eq(customer)
     end
 
+    it "returns to checkout after authentication" do
+      product = Product.create!(seller: approved_seller, name: "Retorno", sku: "RETURN-LOGIN", price_cents: 1000, stock_quantity: 1, status: :active)
+      post cart_items_path, params: { product_id: product.id, quantity: 1 }
+      get new_order_path
+
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+
+      expect(response).to redirect_to(new_order_path)
+    end
+
     it "rejects invalid credentials" do
       post customer_session_path, params: { email: customer.email, password: "wrong" }
 

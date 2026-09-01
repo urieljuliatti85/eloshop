@@ -13,7 +13,7 @@ class CustomersController < StorefrontController
     if @customer.save
       start_new_customer_session_for(@customer)
       associate_cart_with_customer(@customer)
-      redirect_to root_path, notice: "Conta criada com sucesso."
+      redirect_to after_customer_authentication_url, notice: "Conta criada com sucesso."
     else
       render :new, status: :unprocessable_entity
     end

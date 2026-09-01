@@ -54,6 +54,18 @@ RSpec.describe "Payments", type: :request do
       expect(response.body).not_to include('name="card_number"')
       expect(response.body).not_to include('name="cvv"')
     end
+
+    it "keeps the pending order recoverable when the gateway times out" do
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+      allow(Payments::Authorize).to receive(:new).and_raise(Net::ReadTimeout)
+
+      get new_order_payment_path(order)
+
+      expect(response).to redirect_to(order_path(order))
+      follow_redirect!
+      expect(response.body).to include("pagamento está temporariamente indisponível")
+      expect(order.reload).to be_pending
+    end
   end
 
   describe "GET /orders/:order_id/payment/status" do

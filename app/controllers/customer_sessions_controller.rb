@@ -10,7 +10,7 @@ class CustomerSessionsController < StorefrontController
     if customer = Customer.authenticate_by(params.permit(:email, :password))
       start_new_customer_session_for(customer)
       associate_cart_with_customer(customer)
-      redirect_to root_path, notice: "Login realizado com sucesso."
+      redirect_to after_customer_authentication_url, notice: "Login realizado com sucesso."
     else
       redirect_to new_customer_session_path, alert: "E-mail ou senha inválidos."
     end

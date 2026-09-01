@@ -17,7 +17,8 @@ class ProductPersonalizationTest < ApplicationSystemTestCase
 
     visit cart_path
     click_link "Finalizar compra"
-    click_button "Finalizar pedido"
+    assert_current_path new_order_path
+    click_button "Ir para pagamento"
 
     assert_text "Nome gravado: Maria"
   end

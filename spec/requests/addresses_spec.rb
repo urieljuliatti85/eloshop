@@ -32,6 +32,34 @@ RSpec.describe "Addresses", type: :request do
       expect(Address.last.customer).to eq(customer)
     end
 
+    it "returns to checkout after registering the required address" do
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+
+      post addresses_path, params: {
+        return_to: new_order_path,
+        address: {
+          street: "Rua Checkout", number: "20", neighborhood: "Centro",
+          city: "Cidade", state: "SP", zip_code: "00000-000"
+        }
+      }
+
+      expect(response).to redirect_to(new_order_path)
+    end
+
+    it "does not redirect to an external return URL" do
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+
+      post addresses_path, params: {
+        return_to: "https://evil.example/steal",
+        address: {
+          street: "Rua Segura", number: "30", neighborhood: "Centro",
+          city: "Cidade", state: "SP", zip_code: "00000-000"
+        }
+      }
+
+      expect(response).to redirect_to(root_path)
+    end
+
     it "does not admit an admin session as customer authentication" do
       user = User.create!(email_address: "admin-address@example.com", password: "password", password_confirmation: "password")
       post session_path, params: { email_address: user.email_address, password: "password" }

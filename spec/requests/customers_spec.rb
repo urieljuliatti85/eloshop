@@ -39,5 +39,21 @@ RSpec.describe "Customers", type: :request do
 
       expect(response).to have_http_status(:unprocessable_entity)
     end
+
+    it "returns a newly registered customer to checkout" do
+      seller = Seller.create!(name: "Cadastro Checkout", status: :approved, approved_at: Time.current)
+      product = Product.create!(seller: seller, name: "Produto cadastro", sku: "RETURN-SIGNUP", price_cents: 1000, stock_quantity: 1, status: :active)
+      post cart_items_path, params: { product_id: product.id, quantity: 1 }
+      get new_order_path
+
+      post customers_path, params: {
+        customer: {
+          name: "Cliente Checkout", email: "signup-checkout@example.com",
+          password: "password123", password_confirmation: "password123"
+        }
+      }
+
+      expect(response).to redirect_to(new_order_path)
+    end
   end
 end

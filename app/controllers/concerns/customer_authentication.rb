@@ -33,7 +33,12 @@ module CustomerAuthentication
     end
 
     def request_customer_authentication
+      session[:return_to_after_customer_authenticating] = request.fullpath if %w[GET HEAD].include?(request.request_method)
       redirect_to new_customer_session_path
+    end
+
+    def after_customer_authentication_url
+      session.delete(:return_to_after_customer_authenticating) || root_path
     end
 
     def start_new_customer_session_for(customer)

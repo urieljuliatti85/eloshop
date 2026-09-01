@@ -10,7 +10,9 @@ class OrdersController < StorefrontController
   def new
     @cart = Current.cart
     @addresses = Current.customer.addresses
-    @shipping = Shipping::Calculator.new(cart: @cart, address: @addresses.first).call if @addresses.any?
+    @shipping_quotes = @addresses.index_with { |address| shipping_quote_for(address) }
+    @selected_address = @addresses.find { |address| @shipping_quotes[address].present? }
+    @shipping = @shipping_quotes[@selected_address]
     @shipping_cents = @shipping&.shipping_cents
     session[:checkout_idempotency_key] ||= SecureRandom.hex(20)
   end
@@ -27,7 +29,7 @@ class OrdersController < StorefrontController
     ).call
 
     session.delete(:checkout_idempotency_key)
-    redirect_to order_path(order), notice: "Pedido \##{order.id} criado com sucesso."
+    redirect_to new_order_payment_path(order), notice: "Pedido \##{order.id} criado. Finalize o pagamento para confirmá-lo."
   rescue Checkout::CreateOrder::Failed => e
     redirect_to cart_path, alert: e.message
   rescue Shipping::Calculator::Unavailable => e
@@ -42,5 +44,11 @@ class OrdersController < StorefrontController
 
   def ensure_cart_not_empty
     redirect_to cart_path, alert: "Seu carrinho está vazio." if Current.cart.cart_items.empty?
+  end
+
+  def shipping_quote_for(address)
+    Shipping::Calculator.new(cart: @cart, address: address).call
+  rescue Shipping::Calculator::Unavailable
+    nil
   end
 end

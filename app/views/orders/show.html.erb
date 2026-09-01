@@ -5,6 +5,10 @@
     <p class="mb-6 rounded bg-green-50 px-4 py-3 text-sm text-green-800"><%= notice %></p>
   <% end %>
 
+  <% if alert %>
+    <p class="mb-6 rounded bg-red-50 px-4 py-3 text-sm text-red-800"><%= alert %></p>
+  <% end %>
+
   <h1 class="mb-2 text-2xl font-bold text-ink">Pedido #<%= @order.id %></h1>
   <p class="mb-6 text-sm text-ink-muted">Status: <%= @order.status %></p>
 

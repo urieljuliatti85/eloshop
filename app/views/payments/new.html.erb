@@ -1,10 +1,37 @@
-<div class="w-full max-w-md">
-  <h1 class="mb-2 text-2xl font-bold text-ink">Pagamento — Pedido #<%= @order.id %></h1>
-  <p class="mb-6 text-sm text-ink-muted">Valor: <%= number_to_currency(@payment.amount_cents / 100.0) %></p>
+<div class="mx-auto w-full max-w-3xl">
+  <ol class="mb-8 grid grid-cols-3 gap-2 text-xs font-semibold sm:max-w-xl sm:text-sm" aria-label="Etapas do checkout">
+    <li class="rounded-full bg-green-50 px-3 py-2 text-center text-green-800">1. Identificação ✓</li>
+    <li class="rounded-full bg-green-50 px-3 py-2 text-center text-green-800">2. Entrega ✓</li>
+    <li class="rounded-full bg-brand-500 px-3 py-2 text-center text-white" aria-current="step">3. Pagamento</li>
+  </ol>
 
-  <%= render "payment",
-             payment: @payment,
-             order: @order,
-             simulated_gateway: @simulated_gateway,
-             webhook_secret: @webhook_secret %>
+  <% if notice %><p class="mb-6 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800"><%= notice %></p><% end %>
+
+  <div class="grid gap-8 md:grid-cols-[minmax(0,1fr)_18rem]">
+    <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Pedido #<%= @order.id %></p>
+      <h1 class="mb-2 mt-1 text-2xl font-bold text-ink">Finalize com PIX</h1>
+      <p class="mb-6 text-sm text-ink-muted">Valor: <%= number_to_currency(@payment.amount_cents.fdiv(100)) %></p>
+
+      <%= render "payment",
+                 payment: @payment,
+                 order: @order,
+                 simulated_gateway: @simulated_gateway,
+                 webhook_secret: @webhook_secret %>
+    </section>
+
+    <aside class="rounded-2xl bg-brand-50 p-5">
+      <h2 class="font-semibold text-ink">Seu pedido</h2>
+      <ul class="mt-4 divide-y divide-brand-200 text-sm">
+        <% @order.order_items.each do |item| %>
+          <li class="py-3 first:pt-0">
+            <div class="flex justify-between gap-3"><span class="font-medium text-ink"><%= item.product_name %> × <%= item.quantity %></span><span><%= number_to_currency(item.subtotal_cents.fdiv(100)) %></span></div>
+            <% item.personalization_entries.each do |entry| %><p class="mt-1 text-xs text-ink-muted"><%= entry[:label] %>: <%= entry[:value] %></p><% end %>
+          </li>
+        <% end %>
+      </ul>
+      <div class="mt-4 flex justify-between border-t border-brand-200 pt-4 font-bold"><span>Total</span><span><%= number_to_currency(@order.total_cents.fdiv(100)) %></span></div>
+      <%= link_to "Ver detalhes do pedido", order_path(@order), class: "mt-5 block text-sm font-semibold text-brand-600 hover:underline" %>
+    </aside>
+  </div>
 </div>
