@@ -67,4 +67,24 @@ class Observability::JsonEventSubscriberTest < ActiveSupport::TestCase
 
     assert_empty output.string
   end
+
+  test "writes marketplace OAuth failures without response values" do
+    output = StringIO.new
+    subscriber = Observability::JsonEventSubscriber.new(io: output)
+
+    subscriber.emit(
+      name: "marketplace.mercado_pago_oauth.failed",
+      payload: {
+        failure_reason: "invalid_payload",
+        response_keys: %w[access_token expires_in user_id]
+      },
+      tags: {},
+      context: { request_id: "request-1" }
+    )
+
+    event = JSON.parse(output.string)
+    assert_equal "warn", event["level"]
+    assert_equal %w[access_token expires_in user_id], event["response_keys"]
+    assert_not_includes output.string, "secret-access-token"
+  end
 end

@@ -18,11 +18,13 @@ module Marketplace
     def initialize(app_id: ENV["MERCADO_PAGO_MARKETPLACE_APP_ID"],
                    client_secret: ENV["MERCADO_PAGO_MARKETPLACE_CLIENT_SECRET"],
                    redirect_uri: ENV["MERCADO_PAGO_MARKETPLACE_REDIRECT_URI"],
-                   sandbox: ENV["MERCADO_PAGO_MARKETPLACE_SANDBOX"])
+                   sandbox: ENV["MERCADO_PAGO_MARKETPLACE_SANDBOX"],
+                   event_reporter: Rails.event)
       @app_id = app_id
       @client_secret = client_secret
       @redirect_uri = redirect_uri
       @sandbox = TRUE_VALUES.include?(sandbox.to_s.downcase)
+      @event_reporter = event_reporter
     end
 
     def configured?
@@ -50,6 +52,7 @@ module Marketplace
     def exchange(code:)
       require_configuration!
 
+      payload = nil
       request = Net::HTTP::Post.new(TOKEN_PATH)
       request["Accept"] = "application/json"
       form_data = {
@@ -68,12 +71,29 @@ module Marketplace
       payload = JSON.parse(response.body.to_s)
       build_credentials(payload)
     rescue JSON::ParserError, KeyError, ArgumentError, TypeError
+      log_invalid_payload(payload)
       raise RequestFailed, "Mercado Pago devolveu credenciais inválidas"
     rescue Timeout::Error, SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError
       raise RequestFailed, "Não foi possível conectar ao Mercado Pago. Tente novamente."
     end
 
     private
+
+    def log_invalid_payload(payload)
+      response_keys = if payload.is_a?(Hash)
+        payload.keys.map { |key| key.to_s.first(100) }.sort.first(50)
+      else
+        []
+      end
+
+      @event_reporter.notify(
+        "marketplace.mercado_pago_oauth.failed",
+        failure_reason: "invalid_payload",
+        response_keys: response_keys
+      )
+    rescue StandardError
+      nil
+    end
 
     def require_configuration!
       return if configured?

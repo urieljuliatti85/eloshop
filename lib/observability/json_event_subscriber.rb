@@ -4,7 +4,7 @@ module Observability
   # Serializa os eventos estruturados nativos do Rails como JSON de uma linha.
   # A Railway indexa cada campo como atributo pesquisável no Log Explorer.
   class JsonEventSubscriber
-    TRACKED_EVENT_PREFIXES = %w[active_job. checkout. payment.].freeze
+    TRACKED_EVENT_PREFIXES = %w[active_job. checkout. marketplace. payment.].freeze
     TRACKED_EVENT_NAMES = %w[action_controller.request_completed].freeze
     PRIVATE_PAYLOAD_KEYS = %i[arguments exception_message params].freeze
 

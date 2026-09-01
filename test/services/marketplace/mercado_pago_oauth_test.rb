@@ -76,6 +76,34 @@ module Marketplace
       end
     end
 
+    test "logs only response field names when credentials are invalid" do
+      remote_payload = {
+        "user_id" => 123_456,
+        "access_token" => "secret-access-token",
+        "expires_in" => 15_552_000,
+        "live_mode" => false
+      }
+      events = []
+      event_reporter = Object.new
+      event_reporter.define_singleton_method(:notify) { |name, **payload| events << [ name, payload ] }
+      oauth = MercadoPagoOauth.new(
+        app_id: "app-123",
+        client_secret: "client-secret",
+        redirect_uri: "https://eloshop.example/painel/mercado-pago/callback",
+        event_reporter: event_reporter
+      )
+
+      assert_raises(MercadoPagoOauth::RequestFailed) do
+        stub_request(remote_payload, oauth: oauth) { oauth.exchange(code: "authorization-code") }
+      end
+
+      name, payload = events.fetch(0)
+      assert_equal "marketplace.mercado_pago_oauth.failed", name
+      assert_equal "invalid_payload", payload[:failure_reason]
+      assert_equal %w[access_token expires_in live_mode user_id], payload[:response_keys]
+      assert_not_includes payload.to_s, "secret-access-token"
+    end
+
   test "does not include a remote response body in an error" do
       fake_http = Object.new
       fake_http.define_singleton_method(:request) do |_request|
