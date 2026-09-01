@@ -171,5 +171,47 @@ RSpec.describe "Storefront products", type: :request do
 
       expect(after).to eq(before)
     end
+
+    # A capa dos cards é carregada com preload, não com includes. Com includes,
+    # o `distinct` do catálogo obriga o Active Record a resolver tudo numa
+    # única SELECT DISTINCT, e o anexo arrasta as tabelas de variante do
+    # Active Storage: 15 JOINs e ~130 colunas. A execução continua trivial
+    # (Unique em 0,03 ms), mas o custo *estimado* do plano passa do
+    # jit_above_cost e o PostgreSQL compila 120 funções por execução — ~1240 ms
+    # a cada requisição, medido em produção como 1012 ms (p50) no /produtos.
+    #
+    # A asserção é sobre a forma da query, não sobre tempo: tempo depende da
+    # máquina, e o teste viraria ruído. Uma SELECT DISTINCT que já traga as
+    # colunas do blob junto é exatamente a forma que reintroduz o problema.
+    it "loads the cover image without folding Active Storage into the DISTINCT query" do
+      Product.create!(seller: approved_seller, name: "Vaso da capa", sku: "PERF-002", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+
+      queries = []
+      subscription = ActiveSupport::Notifications.subscribe("sql.active_record") do |*, payload|
+        queries << payload[:sql] unless payload[:name].to_s.in?(QueryHelpers::IGNORED) || payload[:cached]
+      end
+      get products_path
+      ActiveSupport::Notifications.unsubscribe(subscription)
+
+      distinct_queries = queries.select { |sql| sql.include?("SELECT DISTINCT") }
+      expect(distinct_queries).not_to be_empty
+      expect(distinct_queries).to all(satisfy { |sql| !sql.include?("active_storage_variant_records") })
+    end
+
+    # O contraponto do teste acima: separar a capa em preload não pode
+    # reintroduzir uma query por card.
+    it "does not grow the catalog query count when products are added" do
+      3.times { |i| Product.create!(seller: approved_seller, name: "Vaso serie #{i}", sku: "PERF-1#{i}", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active) }
+
+      get products_path
+      before = count_queries { get products_path }
+
+      3.times { |i| Product.create!(seller: approved_seller, name: "Vaso extra #{i}", sku: "PERF-2#{i}", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active) }
+
+      get products_path
+      after = count_queries { get products_path }
+
+      expect(after).to eq(before)
+    end
   end
 end

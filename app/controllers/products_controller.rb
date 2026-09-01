@@ -46,8 +46,20 @@ class ProductsController < StorefrontController
     @products = scope
       # :category entra porque o card do produto mostra o nome da categoria —
       # sem isso é uma query por card (medido: 7 no catálogo com 10 produtos).
-      .includes(:seller, :product_variants, :personalization_options, category: :parent)
-      .with_attached_main_image
+      #
+      # preload, e não includes, porque aqui já existe `distinct`: com includes
+      # o Active Record resolve tudo numa única SELECT DISTINCT, e a capa
+      # (main_image) arrasta as tabelas de variante do Active Storage, dando
+      # 15 JOINs e ~130 colunas. Isso não torna a execução lenta — o Unique
+      # roda em 0,03 ms —, mas infla o custo *estimado* do plano para 2,5M
+      # (estimativa de 985.759 linhas para devolver 12), o que ultrapassa o
+      # jit_above_cost do PostgreSQL: o banco compila 120 funções por
+      # execução, ~1240 ms, a cada requisição (JIT não é cacheado).
+      # Medido em produção: /produtos a 1012 ms (p50). Com preload, cada
+      # associação vira sua própria query pequena, o plano nunca chega ao
+      # limiar do JIT e a ação cai para ~10 ms.
+      .preload(:seller, :product_variants, :personalization_options, category: :parent)
+      .preload(main_image_attachment: :blob)
       .limit(@per_page)
       .offset((@page - 1) * @per_page)
       # A view pergunta `@products.any?` antes de renderizar a grade; sem

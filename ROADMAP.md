@@ -940,11 +940,55 @@ Configuração: `spec/rails_helper.rb` passou a apontar `file_fixture_path` para
 * [x] Cada otimização saiu de uma medição, com antes e depois registrados
 * [x] O custo da home e do catálogo não cresce com o número de categorias, com teste que falha no código anterior
 * [x] Nenhum índice criado sem plano de consulta que o justifique
-* [ ] Medição sob tráfego real em produção (depende de volume suficiente; primeira amostra abaixo)
+* [x] Medição sob tráfego real em produção realizada (2026-09-01, segunda amostra abaixo); apontou o catálogo como gargalo, cuja correção fica em aberto na fase
 
 ### Primeira amostra em produção
 
 Em 2026-08-31, os logs HTTP da Railway das 24 horas anteriores foram agregados sem healthchecks e sem expor IP, user agent ou requisições individuais. A amostra tinha apenas 20 requisições: 3 na home (p50 57 ms, p95 180 ms), nenhuma no catálogo e 20 no total fora de `/up`/`/ready` (p50 13 ms, p95 180 ms; 11 respostas 2xx e 9 respostas 3xx). Esse volume não permite concluir a medição da fase, especialmente porque o catálogo não recebeu tráfego. A medição deve ser repetida quando houver tráfego orgânico suficiente; não gerar carga artificial em produção para fechar o critério.
+
+### Segunda amostra em produção
+
+Em 2026-09-01, os logs HTTP e os eventos `action_controller.request_completed` da Railway foram agregados sem expor IP, user agent ou requisições individuais. A janela de 7 dias somou 7.795 requisições (4.246 2xx, 2.954 3xx, 541 4xx, 54 5xx); o detalhamento por requisição disponível cobriu 3h22 de navegação real, com 240 requisições e nenhum healthcheck.
+
+A amostra desta vez **inclui o catálogo** e é conclusiva para ele:
+
+| página | n | p50 | p95 |
+| --- | --- | --- | --- |
+| home `/` | 4 | 33 ms | 48 ms |
+| catálogo `/produtos` | 5 | **1012 ms** | **1497 ms** |
+| PDP `/artesaos/:s/produtos/:slug` | 1 | 146 ms | — |
+| admin (todas) | 50 | 27 ms | 75 ms |
+| painel do vendedor | 3 | 30 ms | 50 ms |
+| Active Storage | 135 | 24 ms | 65 ms |
+
+O catálogo é o único gargalo, e o gargalo é o banco: das cinco cargas de `ProductsController#index`, todas fizeram **14 queries** (a correção de N+1 da fase segue válida — não houve regressão de contagem) gastando **959–1314 ms em `db_runtime`**, ou seja 68–94 ms por query. Na mesma janela e no mesmo banco, o admin executou 11 a 33 queries por requisição a **0,88 ms por query** — uma diferença de ~88x que descarta banco lento, cold start ou throttling do plano como explicação e localiza o custo nas queries do próprio catálogo.
+
+Duas requisições `/produtos` terminaram em 499 (cliente desistiu antes da resposta), o que confirma impacto de experiência, não só de métrica.
+
+EXPLAIN ANALYZE executado em 2026-09-01 **refutou a hipótese do `COUNT(DISTINCT ...)`**: o COUNT do catálogo custa 0,073 ms (`HashAggregate` sobre 10 linhas, `shared hit=3`), e as variantes `COUNT(DISTINCT products.id)` e `COUNT(*)` sem distinct custam 0,031 ms e 0,054 ms. A diferença é irrelevante e nenhum índice se justificaria por ela. Registrado para não ser reinvestigado.
+
+O custo está na terceira query da ação (o eager load da página). A causa é `with_attached_main_image` combinado com `includes`: como `includes` precisa resolver tudo em uma única `SELECT DISTINCT`, a capa arrasta as tabelas de variante do Active Storage, gerando **15 JOINs** e ~130 colunas, com `Unique` sobre `Sort` estimando 985.759 linhas para devolver 12.
+
+**A causa raiz é o JIT do PostgreSQL, não o `distinct` nem a execução da query.** O `EXPLAIN (ANALYZE, BUFFERS)` mostra que o trabalho real é trivial: `Unique`/`Sort` em **0,03 ms**, 12 linhas, quicksort de 34 kB, `shared hit=54`. O tempo está na compilação: `JIT: Functions: 120 / Optimization 791,9 ms / Emission 780,5 ms / Total 1635,8 ms` para um `Execution Time` de 1647 ms. O custo *estimado* do plano (2,5M, vindo da estimativa falsa de 985.759 linhas) ultrapassa o `jit_above_cost` (padrão 100000), e o PostgreSQL compila 120 funções para executar uma query que toca 54 buffers. Prova de variável única, sem alterar mais nada na query: `jit=on` → 1387/1244/1247 ms; `jit=off` → 47/25/24 ms.
+
+Isso **refuta a hipótese do `.distinct`** registrada antes: removê-lo mantém a query em ~1070 ms, porque o `includes` + anexo continua produzindo o mesmo plano superestimado. Trocar `includes` por `preload` é o que resolve — cada associação vira sua própria query pequena, o plano nunca chega ao limiar do JIT.
+
+### A divergência local×produção não existia (achado de método, segunda ocorrência)
+
+A observação de que "localmente o custo só ocorre na primeira execução do processo" era **artefato de medição**: o `bin/rails runner` roda tudo dentro de um único executor, então as execuções seguintes eram servidas pelo *query cache* do Active Record, marcadas `[CACHED]` na instrumentação (1400 ms → 8,2 ms → 6,5 ms). Desativando o cache — que é o que toda requisição de produção enxerga —, o local reproduz produção fielmente **em todas as rodadas**: 1215, 1248, 1257, 1310, 1557 ms. Não havia diferença ambiental a explicar, e o JIT é pago por execução, nunca cacheado, o que fecha a coerência com produção.
+
+É a **segunda vez** que o query cache derruba uma conclusão desta fase (a primeira reverteu uma otimização já escrita). Regra que fica: toda medição local de custo de query nesta fase deve rodar dentro de `ActiveRecord::Base.uncached`, ou comparar apenas notificações com `payload[:cached]` falso — o `spec/support/query_helpers.rb` já faz isso.
+
+### Correção aplicada
+
+`ProductsController#index` passou a usar `preload(:seller, :product_variants, :personalization_options, category: :parent)` mais `preload(main_image_attachment: :blob)`, no lugar de `includes` + `with_attached_main_image`. Medido localmente com o query cache desligado: **~1285 ms → ~10 ms**, e o `EXPLAIN ANALYZE` da query de página não tem mais bloco `JIT` (planning 0,320 ms, execution 0,134 ms). Equivalência verificada: mesmos IDs na mesma ordem, `main_image.attached?` idêntico, sem N+1 (contagem constante ao adicionar produtos).
+
+Cobertura: `spec/requests/storefront/products_spec.rb` ganhou dois exemplos — um que falha no código anterior, asserindo que nenhuma `SELECT DISTINCT` do catálogo carrega `active_storage_variant_records` (a forma de query que reintroduz o JIT), e outro que fixa a não-regressão de N+1 ao adicionar produtos. A asserção é sobre a forma da query, não sobre tempo, que dependeria da máquina.
+
+**Achado colateral, não corrigido**: a PDP (`ProductsController#show`) usa o mesmo `includes` + `with_attached_main_image` em `@related_products` e cai no mesmo JIT — o plano tem bloco `JIT` e a query custa 68–86 ms localmente (produção mediu a PDP em 146 ms). O impacto é uma ordem de grandeza menor porque `related_products` traz no máximo 4 itens, e a correção seria a mesma troca por `preload`. Não foi aplicada aqui para manter o diff no escopo do gargalo medido; decidir se entra nesta fase ou vira tarefa própria.
+
+**Pendente**: validação por nova medição em produção, conforme o método da fase. Em aberto como decisão separada, não aplicada: ajustar `jit_above_cost` (ou `jit=off`) no PostgreSQL da Railway protegeria qualquer query futura com plano superestimado, mas é mudança de infraestrutura com efeito global e depende de decisão explícita.
+
 
 ## FASE 18 — Segurança (revisão aprofundada)
 
@@ -995,7 +1039,7 @@ Fase 7.
 
 ## FASE 19 — Observabilidade
 
-Status: `[~]`
+Status: `[x]`
 
 Dependências: Fase 7.
 
@@ -1017,7 +1061,7 @@ Dependências: Fase 7.
 * [x] Código implantado, IaC sem drift e `/ready` validado na Railway
 * [x] Evento estruturado confirmado no Log Explorer com status, duração, tempos de banco/view, queries e `request_id`
 * [x] Dashboard/alertas operacionais configurados no canal escolhido pelo negócio
-* [ ] Medição da Fase 17 realizada sob tráfego real
+* [x] Medição da Fase 17 realizada sob tráfego real (2026-09-01) — os eventos estruturados desta fase foram o que localizou o gargalo do catálogo
 
 ### Configuração operacional em produção
 
@@ -1236,19 +1280,19 @@ Uma tarefa é considerada concluída somente quando:
 
 Fase atual:
 
-`🔄 FASE 17 — Performance em andamento; FASE 19 — Observabilidade em andamento (código, dashboard e alertas Slack validados; medição sob tráfego real pendente); FASE 20 — Produção e deploy em andamento (Etapa A concluída, Etapa B parcial); FASE 22 — Fundação do marketplace em andamento; FASE 23 — Split de pedidos, pagamento e frete por vendedor concluída no código.
+`🔄 FASE 17 — Performance em andamento (medição sob tráfego real concluída; correção do catálogo em aberto); FASE 19 — Observabilidade CONCLUÍDA; FASE 20 — Produção e deploy em andamento (Etapa A concluída, Etapa B parcial); FASE 22 — Fundação do marketplace em andamento; FASE 23 — Split de pedidos, pagamento e frete por vendedor concluída no código.
 
 FASE 22 iniciada: `Seller` e o papel `seller` foram introduzidos; produtos legados receberam o vendedor aprovado EloShop; `Product` agora pertence obrigatoriamente ao vendedor com `sku`/`slug` únicos por vendedor; cadastro pendente, aprovação/suspensão pela plataforma, painel escopado, URL pública por artesão e bloqueio de carrinho multi-vendedor foram implementados. O painel do vendedor usa somente `Current.user.seller`, e testes de alteração de ID cobrem o isolamento. O painel recebeu uma home editorial responsiva com busca escopada ao catálogo, métricas, produtos e pedidos recentes, atalhos operacionais e status financeiro; variantes, personalizações e galeria também são gerenciadas pelo vendedor. O onboarding financeiro foi definido e implementado com OAuth Authorization Code do Mercado Pago: o provedor realiza o KYC 6, a EloShop não coleta documentos, tokens ficam cifrados e a plataforma confirma explicitamente o KYC antes de aprovar. O modo sandbox opt-in envia `test_token=true`, identifica o ambiente no painel e mantém contas de teste inelegíveis para aprovação. Falta configurar as credenciais de uma aplicação Marketplace de testes e validar o fluxo ponta a ponta; `SellerOrder` e split pertencem à Fase 23.
 
 FASE 23 concluída no código: checkout de um vendedor cria atomicamente um `SellerOrder`; itens e frete pertencem a essa unidade operacional. A cobrança PIX usa o token OAuth renovável do artesão e envia `application_fee` de 15% sobre produtos após descontos, excluindo frete; a tarifa do Mercado Pago é registrada separadamente. Reembolsos parciais/totais são exclusivos do admin, idempotentes, auditados e revertem a comissão proporcionalmente. O painel do vendedor mostra apenas seus `SellerOrder`s e valores. O backfill aborta diante de pedidos legados multi-vendedor. Multi-vendedor continua bloqueado até acesso comercial ao split 1:N. Pipeline local verde: 253 RSpec, 394 Minitest, 13 system tests, lint e segurança. A validação ponta a ponta no sandbox continua pendente como dependência externa das Fases 20/22, não como liberação para 1:N.
 
-FASE 19 — Observabilidade implantada e validada na Railway com `Rails.event`: requests, jobs e erros em JSON pesquisável; eventos seguros de checkout/pagamento; correlação por request_id; e `/ready` validando o banco primário. `railway config plan` está sem drift, `/ready` respondeu 200 publicamente e o Log Explorer devolveu evento real com duração, tempos de banco/view, queries e request_id. O dashboard operacional e o webhook Slack para `#novo-canal` estão configurados. Monitores de threshold de CPU/RAM dependem do plano Pro e não estão disponíveis na conta atual; a regra já aceita futuros eventos `Monitor Triggered`. Falta coletar tráfego suficiente para a medição da Fase 17. Detalhes em docs/architecture.md, seção "Observabilidade".
+FASE 19 — Observabilidade CONCLUÍDA. `Rails.event` entrega requests, jobs e erros em JSON pesquisável, eventos seguros de checkout/pagamento, correlação por request_id e `/ready` validando o banco primário. `railway config plan` sem drift, `/ready` 200 público, evento real confirmado no Log Explorer. Dashboard operacional e webhook Slack para `#novo-canal` configurados. Monitores de threshold de CPU/RAM dependem do plano Pro e não estão disponíveis na conta atual; a regra já aceita futuros eventos `Monitor Triggered`. O último critério fechou em 2026-09-01 com a medição sob tráfego real — e foram justamente os eventos estruturados desta fase que localizaram o gargalo do catálogo, provando o valor da instrumentação. Detalhes em docs/architecture.md, seção "Observabilidade".
 
 FASE 20, Etapa A (infraestrutura de deploy) CONCLUÍDA: a aplicação está no ar em eloshop-web-production.up.railway.app e o push no main dispara o deploy automaticamente, com "Wait for CI" ligado (a Railway só builda depois dos check suites do GitHub passarem) — ver docs/architecture.md, seções "Deploy" e "Deploy automático a partir do GitHub". Três achados reais corrigidos: rswag-api/ui quebrava o boot de produção (gem no grupo errado); compartilhar a mesma DATABASE_URL entre os 4 papéis do banco (primary/cache/queue/cable) fazia db:prepare pular o schema de três deles; e .github/workflows/ci.yml estava inválido (um * no valor de DATABASE_URL derrubava o parse do YAML), de modo que NENHUM job de CI rodava no main havia vários commits — o CodeQL, em outro workflow, seguia verde e mascarava.
 
 FASE 20, Etapa B (Mercado Pago real via PIX) INICIADA e parcial: o adapter `Gateways::MercadoPago` existe e só é selecionado com `PAYMENT_GATEWAY=mercado_pago`; em produção, configuração ausente ou gateway fake falha explicitamente. As três lacunas locais foram fechadas: PIX vencido gera nova tentativa, cada tentativa persiste uma chave de idempotência própria (inclusive através de timeout/retry), e a página acompanha a confirmação do webhook automaticamente sem criar cobranças no polling. A integração NUNCA rodou contra o sandbox (falta credencial); os testes stubam HTTP e cobrem o contrato do adapter, não a API real. Detalhes em `docs/payments.md`.
 
-FASE 17 — Performance em andamento, com medição real (ver a seção da fase): N+1 da home, do catálogo, dos formulários do admin e do formulário de produto do painel do vendedor eliminados — com 23 categorias de topo, a home caiu de 118 para 9 queries e o catálogo de 40 para 17. Achado de método registrado: contar toda notificação de `sql.active_record` superestima o problema, porque o query cache do Active Record serve repetições dentro da mesma requisição — isso derrubou uma otimização já escrita, que foi revertida. A medição do admin (2026-09-01) desmentiu a suposição registrada em "deliberadamente não feito": o alvo apontado era o menos afetado, e o custo real estava nos formulários — inclusive no do painel do vendedor, cujo tráfego cresce com o número de artesãos. Corrigido com `Category::Tree`, zerando o crescimento nas três páginas. A primeira amostra de 24 horas em produção teve apenas 20 requisições fora dos healthchecks (3 na home e nenhuma no catálogo), insuficiente para concluir a fase — a medição sob tráfego real segue sendo o único critério em aberto.
+FASE 17 — Performance em andamento. Os N+1 da home, do catálogo, dos formulários do admin e do formulário de produto do painel do vendedor foram eliminados — com 23 categorias de topo, a home caiu de 118 para 9 queries e o catálogo de 40 para 17. Achado de método registrado: contar toda notificação de `sql.active_record` superestima o problema, porque o query cache serve repetições dentro da mesma requisição — isso derrubou uma otimização já escrita, que foi revertida. A medição do admin (2026-09-01) desmentiu a suposição de "deliberadamente não feito": o custo real estava nos formulários, corrigido com `Category::Tree`. A medição sob tráfego real foi CONCLUÍDA em 2026-09-01 (segunda amostra: 7.795 requisições em 7 dias, 240 com detalhe por requisição) e revelou um gargalo novo: o catálogo `/produtos` responde em 1012 ms (p50) e 1497 ms (p95), contra 27–33 ms de todas as outras páginas. A causa não é N+1 (seguem 14 queries, sem regressão) nem banco lento: as queries do catálogo custam 68–94 ms cada, enquanto o admin roda a 0,88 ms por query no mesmo banco e na mesma janela. Duas requisições terminaram em 499, com o cliente desistindo. A causa raiz foi identificada e corrigida: não era N+1, nem `distinct`, nem o `COUNT(DISTINCT ...)` (0,073 ms) — era o **JIT do PostgreSQL**. O `includes` + `with_attached_main_image` produzia 15 JOINs e ~130 colunas, inflando o custo *estimado* do plano para 2,5M e passando do `jit_above_cost`; o banco compilava 120 funções (~1240 ms) por execução para uma query cuja execução real custa 0,03 ms (`jit=on` 1387/1244/1247 ms vs `jit=off` 47/25/24 ms). A troca por `preload` derrubou a ação de ~1285 ms para ~10 ms e eliminou o bloco JIT do plano. A suposta divergência local×produção era artefato do query cache do Active Record mascarando as medições locais — segunda ocorrência do mesmo erro de método nesta fase. Falta apenas validar por nova medição em produção.
 
 INFRAESTRUTURA DE CI corrigida: a suíte Minitest (343 runs, 952 asserções — models, services, integração) NÃO rodava em CI nenhum. Nem no job `test` do `.github/workflows/ci.yml` (só `bundle exec rspec`), nem no `bin/ci`, nem no hook de pre-commit. Toda a camada de domínio, onde o CLAUDE.md manda pôr regra de negócio, seguia sem verificação em push ou PR. Agora roda como job `minitest` separado do `test` (uma falha não mascara a outra) e como etapa do `bin/ci`. Com "Wait for CI" ligado, uma falha do Minitest passa a bloquear deploy — que é a intenção. Achado colateral, pré-existente e só local: a etapa "Tests: Seeds" do `bin/ci` usava `db:seed:replant`, cujo TRUNCATE pega ACCESS EXCLUSIVE e entrava em deadlock contra conexão remanescente do banco de teste (observado em 2 de 3 execuções, como deadlock e como violação de FK sobre linha de fixture sobrevivente) — trocado por `db:test:prepare db:seed`, mais um `db:test:prepare` final que devolve o banco vazio, porque o seed deixado para trás fazia a rodada seguinte da suíte falhar sozinha. Três execuções seguidas de `bin/ci` verdes depois da mudança.
 
@@ -1256,7 +1300,7 @@ FASE 18 — Segurança concluída (nenhum achado CRITICAL/HIGH). FASE 15 foi imp
 
 Próxima tarefa:
 
-`Criar/configurar uma aplicação Marketplace de testes, registrar a callback /painel/mercado-pago/callback, substituir temporariamente MERCADO_PAGO_MARKETPLACE_APP_ID/MERCADO_PAGO_MARKETPLACE_CLIENT_SECRET pelas credenciais dessa aplicação, definir MERCADO_PAGO_MARKETPLACE_SANDBOX=true e validar o OAuth com uma conta TESTUSER Vendedor. Depois da validação, restaurar as credenciais produtivas e remover o modo sandbox. Em paralelo, a medição da Fase 17 continua aguardando tráfego orgânico suficiente e o teste PIX sandbox continua pendente.`
+`Validar em produção a correção do catálogo. O preload foi aplicado no ProductsController#index e a causa raiz (JIT do PostgreSQL disparado pelo plano superestimado do includes + with_attached_main_image) está documentada e coberta por teste; falta fazer o deploy e repetir a medição sob tráfego real para confirmar que /produtos saiu dos 1012 ms (p50). Decisão separada, ainda não tomada: ajustar jit_above_cost (ou jit=off) no PostgreSQL da Railway, que protegeria qualquer query futura com plano superestimado, mas é mudança de infraestrutura com efeito global. Em paralelo, seguem bloqueadas por dependência externa: criar/configurar a aplicação Marketplace de testes do Mercado Pago, registrar a callback /painel/mercado-pago/callback, definir MERCADO_PAGO_MARKETPLACE_SANDBOX=true e validar o OAuth com uma conta TESTUSER Vendedor (Fase 22), e o teste PIX ponta a ponta no sandbox (Fase 20, Etapa B).`
 
 Última atualização:
 
