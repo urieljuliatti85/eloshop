@@ -22,5 +22,19 @@ RSpec.describe "Wishlists", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(product.name)
     end
+
+    # Descontinuado é saída definitiva do catálogo: a PDP responde 404 (o
+    # escopo publicly_visible exclui), então um favorito que continuasse
+    # listado ofereceria nome, foto, preço e um link quebrado.
+    it "omits discontinued products from the list" do
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+      customer.wishlist_items.create!(product: product)
+      product.discontinue!
+
+      get wishlist_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(product.name)
+    end
   end
 end
