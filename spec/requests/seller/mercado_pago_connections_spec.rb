@@ -15,6 +15,8 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("Conectar Mercado Pago")
+    connect_form = Nokogiri::HTML(response.body).at_css("form[action='#{seller_mercado_pago_connect_path}']")
+    expect(connect_form["data-turbo"]).to eq("false")
   end
 
   it "starts authorization with an unpredictable state" do
