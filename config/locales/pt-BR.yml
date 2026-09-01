@@ -26,3 +26,8 @@ pt-BR:
     format:
       separator: ","
       delimiter: "."
+  orders:
+    statuses:
+      pending: "Aguardando pagamento"
+      confirmed: "Confirmado"
+      cancelled: "Cancelado"

@@ -96,7 +96,7 @@ Rails.application.routes.draw do
   resources :customers, only: %i[new create]
   resource :customer_session, only: %i[new create destroy]
   resources :addresses, only: %i[new create]
-  resources :orders, only: %i[new create show] do
+  resources :orders, only: %i[index new create show] do
     resource :payment, only: %i[new] do
       get :status
     end

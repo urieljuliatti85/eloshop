@@ -25,6 +25,7 @@
       <% end %>
 
       <% if respond_to?(:customer_authenticated?) && customer_authenticated? %>
+        <%= link_to "Pedidos", orders_path, class: "hidden font-medium text-ink hover:text-brand-600 md:inline" %>
         <%= link_to "Favoritos", wishlist_path, class: "hidden font-medium text-ink hover:text-brand-600 md:inline" %>
       <% end %>
 
@@ -91,6 +92,7 @@
 
     <div class="container mx-auto flex flex-col gap-3 px-5 pb-5 pt-2">
       <% if respond_to?(:customer_authenticated?) && customer_authenticated? %>
+        <%= link_to "Pedidos", orders_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
         <%= link_to "Favoritos", wishlist_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
         <%= button_to "Sair", customer_session_path, method: :delete, class: "w-full cursor-pointer rounded-full bg-ink px-5 py-3 text-base font-semibold text-white" %>
       <% elsif respond_to?(:customer_authenticated?) %>

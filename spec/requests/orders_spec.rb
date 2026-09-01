@@ -14,6 +14,36 @@ RSpec.describe "Orders", type: :request do
     post cart_items_path, params: { product_id: product.id, quantity: quantity }
   end
 
+  describe "GET /orders" do
+    it "redirects unauthenticated visitors to customer login" do
+      get orders_path
+
+      expect(response).to redirect_to(new_customer_session_path)
+    end
+
+    it "lists only the authenticated customer's orders" do
+      own_order = create_order_for(customer, idempotency_key: "own-order")
+      other_customer = Customer.create!(name: "Outro", email: "other-list@example.com", password: "password123")
+      other_order = create_order_for(other_customer, idempotency_key: "other-order")
+      sign_in_customer
+
+      get orders_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Pedido ##{own_order.id}")
+      expect(response.body).not_to include("Pedido ##{other_order.id}")
+    end
+
+    it "shows an empty state" do
+      sign_in_customer
+
+      get orders_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Você ainda não fez nenhum pedido")
+    end
+  end
+
   describe "GET /orders/new" do
     it "redirects unauthenticated visitors to customer login" do
       add_to_cart
@@ -134,5 +164,17 @@ RSpec.describe "Orders", type: :request do
 
       expect(response).to have_http_status(:not_found)
     end
+  end
+
+  def create_order_for(order_customer, idempotency_key:)
+    Order.create!(
+      customer: order_customer,
+      status: :pending,
+      subtotal_cents: 10_000,
+      shipping_cents: 1_500,
+      total_cents: 11_500,
+      shipping_address_snapshot: { street: "Rua Teste", number: "1" },
+      idempotency_key: idempotency_key
+    )
   end
 end

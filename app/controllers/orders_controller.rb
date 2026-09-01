@@ -3,6 +3,10 @@ class OrdersController < StorefrontController
 
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to cart_path, alert: "Muitas tentativas. Tente novamente em alguns minutos." }
 
+  def index
+    @orders = Current.customer.orders.includes(:order_items).order(created_at: :desc)
+  end
+
   def new
     @cart = Current.cart
     @addresses = Current.customer.addresses
