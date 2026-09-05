@@ -1,0 +1,15 @@
+<div class="w-full max-w-lg">
+  <nav class="mb-6 text-sm text-ink-muted">
+    <%= link_to "Minha conta", account_root_path, class: "hover:text-brand-600" %>
+    <span class="mx-2">/</span>
+    <%= link_to "Endereços", addresses_path, class: "hover:text-brand-600" %>
+    <span class="mx-2">/</span>
+    <span class="text-ink">Editar</span>
+  </nav>
+
+  <h1 class="mb-8 text-2xl font-bold text-ink">Editar endereço</h1>
+
+  <%= form_with model: @address, class: "flex flex-col gap-4" do |form| %>
+    <%= render "fields", form: form %>
+  <% end %>
+</div>

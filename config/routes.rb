@@ -100,7 +100,17 @@ Rails.application.routes.draw do
 
   resources :customers, only: %i[new create]
   resource :customer_session, only: %i[new create destroy]
-  resources :addresses, only: %i[new create]
+
+  # Área do cliente: os destinos da conta sob um prefixo só, para o menu do
+  # topo e o painel terem para onde apontar.
+  scope "minha-conta", as: :account do
+    root to: "accounts#show", as: :root
+    resource :profile, only: %i[edit update], controller: "account_profiles", path: "cadastro"
+  end
+
+  # `new`/`create` já eram usados dentro do checkout; a área do cliente
+  # acrescenta a gestão (listar, editar, excluir).
+  resources :addresses, only: %i[index new create edit update destroy]
   resources :orders, only: %i[index new create show] do
     resource :payment, only: %i[new] do
       get :status
