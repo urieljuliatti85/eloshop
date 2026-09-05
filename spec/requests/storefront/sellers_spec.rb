@@ -58,7 +58,7 @@ RSpec.describe "Storefront sellers", type: :request do
     it "invites a visitor to become an artisan" do
       get root_path
 
-      expect(header_nav).to include("Seja um artesão")
+      expect(header_nav).to include("Cadastre seu Ateliê")
       expect(header_nav).to include(new_seller_registration_path)
     end
 
@@ -70,7 +70,7 @@ RSpec.describe "Storefront sellers", type: :request do
 
       get root_path
 
-      expect(header_nav).not_to include("Seja um artesão")
+      expect(header_nav).not_to include("Cadastre seu Ateliê")
     end
   end
 
