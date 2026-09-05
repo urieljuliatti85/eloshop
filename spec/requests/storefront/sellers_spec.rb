@@ -62,7 +62,18 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(header_nav).to include(new_seller_registration_path)
     end
 
-    # Quem já entrou no painel não precisa ser convidado a se cadastrar.
+    # O admin administra a plataforma sem ser artesão: pode precisar chegar
+    # ao cadastro, então o convite continua no menu para ele.
+    it "keeps the invitation for a signed-in admin" do
+      admin = User.create!(email_address: "admin-header@eloshop.test", password: "password123")
+      sign_in_as(admin)
+
+      get root_path
+
+      expect(header_nav).to include("Cadastre seu Ateliê")
+    end
+
+    # Só quem já tem ateliê deixa de ser convidado.
     it "drops the invitation once an artisan is signed in" do
       seller = Seller.create!(name: "Ateliê logado #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
       user = User.create!(email_address: "artesao-header@eloshop.test", password: "password123", role: :seller, seller: seller)

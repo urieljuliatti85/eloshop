@@ -30,9 +30,17 @@ RSpec.describe "Header navigation", type: :request do
     expect(active_labels).to eq([ "Loja" ])
   end
 
-  it "marks Contato on the contact form" do
+  it "marks Ateliês on the ateliers listing" do
+    get sellers_path
+
+    expect(active_labels).to eq([ "Ateliês" ])
+  end
+
+  # Contato saiu do menu e vive só no rodapé: a página existe, mas não há
+  # item de navegação para marcar.
+  it "marks nothing on a page that is not in the menu" do
     get new_contact_path
 
-    expect(active_labels).to eq([ "Contato" ])
+    expect(active_labels).to eq([])
   end
 end
