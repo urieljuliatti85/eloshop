@@ -92,6 +92,17 @@ RSpec.describe "Storefront products", type: :request do
       expect(response.body).to include(product.name)
     end
 
+    # Quem compra artesanato quer saber de quem é a mão: o ateliê aparece
+    # junto do produto, não só na URL.
+    it "shows the atelier that made the product" do
+      product = Product.create!(seller: approved_seller, name: "Vaso do ateliê", sku: "STORE-ATL", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+
+      get product_path(product.seller, product.slug)
+
+      expect(response.body).to include("Feito por")
+      expect(response.body).to include(product.seller.name)
+    end
+
     it "returns 404 for a draft product" do
       product = Product.create!(seller: approved_seller, name: "Caneca draft", sku: "STORE-004", price_cents: 4_990, stock_quantity: 5, currency: "BRL", status: :draft)
 
@@ -123,6 +134,8 @@ RSpec.describe "Storefront products", type: :request do
       expect(data["@type"]).to eq("Product")
       expect(data["name"]).to eq("Vaso JSON-LD")
       expect(data["sku"]).to eq(product.sku)
+      # No marketplace quem assina a peça é o ateliê, não a plataforma.
+      expect(data["brand"]).to eq({ "@type" => "Brand", "name" => product.seller.name })
       expect(data["offers"]["price"]).to eq(123.45)
       expect(data["offers"]["availability"]).to eq("https://schema.org/InStock")
     end

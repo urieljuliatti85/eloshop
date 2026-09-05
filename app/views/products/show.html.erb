@@ -38,6 +38,14 @@
         </a>
       <% end %>
 
+      <%# O ateliê aparece antes do preço porque é parte de como a peça se
+          apresenta, não um detalhe técnico: quem compra artesanato quer saber
+          de quem é a mão (§59, §60). O nome ainda não é link — não existe
+          vitrine pública do artesão. %>
+      <p class="mt-2 text-sm text-ink-muted">
+        Feito por <span class="font-medium text-ink"><%= @product.seller.name %></span>
+      </p>
+
       <% unless @product.has_variants? %>
         <p class="mt-3 text-2xl text-brand-600"><%= format_price(@product.price_cents) %></p>
       <% end %>
@@ -88,6 +96,11 @@
           </summary>
 
           <dl class="mt-3 space-y-2 text-sm">
+            <div class="flex gap-2">
+              <dt class="w-24 text-ink-muted">Ateliê</dt>
+              <dd class="text-ink"><%= @product.seller.name %></dd>
+            </div>
+
             <div class="flex gap-2">
               <dt class="w-24 text-ink-muted">SKU</dt>
               <dd class="text-ink"><%= @product.sku %></dd>
