@@ -8,15 +8,17 @@ RSpec.describe "Storefront home", type: :request do
   end
 
   describe "GET /" do
-    it "renders the storefront presentation without the catalog listing" do
-      product = Product.create!(seller: approved_seller, name: "Vaso da home", sku: "HOME-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
-
+    # A home não é mais só o carrossel: a seção "Destaques" lista os
+    # produtos mais recentes (ver "shows the newest products" abaixo), então
+    # um produto qualquer pode aparecer ali. O que este teste protege é que a
+    # home não vira um catálogo completo — sem paginação, sem filtro, sem a
+    # grade cheia de produtos que só `/produtos` deve mostrar.
+    it "renders the storefront presentation with a link to the full catalog" do
       get root_path
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Peças com história, feitas à mão")
       expect(response.body).to include(products_path)
-      expect(response.body).not_to include(product.name)
     end
 
     # O carrossel é progressivo: os dois banners vêm no HTML e continuam
@@ -68,8 +70,13 @@ RSpec.describe "Storefront home", type: :request do
 
       get root_path
 
-      expect(response.body).to include("recente.png")
-      expect(response.body).not_to include("antiga.png")
+      # Escopado à faixa de categorias: a seção "Destaques" também lista
+      # produtos recentes e pode legitimamente exibir a mesma imagem — o que
+      # importa aqui é qual delas é a capa da categoria, não se a string
+      # aparece em algum lugar da página inteira.
+      category_section = Nokogiri::HTML(response.body).at_css("section:has(h2:contains('Explore por categoria'))")
+      expect(category_section.to_html).to include("recente.png")
+      expect(category_section.to_html).not_to include("antiga.png")
     end
 
     it "falls back to an older product when the newest one has no image" do
@@ -100,7 +107,15 @@ RSpec.describe "Storefront home", type: :request do
     # A asserção é sobre a invariante, não sobre um número absoluto — o total
     # muda quando a página muda, o crescimento com o catálogo é que não pode
     # voltar.
+    #
+    # A seção "Destaques" busca até 6 produtos recentes com preload próprio: o
+    # LIMIT já é fixo, mas o número de linhas que o preload de fato carrega
+    # muda enquanto o catálogo tem menos de 6 produtos publicados — 6
+    # produtos "sobrando" antes de medir satura esse limite nas duas
+    # rodadas, isolando a asserção do efeito de categoria que ela protege.
     it "does not issue more queries when another top-level category is added" do
+      6.times { |i| product_with_cover(category: Category.create!(name: "Base #{i}"), sku: "BASE-#{i}", filename: "base#{i}.png") }
+
       2.times { |i| product_with_cover(category: Category.create!(name: "Topo #{i}"), sku: "COVER-N#{i}", filename: "topo#{i}.png") }
       get root_path
       before = count_queries { get root_path }

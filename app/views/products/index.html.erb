@@ -23,34 +23,44 @@
 <% content_for :title, index_title %>
 <% content_for :meta_description, index_description %>
 <% content_for :canonical_url, products_url(category: @category&.slug) %>
+<% content_for :body_class, "products-background" %>
 
 <div class="w-full">
-  <nav aria-label="Você está aqui" class="text-sm text-ink-muted">
-    <%= link_to "Início", root_path, class: "hover:text-ink" %>
-    <span class="mx-2" aria-hidden="true">/</span>
-    <% if @category %>
-      <%= link_to "Loja", products_path, class: "hover:text-ink" %>
+  <%# Título num cartão sólido: sobre a paisagem direta o texto perderia
+      contraste em algumas regiões da foto. %>
+  <div class="inline-block rounded-2xl bg-white/90 px-5 py-3 shadow-sm backdrop-blur-sm">
+    <nav aria-label="Você está aqui" class="text-sm text-ink-muted">
+      <%= link_to "Início", root_path, class: "hover:text-ink" %>
       <span class="mx-2" aria-hidden="true">/</span>
-      <span class="text-ink"><%= @category_tree.breadcrumb_name(@category) %></span>
-    <% else %>
-      <span class="text-ink"><%= heading %></span>
-    <% end %>
-  </nav>
+      <% if @category %>
+        <%= link_to "Loja", products_path, class: "hover:text-ink" %>
+        <span class="mx-2" aria-hidden="true">/</span>
+        <span class="text-ink"><%= @category_tree.breadcrumb_name(@category) %></span>
+      <% else %>
+        <span class="text-ink"><%= heading %></span>
+      <% end %>
+    </nav>
 
-  <%# Título grande e alinhado à esquerda, com o preço de entrada logo abaixo. %>
-  <header class="mt-6">
-    <h1 class="text-4xl font-bold tracking-tight text-ink md:text-6xl"><%= heading %></h1>
-    <% if cheapest %>
-      <p class="mt-3 text-lg text-ink-muted">
-        A partir de <%= number_to_currency(cheapest / 100.0) %>
-      </p>
-    <% end %>
-  </header>
+    <%# Título grande e alinhado à esquerda, com o preço de entrada logo abaixo. %>
+    <header class="mt-3">
+      <h1 class="text-4xl font-bold tracking-tight text-ink md:text-6xl"><%= heading %></h1>
+      <% if cheapest %>
+        <p class="mt-3 text-lg text-ink-muted">
+          A partir de <%= number_to_currency(cheapest / 100.0) %>
+        </p>
+      <% end %>
+    </header>
+  </div>
 
+  <%# Um único cartão sólido a partir daqui: navegação, filtros, grade e
+      paginação são muitos controles pequenos e textos secundários — fatiar
+      em vários blocos translúcidos deixaria a página picotada. Um cartão
+      contínuo lê como "a área de compras", com a paisagem só ao redor. %>
+  <div class="mt-8 rounded-[2rem] bg-white/90 p-6 shadow-sm backdrop-blur-sm sm:p-8">
   <%# As categorias deixam de morar dentro do dropdown: viram uma faixa sempre
       visível, que é como o cliente navega o catálogo. As demais dimensões
       (busca, material, técnica, disponibilidade) seguem recolhidas. %>
-  <nav aria-label="Categorias" class="mt-10 flex gap-2 overflow-x-auto pb-1">
+  <nav aria-label="Categorias" class="flex gap-2 overflow-x-auto pb-1">
     <%= link_to "Todos", products_path,
           class: "flex-none rounded-full border px-5 py-2 text-sm transition #{@category ? 'border-gray-200 text-ink hover:border-ink' : 'border-ink bg-ink text-white'}" %>
     <%# A árvore vem ordenada por nome simples; como a pill mostra o caminho
@@ -187,27 +197,36 @@
       </nav>
     <% end %>
   </div>
+  </div>
 
-  <%# Os selos perdem a faixa creme: sobram a divisória de topo e o espaço,
-      como nos blocos da referência. Sem fundo cinza no grid — ele vazaria
-      pelo padding do container, que aqui sangra até a borda da janela. %>
-  <section class="-mb-12 mx-[calc(50%-50vw)] border-t border-gray-200">
+  <%# Selos fora do cartão de compras, com o mesmo tratamento translúcido da
+      home: aqui a paisagem volta a aparecer ao redor, como um respiro antes
+      do rodapé. O fundo sólido (antes branco puro) agora precisa ser
+      explícito — sem `body` branco atrás, a divisória sozinha não bastaria
+      para o texto ler sobre a foto. Ícones no mesmo traço e cor dos selos da
+      home — mesmo bloco de confiança, duas páginas. %>
+  <section class="-mb-12 mx-[calc(50%-50vw)] border-t border-gray-200 bg-white/90 backdrop-blur-sm">
     <div class="container mx-auto grid grid-cols-1 gap-x-8 gap-y-10 px-5 py-14 sm:grid-cols-2 xl:grid-cols-4">
       <% [
-           [ "Feito à mão", "peças autorais de artesãos" ],
-           [ "Peças únicas", "pequenas tiragens e sob encomenda" ],
-           [ "Processo transparente", "materiais e técnicas descritos" ],
-           [ "Atendimento", nil ]
-         ].each do |title, subtitle| %>
-        <div>
-          <p class="text-base font-semibold text-ink"><%= title %></p>
-          <p class="mt-1 text-sm text-ink-muted">
-            <% if subtitle %>
-              <%= subtitle %>
-            <% else %>
-              <%= link_to "fale com a gente", new_contact_path, class: "underline underline-offset-4 hover:text-brand-600" %>
-            <% end %>
-          </p>
+           [ "Feito à mão", "peças autorais de artesãos", "m6 21 6-14 6 14M9 15h6" ],
+           [ "Peças únicas", "pequenas tiragens e sob encomenda", "m5 13 4 4L19 7" ],
+           [ "Processo transparente", "materiais e técnicas descritos", "M12 3c4 3 6 6 6 10a6 6 0 1 1-12 0c0-4 2-7 6-10Z" ],
+           [ "Atendimento", nil, "M4 8h16v12H4zM4 8l8-4 8 4M9 12h6" ]
+         ].each do |title, subtitle, path| %>
+        <div class="flex items-start gap-3">
+          <svg class="mt-0.5 h-7 w-7 flex-none text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path d="<%= path %>" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <div>
+            <p class="text-base font-semibold text-ink"><%= title %></p>
+            <p class="mt-1 text-sm text-ink-muted">
+              <% if subtitle %>
+                <%= subtitle %>
+              <% else %>
+                <%= link_to "fale com a gente", new_contact_path, class: "underline underline-offset-4 hover:text-brand-600" %>
+              <% end %>
+            </p>
+          </div>
         </div>
       <% end %>
     </div>

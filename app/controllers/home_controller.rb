@@ -9,6 +9,17 @@ class HomeController < StorefrontController
     # mais um upload — CLAUDE.md §5): a capa é a foto do produto ativo mais
     # recente da categoria ou de alguma subcategoria dela.
     @category_covers = cover_products_by_category(tree)
+
+    # "Destaque" aqui é só "recente": nenhuma curadoria manual existe ainda, e
+    # não há necessidade de negócio confirmada para um campo de seleção
+    # editorial no Product. Sem exigir imagem: ausência de foto já é tratada
+    # no `_product_card`, e excluir aqui reduziria demais o catálogo no
+    # começo de uma loja com poucos produtos.
+    @featured_products = Product.publicly_visible
+      .order(created_at: :desc)
+      .limit(6)
+      .preload(:seller, :product_variants)
+      .preload(main_image_attachment: :blob)
   end
 
   private
