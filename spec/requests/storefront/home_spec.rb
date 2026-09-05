@@ -19,6 +19,17 @@ RSpec.describe "Storefront home", type: :request do
       expect(response.body).not_to include(product.name)
     end
 
+    # O carrossel é progressivo: os dois banners vêm no HTML e continuam
+    # alcançáveis pela rolagem da faixa mesmo sem JavaScript.
+    it "renders the artisan banner with its call to action" do
+      get root_path
+
+      expect(response.body).to include("Para o Artesão")
+      expect(response.body).to include("Venda suas peças mais criativas através do nosso Ateliê")
+      expect(response.body).to include("Seja um artesão")
+      expect(response.body).to include(new_seller_registration_path)
+    end
+
     it "lists the top-level categories, linking each one to the filtered catalog" do
       parent = Category.create!(name: "Casa da home")
       child = Category.create!(name: "Cozinha da home", parent: parent)
