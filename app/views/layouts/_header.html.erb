@@ -1,22 +1,33 @@
-<header class="sticky top-0 z-10 border-b border-gray-100 bg-white/90 backdrop-blur"
+<header class="sticky top-0 z-10 border-b border-brand-100/60 bg-sand-50/95 backdrop-blur"
         data-controller="mobile-menu"
         data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
-  <div class="container mx-auto flex items-center justify-between gap-6 px-5 py-4">
+  <%# A marca fica centralizada e sozinha na primeira linha, com a assinatura
+      logo abaixo; a navegação vem em uma segunda linha, também centralizada.
+      Só a partir de md: em telas estreitas isso empilharia demais, então lá
+      o topo continua compacto (marca à esquerda, ações à direita). %>
+  <div class="container mx-auto hidden flex-col items-center gap-1 px-5 pt-6 md:flex">
     <%= link_to root_path, class: "flex items-center" do %>
+      <%= image_tag "logo.png", alt: "EloShop", class: "h-12" %>
+    <% end %>
+    <p class="font-script text-lg text-brand-600">Feito à mão com carinho ♥</p>
+  </div>
+
+  <div class="container relative mx-auto flex items-center justify-between gap-6 px-5 py-4 md:justify-center md:pt-5">
+    <%= link_to root_path, class: "flex items-center md:hidden" do %>
       <%= image_tag "logo.png", alt: "EloShop", class: "h-9" %>
     <% end %>
 
-    <nav class="hidden items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-medium text-ink md:flex">
-      <%= link_to "Início", root_path, class: "rounded-full px-4 py-2 transition hover:bg-white hover:shadow-sm" %>
-      <%= link_to "Loja", products_path, class: "rounded-full px-4 py-2 transition hover:bg-white hover:shadow-sm" %>
-      <%= link_to "Contato", new_contact_path, class: "rounded-full px-4 py-2 transition hover:bg-white hover:shadow-sm" %>
-      <%= link_to "Painel do Artesão", seller_root_path, class: "rounded-full px-4 py-2 transition hover:bg-white hover:shadow-sm" %>
+    <nav class="hidden items-center gap-8 border-t border-brand-100 pt-4 text-sm font-semibold uppercase tracking-[0.12em] text-ink md:flex">
+      <%= link_to "Início", root_path, class: "border-b-2 border-transparent pb-1 transition hover:border-brand-500 hover:text-brand-600" %>
+      <%= link_to "Loja", products_path, class: "border-b-2 border-transparent pb-1 transition hover:border-brand-500 hover:text-brand-600" %>
+      <%= link_to "Contato", new_contact_path, class: "border-b-2 border-transparent pb-1 transition hover:border-brand-500 hover:text-brand-600" %>
+      <%= link_to "Painel do Artesão", seller_root_path, class: "border-b-2 border-transparent pb-1 transition hover:border-brand-500 hover:text-brand-600" %>
     </nav>
 
     <%# Em telas estreitas os rótulos de conta saem do topo (a 390px "Criar
         conta" quebrava em duas linhas) e passam para o painel do hambúrguer;
         no topo ficam só o carrinho e o menu, com 44px de alvo de toque. %>
-    <div class="flex items-center gap-1 text-sm md:gap-4">
+    <div class="flex items-center gap-1 text-sm md:absolute md:right-5 md:gap-4">
       <% if respond_to?(:customer_authenticated?) && customer_authenticated? %>
         <%= button_to "Sair", customer_session_path, method: :delete, class: "hidden font-medium text-ink hover:text-brand-600 cursor-pointer md:block" %>
       <% elsif respond_to?(:customer_authenticated?) %>

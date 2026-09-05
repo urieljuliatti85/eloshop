@@ -19,6 +19,10 @@
   --color-sand-50: #faf3ea;
   --color-sand-100: #f9f1e7;
   --color-mist-100: #f4f5f7;
+
+  /* Assinatura manuscrita da marca ("Feito à mão com carinho"). Só fontes do
+     sistema: a CSP não permite CDN externo, e nenhuma família é embarcada. */
+  --font-script: "Snell Roundhand", "Segoe Script", "Brush Script MT", cursive;
 }
 
 @layer components {
