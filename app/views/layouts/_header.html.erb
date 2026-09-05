@@ -27,7 +27,10 @@
     <%# Em telas estreitas os rótulos de conta saem do topo (a 390px "Criar
         conta" quebrava em duas linhas) e passam para o painel do hambúrguer;
         no topo ficam só o carrinho e o menu, com 44px de alvo de toque. %>
-    <div class="flex items-center gap-1 text-sm md:gap-4">
+    <%# Mesma pílula do menu de navegação ao lado: borda, fundo cinza e cantos
+        arredondados, para os dois blocos do topo lerem como um par. No mobile
+        a moldura sai — lá dentro ficam só o carrinho e o hambúrguer. %>
+    <div class="flex items-center gap-1 text-sm md:gap-0.5 md:rounded-full md:border md:border-gray-200 md:bg-gray-50 md:px-2 md:py-1">
       <%# Quem está logado aparece pelo primeiro nome, com a inicial no avatar
           — mesma identificação que o painel do artesão já usa. O nome abre um
           painel com os dados da conta e seus destinos.
@@ -72,11 +75,14 @@
           </div>
         </div>
       <% elsif respond_to?(:customer_authenticated?) %>
-        <%= link_to "Entrar", new_customer_session_path, class: "hidden font-medium text-ink hover:text-brand-600 md:inline" %>
-        <%= link_to "Criar conta", new_customer_path, class: "hidden rounded-full bg-ink px-5 py-2.5 font-semibold text-white transition hover:bg-brand-600 md:inline-block" %>
+        <%# "Quero comprar" no lugar de "Entrar / Criar conta": com o cadastro
+            de artesão no menu ao lado, dois pares de "entrar/criar" no mesmo
+            topo não diziam qual porta é de quem. O destino é o login, que já
+            leva ao cadastro por link. %>
+        <%= link_to "Quero comprar", new_customer_session_path, class: "hidden rounded-full px-4 py-2 font-medium text-ink transition hover:bg-white hover:shadow-sm md:inline-block" %>
       <% end %>
 
-      <%= link_to cart_path, class: "relative flex h-11 min-w-11 items-center justify-center gap-1.5 font-medium text-ink hover:text-brand-600 md:h-auto md:min-w-0", aria: { label: "Carrinho" } do %>
+      <%= link_to cart_path, class: "relative flex h-11 min-w-11 items-center justify-center gap-1.5 font-medium text-ink transition hover:text-brand-600 md:h-auto md:min-w-0 md:rounded-full md:px-4 md:py-2 md:hover:bg-white md:hover:shadow-sm", aria: { label: "Carrinho" } do %>
         <span class="hidden md:inline">Carrinho</span>
         <svg class="h-6 w-6 md:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
           <path d="M6 7h12l-1 13H7L6 7Z" stroke-linejoin="round" />
@@ -96,7 +102,7 @@
       <div class="relative flex items-center" data-controller="header-search"
            data-action="click@window->header-search#closeOnOutsideClick keydown.esc@window->header-search#closeOnEscape">
         <button type="button"
-                class="flex h-11 w-11 cursor-pointer items-center justify-center text-ink hover:text-brand-600 md:h-auto md:w-auto"
+                class="flex h-11 w-11 cursor-pointer items-center justify-center text-ink transition hover:text-brand-600 md:h-9 md:w-9 md:rounded-full md:hover:bg-white md:hover:shadow-sm"
                 aria-expanded="false" aria-label="Buscar produtos"
                 data-action="header-search#toggle">
           <svg class="h-6 w-6 md:h-5 md:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -160,6 +166,9 @@
         <%= link_to "Favoritos", wishlist_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
         <%= button_to "Sair", customer_session_path, method: :delete, class: "w-full cursor-pointer rounded-full bg-ink px-5 py-3 text-base font-semibold text-white" %>
       <% elsif respond_to?(:customer_authenticated?) %>
+        <%# No painel há espaço para as duas ações, então elas continuam
+            separadas — o rótulo acima é que diz para quem servem. %>
+        <p class="px-1 pb-1 text-sm font-semibold text-ink-muted">Quero comprar</p>
         <%= link_to "Entrar", new_customer_session_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
         <%= link_to "Criar conta", new_customer_path, class: "flex min-h-11 items-center justify-center rounded-full bg-ink px-5 text-base font-semibold text-white" %>
       <% end %>
