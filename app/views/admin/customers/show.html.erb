@@ -47,7 +47,7 @@
                   <td class="font-semibold text-slate-900">#<%= order.id %></td>
                   <td><%= admin_status_badge(order.status) %></td>
                   <td><%= payment ? admin_status_badge(payment.status) : "—" %></td>
-                  <td class="font-semibold text-slate-900"><%= number_to_currency(order.total_cents.fdiv(100)) %></td>
+                  <td class="font-semibold text-slate-900"><%= format_price(order.total_cents) %></td>
                   <td class="text-right"><%= link_to "Detalhes", admin_order_path(order), class: "admin-link" %></td>
                 </tr>
               <% end %>

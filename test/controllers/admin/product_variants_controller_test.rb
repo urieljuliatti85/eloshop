@@ -24,7 +24,7 @@ class Admin::ProductVariantsControllerTest < ActionDispatch::IntegrationTest
 
     assert_difference("ProductVariant.count", 1) do
       post admin_product_product_variants_path(@product), params: {
-        product_variant: { sku: "CAMISETA-001-M", price_cents: 7500, stock_quantity: 4, size: "M" }
+        product_variant: { sku: "CAMISETA-001-M", price: "75,00", stock_quantity: 4, size: "M" }
       }
     end
 

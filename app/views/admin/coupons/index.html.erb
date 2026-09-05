@@ -16,8 +16,8 @@
           <% @coupons.each do |coupon| %>
             <tr>
               <td><span class="rounded-lg bg-slate-100 px-2.5 py-1 font-mono text-xs font-bold text-slate-800"><%= coupon.code %></span></td>
-              <td class="font-semibold text-slate-900"><%= coupon.discount_type_percentage? ? "#{coupon.percentage}%" : number_to_currency(coupon.amount_cents.fdiv(100)) %></td>
-              <td><%= coupon.minimum_subtotal_cents ? number_to_currency(coupon.minimum_subtotal_cents.fdiv(100)) : "—" %></td>
+              <td class="font-semibold text-slate-900"><%= coupon.discount_type_percentage? ? "#{coupon.percentage}%" : format_price(coupon.amount_cents) %></td>
+              <td><%= coupon.minimum_subtotal_cents ? format_price(coupon.minimum_subtotal_cents) : "—" %></td>
               <td><%= coupon.uses_count %> / <%= coupon.max_uses || "∞" %></td>
               <td class="whitespace-nowrap text-slate-500">
                 <% if coupon.starts_at || coupon.expires_at %>

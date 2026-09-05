@@ -38,12 +38,12 @@
                   <p class="text-sm text-ink-muted"><%= entry[:label] %>: <%= entry[:value] %></p>
                 <% end %>
                 <p class="mt-1 text-sm text-ink-muted sm:hidden">
-                  <%= number_to_currency(item.unit_price_cents / 100.0) %>
+                  <%= format_price(item.unit_price_cents) %>
                 </p>
               </div>
 
               <p class="hidden text-right text-sm text-ink-muted sm:block">
-                <%= number_to_currency(item.unit_price_cents / 100.0) %>
+                <%= format_price(item.unit_price_cents) %>
               </p>
 
               <div class="flex items-center gap-3 sm:justify-center">
@@ -60,7 +60,7 @@
                       class: "flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-gray-300 text-ink hover:border-brand-500 hover:text-brand-600" %>
               </div>
 
-              <p class="text-right font-medium text-ink"><%= number_to_currency(item.subtotal_cents / 100.0) %></p>
+              <p class="text-right font-medium text-ink"><%= format_price(item.subtotal_cents) %></p>
             </div>
           <% end %>
         </div>
@@ -75,7 +75,7 @@
             </div>
             <p class="mt-1 flex justify-between text-sm text-ink-muted">
               <span>Desconto</span>
-              <span>-<%= number_to_currency(@cart.discount_cents / 100.0) %></span>
+              <span>-<%= format_price(@cart.discount_cents) %></span>
             </p>
           <% else %>
             <%= form_with url: apply_coupon_cart_path, method: :post, class: "flex gap-2" do %>

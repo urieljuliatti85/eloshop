@@ -5,6 +5,22 @@ pt-BR:
   time:
     formats:
       short: "%d/%m/%Y às %H:%M"
+  # `distance_of_time_in_words` não vem traduzido no Rails. Só as faixas que
+  # o e-mail de redefinição de senha alcança (o token expira em horas).
+  datetime:
+    distance_in_words:
+      less_than_x_minutes:
+        one: "menos de um minuto"
+        other: "menos de %{count} minutos"
+      x_minutes:
+        one: "1 minuto"
+        other: "%{count} minutos"
+      about_x_hours:
+        one: "cerca de 1 hora"
+        other: "cerca de %{count} horas"
+      x_days:
+        one: "1 dia"
+        other: "%{count} dias"
   activerecord:
     attributes:
       user:

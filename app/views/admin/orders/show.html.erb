@@ -41,9 +41,9 @@
                     <p class="font-semibold text-slate-900"><%= item.product_name %></p>
                     <p class="mt-1 text-xs text-slate-500">SKU <%= item.sku %></p>
                   </div>
-                  <p class="whitespace-nowrap font-semibold text-slate-950"><%= number_to_currency(item.subtotal_cents.fdiv(100)) %></p>
+                  <p class="whitespace-nowrap font-semibold text-slate-950"><%= format_price(item.subtotal_cents) %></p>
                 </div>
-                <p class="mt-2 text-sm text-slate-600"><%= item.quantity %> × <%= number_to_currency(item.unit_price_cents.fdiv(100)) %></p>
+                <p class="mt-2 text-sm text-slate-600"><%= item.quantity %> × <%= format_price(item.unit_price_cents) %></p>
                 <% if item.variant_label.present? %>
                   <p class="mt-1 text-sm text-slate-500">Variante: <%= item.variant_label %></p>
                 <% end %>
@@ -103,14 +103,14 @@
         <% if payment %>
           <dl class="mt-4 space-y-3 text-sm">
             <div class="flex justify-between gap-4"><dt class="text-slate-500">Gateway</dt><dd class="font-semibold text-slate-800"><%= payment.gateway.humanize %></dd></div>
-            <div class="flex justify-between gap-4"><dt class="text-slate-500">Valor</dt><dd class="font-semibold text-slate-800"><%= number_to_currency(payment.amount_cents.fdiv(100)) %></dd></div>
-            <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão EloShop</dt><dd class="font-semibold text-slate-800"><%= number_to_currency(payment.application_fee_cents.fdiv(100)) %></dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Valor</dt><dd class="font-semibold text-slate-800"><%= format_price(payment.amount_cents) %></dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão EloShop</dt><dd class="font-semibold text-slate-800"><%= format_price(payment.application_fee_cents) %></dd></div>
             <% if payment.processor_fee_cents.present? %>
-              <div class="flex justify-between gap-4"><dt class="text-slate-500">Tarifa Mercado Pago</dt><dd class="font-semibold text-slate-800"><%= number_to_currency(payment.processor_fee_cents.fdiv(100)) %></dd></div>
+              <div class="flex justify-between gap-4"><dt class="text-slate-500">Tarifa Mercado Pago</dt><dd class="font-semibold text-slate-800"><%= format_price(payment.processor_fee_cents) %></dd></div>
             <% end %>
             <% if payment.refunded_amount_cents.positive? %>
-              <div class="flex justify-between gap-4"><dt class="text-slate-500">Reembolsado</dt><dd class="font-semibold text-rose-700">− <%= number_to_currency(payment.refunded_amount_cents.fdiv(100)) %></dd></div>
-              <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão devolvida</dt><dd class="font-semibold text-slate-800"><%= number_to_currency(payment.application_fee_refunded_cents.fdiv(100)) %></dd></div>
+              <div class="flex justify-between gap-4"><dt class="text-slate-500">Reembolsado</dt><dd class="font-semibold text-rose-700">− <%= format_price(payment.refunded_amount_cents) %></dd></div>
+              <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão devolvida</dt><dd class="font-semibold text-slate-800"><%= format_price(payment.application_fee_refunded_cents) %></dd></div>
             <% end %>
           </dl>
           <% if payment.paid? || payment.partially_refunded? %>
@@ -118,7 +118,7 @@
               <%= form.hidden_field :idempotency_key, value: SecureRandom.uuid %>
               <%= form.label :amount, "Reembolso (R$)", class: "block text-sm font-semibold text-slate-700" %>
               <%= form.text_field :amount, inputmode: "decimal", placeholder: number_with_precision(payment.remaining_refundable_cents.fdiv(100), precision: 2, separator: ","), class: "w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" %>
-              <p class="text-xs text-slate-500">Em branco, reembolsa o saldo total de <%= number_to_currency(payment.remaining_refundable_cents.fdiv(100)) %>.</p>
+              <p class="text-xs text-slate-500">Em branco, reembolsa o saldo total de <%= format_price(payment.remaining_refundable_cents) %>.</p>
               <%= form.submit "Solicitar reembolso", class: "rounded-xl bg-rose-700 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-800", data: { turbo_confirm: "Confirma o reembolso deste pagamento?" } %>
             <% end %>
           <% end %>
@@ -130,19 +130,19 @@
       <div class="p-5 sm:p-6">
         <p class="admin-section-label mb-4">Resumo</p>
         <dl class="space-y-3 text-sm">
-          <div class="flex justify-between gap-4"><dt class="text-slate-500">Subtotal</dt><dd class="font-medium"><%= number_to_currency(@order.subtotal_cents.fdiv(100)) %></dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-slate-500">Subtotal</dt><dd class="font-medium"><%= format_price(@order.subtotal_cents) %></dd></div>
           <% if @order.discount_cents.positive? %>
-            <div class="flex justify-between gap-4"><dt class="text-slate-500">Desconto<%= " (#{@order.coupon.code})" if @order.coupon %></dt><dd class="font-medium text-emerald-700">− <%= number_to_currency(@order.discount_cents.fdiv(100)) %></dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Desconto<%= " (#{@order.coupon.code})" if @order.coupon %></dt><dd class="font-medium text-emerald-700">− <%= format_price(@order.discount_cents) %></dd></div>
           <% end %>
-          <div class="flex justify-between gap-4"><dt class="text-slate-500">Frete</dt><dd class="font-medium"><%= number_to_currency(@order.shipping_cents.fdiv(100)) %></dd></div>
-          <div class="flex justify-between gap-4 border-t border-slate-200 pt-4 text-base"><dt class="font-semibold text-slate-900">Total</dt><dd class="text-xl font-semibold text-slate-950"><%= number_to_currency(@order.total_cents.fdiv(100)) %></dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-slate-500">Frete</dt><dd class="font-medium"><%= format_price(@order.shipping_cents) %></dd></div>
+          <div class="flex justify-between gap-4 border-t border-slate-200 pt-4 text-base"><dt class="font-semibold text-slate-900">Total</dt><dd class="text-xl font-semibold text-slate-950"><%= format_price(@order.total_cents) %></dd></div>
         </dl>
         <% if @order.seller_orders.one? %>
           <% seller_order = @order.seller_order %>
           <dl class="mt-5 space-y-3 border-t border-slate-200 pt-4 text-sm">
             <div class="flex justify-between gap-4"><dt class="text-slate-500">Artesão</dt><dd class="font-medium"><%= seller_order.seller.name %></dd></div>
-            <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão (15%)</dt><dd class="font-medium"><%= number_to_currency(seller_order.platform_fee_cents.fdiv(100)) %></dd></div>
-            <div class="flex justify-between gap-4"><dt class="text-slate-500">Valor do artesão</dt><dd class="font-medium"><%= number_to_currency(seller_order.seller_amount_cents.fdiv(100)) %></dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão (15%)</dt><dd class="font-medium"><%= format_price(seller_order.platform_fee_cents) %></dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Valor do artesão</dt><dd class="font-medium"><%= format_price(seller_order.seller_amount_cents) %></dd></div>
           </dl>
         <% end %>
       </div>

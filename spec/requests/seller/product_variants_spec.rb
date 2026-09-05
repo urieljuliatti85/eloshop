@@ -20,7 +20,7 @@ RSpec.describe "Seller product variants", type: :request do
   it "creates a variant for an owned product" do
     expect do
       post seller_product_product_variants_path(product), params: {
-        product_variant: { sku: "SELLER-VAR-G", price_cents: 8_500, stock_quantity: 4, size: "G", active: true }
+        product_variant: { sku: "SELLER-VAR-G", price: "85,00", stock_quantity: 4, size: "G", active: true }
       }
     end.to change(product.product_variants, :count).by(1)
 

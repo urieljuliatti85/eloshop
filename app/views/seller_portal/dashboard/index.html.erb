@@ -60,7 +60,7 @@
         ["Publicados", @active_products_count],
         ["Estoque baixo", @low_stock_count],
         ["Pedidos", @orders_count],
-        ["Líquido em vendas", number_to_currency(@seller_revenue_cents.fdiv(100))]
+        ["Líquido em vendas", format_price(@seller_revenue_cents)]
       ].each do |label, value| %>
         <div class="bg-white px-5 py-6"><p class="text-xs font-semibold uppercase tracking-wider text-stone-500"><%= label %></p><p class="mt-2 text-2xl font-black tracking-tight text-stone-950"><%= value %></p></div>
       <% end %>
@@ -81,7 +81,7 @@
               <span class="grid size-20 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#eee7da] text-2xl text-stone-400">
                 <% if product.main_image.attached? %><%= image_tag product.main_image.variant(resize_to_fill: [240, 240]), alt: product.name, class: "h-full w-full object-cover" %><% else %>✦<% end %>
               </span>
-              <span class="min-w-0"><strong class="block truncate text-sm text-stone-950"><%= product.name %></strong><span class="mt-1 block text-xs text-stone-500"><%= t(product.status, scope: "products.statuses") %> · <%= product.stock_quantity %> em estoque</span><span class="mt-2 block text-sm font-bold"><%= number_to_currency(product.price_cents.fdiv(100)) %></span></span>
+              <span class="min-w-0"><strong class="block truncate text-sm text-stone-950"><%= product.name %></strong><span class="mt-1 block text-xs text-stone-500"><%= t(product.status, scope: "products.statuses") %> · <%= product.stock_quantity %> em estoque</span><span class="mt-2 block text-sm font-bold"><%= format_price(product.price_cents) %></span></span>
             <% end %>
           <% end %>
         </div>
@@ -95,7 +95,7 @@
       <% if @recent_seller_orders.any? %>
         <ol class="mt-5 divide-y divide-white/15">
           <% @recent_seller_orders.each do |seller_order| %>
-            <li><%= link_to seller_order_path(seller_order.order), class: "flex items-center justify-between gap-4 py-4 first:pt-0" do %><span><strong class="block text-sm">Pedido #<%= seller_order.order_id %></strong><span class="mt-1 block text-xs text-white/60"><%= seller_order.order.customer.name %> · <%= l(seller_order.created_at.to_date, format: :short) %></span></span><span class="text-right"><strong class="block text-sm"><%= number_to_currency(seller_order.seller_amount_cents.fdiv(100)) %></strong><span class="mt-1 block text-xs text-[#d8bd8d]"><%= t(seller_order.status, scope: "seller_orders.statuses") %></span></span><% end %></li>
+            <li><%= link_to seller_order_path(seller_order.order), class: "flex items-center justify-between gap-4 py-4 first:pt-0" do %><span><strong class="block text-sm">Pedido #<%= seller_order.order_id %></strong><span class="mt-1 block text-xs text-white/60"><%= seller_order.order.customer.name %> · <%= l(seller_order.created_at.to_date, format: :short) %></span></span><span class="text-right"><strong class="block text-sm"><%= format_price(seller_order.seller_amount_cents) %></strong><span class="mt-1 block text-xs text-[#d8bd8d]"><%= t(seller_order.status, scope: "seller_orders.statuses") %></span></span><% end %></li>
           <% end %>
         </ol>
       <% else %>

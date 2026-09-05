@@ -43,7 +43,7 @@ module Admin
     end
 
     def coupon_params
-      params.expect(coupon: %i[code discount_type percentage amount_cents minimum_subtotal_cents max_uses starts_at expires_at active])
+      params.expect(coupon: %i[code discount_type percentage amount minimum_subtotal max_uses starts_at expires_at active])
     end
   end
 end

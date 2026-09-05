@@ -37,7 +37,7 @@ RSpec.describe "Admin coupons", type: :request do
     it "creates a fixed coupon" do
       post session_path, params: { email_address: user.email_address, password: "password" }
 
-      post admin_coupons_path, params: { coupon: { code: "FIXO20", discount_type: "fixed", amount_cents: 2_000 } }
+      post admin_coupons_path, params: { coupon: { code: "FIXO20", discount_type: "fixed", amount: "20,00" } }
 
       expect(Coupon.find_by!(code: "FIXO20").amount_cents).to eq(2_000)
     end

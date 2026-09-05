@@ -1,4 +1,9 @@
 class Coupon < ApplicationRecord
+  include MoneyAttribute
+
+  money_attribute :amount
+  money_attribute :minimum_subtotal
+
   has_many :orders, dependent: :nullify
   has_many :carts, dependent: :nullify
 

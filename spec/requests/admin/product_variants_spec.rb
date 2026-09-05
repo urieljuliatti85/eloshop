@@ -29,7 +29,7 @@ RSpec.describe "Admin product variants", type: :request do
 
       expect do
         post admin_product_product_variants_path(product), params: {
-          product_variant: { sku: "CAMISETA-001-M", price_cents: 7_500, stock_quantity: 4, size: "M" }
+          product_variant: { sku: "CAMISETA-001-M", price: "75,00", stock_quantity: 4, size: "M" }
         }
       end.to change(ProductVariant, :count).by(1)
 

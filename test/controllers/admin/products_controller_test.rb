@@ -34,7 +34,7 @@ class Admin::ProductsControllerTest < ActionDispatch::IntegrationTest
           seller_id: sellers(:approved).id,
           name: "Cesto de vime",
           description: "Cesto trançado à mão",
-          price_cents: 5990,
+          price: "59,90",
           currency: "BRL",
           sku: "CESTO-001",
           stock_quantity: 2
@@ -51,7 +51,7 @@ class Admin::ProductsControllerTest < ActionDispatch::IntegrationTest
     post admin_products_path, params: {
       product: {
         seller_id: sellers(:approved).id,
-        name: "Cesto catalogado", description: "Cesto", price_cents: 5990,
+        name: "Cesto catalogado", description: "Cesto", price: "59,90",
         currency: "BRL", sku: "CESTO-CATALOGADO-001", stock_quantity: 2,
         tag_names: "feito a mao, presente", material_names: "Vime",
         technique_names: "Trançado"
@@ -68,7 +68,7 @@ class Admin::ProductsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(@user)
 
     assert_no_difference("Product.count") do
-      post admin_products_path, params: { product: { name: "", sku: "", price_cents: 0, stock_quantity: 0 } }
+      post admin_products_path, params: { product: { name: "", sku: "", price: "", stock_quantity: 0 } }
     end
 
     assert_response :unprocessable_entity
@@ -109,7 +109,7 @@ class Admin::ProductsControllerTest < ActionDispatch::IntegrationTest
     post admin_products_path, params: {
       product: {
         seller_id: sellers(:approved).id,
-        name: "Escultura única", description: "Peça única", price_cents: 15_000,
+        name: "Escultura única", description: "Peça única", price: "150,00",
         currency: "BRL", sku: "UNICA-ADMIN-001", stock_quantity: 1, availability_type: "one_of_a_kind"
       }
     }
@@ -123,7 +123,7 @@ class Admin::ProductsControllerTest < ActionDispatch::IntegrationTest
     post admin_products_path, params: {
       product: {
         seller_id: sellers(:approved).id,
-        name: "Cadeira sob encomenda", description: "Feita sob encomenda", price_cents: 30_000,
+        name: "Cadeira sob encomenda", description: "Feita sob encomenda", price: "300,00",
         currency: "BRL", sku: "ENCOMENDA-ADMIN-001", stock_quantity: 0,
         availability_type: "made_to_order", production_time_min_days: 15, production_time_max_days: 20
       }

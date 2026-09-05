@@ -44,7 +44,7 @@
                   <span class="block font-semibold text-ink"><%= address.street %>, <%= address.number %></span>
                   <span class="mt-1 block text-ink-muted"><%= [address.neighborhood, address.city, address.state].compact_blank.join(" · ") %> · CEP <%= address.zip_code %></span>
                   <% if quote %>
-                    <span class="mt-2 block font-medium text-ink"><%= quote.service %> · até <%= quote.estimated_days %> dias úteis · <%= number_to_currency(quote.shipping_cents.fdiv(100)) %></span>
+                    <span class="mt-2 block font-medium text-ink"><%= quote.service %> · até <%= quote.estimated_days %> dias úteis · <%= format_price(quote.shipping_cents) %></span>
                   <% else %>
                     <span class="mt-2 block font-medium text-red-700">Entrega indisponível para este endereço.</span>
                   <% end %>
@@ -68,7 +68,7 @@
                     <p class="text-sm text-ink-muted"><%= entry[:label] %>: <%= entry[:value] %></p>
                   <% end %>
                 </div>
-                <p class="whitespace-nowrap font-semibold text-ink"><%= number_to_currency(item.subtotal_cents.fdiv(100)) %></p>
+                <p class="whitespace-nowrap font-semibold text-ink"><%= format_price(item.subtotal_cents) %></p>
               </li>
             <% end %>
           </ul>
@@ -78,11 +78,11 @@
       <aside class="rounded-2xl bg-brand-50 p-6 lg:sticky lg:top-24">
         <h2 class="text-xl font-semibold text-ink">Resumo</h2>
         <dl class="mt-5 space-y-3 text-sm">
-          <div class="flex justify-between text-ink-muted"><dt>Produtos</dt><dd><%= number_to_currency(@cart.subtotal_cents.fdiv(100)) %></dd></div>
+          <div class="flex justify-between text-ink-muted"><dt>Produtos</dt><dd><%= format_price(@cart.subtotal_cents) %></dd></div>
           <% if @cart.coupon %>
-            <div class="flex justify-between text-green-800"><dt>Cupom <%= @cart.coupon.code %></dt><dd>− <%= number_to_currency(@cart.discount_cents.fdiv(100)) %></dd></div>
+            <div class="flex justify-between text-green-800"><dt>Cupom <%= @cart.coupon.code %></dt><dd>− <%= format_price(@cart.discount_cents) %></dd></div>
           <% end %>
-          <div class="flex justify-between text-ink-muted"><dt>Frete</dt><dd data-checkout-target="shipping"><%= @shipping ? number_to_currency(@shipping_cents.fdiv(100)) : "Indisponível" %></dd></div>
+          <div class="flex justify-between text-ink-muted"><dt>Frete</dt><dd data-checkout-target="shipping"><%= @shipping ? format_price(@shipping_cents) : "Indisponível" %></dd></div>
           <div class="flex justify-between border-t border-brand-200 pt-4 text-lg font-bold text-ink"><dt>Total</dt><dd data-checkout-target="total"><%= @shipping ? number_to_currency((@cart.subtotal_cents - @cart.discount_cents + @shipping_cents).fdiv(100)) : "—" %></dd></div>
         </dl>
 

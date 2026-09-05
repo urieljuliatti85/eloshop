@@ -44,7 +44,7 @@
               </td>
               <td><%= admin_status_badge(order.status) %></td>
               <td><%= payment ? admin_status_badge(payment.status) : admin_status_badge("pending", label: "Não iniciado") %></td>
-              <td class="font-semibold text-slate-950"><%= number_to_currency(order.total_cents.fdiv(100)) %></td>
+              <td class="font-semibold text-slate-950"><%= format_price(order.total_cents) %></td>
               <td class="whitespace-nowrap text-slate-500"><%= l(order.created_at.to_date, format: :short) %></td>
               <td class="text-right"><%= link_to "Detalhes", admin_order_path(order), class: "admin-button admin-button--secondary" %></td>
             </tr>

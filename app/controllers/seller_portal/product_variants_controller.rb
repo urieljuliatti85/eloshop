@@ -46,7 +46,7 @@ module SellerPortal
     end
 
     def product_variant_params
-      params.expect(product_variant: %i[sku price_cents stock_quantity size color material active])
+      params.expect(product_variant: %i[sku price stock_quantity size color material active])
     end
   end
 end

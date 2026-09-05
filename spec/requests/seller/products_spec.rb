@@ -84,7 +84,7 @@ RSpec.describe "Seller products", type: :request do
 
   it "assigns newly created products to the authenticated seller" do
     expect do
-      post seller_products_path, params: { product: { name: "Nova peça", sku: "NEW-001", price_cents: 4_000, currency: "BRL", stock_quantity: 1 } }
+      post seller_products_path, params: { product: { name: "Nova peça", sku: "NEW-001", price: "40,00", currency: "BRL", stock_quantity: 1 } }
     end.to change(seller.products, :count).by(1)
 
     expect(Product.last.seller).to eq(seller)

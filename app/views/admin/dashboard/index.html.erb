@@ -55,7 +55,7 @@
                   <td class="font-semibold text-slate-900">#<%= order.id %></td>
                   <td><%= order.customer.name %></td>
                   <td><%= payment ? admin_status_badge(payment.status) : admin_status_badge("pending", label: "Não iniciado") %></td>
-                  <td class="font-semibold text-slate-900"><%= number_to_currency(order.total_cents.fdiv(100)) %></td>
+                  <td class="font-semibold text-slate-900"><%= format_price(order.total_cents) %></td>
                   <td class="text-right"><%= link_to "Ver", admin_order_path(order), class: "admin-link" %></td>
                 </tr>
               <% end %>

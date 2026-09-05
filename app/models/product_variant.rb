@@ -1,4 +1,8 @@
 class ProductVariant < ApplicationRecord
+  include MoneyAttribute
+
+  money_attribute :price
+
   belongs_to :product
 
   validates :sku, presence: true, uniqueness: true
