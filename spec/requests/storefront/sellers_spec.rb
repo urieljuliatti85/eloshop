@@ -73,6 +73,38 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(header_nav).to include("Cadastre seu Ateliê")
     end
 
+    # O admin clicando em "Painel do Artesão" caía em /painel e era barrado
+    # por `require_seller!`: o item aponta para o painel de quem está logado.
+    it "points the panel link at the admin panel for an admin" do
+      admin = User.create!(email_address: "admin-painel@eloshop.test", password: "password123")
+      sign_in_as(admin)
+
+      get root_path
+
+      expect(header_nav).to include("Painel Admin")
+      expect(header_nav).to include(admin_root_path)
+      expect(header_nav).not_to include("Painel do Artesão")
+    end
+
+    it "points the panel link at the seller panel for an artisan" do
+      seller = Seller.create!(name: "Ateliê painel #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
+      artisan = User.create!(email_address: "artesao-painel@eloshop.test", password: "password123", role: :seller, seller: seller)
+      sign_in_as(artisan)
+
+      get root_path
+
+      expect(header_nav).to include("Painel do Artesão")
+      expect(header_nav).to include(seller_root_path)
+    end
+
+    # Deslogado o rótulo segue sendo o convite ao artesão: é ele quem procura
+    # essa porta.
+    it "keeps the artisan panel label for a visitor" do
+      get root_path
+
+      expect(header_nav).to include("Painel do Artesão")
+    end
+
     # Só quem já tem ateliê deixa de ser convidado.
     it "drops the invitation once an artisan is signed in" do
       seller = Seller.create!(name: "Ateliê logado #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
