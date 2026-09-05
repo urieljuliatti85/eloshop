@@ -106,6 +106,31 @@
     </div>
   </section>
 
+  <%# Selos de confiança, num cartão sólido: diferente do carrossel e das
+      categorias acima, aqui o texto não precisa competir com a foto de
+      fundo — um bloco branco delimita a seção e garante contraste previsto
+      em qualquer parte da paisagem que passe atrás. %>
+  <section class="mt-12 rounded-[2rem] bg-white/90 px-6 py-8 shadow-sm backdrop-blur-sm sm:px-10">
+    <dl class="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
+      <% [
+        ["Feito à mão", "Peças únicas, feitas com cuidado", "m6 21 6-14 6 14M9 15h6"],
+        ["Qualidade", "Materiais selecionados e acabamento impecável", "m5 13 4 4L19 7"],
+        ["Sustentável", "Produção consciente e responsável", "M12 3c4 3 6 6 6 10a6 6 0 1 1-12 0c0-4 2-7 6-10Z"],
+        ["Embalagem cuidadosa", "Seu pedido chega com todo carinho", "M4 8h16v12H4zM4 8l8-4 8 4M9 12h6"]
+      ].each do |title, description, path| %>
+        <div class="flex items-start gap-3">
+          <svg class="mt-0.5 h-7 w-7 flex-none text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path d="<%= path %>" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <div>
+            <dt class="text-sm font-semibold text-ink"><%= title %></dt>
+            <dd class="mt-0.5 text-sm text-ink-muted"><%= description %></dd>
+          </div>
+        </div>
+      <% end %>
+    </dl>
+  </section>
+
   <% if @categories.any? %>
     <section class="mt-16">
       <%# Branco com sombra: este título fica direto sobre a foto do fundo, e
@@ -141,4 +166,53 @@
       </div>
     </section>
   <% end %>
+
+  <% if @featured_products.any? %>
+    <%# Mesmo cartão sólido dos selos acima: a partir daqui a página deixa de
+        competir com a foto de fundo — os cards de produto já têm contraste
+        próprio e não precisam de sombra de texto por cima da paisagem. %>
+    <section class="mt-16 rounded-[2rem] bg-white/90 px-6 py-10 shadow-sm backdrop-blur-sm sm:px-10">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-3xl font-bold tracking-tight text-ink md:text-4xl">Destaques</h2>
+        <%= link_to "Ver todos", products_path, class: "hidden shrink-0 text-sm font-semibold text-brand-600 hover:text-brand-700 sm:inline" %>
+      </div>
+
+      <ul class="mt-8 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-6">
+        <% @featured_products.each do |product| %>
+          <li><%= render "products/product_card", product: product %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <%# Newsletter só visual por ora: nenhum back-end de captura existe ainda —
+      a política de confirmação, LGPD e a lista de destino são decisões de
+      negócio pendentes (CLAUDE.md §69), então o formulário não submete a
+      lugar nenhum até isso ser decidido. %>
+  <section class="mt-16 rounded-[2rem] bg-ink px-6 py-10 text-white sm:px-10">
+    <div class="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-start gap-4">
+        <span class="grid h-11 w-11 flex-none place-items-center rounded-full bg-white/10" aria-hidden="true">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M4 6h16v12H4zM4 6l8 7 8-7" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <div>
+          <p class="text-lg font-semibold">Receba novidades e inspirações direto no seu e-mail</p>
+          <p class="mt-1 text-sm text-white/70">Promoções exclusivas, novos produtos e muito mais.</p>
+        </div>
+      </div>
+
+      <%# disabled: formulário decorativo por enquanto — ver comentário acima. %>
+      <div class="flex w-full max-w-md flex-col gap-3 sm:flex-row">
+        <label for="newsletter-email" class="sr-only">Seu e-mail</label>
+        <input type="email" id="newsletter-email" placeholder="Seu melhor e-mail" disabled
+               class="min-h-11 w-full rounded-full border border-white/20 bg-white/10 px-5 text-sm text-white placeholder:text-white/60">
+        <button type="button" disabled
+                class="min-h-11 shrink-0 rounded-full bg-brand-500 px-6 text-sm font-semibold text-white opacity-70">
+          Inscrever-se
+        </button>
+      </div>
+    </div>
+  </section>
 </div>

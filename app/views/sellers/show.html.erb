@@ -15,23 +15,23 @@
   </nav>
 
   <div class="mt-8 space-y-12">
-    <%# O hero repete a linguagem do painel do artesão — fundo verde profundo,
+    <%# O hero repete a linguagem do painel do artesão — fundo terracota,
         cantos de 2rem, tipografia pesada — mas fala com quem compra, não com
         quem vende. A capa é a foto da peça mais recente: o ateliê não tem
         imagem própria, e não vale pedir mais um upload sem necessidade (§5). %>
-    <section class="relative isolate overflow-hidden rounded-[2rem] bg-[#273b31] text-white shadow-sm">
+    <section class="relative isolate overflow-hidden rounded-[2rem] bg-[#7a2410] text-white shadow-sm">
       <% if (cover = @products.find { |product| product.main_image.attached? }) %>
         <%= image_tag cover.main_image, alt: "", loading: "lazy",
               class: "absolute inset-0 -z-20 h-full w-full object-cover" %>
         <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/80 via-black/45 to-black/20"></div>
       <% else %>
         <%# Mesmo fundo geométrico que o painel usa quando ainda não há foto. %>
-        <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,#d7c7a1_0,transparent_27%),radial-gradient(circle_at_75%_72%,#9bac91_0,transparent_28%),linear-gradient(135deg,#273b31,#526d5d)]"></div>
+        <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,#fbbeb6_0,transparent_27%),radial-gradient(circle_at_75%_72%,#f6604c_0,transparent_28%),linear-gradient(135deg,#7a2410,#df240c)]"></div>
         <div class="absolute right-[12%] top-[12%] -z-10 size-40 rotate-6 border-[1.25rem] border-white/15 sm:size-64"></div>
       <% end %>
 
       <div class="flex max-w-2xl flex-col justify-end p-7 sm:p-10 lg:p-12">
-        <p class="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[#f2d49f]">Ateliê na EloShop</p>
+        <p class="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[#fde1dd]">Ateliê na EloShop</p>
         <h1 class="text-4xl font-black leading-[0.98] tracking-tight sm:text-5xl lg:text-6xl"><%= @seller.name %></h1>
         <p class="mt-5 max-w-lg text-sm leading-6 text-white/80 sm:text-base">
           <%= pluralize(@products.size, "peça disponível", plural: "peças disponíveis") %>, <%= @products.any? ? "feitas à mão e prontas para conhecer" : "por enquanto" %>.

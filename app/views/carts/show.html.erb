@@ -1,13 +1,24 @@
+<% content_for :body_class, "cart-background" %>
+
 <div class="w-full">
-  <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Sacola</p>
-  <h1 class="mt-1 text-4xl font-bold text-ink">Carrinho</h1>
+  <%# Título num cartão sólido, como as seções da home: sobre a paisagem
+      direta o texto escuro perderia contraste em algumas regiões da foto. %>
+  <div class="inline-block rounded-2xl bg-white/90 px-5 py-3 shadow-sm backdrop-blur-sm">
+    <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Sacola</p>
+    <h1 class="mt-1 text-4xl font-bold text-ink">Carrinho</h1>
+  </div>
 
   <% if @cart.cart_items.empty? %>
-    <p class="mt-8 text-ink-muted">Seu carrinho está vazio.</p>
-    <%= link_to "Ver produtos", products_path, class: "mt-4 inline-block text-brand-600 hover:underline" %>
+    <div class="mt-8 inline-block rounded-2xl bg-white/90 px-5 py-4 shadow-sm backdrop-blur-sm">
+      <p class="text-ink-muted">Seu carrinho está vazio.</p>
+      <%= link_to "Ver produtos", products_path, class: "mt-2 inline-block text-brand-600 hover:underline" %>
+    </div>
   <% else %>
     <div class="mt-10 grid grid-cols-1 gap-16 lg:grid-cols-3">
-      <div class="lg:col-span-2">
+      <%# Mesmo cartão sólido do resumo ao lado: a lista de itens também
+          precisa de um fundo opaco próprio, senão o texto e as bordas finas
+          (divide-y, border-gray) competem com a paisagem atrás. %>
+      <div class="rounded-[2rem] bg-white/90 p-6 shadow-sm backdrop-blur-sm sm:p-8 lg:col-span-2">
         <div class="hidden grid-cols-[88px_1fr_110px_140px_100px] gap-4 border-b border-gray-200 pb-4 text-xs font-semibold uppercase tracking-wider text-ink-muted sm:grid">
           <span></span>
           <span>Produto</span>
@@ -19,7 +30,7 @@
         <div class="divide-y divide-gray-100">
           <% @cart.cart_items.includes({ product: :seller }, :product_variant).each do |item| %>
             <div class="grid grid-cols-[88px_1fr] items-center gap-4 py-8 sm:grid-cols-[88px_1fr_110px_140px_100px]">
-              <div class="relative h-22 w-22 flex-none overflow-hidden rounded-xl bg-gray-50">
+              <div class="relative h-22 w-22 flex-none overflow-hidden rounded-2xl bg-mist-100">
                 <% if item.product.main_image.attached? %>
                   <%= image_tag item.product.main_image, class: "h-full w-full object-cover", alt: item.product.name %>
                 <% end %>
@@ -67,7 +78,10 @@
       </div>
 
       <div class="lg:col-span-1">
-        <div class="sticky top-24 border-t border-gray-200 pt-8">
+        <%# Cartão translúcido com blur — mesmo tratamento da lista de itens
+            ao lado, para o bloco de total se destacar como um resumo sobre a
+            paisagem, não como mais uma linha da página. %>
+        <div class="sticky top-24 rounded-[2rem] border border-gray-100 bg-white/90 p-8 shadow-sm backdrop-blur-sm">
           <% if @cart.coupon %>
             <div class="flex items-center justify-between text-sm">
               <span class="text-ink-muted">Cupom <strong><%= @cart.coupon.code %></strong></span>

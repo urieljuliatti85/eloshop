@@ -14,27 +14,27 @@ module SellerPortal
       redirect_to oauth.authorization_url(state: state), allow_other_host: true
     rescue Marketplace::MercadoPagoOauth::ConfigurationError => e
       session.delete(:mercado_pago_oauth)
-      redirect_to seller_root_path, alert: e.message
+      redirect_to seller_atelier_path, alert: e.message
     end
 
     def callback
       unless valid_state?(params[:state]) && params[:code].present?
-        redirect_to seller_root_path, alert: "Não foi possível validar o retorno do Mercado Pago. Tente novamente."
+        redirect_to seller_atelier_path, alert: "Não foi possível validar o retorno do Mercado Pago. Tente novamente."
         return
       end
 
       current_seller.connect_mercado_pago!(oauth.exchange(code: params[:code]))
-      redirect_to seller_root_path, notice: "Conta Mercado Pago conectada. A plataforma agora pode concluir a aprovação."
+      redirect_to seller_atelier_path, notice: "Conta Mercado Pago conectada. A plataforma agora pode concluir a aprovação."
     rescue Marketplace::MercadoPagoOauth::ConfigurationError,
       Marketplace::MercadoPagoOauth::RequestFailed => e
-      redirect_to seller_root_path, alert: e.message
+      redirect_to seller_atelier_path, alert: e.message
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
-      redirect_to seller_root_path, alert: "Esta conta Mercado Pago já está vinculada ou não pôde ser salva."
+      redirect_to seller_atelier_path, alert: "Esta conta Mercado Pago já está vinculada ou não pôde ser salva."
     end
 
     def destroy
       current_seller.disconnect_mercado_pago!
-      redirect_to seller_root_path, notice: "Conta Mercado Pago desconectada. A publicação foi suspensa até uma nova aprovação."
+      redirect_to seller_atelier_path, notice: "Conta Mercado Pago desconectada. A publicação foi suspensa até uma nova aprovação."
     end
 
     private
