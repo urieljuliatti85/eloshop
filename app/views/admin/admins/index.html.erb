@@ -1,0 +1,45 @@
+<div class="space-y-8">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="admin-section-label mb-2">Acesso</p>
+      <h1>Administradores</h1>
+      <p class="mt-2 text-sm text-slate-500">Quem pode entrar neste painel e operar a plataforma.</p>
+    </div>
+    <%= link_to "Novo administrador", new_admin_admin_path, class: "admin-button admin-button--brand" %>
+  </header>
+
+  <div class="admin-table-wrap">
+    <table>
+      <thead><tr><th>E-mail</th><th>Desde</th><th><span class="sr-only">Ações</span></th></tr></thead>
+      <tbody>
+        <% @admins.each do |admin| %>
+          <tr>
+            <td class="font-semibold text-slate-900">
+              <%= admin.email_address %>
+              <% if admin == Current.user %>
+                <span class="ml-2 text-xs font-normal text-slate-500">(você)</span>
+              <% end %>
+            </td>
+            <td><%= l(admin.created_at.to_date, format: :short) %></td>
+            <td>
+              <div class="flex justify-end">
+                <%# Sem botão para a própria conta nem para o último admin: a
+                    ação é recusada de qualquer forma, e oferecer o que não
+                    funciona é pior do que não oferecer. %>
+                <% if admin == Current.user %>
+                  <span class="text-sm text-slate-400">—</span>
+                <% elsif admin.last_admin? %>
+                  <span class="text-sm text-slate-400">Último administrador</span>
+                <% else %>
+                  <%= button_to "Remover", admin_admin_path(admin), method: :delete,
+                        class: "admin-button admin-button--danger",
+                        form: { data: { turbo_confirm: "Remover #{admin.email_address} do painel?" } } %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
