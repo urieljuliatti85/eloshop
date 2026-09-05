@@ -28,6 +28,9 @@ module SeoHelper
       "name" => product.name,
       "description" => product.description.to_s.presence,
       "sku" => product.sku,
+      # No marketplace quem assina a peça é o ateliê, não a plataforma — é o
+      # que `brand` significa para o schema.org.
+      "brand" => { "@type" => "Brand", "name" => product.seller.name },
       "offers" => {
         "@type" => "Offer",
         "url" => product_url(product.seller, product.slug),
