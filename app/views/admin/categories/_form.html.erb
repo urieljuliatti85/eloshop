@@ -28,5 +28,17 @@
           { include_blank: "Nenhuma — categoria de topo" }, class: "w-full" %>
   </div>
 
+  <div>
+    <%= form.label :active, class: "flex items-center gap-2" do %>
+      <%= form.check_box :active %>
+      <span>Categoria ativa na loja</span>
+    <% end %>
+    <p class="text-sm text-gray-600">
+      Desmarcado, a categoria e as subcategorias dela somem da loja, e os
+      produtos delas deixam de aparecer e de ser vendidos. Nada é perdido:
+      marcar de novo devolve tudo ao ar.
+    </p>
+  </div>
+
   <%= form.submit "Salvar categoria", class: "admin-button admin-button--brand" %>
 <% end %>

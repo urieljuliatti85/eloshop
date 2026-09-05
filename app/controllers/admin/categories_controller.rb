@@ -56,12 +56,19 @@ module Admin
     end
     helper_method :product_counts
 
+    # Categorias que não aparecem na loja: as desabilitadas e as que estão
+    # sob uma desabilitada.
+    def hidden_category_ids
+      @hidden_category_ids ||= @category_tree.hidden_ids
+    end
+    helper_method :hidden_category_ids
+
     def set_category
       @category = Category.find_by!(slug: params[:id])
     end
 
     def category_params
-      params.expect(category: %i[name parent_id])
+      params.expect(category: %i[name parent_id active])
     end
   end
 end

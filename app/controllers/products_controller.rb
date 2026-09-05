@@ -24,7 +24,7 @@ class ProductsController < StorefrontController
     # cada categoria, e resolver isso pelo Active Record custava uma query por
     # nível, por categoria (medido: 5 das 24 queries do catálogo filtrado).
     @category_tree = Category::Tree.load
-    @categories = @category_tree.categories
+    @categories = @category_tree.visible
     @tags = Tag.order(:name)
     @materials = Material.order(:name)
     @techniques = Technique.order(:name)

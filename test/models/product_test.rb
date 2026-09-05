@@ -348,4 +348,62 @@ class ProductTest < ActiveSupport::TestCase
 
     assert_not_includes Product.low_stock, product
   end
+
+  # Desabilitar uma categoria é efeito derivado: esconde e impede a compra
+  # sem tocar no `status` do produto, que é do vendedor.
+  test "available_for_purchase? is false when the category is disabled" do
+    category = Category.create!(name: "Categoria desligada", active: false)
+    product = Product.create!(seller: sellers(:approved), name: "Vaso oculto", sku: "CAT-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active", category: category)
+
+    assert_not product.available_for_purchase?
+    assert product.active?, "o status do produto não pode ser alterado pela categoria"
+  end
+
+  test "available_for_purchase? is false when an ancestor category is disabled" do
+    casa = Category.create!(name: "Casa produto", active: false)
+    decoracao = casa.children.create!(name: "Decoração produto")
+    product = Product.create!(seller: sellers(:approved), name: "Vaso herdado", sku: "CAT-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active", category: decoracao)
+
+    assert_not product.available_for_purchase?
+  end
+
+  test "available_for_purchase? ignores categories for a product without one" do
+    Category.create!(name: "Irrelevante desligada", active: false)
+    product = Product.create!(seller: sellers(:approved), name: "Sem categoria", sku: "CAT-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active", category: nil)
+
+    assert product.available_for_purchase?
+  end
+
+  test "publicly_visible excludes products under a disabled category subtree" do
+    casa = Category.create!(name: "Casa escopo", active: false)
+    decoracao = casa.children.create!(name: "Decoração escopo")
+    ativa = Category.create!(name: "Moda escopo")
+
+    attrs = { seller: sellers(:approved), price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active" }
+    oculto = Product.create!(**attrs, name: "Oculto direto", sku: "SC-#{SecureRandom.hex(4)}", category: casa)
+    herdado = Product.create!(**attrs, name: "Oculto herdado", sku: "SC-#{SecureRandom.hex(4)}", category: decoracao)
+    visivel = Product.create!(**attrs, name: "Visível", sku: "SC-#{SecureRandom.hex(4)}", category: ativa)
+    sem_categoria = Product.create!(**attrs, name: "Sem categoria escopo", sku: "SC-#{SecureRandom.hex(4)}", category: nil)
+
+    ids = Product.publicly_visible.pluck(:id)
+
+    assert_not_includes ids, oculto.id
+    assert_not_includes ids, herdado.id
+    assert_includes ids, visivel.id
+    assert_includes ids, sem_categoria.id
+  end
+
+  test "re-enabling the category brings its products back" do
+    category = Category.create!(name: "Categoria volta", active: false)
+    product = Product.create!(seller: sellers(:approved), name: "Vaso que volta", sku: "CAT-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active", category: category)
+
+    category.update!(active: true)
+
+    assert product.reload.available_for_purchase?
+    assert_includes Product.publicly_visible.pluck(:id), product.id
+  end
 end
