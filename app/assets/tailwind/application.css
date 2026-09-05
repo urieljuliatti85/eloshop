@@ -81,3 +81,25 @@
   .admin-flash--danger { @apply border-rose-200 bg-rose-50 text-rose-800; }
   .admin-empty-state { @apply rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center text-sm text-slate-500; }
 }
+
+/* Fundo da home. `cover` preserva a proporção da imagem em qualquer formato
+   de tela — recorta o excedente em vez de esticar. `fixed` mantém a paisagem
+   parada enquanto a página rola.
+
+   A URL da imagem NÃO vem daqui: o Tailwind gera este arquivo fora do
+   pipeline do Propshaft, então um `url()` aqui não seria reescrito para o
+   nome com digest e daria 404. Ela é injetada no <head> pelo layout, com o
+   nonce que a CSP exige.
+
+   Em telas de toque o `fixed` vira `scroll`: iOS e vários Android redesenham
+   o fundo a cada quadro da rolagem, e a imagem "pula". */
+body.home-background {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+@media (hover: none) {
+  body.home-background { background-attachment: scroll; }
+}
