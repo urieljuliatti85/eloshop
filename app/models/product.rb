@@ -102,6 +102,7 @@ class Product < ApplicationRecord
   def available_for_purchase?
     return false unless seller&.approved?
     return false unless active?
+    return false if category && !category.visible?
     return product_variants.any?(&:available_for_purchase?) if has_variants?
     return true if availability_type_made_to_order?
 
@@ -179,7 +180,15 @@ class Product < ApplicationRecord
     active.availability_type_standard.without_variants.where(stock_quantity: 1..LOW_STOCK_THRESHOLD)
   }
 
-  scope :publicly_visible, -> { active.joins(:seller).merge(Seller.approved) }
+  scope :publicly_visible, -> { active.joins(:seller).merge(Seller.approved).in_visible_category }
+
+  # Categoria desabilitada tira do ar os produtos dela e da subárvore abaixo
+  # (Category#visible?). Produto sem categoria nunca é escondido por isso:
+  # `category_id` é opcional e ausência não é desabilitação.
+  scope :in_visible_category, -> {
+    hidden = Category.hidden_ids
+    hidden.empty? ? all : where(category_id: nil).or(where.not(category_id: hidden))
+  }
 
   # Descontinuado é saída definitiva do catálogo: o produto não pode
   # aparecer em lugar nenhum voltado ao cliente. `publicly_visible` já o

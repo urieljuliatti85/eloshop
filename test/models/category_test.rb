@@ -92,4 +92,38 @@ class CategoryTest < ActiveSupport::TestCase
 
     assert_not casa.destroy
   end
+
+  test "visible? is false when the category itself is disabled" do
+    category = Category.create!(name: "Casa oculta", active: false)
+
+    assert_not category.visible?
+  end
+
+  test "visible? is false when an ancestor is disabled" do
+    casa = Category.create!(name: "Casa desligada", active: false)
+    decoracao = casa.children.create!(name: "Decoração herdada", active: true)
+    vasos = decoracao.children.create!(name: "Vasos herdados", active: true)
+
+    assert_not decoracao.visible?, "subcategoria de categoria desabilitada deve sumir junto"
+    assert_not vasos.visible?, "a regra vale para a subárvore inteira, não só o filho direto"
+  end
+
+  test "visible? is true for an active category under active ancestors" do
+    casa = Category.create!(name: "Casa ligada")
+    decoracao = casa.children.create!(name: "Decoração ligada")
+
+    assert decoracao.visible?
+  end
+
+  test "hidden_ids covers disabled categories and their whole subtree" do
+    casa = Category.create!(name: "Casa hidden", active: false)
+    decoracao = casa.children.create!(name: "Decoração hidden")
+    outra = Category.create!(name: "Moda hidden")
+
+    hidden = Category.hidden_ids
+
+    assert_includes hidden, casa.id
+    assert_includes hidden, decoracao.id
+    assert_not_includes hidden, outra.id
+  end
 end

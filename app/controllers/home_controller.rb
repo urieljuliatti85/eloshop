@@ -3,7 +3,7 @@ class HomeController < StorefrontController
 
   def show
     tree = Category::Tree.load
-    @categories = tree.roots
+    @categories = tree.visible_roots
 
     # A categoria não tem imagem própria (não há necessidade de negócio para
     # mais um upload — CLAUDE.md §5): a capa é a foto do produto ativo mais

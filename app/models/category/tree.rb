@@ -27,6 +27,38 @@ class Category::Tree
     Array(@children[nil])
   end
 
+  # Só as categorias que a loja pode mostrar: exclui as desabilitadas e as
+  # que estão sob uma desabilitada.
+  def visible
+    @visible ||= categories.reject { |c| hidden_ids.include?(c.id) }
+  end
+
+  # Categorias de topo visíveis — a home e o filtro do catálogo partem daqui.
+  def visible_roots
+    roots & visible
+  end
+
+  # Ids das categorias desabilitadas e de toda a subárvore abaixo delas.
+  # Uma passada só: como `categories` vem ordenada por nome, e não por
+  # profundidade, a herança do pai é resolvida descendo a partir de cada
+  # raiz inativa.
+  def hidden_ids
+    @hidden_ids ||= begin
+      hidden = []
+      queue = categories.reject(&:active?).map(&:id)
+
+      until queue.empty?
+        id = queue.shift
+        next if hidden.include?(id)
+
+        hidden << id
+        Array(@children[id]).each { |child| queue << child.id }
+      end
+
+      hidden
+    end
+  end
+
   # A própria categoria mais toda a subárvore abaixo dela — usado para
   # filtrar produtos: uma categoria pai deve mostrar também os produtos das
   # subcategorias, senão uma categoria só com filhas apareceria vazia.

@@ -11,12 +11,22 @@
   <% if @categories.any? %>
     <div class="admin-table-wrap">
       <table>
-        <thead><tr><th>Categoria</th><th>Categoria pai</th><th>Produtos</th><th><span class="sr-only">Ações</span></th></tr></thead>
+        <thead><tr><th>Categoria</th><th>Categoria pai</th><th>Na loja</th><th>Produtos</th><th><span class="sr-only">Ações</span></th></tr></thead>
         <tbody>
           <% @categories.each do |category| %>
             <tr>
               <td class="font-semibold text-slate-900"><%= @category_tree.breadcrumb_name(category) %></td>
               <td><%= @category_tree.parent(category)&.name || "Categoria principal" %></td>
+              <%# Uma categoria ativa sob um pai desabilitado também não
+                  aparece na loja — a coluna mostra o efeito, não só a flag. %>
+              <td>
+                <% if category.active? %>
+                  <%= admin_status_badge(hidden_category_ids.include?(category.id) ? "inactive" : "active",
+                        label: hidden_category_ids.include?(category.id) ? "Oculta pelo pai" : "Visível") %>
+                <% else %>
+                  <%= admin_status_badge("inactive", label: "Desabilitada") %>
+                <% end %>
+              </td>
               <td><span class="admin-badge admin-badge--neutral"><%= product_counts.fetch(category.id, 0) %></span></td>
               <td>
                 <div class="flex justify-end gap-2">

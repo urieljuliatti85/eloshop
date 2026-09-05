@@ -32,6 +32,25 @@ class Category < ApplicationRecord
     [ id, *children.flat_map(&:self_and_descendant_ids) ]
   end
 
+  # Desabilitar uma categoria tira do ar os produtos dela e de toda a
+  # subárvore: desligar "Casa" precisa esconder "Casa > Decoração" junto,
+  # senão a subcategoria continuaria vendendo sob um pai desativado.
+  #
+  # O efeito é derivado, nunca destrutivo — o `status` dos produtos não é
+  # tocado, então reabilitar a categoria traz todo mundo de volta. Decisão
+  # de catálogo é da plataforma; `status` de produto é do vendedor.
+  def visible?
+    active? && ancestors.all?(&:active?)
+  end
+
+  # Ids das categorias que NÃO podem aparecer na loja: as inativas mais toda
+  # a subárvore abaixo delas. Uma leitura só, resolvida em memória — a
+  # alternativa (WITH RECURSIVE por requisição) não se paga num catálogo
+  # cujas categorias mudam raramente.
+  def self.hidden_ids
+    Tree.load.hidden_ids
+  end
+
   private
 
   def assign_slug
