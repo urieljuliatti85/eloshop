@@ -51,10 +51,10 @@ class MobileNavigationTest < ApplicationSystemTestCase
     visit new_contact_path
 
     click_button "Abrir menu"
-    within("header") { assert_link "Contato", visible: true }
+    within("header") { assert_link "Ateliês", visible: true }
 
     find("body").send_keys :escape
 
-    within("header") { assert_no_link "Contato", visible: true }
+    within("header") { assert_no_link "Ateliês", visible: true }
   end
 end
