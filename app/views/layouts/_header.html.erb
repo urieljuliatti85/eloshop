@@ -7,15 +7,16 @@
     <% end %>
 
     <nav class="hidden items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-medium text-ink md:flex">
-      <%# "Seja um artesão" só para quem ainda não tem painel: `authenticated?`
-          é a sessão de `User` (admin ou vendedor), independente da sessão de
-          cliente — um comprador logado continua vendo o convite. %>
+      <%# O convite ao artesão só para quem ainda não tem painel:
+          `authenticated?` é a sessão de `User` (admin ou vendedor),
+          independente da sessão de cliente — um comprador logado continua
+          vendo o convite. O rótulo repete o título da página de destino. %>
       <% items = [ [ "Início", root_path, "home" ],
                    [ "Loja", products_path, "products" ],
                    [ "Ateliês", sellers_path, "sellers" ],
                    [ "Contato", new_contact_path, "contacts" ],
                    [ "Painel do Artesão", seller_root_path, "seller_portal/dashboard" ] ]
-         items << [ "Seja um artesão", new_seller_registration_path, "seller_registrations" ] unless authenticated? %>
+         items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations" ] unless authenticated? %>
       <% items.each do |label, path, controllers| %>
         <% active = storefront_nav_active?(controllers) %>
         <%= link_to label, path,
@@ -142,7 +143,7 @@
                           [ "Ateliês", sellers_path, "sellers", true ],
                           [ "Contato", new_contact_path, "contacts", true ],
                           [ "Painel do Artesão", seller_root_path, "seller_portal/dashboard", authenticated? ? false : true ] ]
-         mobile_items << [ "Seja um artesão", new_seller_registration_path, "seller_registrations", false ] unless authenticated? %>
+         mobile_items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations", false ] unless authenticated? %>
       <% mobile_items.each do |label, path, controllers, divider| %>
         <% active = storefront_nav_active?(controllers) %>
         <%= link_to label, path,

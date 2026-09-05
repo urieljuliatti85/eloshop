@@ -4,8 +4,8 @@ class SellerDashboardTest < ApplicationSystemTestCase
   setup do
     user = users(:seller)
     visit new_session_path
-    fill_in "Informe seu e-mail", with: user.email_address
-    fill_in "Informe sua senha", with: "password"
+    fill_in "E-mail", with: user.email_address
+    fill_in "Senha", with: "password"
     click_button "Entrar"
     assert_current_path seller_root_path
   end

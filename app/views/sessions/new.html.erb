@@ -1,33 +1,40 @@
-<div class="mx-auto md:w-2/3 w-full">
+<div class="mx-auto w-full max-w-md">
+  <%# O título diz de qual porta é este login: o topo tem outra, a do
+      comprador, e as duas autenticações são independentes. %>
+  <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Painel do Artesão</p>
+  <h1 class="mb-8 mt-2 text-2xl font-bold text-ink">Entrar</h1>
+
   <% if alert = flash[:alert] %>
-    <p class="py-2 px-3 bg-red-50 mb-5 text-red-500 font-medium rounded-lg inline-block" id="alert"><%= alert %></p>
+    <p class="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800" id="alert"><%= alert %></p>
   <% end %>
 
   <% if notice = flash[:notice] %>
-    <p class="py-2 px-3 bg-green-50 mb-5 text-green-500 font-medium rounded-lg inline-block" id="notice"><%= notice %></p>
+    <p class="mb-6 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800" id="notice"><%= notice %></p>
   <% end %>
 
-  <h1 class="font-bold text-4xl">Entrar</h1>
-
-  <%= form_with url: session_url, class: "contents" do |form| %>
-    <div class="my-5">
-      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Informe seu e-mail", value: params[:email_address], class: "block shadow-sm rounded-md border border-gray-400 focus:outline-blue-600 px-3 py-2 mt-2 w-full" %>
+  <%# Labels visíveis, como no login do cliente: o placeholder sozinho some
+      quando o campo é preenchido, e some para o leitor de tela (§62). %>
+  <%= form_with url: session_url, class: "flex flex-col gap-4" do |form| %>
+    <div>
+      <%= form.label :email_address, "E-mail", class: "mb-1 block text-sm font-medium text-ink" %>
+      <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username",
+            value: params[:email_address],
+            class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
     </div>
 
-    <div class="my-5">
-      <%= form.password_field :password, required: true, autocomplete: "current-password", placeholder: "Informe sua senha", maxlength: 72, class: "block shadow-sm rounded-md border border-gray-400 focus:outline-blue-600 px-3 py-2 mt-2 w-full" %>
+    <div>
+      <%= form.label :password, "Senha", class: "mb-1 block text-sm font-medium text-ink" %>
+      <%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72,
+            class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
     </div>
 
-    <div class="col-span-6 sm:flex sm:items-center sm:gap-4">
-      <div class="inline">
-        <%= form.submit "Entrar", class: "w-full sm:w-auto text-center rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white inline-block font-medium cursor-pointer" %>
-      </div>
-
-      <div class="mt-4 text-sm text-gray-500 sm:mt-0">
-        <%= link_to "Esqueceu a senha?", new_password_path, class: "text-gray-700 underline hover:no-underline" %>
-      </div>
+    <div class="mt-2 flex flex-wrap items-center gap-4">
+      <%= form.submit "Entrar", class: "cursor-pointer rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
+      <%= link_to "Esqueceu a senha?", new_password_path, class: "text-sm text-ink-muted hover:text-brand-600" %>
     </div>
   <% end %>
 
-  <p class="mt-8 text-sm text-gray-600">Quer vender suas peças? <%= link_to "Cadastre seu ateliê", new_seller_registration_path, class: "font-semibold text-brand-600 underline hover:no-underline" %>.</p>
+  <p class="mt-8 text-sm text-ink-muted">
+    Quer vender suas peças? <%= link_to "Cadastre seu ateliê", new_seller_registration_path, class: "font-medium text-brand-600 hover:underline" %>.
+  </p>
 </div>
