@@ -1,0 +1,61 @@
+<% content_for :title, "Cadastro | Minha conta" %>
+
+<div class="w-full max-w-lg">
+  <nav class="text-sm text-ink-muted">
+    <%= link_to "Minha conta", account_root_path, class: "hover:text-brand-600" %>
+    <span class="mx-2">/</span>
+    <span class="text-ink">Cadastro</span>
+  </nav>
+
+  <h1 class="mt-6 text-2xl font-bold text-ink">Meus dados</h1>
+
+  <%= form_with model: @customer, url: account_profile_path, method: :patch, class: "mt-8 flex flex-col gap-4" do |form| %>
+    <% if @customer.errors.any? %>
+      <div class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+        <ul class="list-inside list-disc">
+          <% @customer.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= form.label :name, "Nome", class: "mb-1 block text-sm font-medium text-ink" %>
+      <%= form.text_field :name, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+    </div>
+
+    <div>
+      <%= form.label :email, "E-mail", class: "mb-1 block text-sm font-medium text-ink" %>
+      <%= form.email_field :email, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+    </div>
+
+    <%# Trocar a senha é opcional: em branco, os demais campos são salvos sem
+        tocar nela. A senha atual é exigida só quando há troca — sem isso, uma
+        sessão roubada tomaria a conta em definitivo. %>
+    <fieldset class="mt-4 border-t border-gray-200 pt-6">
+      <legend class="sr-only">Trocar senha</legend>
+      <p class="mb-4 text-sm font-medium text-ink">Trocar senha <span class="font-normal text-ink-muted">(deixe em branco para manter a atual)</span></p>
+
+      <div class="flex flex-col gap-4">
+        <div>
+          <%= form.label :password, "Nova senha", class: "mb-1 block text-sm font-medium text-ink" %>
+          <%= form.password_field :password, autocomplete: "new-password", class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+        </div>
+
+        <div>
+          <%= form.label :password_confirmation, "Repita a nova senha", class: "mb-1 block text-sm font-medium text-ink" %>
+          <%= form.password_field :password_confirmation, autocomplete: "new-password", class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+        </div>
+
+        <div>
+          <%= form.label :current_password, "Senha atual", class: "mb-1 block text-sm font-medium text-ink" %>
+          <%= form.password_field :current_password, autocomplete: "current-password", value: nil, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+          <p class="mt-1 text-xs text-ink-muted">Obrigatória apenas para confirmar a troca de senha.</p>
+        </div>
+      </div>
+    </fieldset>
+
+    <%= form.submit "Salvar alterações", class: "mt-2 w-fit cursor-pointer rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
+  <% end %>
+</div>

@@ -1,0 +1,60 @@
+<% content_for :title, "Minha conta | EloShop" %>
+
+<div class="w-full max-w-3xl">
+  <nav class="text-sm text-ink-muted">
+    <%= link_to "Início", root_path, class: "hover:text-brand-600" %>
+    <span class="mx-2">/</span>
+    <span class="text-ink">Minha conta</span>
+  </nav>
+
+  <header class="mt-6 flex items-center gap-4">
+    <span class="grid size-14 shrink-0 place-items-center rounded-full bg-ink text-lg font-bold text-white" aria-hidden="true"><%= @customer.name.first.upcase %></span>
+    <div class="min-w-0">
+      <h1 class="truncate text-2xl font-bold text-ink"><%= @customer.name %></h1>
+      <p class="truncate text-sm text-ink-muted"><%= @customer.email %></p>
+    </div>
+  </header>
+
+  <div class="mt-10 grid gap-4 sm:grid-cols-3">
+    <%= link_to orders_path, class: "rounded-2xl border border-gray-200 px-5 py-6 transition hover:border-brand-400" do %>
+      <p class="text-sm text-ink-muted">Pedidos</p>
+      <p class="mt-1 text-2xl font-bold text-ink"><%= @orders_count %></p>
+      <span class="mt-3 inline-block text-sm font-medium text-brand-600">Ver pedidos</span>
+    <% end %>
+
+    <%= link_to addresses_path, class: "rounded-2xl border border-gray-200 px-5 py-6 transition hover:border-brand-400" do %>
+      <p class="text-sm text-ink-muted">Endereços</p>
+      <p class="mt-1 text-2xl font-bold text-ink"><%= @addresses_count %></p>
+      <span class="mt-3 inline-block text-sm font-medium text-brand-600">Gerenciar</span>
+    <% end %>
+
+    <%= link_to edit_account_profile_path, class: "rounded-2xl border border-gray-200 px-5 py-6 transition hover:border-brand-400" do %>
+      <p class="text-sm text-ink-muted">Cadastro</p>
+      <p class="mt-1 truncate text-lg font-semibold text-ink"><%= @customer.name.split.first %></p>
+      <span class="mt-3 inline-block text-sm font-medium text-brand-600">Editar dados</span>
+    <% end %>
+  </div>
+
+  <% if @recent_orders.any? %>
+    <section class="mt-12">
+      <div class="flex items-end justify-between gap-4">
+        <h2 class="text-lg font-bold text-ink">Pedidos recentes</h2>
+        <%= link_to "Ver todos", orders_path, class: "text-sm font-medium text-brand-600 hover:underline" %>
+      </div>
+
+      <ul class="mt-4 divide-y divide-gray-100 rounded-2xl border border-gray-200">
+        <% @recent_orders.each do |order| %>
+          <li>
+            <%= link_to order_path(order), class: "flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-sand-50" do %>
+              <div class="text-sm">
+                <p class="font-medium text-ink">Pedido #<%= order.id %></p>
+                <p class="text-ink-muted"><%= l(order.created_at.to_date, format: :short) %></p>
+              </div>
+              <p class="text-sm font-semibold text-ink"><%= format_price(order.total_cents) %></p>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+</div>

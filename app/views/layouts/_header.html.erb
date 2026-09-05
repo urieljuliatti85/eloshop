@@ -60,7 +60,9 @@
             </div>
 
             <div class="py-1">
+              <%= link_to "Minha conta", account_root_path, class: "block px-4 py-2.5 text-sm text-ink hover:bg-sand-50 hover:text-brand-600" %>
               <%= link_to "Meus pedidos", orders_path, class: "block px-4 py-2.5 text-sm text-ink hover:bg-sand-50 hover:text-brand-600" %>
+              <%= link_to "Endereços", addresses_path, class: "block px-4 py-2.5 text-sm text-ink hover:bg-sand-50 hover:text-brand-600" %>
               <%= link_to "Favoritos", wishlist_path, class: "block px-4 py-2.5 text-sm text-ink hover:bg-sand-50 hover:text-brand-600" %>
             </div>
 
@@ -148,12 +150,13 @@
         <%# No painel do hambúrguer o nome é só rótulo: os destinos de conta
             já estão logo abaixo, e um link a mais para "Pedidos" seria ruído. %>
         <% if Current.customer %>
-          <p class="flex items-center gap-2 px-1 pb-1 text-base font-semibold text-ink">
+          <%= link_to account_root_path, class: "flex items-center gap-2 px-1 pb-1 text-base font-semibold text-ink" do %>
             <span class="grid size-8 place-items-center rounded-full bg-ink text-xs font-bold text-white" aria-hidden="true"><%= Current.customer.name.first.upcase %></span>
             <span class="truncate"><%= Current.customer.name %></span>
-          </p>
+          <% end %>
         <% end %>
         <%= link_to "Pedidos", orders_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
+        <%= link_to "Endereços", addresses_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
         <%= link_to "Favoritos", wishlist_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
         <%= button_to "Sair", customer_session_path, method: :delete, class: "w-full cursor-pointer rounded-full bg-ink px-5 py-3 text-base font-semibold text-white" %>
       <% elsif respond_to?(:customer_authenticated?) %>
