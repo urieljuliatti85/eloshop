@@ -46,6 +46,45 @@ RSpec.describe "Storefront products", type: :request do
       expect(response.body.index(expensive.name)).to be < response.body.index(cheap.name)
     end
 
+    it "shows the atelier of each product on the listing" do
+      product = Product.create!(seller: approved_seller, name: "Vaso da listagem", sku: "LIST-ATL", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+
+      get products_path
+
+      expect(response.body).to include(product.name)
+      expect(response.body).to include(product.seller.name)
+    end
+
+    it "filters the catalog by atelier" do
+      other = Seller.create!(name: "Ateliê do filtro #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
+      mine = Product.create!(seller: approved_seller, name: "Peça do meu ateliê", sku: "FIL-A", price_cents: 5_000, stock_quantity: 2, currency: "BRL", status: :active)
+      theirs = Product.create!(seller: other, name: "Peça do outro ateliê", sku: "FIL-B", price_cents: 5_000, stock_quantity: 2, currency: "BRL", status: :active)
+
+      get products_path, params: { seller: approved_seller.slug }
+
+      expect(response.body).to include(mine.name)
+      expect(response.body).not_to include(theirs.name)
+    end
+
+    it "offers only ateliers that have something for sale in the filter" do
+      empty = Seller.create!(name: "Ateliê sem peça #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
+      Product.create!(seller: approved_seller, name: "Peça à venda", sku: "FIL-C", price_cents: 5_000, stock_quantity: 2, currency: "BRL", status: :active)
+
+      get products_path
+
+      expect(response.body).to include(approved_seller.name)
+      expect(response.body).not_to include(empty.name)
+    end
+
+    it "keeps the atelier filter when the sort changes" do
+      Product.create!(seller: approved_seller, name: "Peça ordenada", sku: "FIL-D", price_cents: 5_000, stock_quantity: 2, currency: "BRL", status: :active)
+
+      get products_path, params: { seller: approved_seller.slug, sort: "nome" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Peça ordenada")
+    end
+
     it "falls back to the default sort when the sort param is not on the allowed list" do
       older = Product.create!(seller: approved_seller, name: "Vaso antigo", sku: "STORE-012", price_cents: 1_000, stock_quantity: 3, currency: "BRL", status: :active, created_at: 2.days.ago)
       newer = Product.create!(seller: approved_seller, name: "Vaso novo", sku: "STORE-013", price_cents: 9_000, stock_quantity: 3, currency: "BRL", status: :active, created_at: 1.hour.ago)
@@ -94,6 +133,7 @@ RSpec.describe "Storefront products", type: :request do
 
     # Quem compra artesanato quer saber de quem é a mão: o ateliê aparece
     # junto do produto, não só na URL.
+    # (o mesmo vale na listagem — ver o exemplo em "GET /produtos")
     it "shows the atelier that made the product" do
       product = Product.create!(seller: approved_seller, name: "Vaso do ateliê", sku: "STORE-ATL", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
 

@@ -45,6 +45,9 @@ Rails.application.routes.draw do
   end
 
   resources :products, only: :index, path: "produtos"
+  # A vitrine pública do ateliê ocupa o mesmo prefixo que já identificava o
+  # vendedor na URL do produto.
+  resources :sellers, only: %i[index show], param: :slug, path: "artesaos"
   scope "artesaos/:seller_slug" do
     resources :products, only: :show, param: :slug, path: "produtos" do
       resources :reviews, only: :create

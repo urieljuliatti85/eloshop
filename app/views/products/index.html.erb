@@ -18,7 +18,7 @@
 
   # Um filtro além da categoria significa que o painel precisa nascer aberto —
   # senão o cliente não vê por que a vitrine está recortada.
-  advanced_filters = params.values_at(:q, :availability, :material, :technique).any?(&:present?)
+  advanced_filters = params.values_at(:q, :availability, :material, :technique, :seller).any?(&:present?)
 %>
 <% content_for :title, index_title %>
 <% content_for :meta_description, index_description %>
@@ -138,6 +138,12 @@
       <div>
         <%= form.label :technique, "Técnica", class: "block text-sm text-ink-muted" %>
         <%= form.select :technique, options_for_select([ [ "Todas", "" ] ] + @techniques.map { |technique| [ technique.name, technique.slug ] }, params[:technique]), {}, class: "mt-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-ink focus:outline-none" %>
+      </div>
+      <%# Só ateliês com peça à venda entram na lista (ver o controller): um
+          artesão que devolve resultado vazio não é opção de filtro. %>
+      <div>
+        <%= form.label :seller, "Ateliê", class: "block text-sm text-ink-muted" %>
+        <%= form.select :seller, options_for_select([ [ "Todos", "" ] ] + @sellers.map { |seller| [ seller.name, seller.slug ] }, params[:seller]), {}, class: "mt-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-ink focus:outline-none" %>
       </div>
 
       <%= form.submit "Filtrar", class: "cursor-pointer rounded-full bg-ink px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600" %>

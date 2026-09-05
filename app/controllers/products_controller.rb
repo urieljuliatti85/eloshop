@@ -28,9 +28,16 @@ class ProductsController < StorefrontController
     @tags = Tag.order(:name)
     @materials = Material.order(:name)
     @techniques = Technique.order(:name)
+    # Só ateliês com peça à venda: oferecer no filtro um artesão que devolve
+    # lista vazia é um beco.
+    @sellers = Seller.approved.where(id: Product.publicly_visible.select(:seller_id)).order(:name)
     @category = find_category!(params[:category]) if params[:category].present?
     scope = scope.where(category_id: @category_tree.self_and_descendant_ids(@category)) if @category
     scope = scope.matching_query(params[:q]) if params[:q].present?
+    # Pelo slug, como os demais filtros — o id do vendedor não aparece na URL.
+    # `sellers` e não `seller`: `publicly_visible` já faz o join, e a condição
+    # precisa apontar para a tabela, não para o alias da associação.
+    scope = scope.where(sellers: { slug: params[:seller] }) if params[:seller].present?
     scope = scope.joins(:tags).where(tags: { slug: params[:tag] }) if params[:tag].present?
     scope = scope.joins(:materials).where(materials: { slug: params[:material] }) if params[:material].present?
     scope = scope.joins(:techniques).where(techniques: { slug: params[:technique] }) if params[:technique].present?
