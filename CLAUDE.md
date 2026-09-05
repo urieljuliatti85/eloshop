@@ -6,9 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado atual do projeto
 
-Aplicação Rails 8.1 / Ruby 3.3.11 / PostgreSQL em desenvolvimento ativo. Fases 0–16 e 18 estão implementadas (catálogo, carrinho, checkout, pedidos, pagamento com gateway fake, frete, cupons, admin, variantes, personalizações, avaliações, wishlist, SEO, API v1, segurança). A fase corrente é a **Fase 20 — Produção e deploy** (Railway; Etapa B, integração real com Mercado Pago/PIX, ainda não iniciada).
+Aplicação Rails 8.1 / Ruby 3.3.11 / PostgreSQL em desenvolvimento ativo. Fases 0–19 estão implementadas (catálogo, carrinho, checkout, pedidos, pagamento, frete, cupons, admin, variantes, personalizações, avaliações, wishlist, SEO, API v1, segurança, performance, observabilidade). O sistema **já é um marketplace no código**: `Seller`, painel do vendedor, `SellerOrder` e split de comissão existem e estão testados (Fase 22 em andamento, Fase 23 concluída no código).
 
-**Sempre leia a seção "Estado atual" no fim do `ROADMAP.md` antes de começar** — ela é a fonte de verdade sobre a fase corrente, a próxima tarefa e o que foi deliberadamente adiado (Fase 8 pré-venda, Fase 17 performance, Fases 22/23 marketplace). Não assuma que uma fase listada no roadmap já existe no código.
+Frentes abertas — todas bloqueadas por dependência externa (credenciais do Mercado Pago), não por código:
+
+- **Fase 20, Etapa B** — `Gateways::MercadoPago` existe e só é selecionado com `PAYMENT_GATEWAY=mercado_pago`; em produção, configuração ausente ou gateway fake falha explicitamente. PIX vencido, idempotência por tentativa e confirmação via webhook estão implementados. Os testes stubam HTTP e cobrem o contrato do adapter, **nunca a API real** — a integração jamais rodou contra o sandbox.
+- **Fase 22** — vínculo OAuth do vendedor com o Mercado Pago implementado (o provedor faz o KYC, a EloShop não coleta documentos, tokens ficam cifrados). Falta configurar a aplicação Marketplace de testes e validar o fluxo ponta a ponta.
+- **Fase 8** (pré-venda, `pre_order`) segue adiada por decisão de negócio pendente — ver `docs/inventory.md`.
+
+**Sempre leia a seção "Estado atual" no fim do `ROADMAP.md` antes de começar** — ela é a fonte de verdade sobre a fase corrente e a próxima tarefa. Não assuma que uma fase listada no roadmap já existe no código, nem que uma marcada aqui como adiada continua adiada.
 
 ## Comandos
 
@@ -43,23 +49,38 @@ bin/importmap audit
 bin/ci                 # pipeline completo local (config/ci.rb) — espelha o GitHub Actions
 ```
 
-O git hook de pre-commit (`.githooks/pre-commit`, instalado por `bin/setup`) roda `bin/rubocop` + `bundle exec rspec` a cada commit.
+O git hook de pre-commit (`.githooks/pre-commit`, instalado por `bin/setup`) roda `bin/rubocop` + `bundle exec rspec` a cada commit — **o Minitest não está no hook**, então uma quebra na camada de domínio só aparece no `bin/ci` ou no CI. Rode `bin/rails test` antes de abrir PR.
+
+No GitHub Actions, `test` (RSpec) e `minitest` são jobs **separados de propósito**, para que uma falha não mascare a outra; `bin/ci` roda os dois. Como o deploy da Railway tem "Wait for CI" ligado, uma falha de qualquer um bloqueia o deploy — que é a intenção.
 
 ## Arquitetura
 
 Rails monolítico convencional: Controllers → Models/Domain → PostgreSQL, com Service Objects apenas onde a operação é genuinamente complexa. Os pontos abaixo não são óbvios a partir da estrutura de arquivos.
 
-**Duas autenticações independentes, mais o carrinho anônimo.** `User` (admin, `role` default `"admin"`, sessão em `Session` + cookie assinado `session_id`) e `Customer` (comprador, `CustomerSession` + cookie `customer_session_id`) são entidades separadas com concerns próprios: `Authentication` e `CustomerAuthentication`. `ApplicationController` inclui `Authentication` e exige login por padrão — por isso todo controller público herda de `StorefrontController`, que faz `allow_unauthenticated_access` e inclui `Carting` (cria/recupera o carrinho por cookie assinado `cart_token`) e `CustomerAuthentication`. `StorefrontController` **não** libera a autenticação de cliente globalmente: cada controller decide quais ações são abertas. `Admin::BaseController` centraliza `require_admin!` — nunca espalhar `current_user.admin?`. Tudo em `Current` (`session`, `customer_session`, `cart`, com `user`/`customer` delegados).
+**Duas autenticações independentes e três papéis, mais o carrinho anônimo.** `User` (sessão em `Session` + cookie assinado `session_id`) e `Customer` (comprador, `CustomerSession` + cookie `customer_session_id`) são entidades separadas com concerns próprios: `Authentication` e `CustomerAuthentication`. `User#role` é um enum `admin` / `seller` (default `admin`): o admin da plataforma nunca tem `seller` (`validates :seller, absence: true, if: :admin?`) e o vendedor sempre tem (`presence: true, if: :seller?`). `ApplicationController` inclui `Authentication` e exige login por padrão — por isso todo controller público herda de `StorefrontController`, que faz `allow_unauthenticated_access` e inclui `Carting` (cria/recupera o carrinho por cookie assinado `cart_token`) e `CustomerAuthentication`. `StorefrontController` **não** libera a autenticação de cliente globalmente: cada controller decide quais ações são abertas. `Admin::BaseController` centraliza `require_admin!` — nunca espalhar `current_user.admin?`. Tudo em `Current` (`session`, `customer_session`, `cart`, com `user`/`customer` delegados).
 
-**Duas suítes de teste, com divisão deliberada.** Minitest (`test/`, ~54 arquivos) cobre models, services, integração e system tests; RSpec (`spec/`, ~29 arquivos) cobre request specs e é a fonte do `swagger/v1/swagger.yaml` via rswag. Ao adicionar um teste, siga essa divisão: regra de domínio ou serviço → Minitest; comportamento de endpoint/autorização → RSpec. Ambas limpam `Rails.cache` a cada exemplo porque `rate_limit` (Rails 8 nativo) depende dele e o ambiente de teste usa `:memory_store`. A paralelização do Minitest está desativada (`parallelize(workers: 1)`) — fork trava neste ambiente, ver Fase 3 do ROADMAP.
+**O painel do vendedor deriva o escopo da sessão, nunca da URL.** `SellerPortal::BaseController` centraliza `require_seller!` e expõe `current_seller` como **`Current.user.seller` e nada mais** — nenhuma ação aceita `seller_id` vindo de parâmetro. Toda query do painel (`SellerPortal::ProductsController` e as demais em `app/controllers/seller_portal/`) parte de `current_seller`; um vendedor não pode alcançar o catálogo, os pedidos ou as métricas de outro trocando um ID na URL, e há testes de alteração de ID cobrindo esse isolamento. Ao adicionar uma ação ao painel, escope a partir de `current_seller` — não de `Product.find(params[:id])`.
+
+**Duas suítes de teste, com divisão deliberada.** Minitest (`test/`, ~68 arquivos) cobre models, services, integração e system tests; RSpec (`spec/`, ~42 arquivos) cobre request specs e é a fonte do `swagger/v1/swagger.yaml` via rswag. Ao adicionar um teste, siga essa divisão: regra de domínio ou serviço → Minitest; comportamento de endpoint/autorização → RSpec. Ambas limpam `Rails.cache` a cada exemplo porque `rate_limit` (Rails 8 nativo) depende dele e o ambiente de teste usa `:memory_store`. A paralelização do Minitest está desativada (`parallelize(workers: 1)`) — fork trava neste ambiente, ver Fase 3 do ROADMAP.
 
 **Disponibilidade tem fonte única.** `Product#available_for_purchase?` é a única resposta sobre "pode comprar": considera `status` (máquina de estados com transições explícitas em `STANDARD_STATUS_TRANSITIONS` / `ONE_OF_A_KIND_STATUS_TRANSITIONS`), presença de variantes (quando há variantes, o estoque da `ProductVariant` é a verdade, não o do produto) e `availability_type` (`standard` / `one_of_a_kind` / `made_to_order` — sob encomenda não tem estoque físico). Nunca reintroduzir `product.stock > 0` espalhado.
 
 **Checkout é onde concorrência, idempotência e snapshot se encontram.** `Checkout::CreateOrder` roda em uma transação: trava produtos e variantes com `lock!` em ordem estável (`product_id`, `product_variant_id`) para evitar deadlock, revalida disponibilidade/quantidade, trava o cupom antes de incrementar `uses_count`, grava os snapshots no `OrderItem` (nome, SKU, preço unitário, prazo de produção, variante, personalizações) e o snapshot de endereço no `Order`, e só então debita estoque. Idempotência via `Order#idempotency_key` (índice único + rescue de `RecordNotUnique`).
 
-**Pagamento é isolado atrás de um gateway.** `Gateways::FakeGateway` (`authorize`, `verify_webhook` com comparação timing-safe) é a única implementação hoje; a Etapa B da Fase 20 troca por Mercado Pago sem tocar no domínio. `Payments::Authorize` reaproveita pagamento `pending`/`authorized`/`paid` do pedido, mas permite nova tentativa após `failed`. `Payments::ProcessWebhook` é idempotente por `PaymentEvent#gateway_event_id` (único). `PaymentWebhooksController` usa `skip_forgery_protection` **de propósito** — a autenticidade vem do segredo verificado, não do CSRF; um autofix do CodeQL já removeu isso uma vez e quebrou todos os webhooks.
+**`SellerOrder` fica entre o `Order` e os itens — e o checkout aceita um único vendedor.** `Order` agrupa o que o cliente comprou; o `SellerOrder` é a unidade operacional por artesão, e é dele que dependem `order_items` e `shipment` (`Order#shipments` passa por `has_many through:`). `OrderItem` pertence aos dois (`order` e `seller_order`) — ao criar itens, preencha ambos. **Um checkout só pode conter um vendedor**, porque o split público do Mercado Pago é 1:1: `CartItem` valida `same_seller_as_cart` e bloqueia o carrinho multi-vendedor na origem. Não contorne essa limitação criando múltiplos PIX para o mesmo checkout nem recebendo tudo na conta da plataforma para repasse manual (§34); multi-vendedor só é liberado com acesso comercial ao split 1:N.
+
+**A comissão é calculada em inteiros e vive no `SellerOrder`.** `PLATFORM_FEE_RATE_BPS = 1_500` (15% em basis points) incide sobre `subtotal - discount`, **excluindo frete**; a tarifa do Mercado Pago é do vendedor e registrada à parte. Todo o cálculo usa `divmod` sobre centavos, nunca Float, e `financial_snapshot_is_consistent` valida a aritmética completa (`total`, comissão, `seller_amount`) na gravação. Reembolsos são exclusivos do admin, idempotentes e devolvem a comissão proporcionalmente via `platform_fee_refund_for`, que trata o reembolso total como caso exato para não deixar resto de arredondamento.
+
+**Pagamento é isolado atrás de um gateway.** Existem duas implementações: `Gateways::FakeGateway` (`authorize`, `verify_webhook` com comparação timing-safe) e `Gateways::MercadoPago`, selecionado apenas com `PAYMENT_GATEWAY=mercado_pago` — em produção, configuração ausente ou gateway fake falha explicitamente. A cobrança PIX usa o token OAuth renovável do artesão (`Marketplace::MercadoPagoAccessToken` / `MercadoPagoOauth`, tokens cifrados) e envia `application_fee`. `Payments::Authorize` reaproveita pagamento `pending`/`authorized`/`paid` do pedido, mas permite nova tentativa após `failed`. `Payments::ProcessWebhook` é idempotente por `PaymentEvent#gateway_event_id` (único). `PaymentWebhooksController` usa `skip_forgery_protection` **de propósito** — a autenticidade vem do segredo verificado, não do CSRF; um autofix do CodeQL já removeu isso uma vez e quebrou todos os webhooks.
 
 **Dinheiro sempre em centavos** (`*_cents` + `currency`), nunca Float.
+
+**Duas regras de performance compradas com erro, na Fase 17.** Elas não são dedutíveis do código e já custaram uma otimização revertida e uma investigação inteira na direção errada:
+
+1. **Meça dentro de `ActiveRecord::Base.uncached`.** O query cache do Active Record serve repetições dentro da mesma requisição, então contar toda notificação de `sql.active_record` superestima o N+1 — e, medindo sem `uncached`, o problema some localmente e só aparece em produção. O mesmo erro de método ocorreu duas vezes na fase.
+2. **`preload`, não `includes`, quando houver `with_attached_*` ou `distinct`.** `includes` vira um `LEFT JOIN` único; com anexos do Active Storage o catálogo chegava a 15 JOINs e ~130 colunas, inflando o custo *estimado* do plano para 2,5M e ultrapassando o `jit_above_cost` do PostgreSQL. O banco compilava ~120 funções (~1240 ms) por execução para uma query cuja execução real custa 0,03 ms. A troca por `preload` derrubou `/produtos` de ~1285 ms para ~10 ms, confirmado em produção. Ver o comentário em `app/controllers/products_controller.rb:50`.
+
+Vale a pena repetir o processo do §51 (reproduza, meça, identifique, implemente, meça de novo) em vez de presumir a causa: neste caso não era N+1, nem `distinct`, nem o `COUNT(DISTINCT ...)`.
 
 **Produção usa 4 bancos dentro da mesma instância Postgres.** `config/database.yml` faz parse manual da `DATABASE_URL` da Railway para derivar `<nome>`, `<nome>_cache`, `<nome>_queue`, `<nome>_cable` (Solid Cache/Queue/Cable) — usar `url:` nos quatro papéis faz `db:prepare` pular o schema de três deles. Deploy é via Dockerfile + Railway, não Kamal (`config/deploy.yml` existe mas não é usado). A configuração da infra vive em `.railway/railway.ts` (Infrastructure as Code) e está gravada no serviço; o `railway.json` foi removido. `railway config plan` mostra drift sem alterar nada, mas exige `npm install railway` na raiz — o projeto não tem toolchain Node, e `node_modules/` é gitignored. **Push no `main` deploya automaticamente**: o serviço `eloshop-web` está conectado ao repo no GitHub com "Wait for CI" ligado (`DeploymentTrigger.checkSuites`), então a Railway só builda depois que os check suites passam — um CI quebrado bloqueia todo deploy. Essa configuração é estado do lado da Railway, não está versionada; inspecione com `railway api` / `railway status`. Active Storage grava no volume persistente apontado por `RAILS_STORAGE_PATH`; sem ele, imagens somem a cada redeploy. Detalhes em `docs/architecture.md`, seção "Deploy".
 
@@ -77,7 +98,8 @@ Exemplos:
 - pagamento → docs/payments.md + docs/checkout.md
 - estoque → docs/inventory.md + docs/domain.md
 - frete → docs/shipping.md + docs/checkout.md
-- arquitetura → docs/architecture.md
+- marketplace, vendedor, comissão, split → docs/decisions/004-marketplace-model.md + §34
+- arquitetura, deploy, observabilidade → docs/architecture.md
 - segurança → docs/security.md
 - decisões arquiteturais já tomadas → docs/decisions/*.md (ADRs)
 - sequência de implementação e fase atual → ROADMAP.md
@@ -892,23 +914,21 @@ Essas informações devem ser fornecidas pelo negócio.
 
 **Decisão tomada** (ADR 004, `docs/decisions/004-marketplace-model.md`): o sistema é um marketplace real. Múltiplos artesãos vendem como entidades comerciais independentes (`Seller`), não apenas como um atributo informativo do produto.
 
-Isso implica, no mínimo:
+**Já implementado** (Fases 22/23) — o que segue descreve o código existente, não um plano:
 
-- todo `Product` pertence a um `Seller`; a unicidade de `sku`/`slug` deixa de ser global e passa a ser escopada por vendedor
-- `Order` usa um `SellerOrder` por vendedor para isolar frete/fulfillment; no primeiro lançamento, cada checkout aceita apenas um vendedor porque o split público do Mercado Pago é 1:1. Checkout multi-vendedor só pode ser habilitado depois de acesso comercial ao split 1:N
-- `Payment` precisa suportar split: a plataforma recebe 15% do subtotal dos produtos após descontos, sem frete; a tarifa do Mercado Pago é separada e suportada pelo vendedor; reembolsos devolvem a comissão proporcionalmente
-- autorização precisa de um papel de vendedor, escopado ao próprio catálogo/pedidos, distinto do admin de plataforma (ver §37, §38)
+- todo `Product` pertence a um `Seller`; a unicidade de `sku`/`slug` **não é global**, e sim escopada por vendedor
+- `Order` usa um `SellerOrder` por vendedor para isolar frete/fulfillment; cada checkout aceita apenas um vendedor porque o split público do Mercado Pago é 1:1. Checkout multi-vendedor só pode ser habilitado depois de acesso comercial ao split 1:N
+- `Payment` suporta split: a plataforma recebe 15% do subtotal dos produtos após descontos, sem frete; a tarifa do Mercado Pago é separada e suportada pelo vendedor; reembolsos devolvem a comissão proporcionalmente
+- o papel `seller` em `User` é escopado ao próprio catálogo/pedidos e é distinto do admin de plataforma (ver §37, §38)
 
-Ver Fases 22 e 23 do `ROADMAP.md` para a sequência de implementação.
+Ver Fases 22 e 23 do `ROADMAP.md` para o estado detalhado e o que falta validar.
 
-Decisões de negócio ainda pendentes, que não devem ser assumidas na implementação (ver §69):
+**As decisões de negócio do ADR 004 já foram respondidas** (ROADMAP, Fase 22) — não as trate como abertas nem as redecida:
 
-- forma e periodicidade de repasse ao vendedor
-- onboarding e verificação (KYC) do vendedor
-- responsabilidade por nota fiscal/impostos por vendedor
-- atribuição de cancelamento/reembolso/disputa entre vendedor e plataforma
-
-Não inicie a implementação das Fases 22/23 sem essas decisões estarem respondidas pelo negócio.
+- **repasse automático**, via split do gateway
+- **aprovação/KYC obrigatórios antes de publicar**: o KYC nível 6 é feito pelo próprio Mercado Pago, que exige conta de vendedor com identificação e autorização OAuth. A EloShop não coleta nem persiste documentos — só `user_id`/`collector_id`, `live_mode`, datas e os tokens cifrados. Como o OAuth não devolve o nível de KYC, **conectar não aprova**: um admin só pode aprovar conexão `live_mode` e confirma o KYC explicitamente antes de `Seller#approve!`. Desconectar volta o vendedor para `pending` e despublica o catálogo
+- **nota fiscal e impostos** são responsabilidade do vendedor
+- **cancelamentos, reembolsos e disputas** são decididos e operados pela plataforma
 
 Não contorne a limitação 1:1 criando múltiplos PIX para o mesmo checkout nem recebendo todo o valor na conta da plataforma para repasse manual.
 
