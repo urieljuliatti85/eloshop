@@ -16,6 +16,11 @@ Rails.application.routes.draw do
 
     resources :customers, only: %i[index show]
 
+    # Gestão de quem administra a plataforma. Sem edição: trocar senha alheia
+    # pelo painel é sequestro de conta — quem esquece usa a recuperação por
+    # e-mail, que já existe.
+    resources :admins, only: %i[index new create destroy]
+
     resources :products, only: %i[index show new create edit update] do
       member do
         patch :publish

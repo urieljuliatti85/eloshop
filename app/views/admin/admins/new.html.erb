@@ -1,0 +1,40 @@
+<div class="space-y-8">
+  <header>
+    <p class="admin-section-label mb-2">Acesso</p>
+    <h1>Novo administrador</h1>
+    <p class="mt-2 text-sm text-slate-500">A pessoa entra com o e-mail e a senha definidos aqui.</p>
+  </header>
+
+  <%= form_with model: @admin, url: admin_admins_path, class: "admin-form" do |form| %>
+    <% if @admin.errors.any? %>
+      <div class="admin-flash admin-flash--danger">
+        <ul>
+          <% @admin.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= form.label :email_address, "E-mail" %>
+      <%= form.email_field :email_address, required: true, autocomplete: "off", class: "w-full" %>
+    </div>
+
+    <div>
+      <%= form.label :password, "Senha" %>
+      <%= form.password_field :password, required: true, autocomplete: "new-password", class: "w-full" %>
+      <p class="text-sm text-slate-500">Combine a senha com a pessoa por um canal seguro. Ela pode trocá-la depois pela recuperação por e-mail.</p>
+    </div>
+
+    <div>
+      <%= form.label :password_confirmation, "Repita a senha" %>
+      <%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", class: "w-full" %>
+    </div>
+
+    <div class="flex gap-3">
+      <%= form.submit "Criar administrador", class: "admin-button admin-button--brand" %>
+      <%= link_to "Cancelar", admin_admins_path, class: "admin-button admin-button--secondary" %>
+    </div>
+  <% end %>
+</div>
