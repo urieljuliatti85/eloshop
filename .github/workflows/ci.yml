@@ -36,6 +36,12 @@ jobs:
         with:
           bundler-cache: true
 
+      # bin/importmap carrega o config/application.rb, e o Bundler.require puxa
+      # a ruby-vips, que abre a libvips do sistema já no require. Sem o pacote,
+      # o job falha no boot antes de auditar coisa alguma.
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libvips
+
       - name: Scan for security vulnerabilities in JavaScript dependencies
         run: bin/importmap audit
 
