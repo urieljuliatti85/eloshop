@@ -7,10 +7,15 @@
     <% end %>
 
     <nav class="hidden items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-medium text-ink md:flex">
-      <%= link_to "Início", root_path, class: "rounded-full px-4 py-2 transition hover:bg-white hover:shadow-sm" %>
-      <%= link_to "Loja", products_path, class: "rounded-full px-4 py-2 transition hover:bg-white hover:shadow-sm" %>
-      <%= link_to "Contato", new_contact_path, class: "rounded-full px-4 py-2 transition hover:bg-white hover:shadow-sm" %>
-      <%= link_to "Painel do Artesão", seller_root_path, class: "rounded-full px-4 py-2 transition hover:bg-white hover:shadow-sm" %>
+      <% [ [ "Início", root_path, "home" ],
+           [ "Loja", products_path, "products" ],
+           [ "Contato", new_contact_path, "contacts" ],
+           [ "Painel do Artesão", seller_root_path, "seller_portal/dashboard" ] ].each do |label, path, controllers| %>
+        <% active = storefront_nav_active?(controllers) %>
+        <%= link_to label, path,
+              class: "rounded-full px-4 py-2 transition #{active ? 'bg-white text-brand-600 shadow-sm' : 'hover:bg-white hover:shadow-sm'}",
+              aria: { current: ("page" if active) } %>
+      <% end %>
     </nav>
 
     <%# Em telas estreitas os rótulos de conta saem do topo (a 390px "Criar
@@ -84,10 +89,15 @@
       Contato — nenhum destino fica inalcançável. %>
   <div class="border-t border-gray-100 bg-white md:hidden" data-mobile-menu-target="panel" hidden>
     <nav class="container mx-auto flex flex-col px-5">
-      <%= link_to "Início", root_path, class: "flex min-h-11 items-center border-b border-gray-100 py-1 text-base font-medium text-ink" %>
-      <%= link_to "Loja", products_path, class: "flex min-h-11 items-center border-b border-gray-100 py-1 text-base font-medium text-ink" %>
-      <%= link_to "Contato", new_contact_path, class: "flex min-h-11 items-center border-b border-gray-100 py-1 text-base font-medium text-ink" %>
-      <%= link_to "Painel do Artesão", seller_root_path, class: "flex min-h-11 items-center py-1 text-base font-medium text-ink" %>
+      <% [ [ "Início", root_path, "home", true ],
+           [ "Loja", products_path, "products", true ],
+           [ "Contato", new_contact_path, "contacts", true ],
+           [ "Painel do Artesão", seller_root_path, "seller_portal/dashboard", false ] ].each do |label, path, controllers, divider| %>
+        <% active = storefront_nav_active?(controllers) %>
+        <%= link_to label, path,
+              class: "flex min-h-11 items-center py-1 text-base font-medium #{divider ? 'border-b border-gray-100 ' : ''}#{active ? 'text-brand-600' : 'text-ink'}",
+              aria: { current: ("page" if active) } %>
+      <% end %>
     </nav>
 
     <div class="container mx-auto flex flex-col gap-3 px-5 pb-5 pt-2">
