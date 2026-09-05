@@ -39,10 +39,14 @@ RSpec.describe "Header identity", type: :request do
     expect(response.body).to include(customer.email)
   end
 
+  # Casar contra o nome aqui seria frágil: o catálogo da home pode conter uma
+  # artesã chamada Maria sem que nada esteja errado. O marcador é o menu de
+  # conta em si, que só existe no ramo autenticado.
   it "shows nothing about identity to a visitor" do
     get root_path
 
-    expect(response.body).not_to include("Maria")
+    expect(response.body).not_to include("account-menu")
+    expect(response.body).not_to include(customer.email)
     expect(response.body).to include("Entrar")
   end
 
@@ -54,7 +58,7 @@ RSpec.describe "Header identity", type: :request do
 
     get root_path, params: { email: other.email }
 
-    expect(response.body).to include("Maria")
-    expect(response.body).not_to include("Joana")
+    expect(response.body).to include(customer.email)
+    expect(response.body).not_to include(other.email)
   end
 end

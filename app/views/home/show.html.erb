@@ -7,6 +7,7 @@
       princípio da faixa de categorias abaixo. %>
   <section class="relative" aria-roledescription="carrossel" aria-label="Destaques"
            data-controller="carousel"
+           data-carousel-interval-value="<%= Rails.env.test? ? 0 : 7000 %>"
            data-action="keydown.left->carousel#previous keydown.right->carousel#next
                         mouseenter->carousel#stop mouseleave->carousel#start
                         focusin->carousel#stop focusout->carousel#start">
