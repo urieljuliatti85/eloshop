@@ -1,0 +1,66 @@
+<% content_for :title, "#{@seller.name} | Ateliê na EloShop" %>
+<% content_for :description, "Conheça as peças feitas à mão pelo ateliê #{@seller.name} na EloShop." %>
+<% content_for :canonical_url, seller_url(@seller.slug) %>
+
+<div class="w-full">
+  <%# Mesmo breadcrumb da PDP: o ateliê é alcançado a partir de um produto, e
+      sem ele a página vira um beco — não há como voltar à loja pela própria
+      página. %>
+  <nav class="text-sm text-ink-muted" aria-label="Você está em">
+    <%= link_to "Início", root_path, class: "hover:text-brand-600" %>
+    <span class="mx-2">/</span>
+    <%= link_to "Loja", products_path, class: "hover:text-brand-600" %>
+    <span class="mx-2">/</span>
+    <span class="text-ink"><%= @seller.name %></span>
+  </nav>
+
+  <div class="mt-8 space-y-12">
+    <%# O hero repete a linguagem do painel do artesão — fundo verde profundo,
+        cantos de 2rem, tipografia pesada — mas fala com quem compra, não com
+        quem vende. A capa é a foto da peça mais recente: o ateliê não tem
+        imagem própria, e não vale pedir mais um upload sem necessidade (§5). %>
+    <section class="relative isolate overflow-hidden rounded-[2rem] bg-[#273b31] text-white shadow-sm">
+      <% if (cover = @products.find { |product| product.main_image.attached? }) %>
+        <%= image_tag cover.main_image, alt: "", loading: "lazy",
+              class: "absolute inset-0 -z-20 h-full w-full object-cover" %>
+        <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/80 via-black/45 to-black/20"></div>
+      <% else %>
+        <%# Mesmo fundo geométrico que o painel usa quando ainda não há foto. %>
+        <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,#d7c7a1_0,transparent_27%),radial-gradient(circle_at_75%_72%,#9bac91_0,transparent_28%),linear-gradient(135deg,#273b31,#526d5d)]"></div>
+        <div class="absolute right-[12%] top-[12%] -z-10 size-40 rotate-6 border-[1.25rem] border-white/15 sm:size-64"></div>
+      <% end %>
+
+      <div class="flex max-w-2xl flex-col justify-end p-7 sm:p-10 lg:p-12">
+        <p class="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[#f2d49f]">Ateliê na EloShop</p>
+        <h1 class="text-4xl font-black leading-[0.98] tracking-tight sm:text-5xl lg:text-6xl"><%= @seller.name %></h1>
+        <p class="mt-5 max-w-lg text-sm leading-6 text-white/80 sm:text-base">
+          <%= pluralize(@products.size, "peça disponível", plural: "peças disponíveis") %>, <%= @products.any? ? "feitas à mão e prontas para conhecer" : "por enquanto" %>.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="flex items-end justify-between gap-4">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Catálogo</p>
+          <h2 class="mt-2 text-3xl font-bold text-ink">Peças deste ateliê</h2>
+        </div>
+        <%= link_to "Ver toda a loja", products_path, class: "hidden text-sm font-semibold text-brand-600 underline underline-offset-4 sm:block" %>
+      </div>
+
+      <% if @products.any? %>
+        <div class="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
+          <% @products.each do |product| %>
+            <%= render "products/product_card", product: product %>
+          <% end %>
+        </div>
+      <% else %>
+        <%# Um ateliê aprovado pode não ter nenhuma peça publicada ainda — a
+            página existe, mas não finge um catálogo. %>
+        <p class="mt-8 rounded-2xl bg-sand-50 px-6 py-8 text-center text-ink-muted">
+          Este ateliê ainda não tem peças publicadas.
+        </p>
+      <% end %>
+    </section>
+  </div>
+</div>

@@ -31,6 +31,12 @@
       <% if subtitle.present? %>
         <p class="text-sm text-ink-muted"><%= subtitle %></p>
       <% end %>
+      <%# O ateliê fica em linha própria, abaixo do subtítulo: em artesanato a
+          autoria é parte do produto (§59). Não é link aqui — o card inteiro já
+          leva à peça, e um link dentro de outro link é HTML inválido. %>
+      <p class="text-xs uppercase tracking-wider text-ink-muted">
+        <%= product.seller.name %>
+      </p>
       <%# data-product-price dá ao teste de sistema um alvo estável para
           verificar a ordem exibida, sem depender de classe de estilo. %>
       <p data-product-price class="mt-auto pt-3 text-base text-ink">
@@ -61,6 +67,6 @@
   </div>
 
   <div class="absolute right-3 top-3 z-10">
-    <%= render "wishlist_button", product: product %>
+    <%= render "products/wishlist_button", product: product %>
   </div>
 </article>

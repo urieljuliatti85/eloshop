@@ -14,7 +14,8 @@ class HomeCarouselTest < ApplicationSystemTestCase
     assert_selector "button[aria-label='Próximo banner']"
 
     click_button "Próximo banner"
-    click_link "Seja um artesão"
+    # Dentro do carrossel: o mesmo rótulo existe no topo, no menu da direita.
+    within("[aria-roledescription='carrossel']") { click_link "Seja um artesão" }
 
     assert_current_path new_seller_registration_path
   end

@@ -1,0 +1,49 @@
+<% content_for :title, "Ateliês | EloShop" %>
+<% content_for :description, "Conheça os ateliês que vendem peças feitas à mão na EloShop." %>
+<% content_for :canonical_url, sellers_url %>
+
+<div class="w-full">
+  <nav class="text-sm text-ink-muted" aria-label="Você está em">
+    <%= link_to "Início", root_path, class: "hover:text-brand-600" %>
+    <span class="mx-2">/</span>
+    <span class="text-ink">Ateliês</span>
+  </nav>
+
+  <header class="mt-8">
+    <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Quem faz</p>
+    <h1 class="mt-2 text-3xl font-bold text-ink md:text-4xl">Ateliês na EloShop</h1>
+    <p class="mt-3 max-w-xl leading-relaxed text-ink-muted">
+      Cada peça da loja sai de um ateliê com nome. Conheça quem está por trás delas.
+    </p>
+  </header>
+
+  <% if @sellers.any? %>
+    <ul class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <% @sellers.each do |seller| %>
+        <li>
+          <%# Mesmo verde profundo e canto de 2rem do painel do artesão, para o
+              card do ateliê se distinguir do card de produto. %>
+          <%= link_to seller_path(seller.slug), class: "group relative isolate flex min-h-56 flex-col justify-end overflow-hidden rounded-[2rem] bg-[#273b31] p-7 text-white shadow-sm" do %>
+            <% if (cover = @covers[seller.id]) %>
+              <%= image_tag cover.main_image, alt: "", loading: "lazy",
+                    class: "absolute inset-0 -z-20 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" %>
+              <div class="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/50 to-black/20"></div>
+            <% else %>
+              <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,#d7c7a1_0,transparent_27%),linear-gradient(135deg,#273b31,#526d5d)]"></div>
+            <% end %>
+
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#f2d49f]">Ateliê</p>
+            <strong class="mt-2 text-2xl font-black leading-tight"><%= seller.name %></strong>
+            <span class="mt-3 text-sm text-white/80">
+              <%= pluralize(@product_counts.fetch(seller.id, 0), "peça", plural: "peças") %> à venda
+            </span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="mt-10 rounded-2xl bg-sand-50 px-6 py-8 text-center text-ink-muted">
+      Nenhum ateliê com peças publicadas por enquanto.
+    </p>
+  <% end %>
+</div>
