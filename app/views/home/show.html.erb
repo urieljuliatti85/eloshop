@@ -1,26 +1,100 @@
 <% content_for :canonical_url, root_url %>
 
 <div class="w-full">
-  <%# O gradiente corre na horizontal, do laranja da marca ao creme da vitrine:
-      o lado direito fica claro de propósito, é o respiro da composição. %>
-  <section class="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-brand-600 via-brand-500 to-sand-100">
-    <div class="pointer-events-none absolute -right-20 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-white/25 blur-3xl"></div>
-    <div class="pointer-events-none absolute -bottom-24 left-1/4 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
+  <%# Carrossel de dois banners. A faixa é uma lista rolável com scroll-snap:
+      sem JavaScript os dois continuam alcançáveis pela rolagem horizontal, e
+      o Stimulus só acrescenta os controles e o avanço automático. Mesmo
+      princípio da faixa de categorias abaixo. %>
+  <section class="relative" aria-roledescription="carrossel" aria-label="Destaques"
+           data-controller="carousel"
+           data-action="keydown.left->carousel#previous keydown.right->carousel#next
+                        mouseenter->carousel#stop mouseleave->carousel#start
+                        focusin->carousel#stop focusout->carousel#start">
+    <ul class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth rounded-[2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        data-carousel-target="track">
+      <%# O gradiente corre na horizontal, do laranja da marca ao creme da
+          vitrine: o lado direito fica claro de propósito, é o respiro da
+          composição. %>
+      <li class="relative w-full flex-none snap-start overflow-hidden bg-gradient-to-r from-brand-600 via-brand-500 to-sand-100"
+          data-carousel-target="slide" aria-label="1 de 2">
+        <div class="pointer-events-none absolute -right-20 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-white/25 blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-24 left-1/4 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
 
-    <div class="relative flex max-w-2xl flex-col items-start gap-6 px-8 py-16 md:px-16 md:py-20">
-      <span class="rounded-full bg-white/25 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white">Feito à mão</span>
+        <div class="relative flex max-w-2xl flex-col items-start gap-6 px-8 py-16 md:px-16 md:py-20">
+          <span class="rounded-full bg-white/25 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white">Feito à mão</span>
 
-      <%# Sem <br>: a largura do bloco já quebra o título depois de "história,",
-          e o texto segue íntegro para leitores de tela e para o teste. %>
-      <h1 class="text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl">
-        Peças com história, feitas à mão
-      </h1>
+          <%# Sem <br>: a largura do bloco já quebra o título depois de
+              "história,", e o texto segue íntegro para leitores de tela e
+              para o teste. %>
+          <h1 class="text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl">
+            Peças com história, feitas à mão
+          </h1>
 
-      <p class="max-w-md text-lg leading-relaxed text-white/90">
-        Cada produto é feito à mão, em pequenas tiragens ou sob encomenda. Conheça o processo antes de comprar.
-      </p>
+          <p class="max-w-md text-lg leading-relaxed text-white/90">
+            Cada produto é feito à mão, em pequenas tiragens ou sob encomenda. Conheça o processo antes de comprar.
+          </p>
 
-      <%= link_to "Ver produtos", products_path, class: "rounded-full bg-white px-8 py-4 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50" %>
+          <%= link_to "Ver produtos", products_path, class: "rounded-full bg-white px-8 py-4 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50" %>
+        </div>
+      </li>
+
+      <%# O segundo banner fala com o artesão, não com o comprador: foto do
+          ateliê no lugar do gradiente puro. O véu escuro por cima existe para
+          o texto branco manter contraste sobre qualquer região da foto —
+          sem ele, o título cai em cima dos pincéis claros. %>
+      <li class="relative w-full flex-none snap-start overflow-hidden bg-ink"
+          data-carousel-target="slide" aria-label="2 de 2">
+        <%# alt vazio: a foto é decorativa, e o título ao lado já diz do que
+            se trata (§62). %>
+        <%= image_tag "atelie-banner.jpg", alt: "", loading: "lazy",
+              class: "absolute inset-0 h-full w-full object-cover" %>
+        <%# Dois véus: no mobile o texto ocupa a largura toda e precisa de um
+            escurecimento uniforme; a partir de md ele fica só na metade
+            esquerda, e o gradiente horizontal devolve as cores da foto à
+            direita. %>
+        <div class="absolute inset-0 bg-ink/70 md:bg-gradient-to-r md:from-ink/95 md:via-ink/70 md:to-transparent"></div>
+
+        <div class="relative flex max-w-2xl flex-col items-start gap-6 px-8 py-16 md:px-16 md:py-20">
+          <span class="rounded-full bg-white/25 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white">Para o Artesão</span>
+
+          <h2 class="text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl">
+            Venda suas peças mais criativas através do nosso Ateliê
+          </h2>
+
+          <p class="max-w-md text-lg leading-relaxed text-white/90">
+            Você pode optar em vender cada peça em pequenas tiragens ou sob encomenda. Conheça o nosso Ateliê e comece a vender!
+          </p>
+
+          <%= link_to "Seja um artesão", new_seller_registration_path, class: "rounded-full bg-white px-8 py-4 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50" %>
+        </div>
+      </li>
+    </ul>
+
+    <%# Controles só aparecem com JavaScript: sem ele a rolagem da própria
+        faixa já dá conta, e um botão inerte seria pior que nenhum. %>
+    <div class="mt-4 flex items-center justify-center gap-3" data-carousel-target="controls" hidden>
+      <button type="button" class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-gray-200 text-ink transition hover:border-brand-500 hover:text-brand-600"
+              data-action="carousel#previous" aria-label="Banner anterior">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="m15 5-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+
+      <div class="flex items-center gap-2" role="tablist">
+        <% 2.times do |index| %>
+          <button type="button" class="h-2.5 w-2.5 cursor-pointer rounded-full bg-gray-300 transition"
+                  data-carousel-target="dot" data-index="<%= index %>"
+                  data-action="carousel#goTo" role="tab"
+                  aria-label="Ir para o banner <%= index + 1 %>"></button>
+        <% end %>
+      </div>
+
+      <button type="button" class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-gray-200 text-ink transition hover:border-brand-500 hover:text-brand-600"
+              data-action="carousel#next" aria-label="Próximo banner">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="m9 5 7 7-7 7" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
     </div>
   </section>
 
