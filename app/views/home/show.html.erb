@@ -1,13 +1,5 @@
 <% content_for :canonical_url, root_url %>
 <% content_for :body_class, "home-background" %>
-<%# A URL sai daqui, e não do CSS do Tailwind: aquele arquivo é gerado fora
-    do pipeline do Propshaft, então o caminho não ganharia o digest e daria
-    404. O nonce é o que a CSP (`style_src :self`) exige de um <style>. %>
-<% content_for :head do %>
-  <%= tag.style nonce: content_security_policy_nonce do %>
-    body.home-background { background-image: url("<%= asset_path("home-background.jpg") %>"); }
-  <% end %>
-<% end %>
 
 <div class="w-full">
   <%# Carrossel de dois banners. A faixa é uma lista rolável com scroll-snap:

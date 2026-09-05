@@ -82,18 +82,27 @@
   .admin-empty-state { @apply rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center text-sm text-slate-500; }
 }
 
-/* Fundo da home. `cover` preserva a proporção da imagem em qualquer formato
-   de tela — recorta o excedente em vez de esticar. `fixed` mantém a paisagem
-   parada enquanto a página rola.
+/* Fundo fotográfico das páginas que usam a paisagem quente da marca (hoje
+   home e carrinho). `cover` preserva a proporção da imagem em qualquer
+   formato de tela — recorta o excedente em vez de esticar. `fixed` mantém a
+   paisagem parada enquanto a página rola.
 
    A URL da imagem NÃO vem daqui: o Tailwind gera este arquivo fora do
    pipeline do Propshaft, então um `url()` aqui não seria reescrito para o
-   nome com digest e daria 404. Ela é injetada no <head> pelo layout, com o
-   nonce que a CSP exige.
+   nome com digest e daria 404. Ela é injetada no <head> por cada view, com o
+   nonce que a CSP exige — mesma imagem física, uma única declaração de estilo
+   aqui.
 
    Em telas de toque o `fixed` vira `scroll`: iOS e vários Android redesenham
    o fundo a cada quadro da rolagem, e a imagem "pula". */
-body.home-background {
+body.home-background,
+body.cart-background,
+body.products-background {
+  /* A URL fica aqui, e não num <style> injetado no <head> pela página: o
+     Turbo Drive troca só o <body> ao navegar, então aquele bloco não era
+     reexecutado e o fundo só aparecia depois de um reload completo.
+     O Propshaft reescreve este `url()` para o caminho com digest. */
+  background-image: url("home-background.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -101,5 +110,5 @@ body.home-background {
 }
 
 @media (hover: none) {
-  body.home-background { background-attachment: scroll; }
+  body.home-background, body.cart-background, body.products-background { background-attachment: scroll; }
 }
