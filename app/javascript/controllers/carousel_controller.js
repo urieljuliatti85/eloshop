@@ -62,7 +62,7 @@ export default class extends Controller {
       const current = index === this.index
       dot.classList.toggle("bg-brand-500", current)
       dot.classList.toggle("w-6", current)
-      dot.classList.toggle("bg-gray-300", !current)
+      dot.classList.toggle("bg-white/70", !current)
       dot.setAttribute("aria-selected", current)
     })
   }

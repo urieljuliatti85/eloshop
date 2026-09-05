@@ -36,7 +36,10 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="flex min-h-screen flex-col overflow-x-clip bg-white text-ink">
+  <%# `body_class` deixa uma página trocar o fundo do body — hoje só a home,
+      que usa `home-background`. A imagem em si é injetada por ela no <head>,
+      com nonce, porque a CSP é `style_src :self`. %>
+  <body class="flex min-h-screen flex-col overflow-x-clip bg-white text-ink <%= content_for(:body_class) %>">
     <%= render "layouts/header" %>
 
     <main class="container mx-auto flex-1 px-5 py-12">
