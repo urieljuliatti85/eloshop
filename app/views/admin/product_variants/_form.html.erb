@@ -15,8 +15,9 @@
   </div>
 
   <div>
-    <%= form.label :price_cents, "Preço (em centavos)" %>
-    <%= form.number_field :price_cents, class: "w-full" %>
+    <%= form.label :price, "Preço (R$)" %>
+    <%= form.text_field :price, value: price_field_value(form.object.price_cents),
+          inputmode: "decimal", placeholder: "0,00", data: { controller: "price-input", action: "input->price-input#format" }, class: "w-full" %>
   </div>
 
   <div>

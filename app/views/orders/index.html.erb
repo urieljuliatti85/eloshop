@@ -27,7 +27,7 @@
             </div>
 
             <div class="flex items-center justify-between gap-5 sm:justify-end">
-              <p class="text-lg font-bold text-ink"><%= number_to_currency(order.total_cents.fdiv(100)) %></p>
+              <p class="text-lg font-bold text-ink"><%= format_price(order.total_cents) %></p>
               <%= link_to "Ver detalhes", order_path(order), class: "rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600" %>
             </div>
           </div>

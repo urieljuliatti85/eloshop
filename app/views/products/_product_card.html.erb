@@ -37,7 +37,7 @@
         <% if product.has_variants? %>
           <span class="text-ink-muted">A partir de</span>
         <% end %>
-        <%= number_to_currency(product.starting_price_cents / 100.0) %>
+        <%= format_price(product.starting_price_cents) %>
       </p>
     </div>
   <% end %>

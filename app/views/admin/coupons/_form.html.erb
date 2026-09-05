@@ -27,13 +27,15 @@
   </div>
 
   <div>
-    <%= form.label :amount_cents, "Valor fixo em centavos (quando valor fixo)" %>
-    <%= form.number_field :amount_cents, class: "w-full" %>
+    <%= form.label :amount, "Valor fixo em R$ (quando valor fixo)" %>
+    <%= form.text_field :amount, value: price_field_value(form.object.amount_cents),
+          inputmode: "decimal", placeholder: "0,00", data: { controller: "price-input", action: "input->price-input#format" }, class: "w-full" %>
   </div>
 
   <div>
-    <%= form.label :minimum_subtotal_cents, "Subtotal mínimo em centavos (opcional)" %>
-    <%= form.number_field :minimum_subtotal_cents, class: "w-full" %>
+    <%= form.label :minimum_subtotal, "Subtotal mínimo em R$ (opcional)" %>
+    <%= form.text_field :minimum_subtotal, value: price_field_value(form.object.minimum_subtotal_cents),
+          inputmode: "decimal", placeholder: "0,00", data: { controller: "price-input", action: "input->price-input#format" }, class: "w-full" %>
   </div>
 
   <div>

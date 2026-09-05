@@ -1,4 +1,8 @@
 class Product < ApplicationRecord
+  include MoneyAttribute
+
+  money_attribute :price
+
   class InvalidStatusTransition < StandardError; end
 
   STANDARD_STATUS_TRANSITIONS = {

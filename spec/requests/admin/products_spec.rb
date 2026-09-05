@@ -76,7 +76,7 @@ RSpec.describe "Admin products", type: :request do
             seller_id: approved_seller.id,
             name: "Cesto de vime",
             description: "Cesto trançado à mão",
-            price_cents: 5_990,
+            price: "59,90",
             currency: "BRL",
             sku: "CESTO-001",
             stock_quantity: 2
@@ -91,7 +91,7 @@ RSpec.describe "Admin products", type: :request do
       sign_in_as(user)
 
       expect do
-        post admin_products_path, params: { product: { name: "", sku: "", price_cents: 0, stock_quantity: 0 } }
+        post admin_products_path, params: { product: { name: "", sku: "", price: "", stock_quantity: 0 } }
       end.not_to change(Product, :count)
 
       expect(response).to have_http_status(:unprocessable_entity)

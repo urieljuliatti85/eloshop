@@ -51,7 +51,7 @@
       <section class="admin-card p-5 sm:p-6">
         <p class="admin-section-label">Informações comerciais</p>
         <dl class="mt-5 grid gap-5 sm:grid-cols-2">
-          <div><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Preço</dt><dd class="mt-1 text-xl font-semibold text-slate-950"><%= number_to_currency(@product.price_cents.fdiv(100)) %></dd></div>
+          <div><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Preço</dt><dd class="mt-1 text-xl font-semibold text-slate-950"><%= format_price(@product.price_cents) %></dd></div>
           <div><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Estoque</dt><dd class="mt-1 text-xl font-semibold text-slate-950"><%= @product.stock_quantity %> un.</dd></div>
           <div><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Categoria</dt><dd class="mt-1 text-sm font-semibold text-slate-800"><%= @product.category&.breadcrumb_name || "Sem categoria" %></dd></div>
           <div><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Disponibilidade</dt><dd class="mt-1 text-sm font-semibold text-slate-800"><%= @product.availability_type.humanize %></dd></div>
@@ -65,7 +65,7 @@
           <% if @product.product_variants.any? %>
             <div class="overflow-x-auto"><table><thead><tr><th>Combinação</th><th>SKU</th><th>Preço</th><th>Estoque</th><th>Status</th><th></th></tr></thead><tbody>
               <% @product.product_variants.each do |variant| %>
-                <tr><td class="font-semibold text-slate-900"><%= variant.to_label %></td><td class="font-mono text-xs"><%= variant.sku %></td><td><%= number_to_currency(variant.price_cents.fdiv(100)) %></td><td><%= variant.stock_quantity %></td><td><%= admin_status_badge(variant.active? ? "active" : "inactive") %></td><td><div class="flex justify-end gap-2"><%= link_to "Editar", edit_admin_product_product_variant_path(@product, variant), class: "admin-link" %><%= button_to "Excluir", admin_product_product_variant_path(@product, variant), method: :delete, class: "text-sm font-semibold text-rose-700", form: { data: { turbo_confirm: "Excluir esta variante?" } } %></div></td></tr>
+                <tr><td class="font-semibold text-slate-900"><%= variant.to_label %></td><td class="font-mono text-xs"><%= variant.sku %></td><td><%= format_price(variant.price_cents) %></td><td><%= variant.stock_quantity %></td><td><%= admin_status_badge(variant.active? ? "active" : "inactive") %></td><td><div class="flex justify-end gap-2"><%= link_to "Editar", edit_admin_product_product_variant_path(@product, variant), class: "admin-link" %><%= button_to "Excluir", admin_product_product_variant_path(@product, variant), method: :delete, class: "text-sm font-semibold text-rose-700", form: { data: { turbo_confirm: "Excluir esta variante?" } } %></div></td></tr>
               <% end %>
             </tbody></table></div>
           <% else %>

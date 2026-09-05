@@ -80,7 +80,7 @@ module SellerPortal
 
     def product_params
       params.expect(product: [
-        :name, :description, :price_cents, :currency, :sku, :stock_quantity, :main_image,
+        :name, :description, :price, :currency, :sku, :stock_quantity, :main_image,
         :availability_type, :production_time_min_days, :production_time_max_days, :category_id,
         :weight_grams, :length_cm, :width_cm, :height_cm, images: []
       ]).except(:images)

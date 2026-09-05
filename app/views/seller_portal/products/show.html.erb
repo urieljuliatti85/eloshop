@@ -16,7 +16,7 @@
   </header>
 
   <div class="grid gap-4 sm:grid-cols-3">
-    <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Preço</p><p class="mt-2 text-2xl font-bold"><%= number_to_currency(@product.price_cents.fdiv(100)) %></p></div>
+    <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Preço</p><p class="mt-2 text-2xl font-bold"><%= format_price(@product.price_cents) %></p></div>
     <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Estoque</p><p class="mt-2 text-2xl font-bold"><%= @product.stock_quantity %></p></div>
     <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Disponibilidade</p><p class="mt-2 text-lg font-bold"><%= @product.availability_type.humanize %></p></div>
   </div>
