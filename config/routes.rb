@@ -65,6 +65,10 @@ Rails.application.routes.draw do
 
   scope module: :seller_portal, as: :seller, path: "painel" do
     root to: "dashboard#index"
+    # Dados do próprio ateliê. Sempre a partir de `current_seller`, nunca de
+    # um id na URL — é a regra do painel inteiro.
+    resource :atelier, only: %i[show edit update], controller: "ateliers", path: "atelie"
+
     get "mercado-pago/conectar", to: "mercado_pago_connections#create", as: :mercado_pago_connect
     get "mercado-pago/callback", to: "mercado_pago_connections#callback", as: :mercado_pago_callback
     delete "mercado-pago", to: "mercado_pago_connections#destroy", as: :mercado_pago_connection

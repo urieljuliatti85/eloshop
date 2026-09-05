@@ -1,0 +1,31 @@
+<% content_for :title, "Editar ateliê | #{current_seller.name}" %>
+
+<div class="max-w-xl space-y-8">
+  <header>
+    <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Seu ateliê</p>
+    <h1 class="mt-1 text-3xl font-bold">Editar dados</h1>
+  </header>
+
+  <%= form_with model: current_seller, url: seller_atelier_path, method: :patch, class: "space-y-5 rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm sm:p-8" do |form| %>
+    <% if current_seller.errors.any? %>
+      <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <ul class="list-inside list-disc">
+          <% current_seller.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= form.label :name, "Nome do ateliê", class: "mb-1 block text-sm font-semibold text-stone-700" %>
+      <%= form.text_field :name, required: true, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+      <p class="mt-1 text-xs text-stone-500">É o nome que aparece nas suas peças e na sua vitrine.</p>
+    </div>
+
+    <div class="flex gap-3">
+      <%= form.submit "Salvar", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-600" %>
+      <%= link_to "Cancelar", seller_atelier_path, class: "rounded-full border border-stone-300 px-6 py-3 text-sm font-bold text-stone-700 transition hover:bg-stone-50" %>
+    </div>
+  <% end %>
+</div>

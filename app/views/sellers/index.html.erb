@@ -21,18 +21,20 @@
     <ul class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <% @sellers.each do |seller| %>
         <li>
-          <%# Mesmo verde profundo e canto de 2rem do painel do artesão, para o
-              card do ateliê se distinguir do card de produto. %>
-          <%= link_to seller_path(seller.slug), class: "group relative isolate flex min-h-56 flex-col justify-end overflow-hidden rounded-[2rem] bg-[#273b31] p-7 text-white shadow-sm" do %>
+          <%# Mesma terracota e canto de 2rem do painel do artesão, para o
+              card do ateliê se distinguir do card de produto. Sombra cresce
+              no hover — mesma pista de elevação que o zoom da foto já dá,
+              reforçada. %>
+          <%= link_to seller_path(seller.slug), class: "group relative isolate flex min-h-56 flex-col justify-end overflow-hidden rounded-[2rem] bg-[#7a2410] p-7 text-white shadow-sm transition-shadow hover:shadow-xl" do %>
             <% if (cover = @covers[seller.id]) %>
               <%= image_tag cover.main_image, alt: "", loading: "lazy",
                     class: "absolute inset-0 -z-20 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" %>
               <div class="absolute inset-0 -z-10 bg-gradient-to-t from-black/85 via-black/50 to-black/20"></div>
             <% else %>
-              <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,#d7c7a1_0,transparent_27%),linear-gradient(135deg,#273b31,#526d5d)]"></div>
+              <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,#fbbeb6_0,transparent_27%),linear-gradient(135deg,#7a2410,#df240c)]"></div>
             <% end %>
 
-            <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#f2d49f]">Ateliê</p>
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#fde1dd]">Ateliê</p>
             <strong class="mt-2 text-2xl font-black leading-tight"><%= seller.name %></strong>
             <span class="mt-3 text-sm text-white/80">
               <%= pluralize(@product_counts.fetch(seller.id, 0), "peça", plural: "peças") %> à venda

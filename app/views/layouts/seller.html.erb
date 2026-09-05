@@ -12,7 +12,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-[#f5f2eb] text-ink antialiased">
+  <body class="min-h-screen bg-[#faf3ea] text-ink antialiased">
     <header class="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur">
       <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6 lg:flex-nowrap lg:px-8">
         <%= link_to seller_root_path, class: "flex shrink-0 items-center gap-3", aria: { label: "Início do painel" } do %>
@@ -35,7 +35,7 @@
             <p class="max-w-36 truncate text-sm font-bold text-stone-900"><%= current_seller.name %></p>
             <p class="text-[0.65rem] font-semibold uppercase tracking-wider text-stone-500"><%= t(current_seller.status, scope: "sellers.statuses") %></p>
           </div>
-          <span class="grid size-9 place-items-center rounded-full bg-[#25382d] text-sm font-bold text-white" aria-hidden="true"><%= current_seller.name.first.upcase %></span>
+          <span class="grid size-9 place-items-center rounded-full bg-[#7a2410] text-sm font-bold text-white" aria-hidden="true"><%= current_seller.name.first.upcase %></span>
           <%= button_to session_path, method: :delete, class: "grid size-9 cursor-pointer place-items-center rounded-full border border-stone-200 text-stone-600 transition hover:border-brand-300 hover:text-brand-600", form: { aria: { label: "Sair" } } do %>
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/></svg>
           <% end %>
@@ -47,6 +47,7 @@
           ["Visão geral", seller_root_path],
           ["Produtos", seller_products_path],
           ["Pedidos", seller_orders_path],
+          ["Ateliê", seller_atelier_path],
           ["Novo produto", new_seller_product_path]
         ].each do |label, path| %>
           <%= link_to label, path,

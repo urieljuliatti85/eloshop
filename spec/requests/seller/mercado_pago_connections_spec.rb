@@ -10,8 +10,8 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     allow(Marketplace::MercadoPagoOauth).to receive(:new).and_return(oauth)
   end
 
-  it "shows the connection action on the seller dashboard when OAuth is configured" do
-    get seller_root_path
+  it "shows the connection action on the atelier page when OAuth is configured" do
+    get seller_atelier_path
 
     expect(response).to have_http_status(:ok)
     connect_link = Nokogiri::HTML(response.body).at_css("a[href='#{seller_mercado_pago_connect_path}']")
@@ -19,10 +19,10 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     expect(connect_link["data-turbo"]).to eq("false")
   end
 
-  it "identifies sandbox connections before the seller leaves the dashboard" do
+  it "identifies sandbox connections on the atelier page" do
     allow(oauth).to receive(:sandbox?).and_return(true)
 
-    get seller_root_path
+    get seller_atelier_path
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("Ambiente de teste")
@@ -53,7 +53,7 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
 
     get seller_mercado_pago_callback_path, params: { code: "valid-code", state: state }
 
-    expect(response).to redirect_to(seller_root_path)
+    expect(response).to redirect_to(seller_atelier_path)
     expect(seller.reload).to be_mercado_pago_connected
     expect(seller.mercado_pago_user_id).to eq("mp-123")
     expect(seller.mercado_pago_access_token_ciphertext).not_to include("access-token-secret")
@@ -70,7 +70,7 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
 
     get seller_mercado_pago_callback_path, params: { code: "valid-code", state: "tampered" }
 
-    expect(response).to redirect_to(seller_root_path)
+    expect(response).to redirect_to(seller_atelier_path)
     expect(oauth).not_to have_received(:exchange)
     expect(seller.reload).not_to be_mercado_pago_connected
   end
@@ -90,7 +90,7 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
 
     get seller_mercado_pago_callback_path, params: { code: "valid-code", state: state }
 
-    expect(response).to redirect_to(seller_root_path)
+    expect(response).to redirect_to(seller_atelier_path)
     expect(seller.reload).not_to be_mercado_pago_connected
   end
 
@@ -104,7 +104,7 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
 
     delete seller_mercado_pago_connection_path
 
-    expect(response).to redirect_to(seller_root_path)
+    expect(response).to redirect_to(seller_atelier_path)
     expect(seller.reload).to be_pending
     expect(seller).not_to be_mercado_pago_connected
   end
