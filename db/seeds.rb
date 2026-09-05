@@ -5,9 +5,40 @@ require "zlib"
 # Catálogo inicial (produtos com descrição e imagem). Idempotente: pode ser
 # executado de novo sem duplicar SKUs. Em produção só cria o que ainda não
 # existe — não sobrescreve preço, estoque nem texto de produtos já cadastrados.
+#
+# Contas de desenvolvimento — um usuário por papel do sistema, todas com a
+# senha `password123`:
+#
+#   admin@eloshop.test    admin da plataforma
+#   atelie@eloshop.test   vendedor, dono do catálogo criado abaixo
+#   cliente@eloshop.test  comprador, com endereço pronto para o checkout
+#
+# As três ficam sob `Rails.env.local?` (development ou test, nunca
+# production): o entrypoint roda `db:seed` a cada boot em produção, e senha
+# conhecida lá daria acesso ao painel e aos pedidos. O usuário do ateliê é
+# criado mais abaixo, depois do vendedor de que ele depende.
 if Rails.env.local?
   User.find_or_create_by!(email_address: "admin@eloshop.test") do |user|
     user.password = "password123"
+  end
+
+  # Comprador de desenvolvimento, com endereço pronto para atravessar o
+  # checkout sem preencher formulário a cada teste. Só em dev/test: senha
+  # conhecida em produção seria uma conta de cliente aberta a qualquer um.
+  customer = Customer.find_or_create_by!(email: "cliente@eloshop.test") do |record|
+    record.name = "Cliente de Teste"
+    record.password = "password123"
+  end
+
+  # `find_or_create_by!` pela rua evita um endereço novo a cada db:seed —
+  # o seed roda a cada boot em desenvolvimento.
+  customer.addresses.find_or_create_by!(street: "Rua das Oliveiras") do |address|
+    address.number = "123"
+    address.complement = "Apto 45"
+    address.neighborhood = "Centro"
+    address.city = "Florianópolis"
+    address.state = "SC"
+    address.zip_code = "88010-000"
   end
 end
 
@@ -15,6 +46,20 @@ seed_seller = Seller.find_or_create_by!(slug: "eloshop") do |seller|
   seller.name = "EloShop"
   seller.status = "approved"
   seller.approved_at = Time.current
+end
+
+# Usuário do ateliê: entra no painel do vendedor já administrando o catálogo
+# que este seed cria. Vem depois de `seed_seller` porque `User` valida a
+# presença do vendedor quando o papel é `seller`.
+#
+# Só em dev/test, como o admin e o comprador — senha conhecida em produção
+# daria acesso ao catálogo e aos pedidos de um vendedor real.
+if Rails.env.local?
+  User.find_or_create_by!(email_address: "atelie@eloshop.test") do |user|
+    user.password = "password123"
+    user.role = "seller"
+    user.seller = seed_seller
+  end
 end
 
 def find_or_create_named!(klass, name)
