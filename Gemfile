@@ -40,7 +40,7 @@ gem "kamal", require: false
 gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 1.2"
+gem "image_processing", "~> 2.1"
 
 # Documentação da API pública (v1) via OpenAPI/Swagger — montada em
 # /api-docs em todos os ambientes (ver config/routes.rb), por isso fora do
