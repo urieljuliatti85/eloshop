@@ -40,7 +40,13 @@ gem "kamal", require: false
 gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 1.2"
+gem "image_processing", "~> 2.1"
+# A v2 do image_processing deixou de declarar mini_magick/ruby-vips como
+# dependência: o app precisa declarar o processador que usa. Aqui é Vips
+# (config.load_defaults 8.1 => variant_processor :vips), e a libvips do
+# sistema já é instalada no CI e no Dockerfile. Sem esta linha, a primeira
+# variante gerada levanta LoadError.
+gem "ruby-vips", "~> 2.0"
 
 # Documentação da API pública (v1) via OpenAPI/Swagger — montada em
 # /api-docs em todos os ambientes (ver config/routes.rb), por isso fora do
