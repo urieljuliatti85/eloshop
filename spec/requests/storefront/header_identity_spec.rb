@@ -47,7 +47,9 @@ RSpec.describe "Header identity", type: :request do
 
     expect(response.body).not_to include("account-menu")
     expect(response.body).not_to include(customer.email)
-    expect(response.body).to include("Entrar")
+    # O convite ao comprador diz o que ele quer fazer, e não "Entrar" — que
+    # no topo se confundia com o cadastro de artesão ao lado.
+    expect(response.body).to include("Quero comprar")
   end
 
   # O nome sai da sessão, nunca de parâmetro: trocar o e-mail na URL não
