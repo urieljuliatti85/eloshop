@@ -10,26 +10,37 @@ class PriceInputTest < ApplicationSystemTestCase
 
     visit new_admin_product_path
 
-    # Os dígitos entram pela direita: "4000" vira "40,00" sem que ninguém
-    # digite a vírgula.
-    fill_in "Preço (R$)", with: "4000"
+    # `fill_in` digita caractere a caractere, e o campo reformata a cada
+    # tecla: sem zerar antes, o dígito novo entra sobre o valor anterior e a
+    # asserção lê o resultado da soma dos dois. Daí o preenchimento explícito
+    # em vez de um `fill_in` direto.
+    type_price "4000"
     assert_field "Preço (R$)", with: "40,00"
 
     # A vírgula aparece já no primeiro dígito.
-    fill_in "Preço (R$)", with: "4"
+    type_price "4"
     assert_field "Preço (R$)", with: "0,04"
 
     # O separador de milhar entra sozinho quando o valor cresce.
-    fill_in "Preço (R$)", with: "129990"
+    type_price "129990"
     assert_field "Preço (R$)", with: "1.299,90"
 
     # Apagar tudo deixa o campo vazio, não "0,00" — preço opcional em branco
     # não é um preço decidido.
-    fill_in "Preço (R$)", with: ""
+    type_price ""
     assert_field "Preço (R$)", with: ""
   end
 
   private
+
+  # Zera o campo antes de digitar e espera o valor assentar: o Capybara
+  # preenche tecla a tecla, e o controller reformata a cada uma.
+  def type_price(value)
+    field = find_field("Preço (R$)")
+    field.set("")
+    assert_field "Preço (R$)", with: ""
+    field.send_keys(value) unless value.empty?
+  end
 
   def sign_in_as_admin(user)
     visit new_session_path

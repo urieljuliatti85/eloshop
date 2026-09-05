@@ -28,16 +28,50 @@
         conta" quebrava em duas linhas) e passam para o painel do hambúrguer;
         no topo ficam só o carrinho e o menu, com 44px de alvo de toque. %>
     <div class="flex items-center gap-1 text-sm md:gap-4">
-      <% if respond_to?(:customer_authenticated?) && customer_authenticated? %>
-        <%= button_to "Sair", customer_session_path, method: :delete, class: "hidden font-medium text-ink hover:text-brand-600 cursor-pointer md:block" %>
+      <%# Quem está logado aparece pelo primeiro nome, com a inicial no avatar
+          — mesma identificação que o painel do artesão já usa. O nome abre um
+          painel com os dados da conta e seus destinos.
+
+          Sem JavaScript o painel não abre, mas nada se perde: Pedidos,
+          Favoritos e Sair continuam no menu do hambúrguer. %>
+      <% if respond_to?(:customer_authenticated?) && customer_authenticated? && Current.customer %>
+        <div class="relative hidden md:block" data-controller="account-menu"
+             data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
+          <button type="button"
+                  class="flex cursor-pointer items-center gap-2 font-medium text-ink hover:text-brand-600"
+                  aria-expanded="false" aria-haspopup="true"
+                  data-account-menu-target="button"
+                  data-action="account-menu#toggle">
+            <span class="grid size-8 place-items-center rounded-full bg-ink text-xs font-bold text-white" aria-hidden="true"><%= Current.customer.name.first.upcase %></span>
+            <span class="max-w-28 truncate"><%= Current.customer.name.split.first %></span>
+            <svg class="size-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+
+          <div class="absolute right-0 top-full z-20 mt-3 w-64 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg"
+               data-account-menu-target="panel" hidden>
+            <div class="flex items-center gap-3 border-b border-gray-100 px-4 py-4">
+              <span class="grid size-10 shrink-0 place-items-center rounded-full bg-ink text-sm font-bold text-white" aria-hidden="true"><%= Current.customer.name.first.upcase %></span>
+              <div class="min-w-0">
+                <p class="truncate font-semibold text-ink"><%= Current.customer.name %></p>
+                <p class="truncate text-xs text-ink-muted"><%= Current.customer.email %></p>
+              </div>
+            </div>
+
+            <div class="py-1">
+              <%= link_to "Meus pedidos", orders_path, class: "block px-4 py-2.5 text-sm text-ink hover:bg-sand-50 hover:text-brand-600" %>
+              <%= link_to "Favoritos", wishlist_path, class: "block px-4 py-2.5 text-sm text-ink hover:bg-sand-50 hover:text-brand-600" %>
+            </div>
+
+            <div class="border-t border-gray-100">
+              <%= button_to "Sair da conta", customer_session_path, method: :delete, class: "w-full cursor-pointer px-4 py-2.5 text-left text-sm font-medium text-ink hover:bg-sand-50 hover:text-brand-600" %>
+            </div>
+          </div>
+        </div>
       <% elsif respond_to?(:customer_authenticated?) %>
         <%= link_to "Entrar", new_customer_session_path, class: "hidden font-medium text-ink hover:text-brand-600 md:inline" %>
         <%= link_to "Criar conta", new_customer_path, class: "hidden rounded-full bg-ink px-5 py-2.5 font-semibold text-white transition hover:bg-brand-600 md:inline-block" %>
-      <% end %>
-
-      <% if respond_to?(:customer_authenticated?) && customer_authenticated? %>
-        <%= link_to "Pedidos", orders_path, class: "hidden font-medium text-ink hover:text-brand-600 md:inline" %>
-        <%= link_to "Favoritos", wishlist_path, class: "hidden font-medium text-ink hover:text-brand-600 md:inline" %>
       <% end %>
 
       <%= link_to cart_path, class: "relative flex h-11 min-w-11 items-center justify-center gap-1.5 font-medium text-ink hover:text-brand-600 md:h-auto md:min-w-0", aria: { label: "Carrinho" } do %>
@@ -111,6 +145,14 @@
 
     <div class="container mx-auto flex flex-col gap-3 px-5 pb-5 pt-2">
       <% if respond_to?(:customer_authenticated?) && customer_authenticated? %>
+        <%# No painel do hambúrguer o nome é só rótulo: os destinos de conta
+            já estão logo abaixo, e um link a mais para "Pedidos" seria ruído. %>
+        <% if Current.customer %>
+          <p class="flex items-center gap-2 px-1 pb-1 text-base font-semibold text-ink">
+            <span class="grid size-8 place-items-center rounded-full bg-ink text-xs font-bold text-white" aria-hidden="true"><%= Current.customer.name.first.upcase %></span>
+            <span class="truncate"><%= Current.customer.name %></span>
+          </p>
+        <% end %>
         <%= link_to "Pedidos", orders_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
         <%= link_to "Favoritos", wishlist_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
         <%= button_to "Sair", customer_session_path, method: :delete, class: "w-full cursor-pointer rounded-full bg-ink px-5 py-3 text-base font-semibold text-white" %>

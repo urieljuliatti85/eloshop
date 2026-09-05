@@ -68,6 +68,9 @@ export default class extends Controller {
   }
 
   start() {
+    // interval 0 desliga o avanço — é como os testes de sistema evitam que o
+    // banner se mova sozinho no meio de um clique.
+    if (this.intervalValue <= 0) return
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
 
     this.timer = setInterval(() => {
