@@ -12,6 +12,15 @@ module SellerPortal
       Current.user.seller
     end
 
+    # Estado do OAuth do Mercado Pago para o banner de "Recebimentos e
+    # verificação" (app/views/seller_portal/mercado_pago_connections/_banner),
+    # exibido tanto no dashboard quanto no ateliê.
+    def set_mercado_pago_oauth_state
+      oauth = Marketplace::MercadoPagoOauth.new
+      @mercado_pago_oauth_configured = oauth.configured?
+      @mercado_pago_oauth_sandbox = oauth.sandbox?
+    end
+
     # O painel tem porta própria: quem não está autenticado vai para o login
     # do ateliê, não para o da administração da plataforma.
     def request_authentication

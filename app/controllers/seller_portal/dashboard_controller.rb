@@ -14,6 +14,8 @@ module SellerPortal
       @recent_products = products.with_attached_main_image.order(updated_at: :desc).limit(4)
       @featured_product = @recent_products.find { |product| product.main_image.attached? } || @recent_products.first
       @recent_seller_orders = seller_orders.includes(order: :customer).order(created_at: :desc).limit(4)
+
+      set_mercado_pago_oauth_state
     end
   end
 end

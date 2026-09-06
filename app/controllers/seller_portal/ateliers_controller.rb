@@ -2,7 +2,7 @@ module SellerPortal
   # Dados do próprio ateliê. O escopo vem sempre de `current_seller` — nenhuma
   # ação aceita id de vendedor por parâmetro.
   class AteliersController < BaseController
-    before_action :set_oauth_state, only: :show
+    before_action :set_mercado_pago_oauth_state, only: :show
 
     def show
     end
@@ -25,12 +25,6 @@ module SellerPortal
     # plataforma.
     def atelier_params
       params.expect(seller: [ :name, *Seller::ORIGIN_ADDRESS_FIELDS ])
-    end
-
-    def set_oauth_state
-      oauth = Marketplace::MercadoPagoOauth.new
-      @mercado_pago_oauth_configured = oauth.configured?
-      @mercado_pago_oauth_sandbox = oauth.sandbox?
     end
   end
 end

@@ -1,0 +1,20 @@
+<section class="flex flex-col justify-between gap-5 rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:p-8">
+  <div class="max-w-3xl">
+    <p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Recebimentos e verificação</p>
+    <h2 class="mt-1 text-2xl font-bold">Mercado Pago</h2>
+    <% if current_seller.mercado_pago_connected? %>
+      <p class="mt-2 text-sm leading-6 text-stone-600">Conta conectada em <%= l(current_seller.mercado_pago_connected_at, format: :short) %>. Identificador: <%= current_seller.mercado_pago_user_id %>. Ambiente: <%= current_seller.mercado_pago_live_mode? ? "produção" : "teste" %>. A verificação de identidade acontece no Mercado Pago.</p>
+    <% elsif @mercado_pago_oauth_configured %>
+      <% if @mercado_pago_oauth_sandbox %><p class="mt-2 text-sm leading-6 text-amber-700"><strong>Ambiente de teste:</strong> conecte uma conta TESTUSER do tipo Vendedor. Esta conexão não permite aprovação nem vendas reais.</p><% else %><p class="mt-2 text-sm leading-6 text-stone-600">Conclua a identificação da sua conta no Mercado Pago e autorize a EloShop a processar suas vendas.</p><% end %>
+    <% else %>
+      <p class="mt-2 text-sm leading-6 text-amber-700">A conexão aguarda a configuração da aplicação Mercado Pago pela plataforma.</p>
+    <% end %>
+  </div>
+  <div class="shrink-0">
+    <% if current_seller.mercado_pago_connected? %>
+      <%= button_to "Desconectar", seller_mercado_pago_connection_path, method: :delete, class: "rounded-full border border-red-200 px-6 py-3 text-sm font-bold text-red-700 hover:bg-red-50", form: { data: { turbo_confirm: "Desconectar a conta e suspender a publicação dos produtos?" } } %>
+    <% elsif @mercado_pago_oauth_configured %>
+      <%= link_to(@mercado_pago_oauth_sandbox ? "Conectar conta de teste" : "Conectar Mercado Pago", seller_mercado_pago_connect_path, class: "inline-flex rounded-full bg-[#7a2410] px-6 py-3 text-sm font-bold text-white hover:bg-[#4a1508]", data: { turbo: false }) %>
+    <% end %>
+  </div>
+</section>
