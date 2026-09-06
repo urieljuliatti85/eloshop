@@ -32,15 +32,15 @@
       <p class="text-sm font-semibold text-stone-700">De onde você envia</p>
       <p class="mt-1 mb-4 text-xs text-stone-500">Usado para calcular o frete das suas vendas. Não aparece na loja.</p>
 
-      <div class="grid gap-4 sm:grid-cols-6">
+      <div class="grid gap-4 sm:grid-cols-6" data-controller="postal-code" data-postal-code-url-value="<%= seller_atelier_postal_code_path(cep: "00000000") %>">
         <div class="sm:col-span-2">
           <%= form.label :origin_zip_code, "CEP", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-          <%= form.text_field :origin_zip_code, inputmode: "numeric", placeholder: "00000-000", class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+          <%= form.text_field :origin_zip_code, inputmode: "numeric", placeholder: "00000-000", data: { postal_code_target: "zipCode", action: "input->postal-code#lookup" }, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
         </div>
 
         <div class="sm:col-span-4">
           <%= form.label :origin_street, "Rua", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-          <%= form.text_field :origin_street, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+          <%= form.text_field :origin_street, data: { postal_code_target: "street" }, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
         </div>
 
         <div class="sm:col-span-2">
@@ -55,17 +55,17 @@
 
         <div class="sm:col-span-3">
           <%= form.label :origin_neighborhood, "Bairro", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-          <%= form.text_field :origin_neighborhood, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+          <%= form.text_field :origin_neighborhood, data: { postal_code_target: "neighborhood" }, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
         </div>
 
         <div class="sm:col-span-2">
           <%= form.label :origin_city, "Cidade", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-          <%= form.text_field :origin_city, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+          <%= form.text_field :origin_city, data: { postal_code_target: "city" }, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
         </div>
 
         <div class="sm:col-span-1">
           <%= form.label :origin_state, "UF", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-          <%= form.text_field :origin_state, maxlength: 2, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+          <%= form.text_field :origin_state, maxlength: 2, data: { postal_code_target: "state" }, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
         </div>
       </div>
     </fieldset>
