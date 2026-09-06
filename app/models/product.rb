@@ -71,6 +71,17 @@ class Product < ApplicationRecord
   validates :weight_grams, :length_cm, :width_cm, :height_cm,
             numericality: { greater_than: 0 }, allow_nil: true
 
+  # Peso e dimensões são exigidos para PUBLICAR, não para rascunhar: o
+  # vendedor cadastra a peça enquanto ainda a está fazendo, mas não anuncia
+  # sem saber quanto ela pesa — o frete real cotaria errado, e é o artesão
+  # quem absorve a diferença.
+  #
+  # A regra vive no `publish!`, e não como validação de `active?`: como
+  # validação, ela recairia sobre todo `save` de produto publicado —
+  # inclusive a baixa de estoque de uma venda, que não tem nada a ver com
+  # frete e passaria a falhar em catálogo legado.
+  validate :shippable_dimensions_for_publication, on: :publication
+
   validates :stock_quantity, numericality: { less_than_or_equal_to: 1 }, if: :availability_type_one_of_a_kind?
   validates :production_time_min_days, :production_time_max_days,
             presence: true, numericality: { greater_than: 0 }, if: :availability_type_made_to_order?
@@ -88,7 +99,24 @@ class Product < ApplicationRecord
   def publish!
     raise InvalidStatusTransition, "o vendedor precisa estar aprovado antes da publicação" unless seller.approved?
 
+    unless valid?(:publication)
+      raise InvalidStatusTransition, errors.full_messages_for(:base).first ||
+        "informe peso e dimensões antes de publicar"
+    end
+
     transition_to!("active")
+  end
+
+  # Sem peso ou dimensões o frete real não cotiza, e o produto não deveria
+  # estar anunciado.
+  def shippable_dimensions_for_publication
+    missing = { weight_grams: "peso", length_cm: "comprimento", width_cm: "largura", height_cm: "altura" }
+      .select { |field, _| public_send(field).blank? }
+      .values
+
+    return if missing.empty?
+
+    errors.add(:base, "Informe #{missing.to_sentence} antes de publicar: são necessários para calcular o frete.")
   end
 
   def unpublish!

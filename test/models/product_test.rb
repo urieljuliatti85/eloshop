@@ -406,4 +406,44 @@ class ProductTest < ActiveSupport::TestCase
     assert product.reload.available_for_purchase?
     assert_includes Product.publicly_visible.pluck(:id), product.id
   end
+
+  # Publicar sem peso faria o frete real cotar errado — e é o artesão quem
+  # absorve a diferença.
+  test "publish! refuses a product without weight and dimensions" do
+    product = Product.create!(seller: sellers(:approved), name: "Sem medidas", sku: "DIM-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 1, currency: "BRL", status: "draft")
+
+    error = assert_raises(Product::InvalidStatusTransition) { product.publish! }
+
+    assert_match(/peso/, error.message)
+    assert product.reload.draft?
+  end
+
+  test "publish! names every missing measurement" do
+    product = Product.create!(seller: sellers(:approved), name: "Só peso", sku: "DIM-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 1, currency: "BRL", status: "draft", weight_grams: 300)
+
+    error = assert_raises(Product::InvalidStatusTransition) { product.publish! }
+
+    assert_match(/comprimento/, error.message)
+    assert_no_match(/peso/, error.message)
+  end
+
+  # Rascunho segue livre: o vendedor cadastra a peça enquanto ainda a faz.
+  test "a draft without measurements is still valid" do
+    product = Product.new(seller: sellers(:approved), name: "Rascunho", sku: "DIM-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 1, currency: "BRL", status: "draft")
+
+    assert product.valid?
+  end
+
+  # A regra vale na publicação, não em todo save: baixar estoque numa venda
+  # não pode falhar por causa de frete em catálogo legado.
+  test "an already active product without measurements can still be saved" do
+    product = Product.create!(seller: sellers(:approved), name: "Legado", sku: "DIM-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "draft")
+    product.update_column(:status, "active")
+
+    assert product.reload.update(stock_quantity: 4)
+  end
 end

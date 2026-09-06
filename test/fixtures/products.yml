@@ -9,6 +9,10 @@ one:
   currency: BRL
   sku: VASO-AZUL-001
   stock_quantity: 3
+  weight_grams: 500
+  length_cm: 20
+  width_cm: 15
+  height_cm: 10
   status: active
 
 two:
@@ -20,6 +24,10 @@ two:
   currency: BRL
   sku: CANECA-001
   stock_quantity: 0
+  weight_grams: 500
+  length_cm: 20
+  width_cm: 15
+  height_cm: 10
   status: draft
 
 three:
@@ -31,6 +39,10 @@ three:
   currency: BRL
   sku: CESTO-VIME-ESGOTADO-001
   stock_quantity: 0
+  weight_grams: 500
+  length_cm: 20
+  width_cm: 15
+  height_cm: 10
   status: active
 
 with_variants:
@@ -42,6 +54,10 @@ with_variants:
   currency: BRL
   sku: CAMISETA-001
   stock_quantity: 0
+  weight_grams: 500
+  length_cm: 20
+  width_cm: 15
+  height_cm: 10
   status: active
 
 with_personalization:
@@ -53,4 +69,8 @@ with_personalization:
   currency: BRL
   sku: CANECA-PERSONALIZADA-001
   stock_quantity: 5
+  weight_grams: 500
+  length_cm: 20
+  width_cm: 15
+  height_cm: 10
   status: active
