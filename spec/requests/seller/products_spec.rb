@@ -108,4 +108,29 @@ RSpec.describe "Seller products", type: :request do
     expect(response).to redirect_to(seller_product_path(own_product))
     expect(own_product.reload).to be_draft
   end
+
+  it "exposes weight and dimension fields on the product form" do
+    get new_seller_product_path
+
+    expect(response.body).to include("product_weight_grams", "product_length_cm", "product_width_cm", "product_height_cm")
+  end
+
+  it "publishes once name, price and shipping dimensions are set" do
+    own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10)
+
+    patch publish_seller_product_path(own_product)
+
+    expect(response).to redirect_to(seller_product_path(own_product))
+    expect(own_product.reload).to be_active
+  end
+
+  it "accepts weight and dimensions through the update form" do
+    patch seller_product_path(own_product), params: { product: { weight_grams: "200", length_cm: "10", width_cm: "10", height_cm: "10" } }
+
+    own_product.reload
+    expect(own_product.weight_grams).to eq(200)
+    expect(own_product.length_cm).to eq(10)
+    expect(own_product.width_cm).to eq(10)
+    expect(own_product.height_cm).to eq(10)
+  end
 end
