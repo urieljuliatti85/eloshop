@@ -24,6 +24,19 @@ RSpec.describe "Admin sellers", type: :request do
     expect(seller.reload).to be_pending
   end
 
+  # `live_mode` sozinho não distingue TESTUSER de conta real — ver o
+  # comentário em Seller#mercado_pago_real_account?. Uma conta de sandbox
+  # já foi aprovada indevidamente antes dessa checagem existir.
+  it "does not approve a Mercado Pago sandbox (TESTUSER) account" do
+    sign_in_as(admin)
+    seller.connect_mercado_pago!(mercado_pago_credentials(test_account: true))
+
+    patch approve_admin_seller_path(seller), params: { kyc_level_6_confirmed: "1" }
+
+    expect(response).to redirect_to(admin_seller_path(seller))
+    expect(seller.reload).to be_pending
+  end
+
   it "keeps the platform panel unavailable to sellers" do
     sign_in_as(seller_user)
 
@@ -32,14 +45,14 @@ RSpec.describe "Admin sellers", type: :request do
     expect(response).to redirect_to(new_session_path)
   end
 
-  def mercado_pago_credentials
+  def mercado_pago_credentials(test_account: false)
     Marketplace::MercadoPagoOauth::Credentials.new(
       user_id: "admin-spec-seller",
       access_token: "access-token",
       refresh_token: "refresh-token",
       expires_at: 180.days.from_now,
       live_mode: true,
-      test_account: false
+      test_account: test_account
     )
   end
 end
