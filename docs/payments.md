@@ -67,15 +67,21 @@ O endpoint a configurar no painel é `POST /webhooks/payments`.
 
 O adapter e seus testes existem, mas **a integração nunca rodou contra o sandbox do Mercado Pago** — falta credencial. Os testes stubam HTTP e verificam o contrato do adapter (o que envia, o que devolve, o que recusa), não a API real. Antes de ligar `PAYMENT_GATEWAY=mercado_pago` em produção, é obrigatório um teste ponta a ponta no sandbox.
 
-`TODO — DECISION REQUIRED`: prazo de expiração do PIX e o que acontece com o pedido quando ele expira. Hoje o pedido fica `pending` indefinidamente.
-
 ### Renovação e acompanhamento do PIX
 
 As três lacunas identificadas antes do teste no sandbox foram fechadas:
 
-1. `Payments::Authorize` reaproveita um pagamento `pending` somente enquanto o PIX ainda está válido. Ao abrir novamente a etapa de pagamento depois da expiração, a tentativa anterior vira `failed` e uma nova cobrança é criada. Isso não cancela o pedido, que continua `pending` — a política de expiração do pedido inteiro continua sendo uma decisão de negócio separada.
+1. `Payments::Authorize` reaproveita um pagamento `pending` somente enquanto o PIX ainda está válido. Ao abrir novamente a etapa de pagamento depois da expiração, a tentativa anterior vira `failed` e uma nova cobrança é criada. Isso não cancela o pedido sozinho — quem cancela é `Orders::CancelExpired` (ver abaixo).
 2. Cada `Payment` possui sua própria `idempotency_key`. A tentativa é persistida no estado interno `processing` antes da chamada externa; se houver timeout ou queda depois que o Mercado Pago receber a requisição, o retry retoma o mesmo registro e a mesma chave. Uma tentativa posterior a um QR expirado recebe outra chave.
 3. A página do PIX consulta periodicamente um endpoint somente de leitura, autenticado e escopado ao dono do pedido. O bloco de pagamento reflete `paid`/`failed` assim que o webhook atualizar o banco, sem criar cobranças durante o polling. Se o QR vencer com a página aberta, o polling para e a interface oferece uma nova tentativa.
+
+### Cancelamento automático por PIX expirado
+
+**Decisão de negócio**: um pedido `pending` cujo PIX expirou é cancelado automaticamente depois de 1 hora de tolerância (`Orders::CancelExpired::GRACE_PERIOD`) — não imediatamente, para dar chance de uma nova tentativa antes do cancelamento.
+
+`CancelExpiredOrdersJob` roda a cada 15 minutos via Solid Queue (`config/recurring.yml`) e delega a `Orders::CancelExpired`. Um pedido é candidato quando está `pending`, tem um `Payment` `pending` cujo `expires_at` passou de mais de 1 hora, e nenhum `Payment` do pedido chegou a `authorized`/`paid`/`partially_refunded`/`refunded` — protege contra cancelar um pedido que na verdade já foi pago (ex: webhook atrasado).
+
+Ao cancelar, o estoque debitado no checkout é devolvido (`Product#stock_quantity` ou `ProductVariant#stock_quantity`, dependendo se o item tem variante), exceto para produtos `made_to_order` (sem estoque físico). Peça única (`one_of_a_kind`) mantém a regra já existente de não voltar a `active` automaticamente depois de `sold_out` — devolver o `stock_quantity` não contorna isso, porque a transição de status não é disparada por este serviço.
 
 ## Estados do pagamento
 
