@@ -1,1 +1,26 @@
-<div class="space-y-6"><header><p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Operação</p><h1 class="mt-2 text-3xl font-bold">Pedidos</h1></header><div class="overflow-hidden rounded-2xl bg-white shadow-sm"><table class="w-full text-left text-sm"><thead class="bg-stone-50"><tr><th class="p-4">Pedido</th><th class="p-4">Cliente</th><th class="p-4">Status</th><th class="p-4">A receber</th><th class="p-4">Data</th><th></th></tr></thead><tbody class="divide-y divide-gray-100"><% @seller_orders.each do |seller_order| %><% order = seller_order.order %><tr><td class="p-4 font-semibold">#<%= order.id %></td><td class="p-4"><%= order.customer.name %></td><td class="p-4"><%= seller_order.status.humanize %></td><td class="p-4"><%= number_to_currency((seller_order.seller_amount_cents - seller_order.refunded_amount_cents + seller_order.platform_fee_refunded_cents).fdiv(100)) %></td><td class="p-4"><%= l(order.created_at.to_date, format: :short) %></td><td class="p-4 text-right"><%= link_to "Detalhes", seller_order_path(order), class: "font-semibold text-brand-600" %></td></tr><% end %></tbody></table></div></div>
+<div class="space-y-6">
+  <header><p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Operação</p><h1 class="mt-2 text-3xl font-bold">Pedidos</h1></header>
+
+  <%# Cartões no celular, tabela a partir de sm: as seis colunas somam ~573px e
+      não cabem em 390px — com overflow-hidden a coluna "Detalhes" ficava fora
+      de alcance, deixando o pedido inacessível pelo celular. %>
+  <div class="grid gap-3 sm:hidden">
+    <% @seller_orders.each do |seller_order| %>
+      <% order = seller_order.order %>
+      <%= link_to seller_order_path(order), class: "block rounded-2xl bg-white p-4 shadow-sm" do %>
+        <div class="flex items-baseline justify-between gap-3">
+          <p class="font-semibold text-stone-950">#<%= order.id %></p>
+          <p class="text-sm font-bold"><%= number_to_currency((seller_order.seller_amount_cents - seller_order.refunded_amount_cents + seller_order.platform_fee_refunded_cents).fdiv(100)) %></p>
+        </div>
+        <p class="mt-1 truncate text-sm text-ink-muted"><%= order.customer.name %></p>
+        <p class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          <span class="font-medium"><%= seller_order.status.humanize %></span>
+          <span class="text-ink-muted">·</span>
+          <span class="text-ink-muted"><%= l(order.created_at.to_date, format: :short) %></span>
+        </p>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="hidden overflow-x-auto rounded-2xl bg-white shadow-sm sm:block"><table class="w-full text-left text-sm"><thead class="bg-stone-50"><tr><th class="p-4">Pedido</th><th class="p-4">Cliente</th><th class="p-4">Status</th><th class="p-4">A receber</th><th class="p-4">Data</th><th></th></tr></thead><tbody class="divide-y divide-gray-100"><% @seller_orders.each do |seller_order| %><% order = seller_order.order %><tr><td class="p-4 font-semibold">#<%= order.id %></td><td class="p-4"><%= order.customer.name %></td><td class="p-4"><%= seller_order.status.humanize %></td><td class="p-4"><%= number_to_currency((seller_order.seller_amount_cents - seller_order.refunded_amount_cents + seller_order.platform_fee_refunded_cents).fdiv(100)) %></td><td class="p-4"><%= l(order.created_at.to_date, format: :short) %></td><td class="p-4 text-right"><%= link_to "Detalhes", seller_order_path(order), class: "inline-flex min-h-11 items-center font-semibold text-brand-600" %></td></tr><% end %></tbody></table></div>
+</div>

@@ -47,7 +47,9 @@
         <dt class="text-xs font-semibold uppercase tracking-wider text-stone-500">Endereço na loja</dt>
         <dd class="mt-1">
           <% if current_seller.approved? %>
-            <%= link_to seller_url(current_seller.slug), seller_path(current_seller.slug), class: "font-medium text-brand-600 underline underline-offset-4 hover:text-brand-700" %>
+            <%# break-all porque a URL é uma palavra só: sem isso ela estoura
+                a largura do celular em vez de quebrar em duas linhas. %>
+            <%= link_to seller_url(current_seller.slug), seller_path(current_seller.slug), class: "inline-flex min-h-11 items-center break-all font-medium text-brand-600 underline underline-offset-4 hover:text-brand-700" %>
           <% else %>
             <span class="text-stone-500">A vitrine fica pública quando o ateliê for aprovado.</span>
           <% end %>

@@ -1,5 +1,22 @@
 <div class="space-y-6">
-  <header class="flex items-end justify-between gap-4"><div><p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Catálogo</p><h1 class="mt-2 text-3xl font-bold">Produtos</h1></div><%= link_to "Novo produto", new_seller_product_path, class: "rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white" %></header>
+  <header class="flex flex-wrap items-end justify-between gap-4"><div><p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Catálogo</p><h1 class="mt-2 text-3xl font-bold">Produtos</h1></div><%= link_to "Novo produto", new_seller_product_path, class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white" %></header>
   <% if params[:q].present? %><p class="text-sm text-ink-muted">Resultados para “<%= params[:q] %>” · <%= link_to "Limpar busca", seller_products_path, class: "font-semibold text-brand-600 underline underline-offset-4" %></p><% end %>
-  <div class="overflow-hidden rounded-2xl bg-white shadow-sm"><table class="w-full text-left text-sm"><thead class="bg-stone-50 text-ink-muted"><tr><th class="p-4">Produto</th><th class="p-4">SKU</th><th class="p-4">Status</th><th class="p-4">Estoque</th><th class="p-4"></th></tr></thead><tbody class="divide-y divide-gray-100"><% @products.each do |product| %><tr><td class="p-4 font-semibold"><%= product.name %></td><td class="p-4"><%= product.sku %></td><td class="p-4"><%= product.status.humanize %></td><td class="p-4"><%= product.stock_quantity %></td><td class="p-4 text-right"><%= link_to "Detalhes", seller_product_path(product), class: "font-semibold text-brand-600" %></td></tr><% end %></tbody></table></div>
+  <%# Lista em cartões no celular e tabela a partir de sm: cinco colunas em
+      390px não cabem, e com overflow-hidden a coluna de ação ficava fora de
+      alcance — o link "Detalhes" era inclicável no celular. %>
+  <div class="grid gap-3 sm:hidden">
+    <% @products.each do |product| %>
+      <%= link_to seller_product_path(product), class: "block rounded-2xl bg-white p-4 shadow-sm" do %>
+        <p class="font-semibold text-stone-950"><%= product.name %></p>
+        <p class="mt-1 text-xs text-ink-muted">SKU <%= product.sku %></p>
+        <p class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          <span class="font-medium"><%= product.status.humanize %></span>
+          <span class="text-ink-muted">·</span>
+          <span><%= product.stock_quantity %> em estoque</span>
+        </p>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="hidden overflow-x-auto rounded-2xl bg-white shadow-sm sm:block"><table class="w-full text-left text-sm"><thead class="bg-stone-50 text-ink-muted"><tr><th class="p-4">Produto</th><th class="p-4">SKU</th><th class="p-4">Status</th><th class="p-4">Estoque</th><th class="p-4"></th></tr></thead><tbody class="divide-y divide-gray-100"><% @products.each do |product| %><tr><td class="p-4 font-semibold"><%= product.name %></td><td class="p-4"><%= product.sku %></td><td class="p-4"><%= product.status.humanize %></td><td class="p-4"><%= product.stock_quantity %></td><td class="p-4 text-right"><%= link_to "Detalhes", seller_product_path(product), class: "inline-flex min-h-11 items-center font-semibold text-brand-600" %></td></tr><% end %></tbody></table></div>
 </div>

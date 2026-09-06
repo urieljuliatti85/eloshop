@@ -71,7 +71,7 @@
     <div class="rounded-[2rem] bg-white p-6 shadow-sm sm:p-8">
       <div class="flex items-center justify-between gap-4">
         <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Sua coleção</p><h2 class="mt-1 text-2xl font-bold">Produtos recentes</h2></div>
-        <%= link_to "Ver todos", seller_products_path, class: "text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-600" %>
+        <%= link_to "Ver todos", seller_products_path, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-600" %>
       </div>
 
       <% if @recent_products.any? %>
@@ -91,7 +91,7 @@
     </div>
 
     <div class="rounded-[2rem] bg-[#5c1a0b] p-6 text-white shadow-sm sm:p-8">
-      <div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#d8bd8d]">Últimas vendas</p><h2 class="mt-1 text-2xl font-bold">Pedidos</h2></div><%= link_to "Ver todos", seller_orders_path, class: "text-sm font-bold text-white/80 underline underline-offset-4 hover:text-white" %></div>
+      <div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#d8bd8d]">Últimas vendas</p><h2 class="mt-1 text-2xl font-bold">Pedidos</h2></div><%= link_to "Ver todos", seller_orders_path, class: "inline-flex min-h-11 items-center text-sm font-bold text-white/80 underline underline-offset-4 hover:text-white" %></div>
       <% if @recent_seller_orders.any? %>
         <ol class="mt-5 divide-y divide-white/15">
           <% @recent_seller_orders.each do |seller_order| %>
