@@ -69,7 +69,7 @@ exige backfill dos existentes.
 
 Regras de frete não devem ser implementadas diretamente em controllers — devem ficar isoladas no domínio de Shipping.
 
-`TODO — DECISION REQUIRED`: qual(is) transportadora(s) ou serviço(s) de cálculo de frete serão integrados (ex.: Correios, transportadora privada, serviço agregador) não está definido.
+`TODO — DECISION REQUIRED`: qual transportadora ou serviço de cálculo integrar segue em aberto. As três opções levantadas (Correios via API, agregador, tabela própria), a recomendação técnica e as decisões de negócio que vêm junto — quem paga a etiqueta, se existe frete grátis, quem absorve a diferença — estão no **ADR 005** (`docs/decisions/005-shipping-provider.md`).
 
 ## Embalagem
 
