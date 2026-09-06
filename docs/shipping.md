@@ -69,7 +69,15 @@ exige backfill dos existentes.
 
 Regras de frete não devem ser implementadas diretamente em controllers — devem ficar isoladas no domínio de Shipping.
 
-`TODO — DECISION REQUIRED`: qual transportadora ou serviço de cálculo integrar segue em aberto. As três opções levantadas (Correios via API, agregador, tabela própria), a recomendação técnica e as decisões de negócio que vêm junto — quem paga a etiqueta, se existe frete grátis, quem absorve a diferença — estão no **ADR 005** (`docs/decisions/005-shipping-provider.md`).
+**Provedor definido em 2026-09-06: Melhor Envio** — ver o **ADR 005**
+(`docs/decisions/005-shipping-provider.md`), que registra por que ele foi
+escolhido, o que a documentação dele confirma e como a integração se divide em
+três etapas. Nenhuma linha foi escrita ainda.
+
+`TODO — DECISION REQUIRED`: seguem pendentes, e travam apenas as Etapas 2 e 3
+(etiqueta e rastreio), **se existe frete grátis** — a partir de qual valor e
+por conta de quem — e **quem absorve a diferença** quando o frete real sai mais
+caro que o cobrado no checkout.
 
 ## Embalagem
 
