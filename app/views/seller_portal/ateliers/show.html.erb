@@ -22,6 +22,25 @@
         <dd class="mt-1 text-lg font-bold text-stone-950"><%= t(current_seller.status, scope: "sellers.statuses") %></dd>
       </div>
 
+      <%# Sem endereço o frete real não tem origem — o aviso é para o vendedor
+          saber o que falta antes de a plataforma ligar o cálculo. %>
+      <div class="sm:col-span-2">
+        <dt class="text-xs font-semibold uppercase tracking-wider text-stone-500">De onde você envia</dt>
+        <dd class="mt-1">
+          <% if current_seller.origin_address_complete? %>
+            <p class="text-stone-950">
+              <%= current_seller.origin_street %>, <%= current_seller.origin_number %><%= " — #{current_seller.origin_complement}" if current_seller.origin_complement.present? %>
+            </p>
+            <p class="text-sm text-stone-600">
+              <%= current_seller.origin_neighborhood %> — <%= current_seller.origin_city %>/<%= current_seller.origin_state %>
+              · CEP <%= current_seller.origin_zip_code %>
+            </p>
+          <% else %>
+            <p class="text-stone-500">Ainda não informado. É o endereço usado para calcular o frete das suas vendas.</p>
+          <% end %>
+        </dd>
+      </div>
+
       <%# O slug não é editável: ele já está nas URLs públicas dos produtos, e
           trocá-lo quebraria links que alguém compartilhou. %>
       <div class="sm:col-span-2">

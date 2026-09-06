@@ -61,6 +61,29 @@ RSpec.describe "Seller atelier", type: :request do
       expect(seller.reload.name).to eq("Ateliê do Vendedor")
     end
 
+    it "saves the origin address" do
+      sign_in_as(user)
+
+      patch seller_atelier_path, params: { seller: {
+        name: seller.name, origin_zip_code: "88010-000", origin_street: "Rua das Flores",
+        origin_number: "10", origin_neighborhood: "Centro", origin_city: "Florianópolis", origin_state: "SC"
+      } }
+
+      seller.reload
+      expect(seller.origin_zip_code).to eq("88010000")
+      expect(seller).to be_origin_address_complete
+    end
+
+    # Meio endereço não despacha nada.
+    it "rejects a partial origin address" do
+      sign_in_as(user)
+
+      patch seller_atelier_path, params: { seller: { name: seller.name, origin_city: "Florianópolis" } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(seller.reload.origin_city).to be_nil
+    end
+
     # `slug` está nas URLs públicas dos produtos: trocá-lo quebraria links já
     # compartilhados. `status` é decisão da plataforma, não do vendedor.
     it "ignores slug and status sent by the seller" do

@@ -1,6 +1,6 @@
 <% content_for :title, "Editar ateliê | #{current_seller.name}" %>
 
-<div class="max-w-xl space-y-8">
+<div class="max-w-2xl space-y-8">
   <header>
     <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Seu ateliê</p>
     <h1 class="mt-1 text-3xl font-bold">Editar dados</h1>
@@ -22,6 +22,53 @@
       <%= form.text_field :name, required: true, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
       <p class="mt-1 text-xs text-stone-500">É o nome que aparece nas suas peças e na sua vitrine.</p>
     </div>
+
+    <%# Endereço de onde a peça é despachada — não é o endereço de cobrança
+        nem aparece na loja. Opcional por ora: o cálculo real de frete ainda
+        depende de decisão de negócio (docs/shipping.md), mas quem preencher
+        precisa preencher inteiro, porque meio endereço não despacha nada. %>
+    <fieldset class="border-t border-stone-200 pt-6">
+      <legend class="sr-only">Endereço de origem</legend>
+      <p class="text-sm font-semibold text-stone-700">De onde você envia</p>
+      <p class="mt-1 mb-4 text-xs text-stone-500">Usado para calcular o frete das suas vendas. Não aparece na loja.</p>
+
+      <div class="grid gap-4 sm:grid-cols-6">
+        <div class="sm:col-span-2">
+          <%= form.label :origin_zip_code, "CEP", class: "mb-1 block text-sm font-semibold text-stone-700" %>
+          <%= form.text_field :origin_zip_code, inputmode: "numeric", placeholder: "00000-000", class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+        </div>
+
+        <div class="sm:col-span-4">
+          <%= form.label :origin_street, "Rua", class: "mb-1 block text-sm font-semibold text-stone-700" %>
+          <%= form.text_field :origin_street, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+        </div>
+
+        <div class="sm:col-span-2">
+          <%= form.label :origin_number, "Número", class: "mb-1 block text-sm font-semibold text-stone-700" %>
+          <%= form.text_field :origin_number, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+        </div>
+
+        <div class="sm:col-span-4">
+          <%= form.label :origin_complement, "Complemento (opcional)", class: "mb-1 block text-sm font-semibold text-stone-700" %>
+          <%= form.text_field :origin_complement, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+        </div>
+
+        <div class="sm:col-span-3">
+          <%= form.label :origin_neighborhood, "Bairro", class: "mb-1 block text-sm font-semibold text-stone-700" %>
+          <%= form.text_field :origin_neighborhood, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+        </div>
+
+        <div class="sm:col-span-2">
+          <%= form.label :origin_city, "Cidade", class: "mb-1 block text-sm font-semibold text-stone-700" %>
+          <%= form.text_field :origin_city, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+        </div>
+
+        <div class="sm:col-span-1">
+          <%= form.label :origin_state, "UF", class: "mb-1 block text-sm font-semibold text-stone-700" %>
+          <%= form.text_field :origin_state, maxlength: 2, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+        </div>
+      </div>
+    </fieldset>
 
     <div class="flex gap-3">
       <%= form.submit "Salvar", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-600" %>

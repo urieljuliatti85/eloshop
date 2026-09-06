@@ -79,4 +79,40 @@ class SellerTest < ActiveSupport::TestCase
       live_mode: live_mode
     )
   end
+
+  # Endereço de origem: opcional enquanto o frete real não está ligado, mas
+  # quem começa a preencher precisa terminar — meio endereço não despacha.
+  test "is valid without an origin address" do
+    assert Seller.new(name: "Sem endereço").valid?
+  end
+
+  test "requires the whole origin address once one field is filled" do
+    seller = Seller.new(name: "Parcial", origin_city: "Florianópolis")
+
+    assert_not seller.valid?
+    assert seller.origin_address_started?
+    assert_not seller.origin_address_complete?
+  end
+
+  test "accepts a complete origin address" do
+    seller = Seller.new(name: "Completo", origin_zip_code: "88010-000", origin_street: "Rua A",
+      origin_number: "10", origin_neighborhood: "Centro", origin_city: "Florianópolis", origin_state: "SC")
+
+    assert seller.valid?
+    assert seller.origin_address_complete?
+  end
+
+  # O CEP é comparado com o de destino, que chega só com dígitos.
+  test "normalizes the origin zip code to digits" do
+    seller = Seller.new(name: "CEP", origin_zip_code: "88010-000")
+
+    assert_equal "88010000", seller.origin_zip_code
+  end
+
+  test "rejects an origin zip code that is not eight digits" do
+    seller = Seller.new(name: "CEP curto", origin_zip_code: "8801")
+
+    assert_not seller.valid?
+    assert_includes seller.errors[:origin_zip_code], "deve ter 8 dígitos"
+  end
 end
