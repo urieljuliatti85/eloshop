@@ -35,7 +35,7 @@ class Seller < ApplicationRecord
   validates :origin_state, length: { is: 2 }, allow_blank: true
 
   def approve!(kyc_level_6_confirmed: false)
-    unless mercado_pago_connected? && mercado_pago_live_mode? && kyc_level_6_confirmed
+    unless mercado_pago_connected? && mercado_pago_real_account? && kyc_level_6_confirmed
       raise VerificationRequired, "Conecte uma conta Mercado Pago de produção e confirme o KYC nível 6 antes da aprovação."
     end
 
@@ -56,6 +56,18 @@ class Seller < ApplicationRecord
     ORIGIN_ADDRESS_FIELDS.all? { |field| public_send(field).present? }
   end
 
+  # Conta real, apta a receber dinheiro de verdade. `live_mode` sozinho não
+  # responde isso: o Mercado Pago o devolve `true` até para TESTUSER, e foi
+  # por isso que um vendedor de teste chegou a ser aprovado. A tag
+  # `test_user` de /users/me é o que distingue.
+  #
+  # `nil` (consulta falhou, ou conexão anterior a esta verificação) conta
+  # como "não sei", e não passa: aprovar sem certeza é o risco que a
+  # salvaguarda existe para evitar.
+  def mercado_pago_real_account?
+    mercado_pago_live_mode? && mercado_pago_test_account == false
+  end
+
   def mercado_pago_connected?
     mercado_pago_user_id.present? &&
       mercado_pago_access_token_ciphertext.present? &&
@@ -69,7 +81,8 @@ class Seller < ApplicationRecord
       mercado_pago_refresh_token_ciphertext: credential_encryptor.encrypt_and_sign(credentials.refresh_token),
       mercado_pago_token_expires_at: credentials.expires_at,
       mercado_pago_connected_at: Time.current,
-      mercado_pago_live_mode: credentials.live_mode
+      mercado_pago_live_mode: credentials.live_mode,
+      mercado_pago_test_account: credentials.test_account
     }
     if mercado_pago_user_id != credentials.user_id
       connection_attributes.merge!(status: :pending, approved_at: nil)
@@ -86,6 +99,7 @@ class Seller < ApplicationRecord
       mercado_pago_token_expires_at: nil,
       mercado_pago_connected_at: nil,
       mercado_pago_live_mode: false,
+      mercado_pago_test_account: nil,
       status: :pending,
       approved_at: nil
     )
