@@ -3,10 +3,10 @@
 <div class="max-w-2xl space-y-8">
   <header>
     <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Seu ateliê</p>
-    <h1 class="mt-1 text-3xl font-bold">Editar dados</h1>
+    <h1 class="mt-1 text-3xl font-black tracking-tight">Editar dados</h1>
   </header>
 
-  <%= form_with model: current_seller, url: seller_atelier_path, method: :patch, class: "space-y-5 rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm sm:p-8" do |form| %>
+  <%= form_with model: current_seller, url: seller_atelier_path, method: :patch, class: "space-y-5 rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8" do |form| %>
     <% if current_seller.errors.any? %>
       <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
         <ul class="list-inside list-disc">
@@ -19,7 +19,7 @@
 
     <div>
       <%= form.label :name, "Nome do ateliê", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-      <%= form.text_field :name, required: true, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+      <%= form.text_field :name, required: true, class: "min-h-11 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %>
       <p class="mt-1 text-xs text-stone-500">É o nome que aparece nas suas peças e na sua vitrine.</p>
     </div>
 
@@ -35,44 +35,44 @@
       <div class="grid gap-4 sm:grid-cols-6" data-controller="postal-code" data-postal-code-url-value="<%= seller_atelier_postal_code_path(cep: "00000000") %>">
         <div class="sm:col-span-2">
           <%= form.label :origin_zip_code, "CEP", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-          <%= form.text_field :origin_zip_code, inputmode: "numeric", placeholder: "00000-000", data: { postal_code_target: "zipCode", action: "input->postal-code#lookup" }, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+          <%= form.text_field :origin_zip_code, inputmode: "numeric", placeholder: "00000-000", data: { postal_code_target: "zipCode", action: "input->postal-code#lookup" }, class: "min-h-11 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %>
         </div>
 
         <div class="sm:col-span-4">
           <%= form.label :origin_street, "Rua", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-          <%= form.text_field :origin_street, data: { postal_code_target: "street" }, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+          <%= form.text_field :origin_street, data: { postal_code_target: "street" }, class: "min-h-11 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %>
         </div>
 
         <div class="sm:col-span-2">
           <%= form.label :origin_number, "Número", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-          <%= form.text_field :origin_number, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+          <%= form.text_field :origin_number, class: "min-h-11 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %>
         </div>
 
         <div class="sm:col-span-4">
           <%= form.label :origin_complement, "Complemento (opcional)", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-          <%= form.text_field :origin_complement, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+          <%= form.text_field :origin_complement, class: "min-h-11 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %>
         </div>
 
         <div class="sm:col-span-3">
           <%= form.label :origin_neighborhood, "Bairro", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-          <%= form.text_field :origin_neighborhood, data: { postal_code_target: "neighborhood" }, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+          <%= form.text_field :origin_neighborhood, data: { postal_code_target: "neighborhood" }, class: "min-h-11 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %>
         </div>
 
         <div class="sm:col-span-2">
           <%= form.label :origin_city, "Cidade", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-          <%= form.text_field :origin_city, data: { postal_code_target: "city" }, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+          <%= form.text_field :origin_city, data: { postal_code_target: "city" }, class: "min-h-11 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %>
         </div>
 
         <div class="sm:col-span-1">
           <%= form.label :origin_state, "UF", class: "mb-1 block text-sm font-semibold text-stone-700" %>
-          <%= form.text_field :origin_state, maxlength: 2, data: { postal_code_target: "state" }, class: "min-h-11 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-3 focus:ring-brand-100" %>
+          <%= form.text_field :origin_state, maxlength: 2, data: { postal_code_target: "state" }, class: "min-h-11 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %>
         </div>
       </div>
     </fieldset>
 
     <div class="flex gap-3">
-      <%= form.submit "Salvar", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-600" %>
-      <%= link_to "Cancelar", seller_atelier_path, class: "rounded-full border border-stone-300 px-6 py-3 text-sm font-bold text-stone-700 transition hover:bg-stone-50" %>
+      <%= form.submit "Salvar", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-600" %>
+      <%= link_to "Cancelar", seller_atelier_path, class: "rounded-full border border-brand-200 px-6 py-3 text-sm font-bold text-stone-700 transition hover:bg-brand-50" %>
     </div>
   <% end %>
 </div>

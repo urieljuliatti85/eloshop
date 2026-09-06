@@ -1,30 +1,38 @@
+<%
+  product_status_classes = {
+    "draft" => "bg-stone-100 text-stone-600",
+    "active" => "bg-emerald-100 text-emerald-800",
+    "sold_out" => "bg-amber-100 text-amber-800",
+    "discontinued" => "bg-stone-200 text-stone-600"
+  }
+%>
 <div class="space-y-6">
   <header class="flex flex-wrap items-start justify-between gap-4">
     <div>
       <%= link_to "← Produtos", seller_products_path, class: "inline-flex min-h-11 items-center text-sm font-semibold text-brand-600" %>
-      <h1 class="mt-3 text-3xl font-bold"><%= @product.name %></h1>
-      <p class="mt-2 text-ink-muted">SKU <%= @product.sku %> · <%= @product.status.humanize %></p>
+      <h1 class="mt-3 text-3xl font-black tracking-tight"><%= @product.name %></h1>
+      <p class="mt-3 flex items-center gap-2 text-sm text-ink-muted">SKU <%= @product.sku %> <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold <%= product_status_classes[@product.status] %>"><%= t(@product.status, scope: "products.statuses") %></span></p>
     </div>
     <div class="flex flex-wrap gap-2">
-      <%= link_to "Editar", edit_seller_product_path(@product), class: "inline-flex min-h-11 items-center rounded-full border border-gray-300 bg-white px-5 py-2 text-sm font-semibold" %>
+      <%= link_to "Editar", edit_seller_product_path(@product), class: "inline-flex min-h-11 items-center rounded-full border border-brand-200 bg-white px-5 py-2 text-sm font-semibold text-stone-700 transition hover:bg-brand-50" %>
       <% if @product.draft? %>
-        <%= button_to "Publicar", publish_seller_product_path(@product), method: :patch, class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white" %>
+        <%= button_to "Publicar", publish_seller_product_path(@product), method: :patch, class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600" %>
       <% elsif @product.active? %>
-        <%= button_to "Despublicar", unpublish_seller_product_path(@product), method: :patch, class: "inline-flex min-h-11 items-center rounded-full border border-gray-300 bg-white px-5 py-2 text-sm font-semibold" %>
+        <%= button_to "Despublicar", unpublish_seller_product_path(@product), method: :patch, class: "inline-flex min-h-11 items-center rounded-full border border-brand-200 bg-white px-5 py-2 text-sm font-semibold text-stone-700 transition hover:bg-brand-50" %>
       <% end %>
     </div>
   </header>
 
   <div class="grid gap-4 sm:grid-cols-3">
-    <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Preço</p><p class="mt-2 text-2xl font-bold"><%= format_price(@product.price_cents) %></p></div>
-    <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Estoque</p><p class="mt-2 text-2xl font-bold"><%= @product.stock_quantity %></p></div>
-    <div class="rounded-2xl bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Disponibilidade</p><p class="mt-2 text-lg font-bold"><%= @product.availability_type.humanize %></p></div>
+    <div class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Preço</p><p class="mt-2 text-2xl font-bold"><%= format_price(@product.price_cents) %></p></div>
+    <div class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Estoque</p><p class="mt-2 text-2xl font-bold"><%= @product.stock_quantity %></p></div>
+    <div class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm"><p class="text-sm text-ink-muted">Disponibilidade</p><p class="mt-2 text-lg font-bold"><%= @product.availability_type.humanize %></p></div>
   </div>
 
-  <section class="rounded-2xl bg-white p-6 shadow-sm">
-    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Variantes</h2><p class="mt-1 text-sm text-ink-muted">Combinações comerciais reais de tamanho, cor ou material.</p></div><%= link_to "Nova variante", new_seller_product_product_variant_path(@product), class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white" %></div>
+  <section class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
+    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Variantes</h2><p class="mt-1 text-sm text-ink-muted">Combinações comerciais reais de tamanho, cor ou material.</p></div><%= link_to "Nova variante", new_seller_product_product_variant_path(@product), class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600" %></div>
     <% if @product.product_variants.any? %>
-      <div class="mt-5 divide-y divide-gray-100">
+      <div class="mt-5 divide-y divide-brand-100">
         <% @product.product_variants.order(:sku).each do |variant| %>
           <div class="flex flex-wrap items-center justify-between gap-3 py-4">
             <div><p class="font-semibold"><%= variant.sku %></p><p class="text-sm text-ink-muted"><%= [variant.size, variant.color, variant.material].compact_blank.join(" · ").presence || "Sem atributos" %> · Estoque <%= variant.stock_quantity %> · <%= variant.active? ? "Ativa" : "Inativa" %></p></div>
@@ -37,10 +45,10 @@
     <% end %>
   </section>
 
-  <section class="rounded-2xl bg-white p-6 shadow-sm">
-    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Personalizações</h2><p class="mt-1 text-sm text-ink-muted">Informações que o comprador deverá fornecer.</p></div><%= link_to "Novo campo", new_seller_product_personalization_option_path(@product), class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white" %></div>
+  <section class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
+    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Personalizações</h2><p class="mt-1 text-sm text-ink-muted">Informações que o comprador deverá fornecer.</p></div><%= link_to "Novo campo", new_seller_product_personalization_option_path(@product), class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600" %></div>
     <% if @product.personalization_options.any? %>
-      <div class="mt-5 divide-y divide-gray-100">
+      <div class="mt-5 divide-y divide-brand-100">
         <% @product.personalization_options.order(:label).each do |option| %>
           <div class="flex flex-wrap items-center justify-between gap-3 py-4">
             <div><p class="font-semibold"><%= option.label %></p><p class="text-sm text-ink-muted"><%= option.required? ? "Obrigatório" : "Opcional" %><%= " · até #{option.max_length} caracteres" if option.max_length.present? %></p></div>
@@ -53,13 +61,13 @@
     <% end %>
   </section>
 
-  <section class="rounded-2xl bg-white p-6 shadow-sm">
+  <section class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
     <h2 class="text-xl font-bold">Galeria</h2>
     <p class="mt-1 text-sm text-ink-muted">Adicione novas fotos ao editar o produto. A imagem principal é gerenciada separadamente.</p>
     <% if @product.images.attached? %>
       <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <% @product.images.each do |image| %>
-          <div class="overflow-hidden rounded-xl border border-gray-200">
+          <div class="overflow-hidden rounded-xl border border-brand-100">
             <%= image_tag image, alt: "Foto de #{@product.name}", class: "aspect-square w-full object-cover" %>
             <%= button_to "Remover foto", seller_product_product_image_path(@product, image), method: :delete, class: "w-full px-3 py-2 text-sm font-semibold text-red-600", form: { data: { turbo_confirm: "Remover esta foto?" } } %>
           </div>

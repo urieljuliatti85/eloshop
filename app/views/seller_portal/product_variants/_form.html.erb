@@ -1,6 +1,6 @@
-<%= form_with model: [ :seller, product, product_variant ], class: "grid gap-5 rounded-2xl bg-white p-6 shadow-sm" do |form| %>
+<%= form_with model: [ :seller, product, product_variant ], class: "grid gap-5 rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8" do |form| %>
   <% if product_variant.errors.any? %>
-    <div class="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+    <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
       <ul class="list-disc pl-5">
         <% product_variant.errors.full_messages.each do |message| %>
           <li><%= message %></li>
@@ -10,15 +10,15 @@
   <% end %>
 
   <div class="grid gap-5 sm:grid-cols-2">
-    <div><%= form.label :sku, "SKU" %><%= form.text_field :sku, required: true, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
-    <div><%= form.label :price, "Preço (R$)" %><%= form.text_field :price, value: price_field_value(form.object.price_cents), inputmode: "decimal", placeholder: "0,00", data: { controller: "price-input", action: "input->price-input#format" }, required: true, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
+    <div><%= form.label :sku, "SKU" %><%= form.text_field :sku, required: true, class: "mt-2 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %></div>
+    <div><%= form.label :price, "Preço (R$)" %><%= form.text_field :price, value: price_field_value(form.object.price_cents), inputmode: "decimal", placeholder: "0,00", data: { controller: "price-input", action: "input->price-input#format" }, required: true, class: "mt-2 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %></div>
   </div>
   <div class="grid gap-5 sm:grid-cols-3">
-    <div><%= form.label :size, "Tamanho" %><%= form.text_field :size, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
-    <div><%= form.label :color, "Cor" %><%= form.text_field :color, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
-    <div><%= form.label :material, "Material" %><%= form.text_field :material, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
+    <div><%= form.label :size, "Tamanho" %><%= form.text_field :size, class: "mt-2 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %></div>
+    <div><%= form.label :color, "Cor" %><%= form.text_field :color, class: "mt-2 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %></div>
+    <div><%= form.label :material, "Material" %><%= form.text_field :material, class: "mt-2 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %></div>
   </div>
-  <div><%= form.label :stock_quantity, "Estoque" %><%= form.number_field :stock_quantity, min: 0, required: true, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
-  <label class="flex items-center gap-3"><%= form.checkbox :active, class: "rounded border-gray-300" %><span>Variante ativa</span></label>
-  <%= form.submit "Salvar variante", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 font-semibold text-white" %>
+  <div><%= form.label :stock_quantity, "Estoque" %><%= form.number_field :stock_quantity, min: 0, required: true, class: "mt-2 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %></div>
+  <label class="flex items-center gap-3"><%= form.checkbox :active, class: "rounded border-stone-300 text-brand-600 accent-brand-600" %><span>Variante ativa</span></label>
+  <%= form.submit "Salvar variante", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-brand-600" %>
 <% end %>

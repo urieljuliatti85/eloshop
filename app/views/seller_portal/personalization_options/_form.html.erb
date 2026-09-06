@@ -1,6 +1,6 @@
-<%= form_with model: [ :seller, product, personalization_option ], class: "grid gap-5 rounded-2xl bg-white p-6 shadow-sm" do |form| %>
+<%= form_with model: [ :seller, product, personalization_option ], class: "grid gap-5 rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8" do |form| %>
   <% if personalization_option.errors.any? %>
-    <div class="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+    <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
       <ul class="list-disc pl-5">
         <% personalization_option.errors.full_messages.each do |message| %>
           <li><%= message %></li>
@@ -9,8 +9,8 @@
     </div>
   <% end %>
 
-  <div><%= form.label :label, "Nome do campo" %><%= form.text_field :label, required: true, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
-  <div><%= form.label :max_length, "Máximo de caracteres" %><%= form.number_field :max_length, min: 1, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
-  <label class="flex items-center gap-3"><%= form.checkbox :required, class: "rounded border-gray-300" %><span>Preenchimento obrigatório</span></label>
-  <%= form.submit "Salvar personalização", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 font-semibold text-white" %>
+  <div><%= form.label :label, "Nome do campo" %><%= form.text_field :label, required: true, class: "mt-2 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %></div>
+  <div><%= form.label :max_length, "Máximo de caracteres" %><%= form.number_field :max_length, min: 1, class: "mt-2 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %></div>
+  <label class="flex items-center gap-3"><%= form.checkbox :required, class: "rounded border-stone-300 text-brand-600 accent-brand-600" %><span>Preenchimento obrigatório</span></label>
+  <%= form.submit "Salvar personalização", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-brand-600" %>
 <% end %>

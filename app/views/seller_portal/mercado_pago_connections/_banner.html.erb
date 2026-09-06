@@ -1,7 +1,13 @@
-<section class="flex flex-col justify-between gap-5 rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:p-8">
-  <div class="max-w-3xl">
-    <p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Recebimentos e verificação</p>
-    <h2 class="mt-1 text-2xl font-bold">Mercado Pago</h2>
+<section class="relative flex flex-col justify-between gap-5 overflow-hidden rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:flex-row sm:items-center sm:p-8">
+  <span class="pointer-events-none absolute -right-8 -top-10 size-40 rounded-full bg-brand-50" aria-hidden="true"></span>
+  <span class="pointer-events-none absolute -right-2 -top-2 size-24 rounded-full bg-brand-100/70" aria-hidden="true"></span>
+  <div class="relative flex max-w-3xl items-start gap-4">
+    <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#7a2410] text-white" aria-hidden="true">
+      <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+    </span>
+    <div>
+      <p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Recebimentos e verificação</p>
+      <h2 class="mt-1 text-2xl font-bold">Mercado Pago</h2>
     <% if current_seller.mercado_pago_connected? %>
       <p class="mt-2 text-sm leading-6 text-stone-600">Conta conectada em <%= l(current_seller.mercado_pago_connected_at, format: :short) %>. Identificador: <%= current_seller.mercado_pago_user_id %>. Ambiente: <%= current_seller.mercado_pago_live_mode? ? "produção" : "teste" %>. A verificação de identidade acontece no Mercado Pago.</p>
     <% elsif @mercado_pago_oauth_configured %>
@@ -9,8 +15,9 @@
     <% else %>
       <p class="mt-2 text-sm leading-6 text-amber-700">A conexão aguarda a configuração da aplicação Mercado Pago pela plataforma.</p>
     <% end %>
+    </div>
   </div>
-  <div class="shrink-0">
+  <div class="relative shrink-0">
     <% if current_seller.mercado_pago_connected? %>
       <%= button_to "Desconectar", seller_mercado_pago_connection_path, method: :delete, class: "rounded-full border border-red-200 px-6 py-3 text-sm font-bold text-red-700 hover:bg-red-50", form: { data: { turbo_confirm: "Desconectar a conta e suspender a publicação dos produtos?" } } %>
     <% elsif @mercado_pago_oauth_configured %>
