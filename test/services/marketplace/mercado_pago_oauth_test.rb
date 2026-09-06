@@ -146,15 +146,63 @@ module Marketplace
     assert_not_includes error.message, "internal host details"
   end
 
+    # `live_mode` vem `true` também para TESTUSER: quem distingue é a tag.
+    test "exchange marks a TESTUSER account as a test account" do
+      stub_request(token_payload, tags: %w[user_product_seller test_user normal]) do
+        assert @oauth.exchange(code: "authorization-code").test_account
+      end
+    end
+
+    test "exchange marks a real account as not a test account" do
+      stub_request(token_payload, tags: %w[user_product_seller normal]) do
+        assert_equal false, @oauth.exchange(code: "authorization-code").test_account
+      end
+    end
+
+    # Sem resposta do /users/me fica `nil`, e não `false`: afirmar que é conta
+    # real sem ter verificado é justamente o erro que esta detecção corrige.
+    test "exchange leaves the account type unknown when the lookup fails" do
+      fake_http = Object.new
+      fake_http.define_singleton_method(:request) do |request|
+        if request.path == MercadoPagoOauth::USERS_ME_PATH
+          Net::HTTPServerError.new("1.1", "500", "Internal Server Error")
+        else
+          Net::HTTPOK.new("1.1", "200", "OK").tap do |r|
+            payload = { "user_id" => 1, "access_token" => "a", "refresh_token" => "b", "expires_in" => 100, "live_mode" => true }
+            r.define_singleton_method(:body) { payload.to_json }
+          end
+        end
+      end
+      @oauth.instance_variable_set(:@http, fake_http)
+
+      assert_nil @oauth.exchange(code: "authorization-code").test_account
+    end
+
     private
 
-    def stub_request(payload, oauth: @oauth)
+    def token_payload
+      {
+        "user_id" => 123_456,
+        "access_token" => "seller-access-token",
+        "refresh_token" => "seller-refresh-token",
+        "expires_in" => 15_552_000,
+        "live_mode" => true
+      }
+    end
+
+    # Duas chamadas saem numa troca de token: o POST em /oauth/token e o GET
+    # em /users/me, que descobre se a conta é de teste. O helper devolve a do
+    # token — é dela que os testes verificam os parâmetros —, e responde ao
+    # /users/me com as tags pedidas.
+    def stub_request(payload, oauth: @oauth, tags: [])
       captured = nil
       fake_http = Object.new
       fake_http.define_singleton_method(:request) do |request|
-        captured = request
+        captured = request unless request.path == MercadoPagoOauth::USERS_ME_PATH
+
+        body = request.path == MercadoPagoOauth::USERS_ME_PATH ? { "tags" => tags } : payload
         Net::HTTPOK.new("1.1", "200", "OK").tap do |response|
-          response.define_singleton_method(:body) { payload.to_json }
+          response.define_singleton_method(:body) { body.to_json }
         end
       end
       oauth.instance_variable_set(:@http, fake_http)

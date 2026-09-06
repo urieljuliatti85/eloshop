@@ -70,13 +70,16 @@ class SellerTest < ActiveSupport::TestCase
 
   private
 
-  def mercado_pago_credentials(live_mode: true)
+  # `test_account: false` é o padrão porque a maioria dos casos descreve uma
+  # conta real; os testes de conta de teste passam `true` explicitamente.
+  def mercado_pago_credentials(live_mode: true, test_account: false)
     Marketplace::MercadoPagoOauth::Credentials.new(
       user_id: "123456",
       access_token: "seller-access-token",
       refresh_token: "seller-refresh-token",
       expires_at: 180.days.from_now,
-      live_mode: live_mode
+      live_mode: live_mode,
+      test_account: test_account
     )
   end
 
@@ -114,5 +117,46 @@ class SellerTest < ActiveSupport::TestCase
 
     assert_not seller.valid?
     assert_includes seller.errors[:origin_zip_code], "deve ter 8 dígitos"
+  end
+
+  # `live_mode` vem `true` também para TESTUSER — foi assim que uma conta de
+  # teste chegou a ser aprovada em produção. Quem distingue é a tag
+  # `test_user` de /users/me.
+  test "refuses approval for a Mercado Pago test account" do
+    seller = Seller.create!(name: "Ateliê de teste")
+    seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: true, test_account: true))
+
+    assert seller.mercado_pago_connected?
+    assert seller.mercado_pago_live_mode?
+    assert_not seller.mercado_pago_real_account?
+    assert_raises(Seller::VerificationRequired) { seller.approve!(kyc_level_6_confirmed: true) }
+  end
+
+  # Sem certeza sobre a conta, a aprovação não passa: aprovar no escuro é o
+  # risco que a salvaguarda existe para evitar.
+  test "refuses approval when the account type is unknown" do
+    seller = Seller.create!(name: "Ateliê indefinido")
+    seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: true, test_account: nil))
+
+    assert_nil seller.mercado_pago_test_account
+    assert_not seller.mercado_pago_real_account?
+    assert_raises(Seller::VerificationRequired) { seller.approve!(kyc_level_6_confirmed: true) }
+  end
+
+  test "approves a real account with KYC confirmed" do
+    seller = Seller.create!(name: "Ateliê real")
+    seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: true, test_account: false))
+
+    seller.approve!(kyc_level_6_confirmed: true)
+
+    assert seller.reload.approved?
+  end
+
+  test "disconnecting clears the account type" do
+    seller = Seller.create!(name: "Ateliê desconecta")
+    seller.connect_mercado_pago!(mercado_pago_credentials(test_account: false))
+    seller.disconnect_mercado_pago!
+
+    assert_nil seller.reload.mercado_pago_test_account
   end
 end

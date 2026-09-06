@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_06_000358) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_06_015840) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -371,6 +371,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_000358) do
     t.datetime "mercado_pago_connected_at"
     t.boolean "mercado_pago_live_mode", default: false, null: false
     t.text "mercado_pago_refresh_token_ciphertext"
+    t.boolean "mercado_pago_test_account"
     t.datetime "mercado_pago_token_expires_at"
     t.string "mercado_pago_user_id"
     t.string "name", null: false

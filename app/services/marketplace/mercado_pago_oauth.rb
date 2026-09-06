@@ -6,11 +6,12 @@ module Marketplace
     class ConfigurationError < StandardError; end
     class RequestFailed < StandardError; end
 
-    Credentials = Data.define(:user_id, :access_token, :refresh_token, :expires_at, :live_mode)
+    Credentials = Data.define(:user_id, :access_token, :refresh_token, :expires_at, :live_mode, :test_account)
 
     AUTHORIZATION_URL = "https://auth.mercadopago.com.br/authorization"
     API_HOST = "api.mercadopago.com"
     TOKEN_PATH = "/oauth/token"
+    USERS_ME_PATH = "/users/me"
     OPEN_TIMEOUT = 5
     READ_TIMEOUT = 15
     TRUE_VALUES = %w[1 true yes on].freeze
@@ -132,8 +133,28 @@ module Marketplace
         access_token: access_token,
         refresh_token: refresh_token,
         expires_at: Time.current + expires_in.seconds,
-        live_mode: payload["live_mode"] == true
+        live_mode: payload["live_mode"] == true,
+        test_account: test_account?(access_token)
       )
+    end
+
+    # `live_mode` do token não serve para separar teste de produção: o Mercado
+    # Pago devolve `true` também para TESTUSER, porque do lado deles a conta
+    # transaciona. Quem distingue é a tag `test_user` em /users/me.
+    #
+    # `nil` quando a consulta falha — e não `false`, que afirmaria ser conta
+    # real. Sem certeza, a aprovação não passa (ver Seller#approve!).
+    def test_account?(access_token)
+      request = Net::HTTP::Get.new(USERS_ME_PATH)
+      request["Accept"] = "application/json"
+      request["Authorization"] = "Bearer #{access_token}"
+
+      response = http.request(request)
+      return nil unless response.is_a?(Net::HTTPSuccess)
+
+      JSON.parse(response.body.to_s)["tags"].to_a.include?("test_user")
+    rescue JSON::ParserError, Timeout::Error, SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError
+      nil
     end
 
     def http
