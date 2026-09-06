@@ -41,6 +41,26 @@ RSpec.describe "Seller atelier", type: :request do
 
       expect(response.body).not_to include(other.name)
     end
+
+    it "shows a call to action to register the origin address when missing" do
+      sign_in_as(user)
+
+      get seller_atelier_path
+
+      expect(response.body).to include("Cadastrar endereço")
+    end
+
+    it "hides the call to action once the origin address is complete" do
+      seller.update!(
+        origin_zip_code: "88010-000", origin_street: "Rua das Flores",
+        origin_number: "10", origin_neighborhood: "Centro", origin_city: "Florianópolis", origin_state: "SC"
+      )
+      sign_in_as(user)
+
+      get seller_atelier_path
+
+      expect(response.body).not_to include("Cadastrar endereço")
+    end
   end
 
   describe "PATCH /painel/atelie" do
