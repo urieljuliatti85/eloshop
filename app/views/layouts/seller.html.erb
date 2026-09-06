@@ -15,7 +15,7 @@
   <body class="min-h-screen bg-[#faf3ea] text-ink antialiased">
     <header class="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur">
       <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6 lg:flex-nowrap lg:px-8">
-        <%= link_to seller_root_path, class: "flex shrink-0 items-center gap-3", aria: { label: "Início do painel" } do %>
+        <%= link_to seller_root_path, class: "flex min-h-11 shrink-0 items-center gap-3", aria: { label: "Início do painel" } do %>
           <%= image_tag "logo.png", alt: "EloShop", class: "h-7 w-auto" %>
           <span class="hidden border-l border-stone-300 pl-3 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-stone-500 sm:block">Ateliê</span>
         <% end %>
@@ -23,38 +23,46 @@
         <%= form_with url: seller_products_path, method: :get, class: "order-3 flex w-full min-w-0 items-center rounded-full border border-stone-300 bg-stone-50 px-4 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100 lg:order-none lg:mx-5 lg:flex-1" do %>
           <label for="seller-search" class="sr-only">Buscar no seu catálogo</label>
           <%= search_field_tag :q, params[:q], id: "seller-search", placeholder: "Buscar no seu catálogo", class: "min-h-10 w-full border-0 bg-transparent px-0 text-sm outline-none focus:ring-0" %>
-          <button type="submit" class="grid size-9 shrink-0 cursor-pointer place-items-center text-stone-500" aria-label="Buscar">
+          <button type="submit" class="grid size-11 shrink-0 cursor-pointer place-items-center text-stone-500" aria-label="Buscar">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
           </button>
         <% end %>
 
         <div class="ml-auto flex shrink-0 items-center gap-3 sm:gap-5">
-          <%= link_to "Ver loja", products_path, class: "hidden text-xs font-semibold text-stone-600 hover:text-brand-600 sm:block" %>
+          <%= link_to "Ver loja", products_path, class: "hidden min-h-11 items-center text-xs font-semibold text-stone-600 hover:text-brand-600 sm:inline-flex" %>
           <div class="hidden h-7 w-px bg-stone-200 sm:block"></div>
           <div class="text-right">
             <p class="max-w-36 truncate text-sm font-bold text-stone-900"><%= current_seller.name %></p>
             <p class="text-[0.65rem] font-semibold uppercase tracking-wider text-stone-500"><%= t(current_seller.status, scope: "sellers.statuses") %></p>
           </div>
           <span class="grid size-9 place-items-center rounded-full bg-[#7a2410] text-sm font-bold text-white" aria-hidden="true"><%= current_seller.name.first.upcase %></span>
-          <%= button_to session_path, method: :delete, class: "grid size-9 cursor-pointer place-items-center rounded-full border border-stone-200 text-stone-600 transition hover:border-brand-300 hover:text-brand-600", form: { aria: { label: "Sair" } } do %>
+          <%= button_to seller_logout_path, method: :delete, class: "grid size-11 cursor-pointer place-items-center rounded-full border border-stone-200 text-stone-600 transition hover:border-brand-300 hover:text-brand-600", form: { aria: { label: "Sair" } } do %>
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/></svg>
           <% end %>
         </div>
       </div>
 
-      <nav class="mx-auto flex max-w-7xl gap-7 overflow-x-auto px-4 pb-3 text-xs font-semibold text-stone-600 sm:px-6 lg:px-8" aria-label="Navegação do painel">
-        <% [
-          ["Visão geral", seller_root_path],
-          ["Produtos", seller_products_path],
-          ["Pedidos", seller_orders_path],
-          ["Dados do Ateliê", seller_atelier_path],
-          ["Novo produto", new_seller_product_path]
-        ].each do |label, path| %>
-          <%= link_to label, path,
-                class: "whitespace-nowrap border-b-2 pb-1 transition #{current_page?(path) ? 'border-brand-500 text-stone-950' : 'border-transparent hover:border-stone-300 hover:text-stone-950'}",
-                aria: (current_page?(path) ? { current: "page" } : {}) %>
-        <% end %>
-      </nav>
+      <%# O gradiente na borda direita é a única pista de que a nav tem mais
+          itens fora da tela no celular: sem ele "Dados do Ateliê" parecia o
+          último e "Novo produto" ficava escondido sem indício de arrastar. %>
+      <div class="relative mx-auto max-w-7xl">
+        <nav class="flex gap-7 overflow-x-auto px-4 pb-3 text-xs font-semibold text-stone-600 sm:px-6 lg:px-8" aria-label="Navegação do painel">
+          <% [
+            ["Visão geral", seller_root_path],
+            ["Produtos", seller_products_path],
+            ["Pedidos", seller_orders_path],
+            ["Dados do Ateliê", seller_atelier_path],
+            ["Novo produto", new_seller_product_path]
+          ].each do |label, path| %>
+            <%# min-h-11: no celular estes são os alvos de toque principais do
+                painel, e a altura do texto sozinha ficava abaixo de 40px. %>
+            <%= link_to label, path,
+                  class: "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 transition #{current_page?(path) ? 'border-brand-500 text-stone-950' : 'border-transparent hover:border-stone-300 hover:text-stone-950'}",
+                  aria: (current_page?(path) ? { current: "page" } : {}) %>
+          <% end %>
+        </nav>
+        <div class="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white via-white/90 to-transparent shadow-[inset_-12px_0_10px_-10px_rgba(28,25,23,0.15)] lg:hidden" aria-hidden="true"></div>
+      </div>
     </header>
 
     <main class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
