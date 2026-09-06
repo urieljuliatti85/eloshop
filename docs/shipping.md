@@ -48,6 +48,25 @@ dimensões ficam registradas para o próximo provedor que exigir cubagem. CEP
 inválido ou peso acima do limite de envio tornam o frete indisponível e impedem
 a criação do pedido.
 
+## Endereço de origem do ateliê
+
+Desde 2026-09-06 o `Seller` tem endereço de origem (`origin_zip_code`,
+`origin_street`, `origin_number`, `origin_complement`, `origin_neighborhood`,
+`origin_city`, `origin_state`), editável pelo vendedor em `/painel/atelie`. É
+de onde a peça é despachada — nenhum cálculo real de frete funciona sem o CEP
+de origem, qualquer que seja a transportadora escolhida.
+
+Os campos são **opcionais** por ora: os vendedores já cadastrados não os têm, e
+exigi-los invalidaria o catálogo deles. Mas o preenchimento é tudo-ou-nada
+(`Seller#origin_address_started?`): meio endereço não despacha nada. O CEP é
+normalizado para 8 dígitos, como o CEP de destino que o `Shipping::Calculator`
+já recebe.
+
+`Seller#origin_address_complete?` responde se o ateliê está pronto para
+despachar. **Tornar o endereço obrigatório é decisão para quando o frete real
+for ligado** — provavelmente como pré-requisito de aprovação do vendedor, o que
+exige backfill dos existentes.
+
 Regras de frete não devem ser implementadas diretamente em controllers — devem ficar isoladas no domínio de Shipping.
 
 `TODO — DECISION REQUIRED`: qual(is) transportadora(s) ou serviço(s) de cálculo de frete serão integrados (ex.: Correios, transportadora privada, serviço agregador) não está definido.

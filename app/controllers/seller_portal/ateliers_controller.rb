@@ -20,10 +20,11 @@ module SellerPortal
 
     private
 
-    # Só o nome: `slug` já está nas URLs públicas dos produtos, e trocá-lo
-    # quebraria links compartilhados; `status` é decisão da plataforma.
+    # Nome e endereço de origem. `slug` já está nas URLs públicas dos produtos,
+    # e trocá-lo quebraria links compartilhados; `status` é decisão da
+    # plataforma.
     def atelier_params
-      params.expect(seller: [ :name ])
+      params.expect(seller: [ :name, *Seller::ORIGIN_ADDRESS_FIELDS ])
     end
 
     def set_oauth_state
