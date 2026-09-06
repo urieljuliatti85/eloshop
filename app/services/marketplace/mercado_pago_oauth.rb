@@ -36,7 +36,7 @@ module Marketplace
       @sandbox
     end
 
-    def authorization_url(state:)
+    def authorization_url(state:, code_challenge:)
       require_configuration!
 
       uri = URI(AUTHORIZATION_URL)
@@ -45,12 +45,14 @@ module Marketplace
         response_type: "code",
         platform_id: "mp",
         state: state,
-        redirect_uri: @redirect_uri
+        redirect_uri: @redirect_uri,
+        code_challenge: code_challenge,
+        code_challenge_method: "S256"
       )
       uri.to_s
     end
 
-    def exchange(code:)
+    def exchange(code:, code_verifier:)
       require_configuration!
 
       form_data = {
@@ -58,7 +60,8 @@ module Marketplace
         client_secret: @client_secret,
         grant_type: "authorization_code",
         code: code,
-        redirect_uri: @redirect_uri
+        redirect_uri: @redirect_uri,
+        code_verifier: code_verifier
       }
       form_data[:test_token] = "true" if sandbox?
 

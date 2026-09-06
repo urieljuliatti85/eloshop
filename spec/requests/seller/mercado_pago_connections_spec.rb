@@ -30,7 +30,7 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
   end
 
   it "starts authorization with an unpredictable state" do
-    allow(oauth).to receive(:authorization_url) do |state:|
+    allow(oauth).to receive(:authorization_url) do |state:, code_challenge:|
       "https://auth.mercadopago.com.br/authorization?state=#{CGI.escape(state)}"
     end
 
@@ -50,7 +50,7 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
       live_mode: true,
       test_account: false
     )
-    allow(oauth).to receive(:exchange).with(code: "valid-code").and_return(credentials)
+    allow(oauth).to receive(:exchange).with(code: "valid-code", code_verifier: an_instance_of(String)).and_return(credentials)
 
     get seller_mercado_pago_callback_path, params: { code: "valid-code", state: state }
 
@@ -88,7 +88,7 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     )
     other_seller.connect_mercado_pago!(credentials)
     state = start_authorization
-    allow(oauth).to receive(:exchange).with(code: "valid-code").and_return(credentials)
+    allow(oauth).to receive(:exchange).with(code: "valid-code", code_verifier: an_instance_of(String)).and_return(credentials)
 
     get seller_mercado_pago_callback_path, params: { code: "valid-code", state: state }
 
@@ -115,7 +115,7 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
   private
 
   def start_authorization
-    allow(oauth).to receive(:authorization_url) do |state:|
+    allow(oauth).to receive(:authorization_url) do |state:, code_challenge:|
       "https://auth.mercadopago.com.br/authorization?state=#{CGI.escape(state)}"
     end
     get seller_mercado_pago_connect_path

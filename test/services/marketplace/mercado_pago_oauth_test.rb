@@ -11,7 +11,7 @@ module Marketplace
     end
 
     test "authorization URL includes the documented marketplace parameters" do
-      uri = URI(@oauth.authorization_url(state: "random-state"))
+      uri = URI(@oauth.authorization_url(state: "random-state", code_challenge: "challenge-value"))
       query = Rack::Utils.parse_query(uri.query)
 
       assert_equal "auth.mercadopago.com.br", uri.host
@@ -20,6 +20,8 @@ module Marketplace
       assert_equal "mp", query["platform_id"]
       assert_equal "random-state", query["state"]
       assert_equal "https://eloshop.example/painel/mercado-pago/callback", query["redirect_uri"]
+      assert_equal "challenge-value", query["code_challenge"]
+      assert_equal "S256", query["code_challenge_method"]
     end
 
     test "exchange returns the seller identifiers and token expiration" do
@@ -30,7 +32,7 @@ module Marketplace
         "expires_in" => 15_552_000,
         "live_mode" => true
       }) do
-        credentials = @oauth.exchange(code: "authorization-code")
+        credentials = @oauth.exchange(code: "authorization-code", code_verifier: "verifier-value")
 
         assert_equal "123456", credentials.user_id
         assert_equal "seller-access-token", credentials.access_token
@@ -43,6 +45,7 @@ module Marketplace
       assert_equal "authorization_code", body["grant_type"]
       assert_equal "authorization-code", body["code"]
       assert_equal "client-secret", body["client_secret"]
+      assert_equal "verifier-value", body["code_verifier"]
       assert_nil body["test_token"]
     end
 
@@ -60,7 +63,7 @@ module Marketplace
         "access_token" => "seller-test-access-token",
         "refresh_token" => "seller-test-refresh-token",
         "expires_in" => 15_552_000
-      }, oauth: oauth) { credentials = oauth.exchange(code: "sandbox-authorization-code") }
+      }, oauth: oauth) { credentials = oauth.exchange(code: "sandbox-authorization-code", code_verifier: "verifier-value") }
 
       body = Rack::Utils.parse_query(captured.body)
       assert oauth.sandbox?
@@ -88,7 +91,7 @@ module Marketplace
 
       assert_not oauth.configured?
       assert_raises(MercadoPagoOauth::ConfigurationError) do
-        oauth.authorization_url(state: "state")
+        oauth.authorization_url(state: "state", code_challenge: "challenge")
       end
     end
 
@@ -110,7 +113,7 @@ module Marketplace
       )
 
       assert_raises(MercadoPagoOauth::RequestFailed) do
-        stub_request(remote_payload, oauth: oauth) { oauth.exchange(code: "authorization-code") }
+        stub_request(remote_payload, oauth: oauth) { oauth.exchange(code: "authorization-code", code_verifier: "verifier-value") }
       end
 
       name, payload = events.fetch(0)
@@ -130,7 +133,7 @@ module Marketplace
       @oauth.instance_variable_set(:@http, fake_http)
 
       error = assert_raises(MercadoPagoOauth::RequestFailed) do
-        @oauth.exchange(code: "bad-code")
+        @oauth.exchange(code: "bad-code", code_verifier: "verifier-value")
       end
     assert_not_includes error.message, "leaked"
   end
@@ -141,7 +144,7 @@ module Marketplace
     @oauth.instance_variable_set(:@http, fake_http)
 
     error = assert_raises(MercadoPagoOauth::RequestFailed) do
-      @oauth.exchange(code: "authorization-code")
+      @oauth.exchange(code: "authorization-code", code_verifier: "verifier-value")
     end
     assert_not_includes error.message, "internal host details"
   end
@@ -149,13 +152,13 @@ module Marketplace
     # `live_mode` vem `true` também para TESTUSER: quem distingue é a tag.
     test "exchange marks a TESTUSER account as a test account" do
       stub_request(token_payload, tags: %w[user_product_seller test_user normal]) do
-        assert @oauth.exchange(code: "authorization-code").test_account
+        assert @oauth.exchange(code: "authorization-code", code_verifier: "verifier-value").test_account
       end
     end
 
     test "exchange marks a real account as not a test account" do
       stub_request(token_payload, tags: %w[user_product_seller normal]) do
-        assert_equal false, @oauth.exchange(code: "authorization-code").test_account
+        assert_equal false, @oauth.exchange(code: "authorization-code", code_verifier: "verifier-value").test_account
       end
     end
 
@@ -175,7 +178,7 @@ module Marketplace
       end
       @oauth.instance_variable_set(:@http, fake_http)
 
-      assert_nil @oauth.exchange(code: "authorization-code").test_account
+      assert_nil @oauth.exchange(code: "authorization-code", code_verifier: "verifier-value").test_account
     end
 
     private
