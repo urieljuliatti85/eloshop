@@ -994,6 +994,16 @@ Cobertura: `spec/requests/storefront/products_spec.rb` ganhou dois exemplos — 
 > As duas medições não foram feitas com os mesmos dados (a remedição rodou sobre um banco de dev com 10 produtos), então nenhuma das duas encerra a questão — mas a hipótese do JIT na PDP deixa de ser premissa. Os 83,75 ms de `db_runtime` em produção são reais e **seguem sem causa identificada**.
 >
 > Para decidir: rodar `EXPLAIN (ANALYZE)` da query real no banco de produção (`railway ssh --service eloshop-web -- bin/rails runner ...`; `railway run` não serve, porque executa na máquina local e não resolve `postgres.railway.internal`) e verificar se há bloco `JIT`. Com JIT, a troca por `preload` é a correção; sem JIT, ela **piora** a página e o custo está em outro lugar.
+>
+> **Diagnóstico local em 2026-09-06 — o JIT reproduziu, e a contestação de 09-05 estava incompleta.** Medindo dentro de `uncached`, a PDP gastou **1527 ms de banco em 12 queries**, com **1520 ms (99,5%) numa única query**: a de `related_products`. O `EXPLAIN (ANALYZE)` traz bloco `JIT` com **116 funções e 1620 ms de compilação**, sobre custo estimado de **529.762** — 5x acima do `jit_above_cost` de 100.000.
+>
+> A causa foi isolada: **`with_attached_main_image`**. Sem ele o plano custa 5.260 e estima 8.553 linhas com 5 JOINs; com ele, salta para **529.762 e 244.811 linhas em 15 JOINs**. É o mesmo mecanismo do catálogo, não um caso diferente.
+>
+> A troca por `preload` foi medida três vezes: **~13 ms contra ~1400 ms do `includes`**, cerca de 100x. O oposto do registrado em 09-05.
+>
+> Por que as duas medições divergem, com bancos de tamanho semelhante (10 e 12 produtos): **a de 09-05 mediu `related_products` sem `with_attached_main_image`** — o custo 128 que ela reporta corresponde à query sem os anexos do Active Storage, e é justamente o anexo que infla o plano. A lição do §51 se repete pela terceira vez nesta fase: o que se mede precisa ser exatamente o que a página executa.
+>
+> **Falta confirmar em produção** antes de corrigir: os dados locais são 12 produtos, e o `jit_above_cost` da Railway pode diferir. Mas a hipótese do JIT volta a ser a principal, agora com plano reproduzido.
 
 ### Validação em produção (2026-09-01)
 
@@ -1322,7 +1332,7 @@ FASE 18 — Segurança concluída (nenhum achado CRITICAL/HIGH). FASE 15 foi imp
 
 Próxima tarefa:
 
-`Duas decisões do negócio, ambas fora do escopo já fechado da Fase 17: (a) a PDP — ATENÇÃO, a premissa mudou: NÃO trocar includes por preload sem antes medir em produção. A remedição de 2026-09-05 não reproduziu o JIT no related_products (custo estimado 128 contra jit_above_cost de 100.000) e mostrou preload ~70x MAIS lento que includes nesse caso, porque a query é pequena por construção (filtra por vendedor, LIMIT 4). Os 83,75 ms de db_runtime seguem reais e sem causa identificada. O próximo passo é diagnóstico, não correção: EXPLAIN (ANALYZE) da query real via railway ssh (railway run não serve — executa na máquina local e não resolve postgres.railway.internal). Ver a nota "Contestado em 2026-09-05" na Fase 17; (b) ajustar jit_above_cost (ou jit=off) no PostgreSQL da Railway, que protegeria qualquer query futura com plano superestimado, mas é mudança de infraestrutura com efeito global. Seguem bloqueadas por dependência externa: criar/configurar a aplicação Marketplace de testes do Mercado Pago, registrar a callback /painel/mercado-pago/callback, definir MERCADO_PAGO_MARKETPLACE_SANDBOX=true e validar o OAuth com uma conta TESTUSER Vendedor (Fase 22), e o teste PIX ponta a ponta no sandbox (Fase 20, Etapa B).`
+`Duas decisões do negócio, ambas fora do escopo já fechado da Fase 17: (a) a PDP — o diagnóstico de 2026-09-06 reproduziu o JIT: `related_products` responde por 1520 dos 1527 ms de banco da página, com 116 funções compiladas sobre custo estimado de 529.762 (5x o jit_above_cost). A causa é o `with_attached_main_image`, que sozinho leva o plano de 5.260 para 529.762 — mesmo mecanismo do catálogo. `preload` mediu ~100x mais rápido (13 ms contra 1400 ms). A contestação de 09-05 media a query SEM os anexos, e por isso não via o JIT. Falta confirmar em produção (dados locais: 12 produtos; o jit_above_cost da Railway pode diferir) antes de aplicar a troca. Ver a nota "Diagnóstico local em 2026-09-06" na Fase 17; (b) ajustar jit_above_cost (ou jit=off) no PostgreSQL da Railway, que protegeria qualquer query futura com plano superestimado, mas é mudança de infraestrutura com efeito global. Seguem bloqueadas por dependência externa: criar/configurar a aplicação Marketplace de testes do Mercado Pago, registrar a callback /painel/mercado-pago/callback, definir MERCADO_PAGO_MARKETPLACE_SANDBOX=true e validar o OAuth com uma conta TESTUSER Vendedor (Fase 22), e o teste PIX ponta a ponta no sandbox (Fase 20, Etapa B).`
 
 Última atualização:
 
