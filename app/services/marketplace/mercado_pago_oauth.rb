@@ -88,7 +88,10 @@ module Marketplace
       request.set_form_data(form_data)
 
       response = http.request(request)
-      raise RequestFailed, "#{failure_message} (HTTP #{response.code})" unless response.is_a?(Net::HTTPSuccess)
+      unless response.is_a?(Net::HTTPSuccess)
+        log_error_response(response)
+        raise RequestFailed, "#{failure_message} (HTTP #{response.code})"
+      end
 
       payload = JSON.parse(response.body.to_s)
       build_credentials(payload)
@@ -97,6 +100,28 @@ module Marketplace
       raise RequestFailed, "Mercado Pago devolveu credenciais inválidas"
     rescue Timeout::Error, SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError
       raise RequestFailed, "Não foi possível conectar ao Mercado Pago. Tente novamente."
+    end
+
+    # TEMPORÁRIO — diagnóstico do HTTP 400 no /oauth/token (Fase 22, validação
+    # sandbox). Loga só o código do erro do Mercado Pago, nunca client_secret
+    # nem tokens. Remover depois de identificar a causa.
+    def log_error_response(response)
+      body = JSON.parse(response.body.to_s)
+      @event_reporter.notify(
+        "marketplace.mercado_pago_oauth.http_error",
+        http_status: response.code,
+        error: body["error"],
+        message: body["message"],
+        cause: body["cause"]
+      )
+    rescue JSON::ParserError
+      @event_reporter.notify(
+        "marketplace.mercado_pago_oauth.http_error",
+        http_status: response.code,
+        error: "unparseable_body"
+      )
+    rescue StandardError
+      nil
     end
 
     def log_invalid_payload(payload)
