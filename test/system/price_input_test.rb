@@ -9,6 +9,7 @@ class PriceInputTest < ApplicationSystemTestCase
     assert_selector "h1", text: "Dashboard"
 
     visit new_admin_product_path
+    await_price_input_controller
 
     # `fill_in` digita caractere a caractere, e o campo reformata a cada
     # tecla: sem zerar antes, o dígito novo entra sobre o valor anterior e a
@@ -32,6 +33,31 @@ class PriceInputTest < ApplicationSystemTestCase
   end
 
   private
+
+  # A máscara só existe depois que o Stimulus baixa e conecta o controller —
+  # e o `visit` do Capybara devolve o controle assim que o HTML carrega, sem
+  # esperar por isso. No runner do CI, mais lento que uma máquina local, os
+  # `send_keys` chegavam antes da conexão: sem handler de `input`, o campo
+  # ficava com o texto cru e a asserção lia "" em vez de "40,00".
+  #
+  # Esperar o campo vazio não serve de barreira (vazio é vazio com ou sem
+  # máscara), então a espera pergunta ao próprio Stimulus se o controller já
+  # está conectado ao elemento.
+  def await_price_input_controller
+    field_id = find_field("Preço (R$)")[:id]
+    script = <<~JS
+      !!(window.Stimulus && window.Stimulus.getControllerForElementAndIdentifier(
+        document.getElementById(#{field_id.to_json}), "price-input"))
+    JS
+
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + Capybara.default_max_wait_time
+    until page.evaluate_script(script)
+      raise Capybara::ElementNotFound, "o controller price-input não conectou a tempo" if
+        Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+
+      sleep 0.05
+    end
+  end
 
   # Zera o campo antes de digitar e espera o valor assentar: o Capybara
   # preenche tecla a tecla, e o controller reformata a cada uma.
