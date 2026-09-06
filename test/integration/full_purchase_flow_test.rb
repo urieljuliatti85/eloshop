@@ -3,7 +3,8 @@ require "test_helper"
 class FullPurchaseFlowTest < ActionDispatch::IntegrationTest
   test "product published to order confirmed, end to end" do
     admin = users(:one)
-    product = Product.create!(seller: sellers(:approved), name: "Vaso de cerâmica", sku: "E2E-#{SecureRandom.hex(4)}", price_cents: 5000, stock_quantity: 3, currency: "BRL", status: "draft")
+    product = Product.create!(seller: sellers(:approved), name: "Vaso de cerâmica", sku: "E2E-#{SecureRandom.hex(4)}", price_cents: 5000, stock_quantity: 3, currency: "BRL", status: "draft",
+      weight_grams: 500, length_cm: 20, width_cm: 15, height_cm: 10)
 
     # Admin publica o produto
     sign_in_admin(admin)

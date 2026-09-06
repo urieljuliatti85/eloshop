@@ -15,7 +15,12 @@ RSpec.describe Product, type: :model do
       sku: "VASO-ARTE-001",
       price_cents: 8_990,
       stock_quantity: 3,
-      currency: "BRL"
+      currency: "BRL",
+      # Medidas: `publish!` as exige, porque o frete real cotiza por peso.
+      weight_grams: 500,
+      length_cm: 20,
+      width_cm: 15,
+      height_cm: 10
     }
   end
 

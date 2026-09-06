@@ -122,9 +122,22 @@ RSpec.describe "Admin products", type: :request do
   end
 
   describe "PATCH /admin/products/:id/publish" do
+    # Sem peso o frete real cotaria errado, e é o artesão quem absorve a
+    # diferença — o produto não pode ir ao ar assim.
+    it "refuses to publish a product without weight and dimensions" do
+      sign_in_as(user)
+      product = Product.create!(seller: approved_seller, name: "Sem medidas", sku: "PUB-DIM", price_cents: 8_990,
+        stock_quantity: 3, currency: "BRL", status: "draft")
+
+      patch publish_admin_product_path(product)
+
+      expect(product.reload).to be_draft
+    end
+
     it "publishes a draft product" do
       sign_in_as(user)
-      product = Product.create!(seller: approved_seller, name: "Vaso publicar", sku: "PUB-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "draft")
+      product = Product.create!(seller: approved_seller, name: "Vaso publicar", sku: "PUB-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "draft",
+        weight_grams: 500, length_cm: 20, width_cm: 15, height_cm: 10)
 
       patch publish_admin_product_path(product)
 
