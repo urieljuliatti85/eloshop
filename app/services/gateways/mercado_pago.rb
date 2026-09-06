@@ -211,6 +211,7 @@ module Gateways
       response = http.request(request)
 
       unless response.is_a?(Net::HTTPSuccess)
+        log_error_response(response, request.path)
         # Sem o corpo da resposta na mensagem: ele pode ecoar dados do
         # pagamento, e esta exceção vai para o log.
         raise RequestFailed, "Mercado Pago respondeu #{response.code} em #{request.path}"
@@ -219,6 +220,23 @@ module Gateways
       JSON.parse(response.body.to_s)
     rescue JSON::ParserError
       raise RequestFailed, "resposta ilegível do Mercado Pago em #{request.path}"
+    end
+
+    # TEMPORÁRIO — diagnóstico do HTTP 500 em /v1/payments no sandbox (Fase
+    # 20, Etapa B). Loga só error/message/cause do corpo, nunca o payload
+    # completo (pode ecoar dados do pagamento). Remover após identificar a causa.
+    def log_error_response(response, path)
+      body = JSON.parse(response.body.to_s)
+      Rails.event.notify(
+        "payment.mercado_pago_gateway_http_error",
+        path: path,
+        http_status: response.code,
+        error: body["error"],
+        message: body["message"],
+        cause: body["cause"]
+      )
+    rescue StandardError
+      nil
     end
 
     def http
