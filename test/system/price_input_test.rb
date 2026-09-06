@@ -43,15 +43,37 @@ class PriceInputTest < ApplicationSystemTestCase
   # Esperar o campo vazio não serve de barreira (vazio é vazio com ou sem
   # máscara), então a espera pergunta ao próprio Stimulus se o controller já
   # está conectado ao elemento.
+  #
+  # `getControllerForElementAndIdentifier` só confirma que a instância JS do
+  # controller existe — não que o binding do `data-action="input->..."` já
+  # foi registrado pelo Application do Stimulus (são passos distintos dentro
+  # do mesmo ciclo de conexão). No runner do CI o gap entre os dois já se
+  # mostrou grande o bastante pra um `send_keys` disparar `input` antes do
+  # binding existir, mesmo com o controller já "conectado" — por isso a
+  # espera termina só depois de confirmar que um evento `input` sintético
+  # realmente aciona `format()` (o campo passa a refletir o valor definido
+  # via `value` antes do disparo), não apenas que o controller existe.
   def await_price_input_controller
     field_id = find_field("Preço (R$)")[:id]
-    script = <<~JS
+    connected_script = <<~JS
       !!(window.Stimulus && window.Stimulus.getControllerForElementAndIdentifier(
         document.getElementById(#{field_id.to_json}), "price-input"))
     JS
+    binding_active_script = <<~JS
+      (function() {
+        const el = document.getElementById(#{field_id.to_json});
+        el.value = "700";
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        const active = el.value === "7,00";
+        el.value = "";
+        return active;
+      })()
+    JS
 
     deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + Capybara.default_max_wait_time
-    until page.evaluate_script(script)
+    loop do
+      break if page.evaluate_script(connected_script) && page.evaluate_script(binding_active_script)
+
       raise Capybara::ElementNotFound, "o controller price-input não conectou a tempo" if
         Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
 

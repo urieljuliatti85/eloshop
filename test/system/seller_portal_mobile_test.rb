@@ -23,13 +23,14 @@ class SellerPortalMobileTest < ApplicationSystemTestCase
   test "reaches a product's details from the mobile card list without horizontal scroll" do
     user = users(:seller)
     sign_in_seller(user)
+    product = products(:one)
 
     visit seller_products_path
 
     assert_no_horizontal_overflow
-    click_link users(:seller).seller.products.first.name
+    click_link product.name
 
-    assert_current_path seller_product_path(users(:seller).seller.products.first)
+    assert_current_path seller_product_path(product)
   end
 
   test "reaches an order's details from the mobile card list without horizontal scroll" do
