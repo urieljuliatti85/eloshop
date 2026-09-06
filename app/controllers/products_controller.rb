@@ -79,9 +79,15 @@ class ProductsController < StorefrontController
     # categorias — cada nível seria outra query.
     seller = Seller.approved.find_by!(slug: params[:seller_slug])
     @product = seller.products.publicly_visible.includes(:product_variants, category: :parent).find_by!(slug: params[:slug])
+    # preload, e não includes: mesmo mecanismo do catálogo (ver comentário em
+    # #index) — com includes, a capa (main_image) arrasta as tabelas de
+    # variante do Active Storage, o plano ganha 15 JOINs e o custo estimado
+    # ultrapassa o jit_above_cost do PostgreSQL. Medido localmente em
+    # 2026-09-06: 1520 ms de banco (JIT compilando 116 funções sobre custo
+    # estimado de 529.762, 5x o limiar) contra ~13 ms com preload.
     @related_products = @product.related_products
-      .includes(:seller, :product_variants, :personalization_options, category: :parent)
-      .with_attached_main_image
+      .preload(:seller, :product_variants, :personalization_options, category: :parent)
+      .preload(main_image_attachment: :blob)
       .load
     # `.load` porque o parcial pergunta `reviews.any?` antes de iterar; sem
     # isso, a pergunta é um SELECT ... LIMIT 1 a mais.
