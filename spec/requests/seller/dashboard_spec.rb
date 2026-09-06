@@ -11,7 +11,7 @@ RSpec.describe "Seller dashboard", type: :request do
   it "redirects unauthenticated visitors to login" do
     get seller_root_path
 
-    expect(response).to redirect_to(new_session_path)
+    expect(response).to redirect_to(seller_login_path)
   end
 
   it "shows the seller operation without exposing another seller data" do

@@ -64,6 +64,10 @@ Rails.application.routes.draw do
   post "seja-um-artesao", to: "seller_registrations#create", as: :seller_registration
 
   scope module: :seller_portal, as: :seller, path: "painel" do
+    get "entrar", to: "sessions#new", as: :login
+    post "entrar", to: "sessions#create"
+    delete "sair", to: "sessions#destroy", as: :logout
+
     root to: "dashboard#index"
     # Dados do próprio ateliê. Sempre a partir de `current_seller`, nunca de
     # um id na URL — é a regra do painel inteiro.
