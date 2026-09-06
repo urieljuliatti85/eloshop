@@ -10,7 +10,7 @@ RSpec.describe "Seller atelier", type: :request do
     it "requires a signed-in seller" do
       get seller_atelier_path
 
-      expect(response).to redirect_to(new_session_path)
+      expect(response).to redirect_to(seller_login_path)
     end
 
     # O admin tem painel próprio e não tem ateliê.
@@ -19,7 +19,7 @@ RSpec.describe "Seller atelier", type: :request do
 
       get seller_atelier_path
 
-      expect(response).to redirect_to(new_session_path)
+      expect(response).to redirect_to(seller_login_path)
     end
 
     it "shows the seller's own data" do

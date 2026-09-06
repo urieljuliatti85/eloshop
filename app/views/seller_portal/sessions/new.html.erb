@@ -1,9 +1,6 @@
 <div class="mx-auto w-full max-w-md">
-  <%# Login da administração da plataforma. O vendedor tem porta própria em
-      /painel/entrar (SellerPortal::SessionsController) — esta aqui não
-      aparece em nenhum link do header público. %>
-  <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Administração</p>
-  <h1 class="mb-8 mt-2 text-2xl font-bold text-ink">Entrar</h1>
+  <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Painel do Artesão</p>
+  <h1 class="mb-8 mt-2 text-2xl font-bold text-ink">Entrar no Ateliê</h1>
 
   <% if alert = flash[:alert] %>
     <p class="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800" id="alert"><%= alert %></p>
@@ -13,9 +10,7 @@
     <p class="mb-6 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800" id="notice"><%= notice %></p>
   <% end %>
 
-  <%# Labels visíveis, como no login do cliente: o placeholder sozinho some
-      quando o campo é preenchido, e some para o leitor de tela (§62). %>
-  <%= form_with url: session_url, class: "flex flex-col gap-4" do |form| %>
+  <%= form_with url: seller_login_path, class: "flex flex-col gap-4" do |form| %>
     <div>
       <%= form.label :email_address, "E-mail", class: "mb-1 block text-sm font-medium text-ink" %>
       <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username",
@@ -36,6 +31,6 @@
   <% end %>
 
   <p class="mt-8 text-sm text-ink-muted">
-    É um artesão? <%= link_to "Entre pelo painel do ateliê", seller_login_path, class: "font-medium text-brand-600 hover:underline" %>.
+    Ainda não tem um ateliê? <%= link_to "Cadastre-se", new_seller_registration_path, class: "font-medium text-brand-600 hover:underline" %>.
   </p>
 </div>
