@@ -37,6 +37,24 @@ RSpec.describe "Admin sellers", type: :request do
     expect(seller.reload).to be_pending
   end
 
+  it "shows the seller's own connection link when Mercado Pago is not connected yet" do
+    sign_in_as(admin)
+
+    get admin_seller_path(seller)
+
+    expect(response.body).to include("Conta ainda não conectada")
+    expect(response.body).to include(seller_atelier_url)
+  end
+
+  it "does not show the connection link once Mercado Pago is connected" do
+    sign_in_as(admin)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+
+    get admin_seller_path(seller)
+
+    expect(response.body).not_to include(seller_atelier_url)
+  end
+
   it "keeps the platform panel unavailable to sellers" do
     sign_in_as(seller_user)
 
