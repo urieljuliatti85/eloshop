@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_015337) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_160758) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -221,12 +221,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_015337) do
     t.integer "amount_cents", null: false
     t.integer "application_fee_cents", default: 0, null: false
     t.integer "application_fee_refunded_cents", default: 0, null: false
+    t.string "card_brand"
+    t.string "card_last_four"
     t.datetime "created_at", null: false
     t.datetime "expires_at"
     t.string "external_id"
     t.string "gateway", null: false
     t.string "idempotency_key", null: false
+    t.integer "installments", default: 1, null: false
     t.bigint "order_id", null: false
+    t.string "payment_method", default: "pix", null: false
     t.text "pix_qr_code"
     t.text "pix_qr_code_base64"
     t.integer "processor_fee_cents"
@@ -237,6 +241,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_015337) do
     t.index ["order_id"], name: "index_payments_on_order_id"
     t.check_constraint "application_fee_cents >= 0 AND application_fee_cents <= amount_cents", name: "payments_application_fee_check"
     t.check_constraint "application_fee_refunded_cents >= 0 AND application_fee_refunded_cents <= application_fee_cents", name: "payments_application_fee_refunded_check"
+    t.check_constraint "installments >= 1", name: "payments_installments_check"
+    t.check_constraint "payment_method::text = ANY (ARRAY['pix'::character varying, 'credit_card'::character varying]::text[])", name: "payments_payment_method_check"
     t.check_constraint "processor_fee_cents IS NULL OR processor_fee_cents >= 0", name: "payments_processor_fee_check"
     t.check_constraint "refunded_amount_cents >= 0 AND refunded_amount_cents <= amount_cents", name: "payments_refunded_amount_check"
   end

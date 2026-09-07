@@ -54,6 +54,61 @@ module Gateways
       assert_equal 13.49, body["application_fee"]
     end
 
+    test "authorize sends the card token and installments, not pix fields" do
+      captured = stub_request(
+        "id" => 55, "status" => "approved",
+        "payment_method_id" => "visa", "card" => { "last_four_digits" => "1111" }
+      ) do
+        @gateway.authorize(
+          order: @order, idempotency_key: "attempt-card", application_fee_cents: 1_349,
+          payment_method: "credit_card", card_token: "card-token-xyz", installments: 3
+        )
+      end
+
+      body = JSON.parse(captured.body)
+      assert_equal "card-token-xyz", body["token"]
+      assert_equal 3, body["installments"]
+      assert_nil body["payment_method_id"]
+    end
+
+    test "authorize returns approved status and card details for an approved card payment" do
+      stub_request(
+        "id" => 55, "status" => "approved",
+        "payment_method_id" => "visa", "card" => { "last_four_digits" => "1111" }
+      ) do
+        intent = @gateway.authorize(
+          order: @order, idempotency_key: "attempt-card-ok", application_fee_cents: 1_349,
+          payment_method: "credit_card", card_token: "card-token-xyz", installments: 1
+        )
+
+        assert_equal "55", intent.external_id
+        assert_equal "approved", intent.status
+        assert_equal "1111", intent.card_last_four
+        assert_equal "visa", intent.card_brand
+        assert_not intent.pix?
+      end
+    end
+
+    test "authorize returns declined status for a rejected card payment" do
+      stub_request("id" => 56, "status" => "rejected") do
+        intent = @gateway.authorize(
+          order: @order, idempotency_key: "attempt-card-declined", application_fee_cents: 1_349,
+          payment_method: "credit_card", card_token: "card-token-xyz", installments: 1
+        )
+
+        assert_equal "declined", intent.status
+      end
+    end
+
+    test "authorize raises without a card token for credit card" do
+      assert_raises(ArgumentError) do
+        @gateway.authorize(
+          order: @order, idempotency_key: "attempt-card-missing-token", application_fee_cents: 1_349,
+          payment_method: "credit_card", card_token: nil, installments: 1
+        )
+      end
+    end
+
     test "authorize fails loudly without an access token" do
       gateway = MercadoPago.new(access_token: nil, webhook_secret: WEBHOOK_SECRET)
 

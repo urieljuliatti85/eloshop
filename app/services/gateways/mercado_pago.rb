@@ -2,7 +2,8 @@ require "net/http"
 require "json"
 
 module Gateways
-  # Adapter do Mercado Pago para PIX (Fase 20, Etapa B).
+  # Adapter do Mercado Pago para PIX (Fase 20, Etapa B) e cartão de crédito
+  # (Fase 24).
   #
   # Sem SDK oficial de propósito: são três chamadas HTTP, e a gem traria
   # dependência e superfície de atualização desproporcionais ao uso (CLAUDE.md
@@ -44,36 +45,23 @@ module Gateways
       "mercado_pago"
     end
 
-    # Cria uma cobrança PIX e devolve o QR code para exibir ao cliente.
+    # Cria uma cobrança PIX ou cartão de crédito.
     #
     # A chave pertence à tentativa de pagamento, não ao checkout. Ela continua
     # estável quando a mesma tentativa é retomada após timeout, mas muda quando
     # um PIX expirado exige uma cobrança nova.
-    def authorize(order:, idempotency_key:, application_fee_cents:)
-      access_token = access_token_for(order)
-
-      response = post(
-        "/v1/payments",
-        body: {
-          transaction_amount: (order.total_cents / 100.0).round(2),
-          application_fee: (application_fee_cents / 100.0).round(2),
-          payment_method_id: "pix",
-          description: "Pedido #{order.id} — EloShop",
-          external_reference: order.id.to_s,
-          payer: { email: payer_email_for(order) }
-        },
-        headers: { "X-Idempotency-Key" => idempotency_key },
-        access_token: access_token
-      )
-
-      pix = response.dig("point_of_interaction", "transaction_data") || {}
-
-      Intent.new(
-        external_id: response["id"].to_s,
-        qr_code: pix["qr_code"],
-        qr_code_base64: pix["qr_code_base64"],
-        expires_at: parse_time(response["date_of_expiration"])
-      )
+    #
+    # PIX sempre nasce "pending" (o QR code é exibido e a confirmação chega
+    # depois via webhook). Cartão aprova ou recusa na própria resposta —
+    # `token`/`installments` só fazem sentido para cartão; o gateway do
+    # Mercado Pago rejeita o payload se forem enviados junto com PIX.
+    def authorize(order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1)
+      if payment_method == "credit_card"
+        authorize_credit_card(order: order, idempotency_key: idempotency_key, application_fee_cents: application_fee_cents,
+                               card_token: card_token, installments: installments)
+      else
+        authorize_pix(order: order, idempotency_key: idempotency_key, application_fee_cents: application_fee_cents)
+      end
     end
 
     # A notificação do Mercado Pago não carrega o status de forma confiável —
@@ -135,6 +123,67 @@ module Gateways
     end
 
     private
+
+    def authorize_pix(order:, idempotency_key:, application_fee_cents:)
+      access_token = access_token_for(order)
+
+      response = post(
+        "/v1/payments",
+        body: {
+          transaction_amount: (order.total_cents / 100.0).round(2),
+          application_fee: (application_fee_cents / 100.0).round(2),
+          payment_method_id: "pix",
+          description: "Pedido #{order.id} — EloShop",
+          external_reference: order.id.to_s,
+          payer: { email: payer_email_for(order) }
+        },
+        headers: { "X-Idempotency-Key" => idempotency_key },
+        access_token: access_token
+      )
+
+      pix = response.dig("point_of_interaction", "transaction_data") || {}
+
+      Intent.new(
+        external_id: response["id"].to_s,
+        status: STATUS_MAP.fetch(response["status"].to_s, "pending"),
+        qr_code: pix["qr_code"],
+        qr_code_base64: pix["qr_code_base64"],
+        expires_at: parse_time(response["date_of_expiration"])
+      )
+    end
+
+    # Token gerado pelo Card Payment Brick no navegador — nunca o número do
+    # cartão em si. `installments` chega do mesmo Brick, que já calculou as
+    # opções de parcela com a taxa do emissor.
+    def authorize_credit_card(order:, idempotency_key:, application_fee_cents:, card_token:, installments:)
+      raise ArgumentError, "card_token é obrigatório para cartão de crédito" if card_token.blank?
+
+      access_token = access_token_for(order)
+
+      response = post(
+        "/v1/payments",
+        body: {
+          transaction_amount: (order.total_cents / 100.0).round(2),
+          application_fee: (application_fee_cents / 100.0).round(2),
+          token: card_token,
+          installments: installments,
+          description: "Pedido #{order.id} — EloShop",
+          external_reference: order.id.to_s,
+          payer: { email: payer_email_for(order) }
+        },
+        headers: { "X-Idempotency-Key" => idempotency_key },
+        access_token: access_token
+      )
+
+      card = response["card"] || {}
+
+      Intent.new(
+        external_id: response["id"].to_s,
+        status: STATUS_MAP.fetch(response["status"].to_s, "declined"),
+        card_last_four: card["last_four_digits"],
+        card_brand: response["payment_method_id"]
+      )
+    end
 
     def access_token_for(order)
       token = @access_token_override || seller_access_token(order.seller_order.seller)

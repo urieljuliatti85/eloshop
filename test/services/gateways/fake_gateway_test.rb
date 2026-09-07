@@ -11,6 +11,26 @@ module Gateways
       assert_not intent.pix?, "o gateway simulado não emite PIX"
     end
 
+    test "authorize approves a credit card payment by default" do
+      intent = @gateway.authorize(
+        order: orders(:one), idempotency_key: SecureRandom.uuid, application_fee_cents: 0,
+        payment_method: "credit_card", card_token: "any-token", installments: 2
+      )
+
+      assert_equal "approved", intent.status
+      assert_equal "1111", intent.card_last_four
+      assert_equal "visa", intent.card_brand
+    end
+
+    test "authorize declines a credit card payment with the magic decline token" do
+      intent = @gateway.authorize(
+        order: orders(:one), idempotency_key: SecureRandom.uuid, application_fee_cents: 0,
+        payment_method: "credit_card", card_token: "fake_card_token_declined", installments: 1
+      )
+
+      assert_equal "declined", intent.status
+    end
+
     test "verify_webhook accepts the correct secret" do
       assert @gateway.verify_webhook(request_with(secret: FakeGateway::WEBHOOK_SECRET))
     end

@@ -111,7 +111,7 @@ module Payments
       Object.new.tap do |gw|
         gw.define_singleton_method(:name) { gateway_name }
         gw.define_singleton_method(:payment_status) { |external_id:| payment_status }
-        gw.define_singleton_method(:authorize) do |order:, idempotency_key:, application_fee_cents:|
+        gw.define_singleton_method(:authorize) do |order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1|
           Gateways::Intent.new(external_id: "fake_#{SecureRandom.hex(10)}")
         end
       end

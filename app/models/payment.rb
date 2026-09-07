@@ -15,6 +15,11 @@ class Payment < ApplicationRecord
     failed: "failed"
   }, default: "pending"
 
+  enum :payment_method, {
+    pix: "pix",
+    credit_card: "credit_card"
+  }, default: "pix"
+
   validates :gateway, presence: true
   validates :external_id, presence: true, unless: :processing?
   validates :idempotency_key, presence: true, uniqueness: true
@@ -22,6 +27,7 @@ class Payment < ApplicationRecord
   validates :application_fee_cents, :refunded_amount_cents, :application_fee_refunded_cents,
     numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :processor_fee_cents, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :installments, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
   validate :financial_accounting_is_bounded
 
   def expired?

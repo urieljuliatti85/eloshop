@@ -13,7 +13,7 @@ module Payments
 
       def name = "mercado_pago"
 
-      def authorize(order:, idempotency_key:, application_fee_cents:)
+      def authorize(order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1)
         @keys << idempotency_key
         if @fail_once
           @fail_once = false
@@ -101,6 +101,51 @@ module Payments
       assert current.pending?
       assert_not_equal expired.id, current.id
       assert_not_equal expired.idempotency_key, current.idempotency_key
+    end
+
+    test "credit card payment approves synchronously and confirms the order" do
+      order = build_order
+
+      payment = Authorize.new(
+        order: order, gateway: Gateways::FakeGateway.new,
+        payment_method: "credit_card", card_token: "any-token", installments: 2
+      ).call
+
+      assert payment.paid?
+      assert_equal "credit_card", payment.payment_method
+      assert_equal 2, payment.installments
+      assert_equal "1111", payment.card_last_four
+      assert order.reload.confirmed?
+    end
+
+    test "credit card payment declined synchronously does not confirm the order" do
+      order = build_order
+
+      payment = Authorize.new(
+        order: order, gateway: Gateways::FakeGateway.new,
+        payment_method: "credit_card", card_token: "fake_card_token_declined", installments: 1
+      ).call
+
+      assert payment.failed?
+      assert_not order.reload.confirmed?
+    end
+
+    test "credit card payment is idempotent when the real webhook arrives after the synchronous confirmation" do
+      order = build_order
+
+      payment = Authorize.new(
+        order: order, gateway: Gateways::FakeGateway.new,
+        payment_method: "credit_card", card_token: "any-token", installments: 1
+      ).call
+
+      assert_no_difference "PaymentEvent.count" do
+        Payments::ProcessWebhook.new(
+          event_id: "sync-#{payment.external_id}-approved",
+          external_id: payment.external_id,
+          status: "approved"
+        ).call
+      end
+      assert payment.reload.paid?
     end
 
     test "resumes a processing attempt with the same key after timeout" do

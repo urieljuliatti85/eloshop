@@ -15,8 +15,17 @@ module Gateways
       "fake"
     end
 
-    def authorize(order:, idempotency_key:, application_fee_cents:)
-      Intent.new(external_id: "fake_#{SecureRandom.hex(10)}")
+    def authorize(order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1)
+      if payment_method == "credit_card"
+        # Sem tela de simulação própria para cartão: o token decide o
+        # desfecho, para exercitar aprovação e recusa síncronas em teste sem
+        # depender de interação manual (diferente do PIX, que usa os botões
+        # de simulação na tela de pagamento).
+        status = card_token == "fake_card_token_declined" ? "declined" : "approved"
+        Intent.new(external_id: "fake_#{SecureRandom.hex(10)}", status: status, card_last_four: "1111", card_brand: "visa")
+      else
+        Intent.new(external_id: "fake_#{SecureRandom.hex(10)}")
+      end
     end
 
     def refund(payment:, amount_cents:, idempotency_key:)

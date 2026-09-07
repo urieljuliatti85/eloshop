@@ -7,8 +7,17 @@ module Gateways
   # cartão preencheria só o id. Estão aqui, e não num adapter específico,
   # porque "QR code do PIX" é conceito do meio de pagamento brasileiro, não do
   # Mercado Pago: outro provedor de PIX preencheria os mesmos campos.
-  Intent = Data.define(:external_id, :qr_code, :qr_code_base64, :expires_at) do
-    def initialize(external_id:, qr_code: nil, qr_code_base64: nil, expires_at: nil)
+  #
+  # `status` é o desfecho imediato da autorização, no vocabulário de
+  # Gateways::MercadoPago::STATUS_MAP ("approved"/"pending"/"declined"). PIX
+  # sempre nasce "pending" (aguarda o webhook); cartão de crédito aprova ou
+  # recusa na própria resposta HTTP, sem passar por webhook.
+  Intent = Data.define(
+    :external_id, :status, :qr_code, :qr_code_base64, :expires_at,
+    :card_last_four, :card_brand
+  ) do
+    def initialize(external_id:, status: "pending", qr_code: nil, qr_code_base64: nil, expires_at: nil,
+                   card_last_four: nil, card_brand: nil)
       super
     end
 
