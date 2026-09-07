@@ -1254,6 +1254,80 @@ Fase 22.
 
 ---
 
+## FASE 24 — Pagamento via cartão de crédito
+
+Status: `[ ]`
+
+### Objetivo
+
+Oferecer cartão de crédito como segundo meio de pagamento, ao lado do PIX já existente (Fase 20, Etapa B), usando Checkout Bricks (Card Payment Brick) do Mercado Pago para tokenização no front. A decisão original de começar só por PIX (`docs/payments.md`, Fase 20 Etapa B) é revisitada aqui, não descartada retroativamente — PIX segue funcionando sem regressão.
+
+Decisões de negócio já tomadas para esta fase:
+
+* Tokenização via Checkout Bricks (componente pronto do Mercado Pago), não formulário próprio
+* Autorização e captura em uma etapa só, igual ao PIX hoje — sem captura em duas etapas nesta primeira versão
+* Parcelamento habilitado desde o início, usando as opções calculadas pelo próprio Brick
+* Juro do parcelamento é repassado ao cliente (taxa do emissor); a loja/vendedor não assume custo extra de "parcelamento sem juros" — a fórmula de comissão de 15% sobre produtos após descontos, sem frete (Fase 23), não muda
+
+### Diferença fundamental do fluxo PIX
+
+PIX é assíncrono: `authorize` cria a cobrança e o status só muda depois via webhook, quando o cliente paga o QR code. Cartão é síncrono: o Mercado Pago aprova ou recusa **na própria resposta HTTP** do `authorize`. O checkout precisa ramificar entre a tela de PIX (como hoje) e o resultado imediato do cartão — aprovado segue para confirmação, recusado permite nova tentativa sem debitar estoque.
+
+### Funcionalidades
+
+* Nova opção de meio de pagamento no checkout, ao lado do PIX
+* Card Payment Brick embutido na etapa de pagamento, tokenizando os dados do cartão no navegador — nenhum dado sensível (número, CVV) trafega pelo backend
+* Exibição das opções de parcela calculadas pelo Brick
+* Resultado síncrono de aprovação/recusa tratado no mesmo request do checkout
+* Split de comissão (`application_fee`) aplicado igual ao PIX
+
+### Modelos envolvidos
+
+* `Payment` — novos campos `payment_method` (`pix` / `credit_card`) e `installments`; possivelmente `card_last_four`/`card_brand` só para exibição (nunca dado sensível completo)
+* `Gateways::Intent` — já neutro a meio de pagamento (ver comentário em `app/services/gateways/intent.rb`)
+
+### Migrations necessárias
+
+Adicionar `payment_method` (string) e `installments` (integer, default 1) a `payments`; campos de exibição do cartão (`card_last_four`, `card_brand`) se necessário para o admin/cliente identificarem a tentativa.
+
+### Arquivos principais a alterar
+
+* `app/services/gateways/mercado_pago.rb` — `authorize` aceita `payment_method_id:`/`card_token:`/`installments:` e monta o corpo da requisição conforme o meio
+* `app/services/gateways/fake_gateway.rb` — simular aprovação/recusa de cartão em dev/test
+* `app/services/payments/authorize.rb` — repassar os novos parâmetros ao gateway
+* Controller da etapa de pagamento do checkout — ramificar entre PIX e resultado síncrono do cartão
+* CSP (`config/initializers/content_security_policy.rb` ou equivalente) — liberar o domínio do SDK JS do Mercado Pago (`sdk.mercadopago.com`) e os domínios que o Brick usa para tokenizar
+
+### Testes
+
+* `Gateways::MercadoPago`: contrato do adapter para cartão — aprovação, recusa, erro de gateway, parcelas inválidas
+* `Payments::Authorize` com `payment_method: "credit_card"`
+* Request specs do checkout cobrindo o novo meio de pagamento
+* Edge cases obrigatórios (CLAUDE.md §46): cartão recusado, token expirado/inválido, timeout na tokenização, tentativa duplicada (double-submit do Brick)
+* Regressão: fluxo PIX continua funcionando sem alteração de comportamento
+
+### Riscos
+
+* Primeira vez que o app carrega script de CDN externo — validar que a CSP não abre brecha além do necessário
+* Mesmo com Bricks, a loja entra em escopo leve de PCI-DSS (SAQ A) — confirmar que isso não é bloqueio de negócio antes de habilitar em produção
+* Sandbox nunca testado para cartão, mesma situação já registrada para PIX (Fase 20, Etapa B) — falta credencial de teste
+* Chargebacks/disputas de cartão têm prazo e fluxo diferentes de PIX; fora do escopo desta fase, registrar como débito técnico se não for endereçado
+
+### Critérios de aceite
+
+* [ ] Cliente consegue pagar com cartão de crédito parcelado, vendo as opções de parcela calculadas pelo Bricks
+* [ ] Cartão recusado mantém o pedido `pending` e permite nova tentativa, sem debitar estoque
+* [ ] Nenhum dado de cartão (número, CVV) trafega ou é logado pelo backend — só o token gerado pelo Brick
+* [ ] PIX continua funcionando sem regressão
+* [ ] Split de comissão (`application_fee`) funciona igual para cartão
+* [ ] Testes cobrindo aprovação, recusa, erro de gateway e duplicidade
+
+### Dependências de outras fases
+
+Fase 20 (Etapa B — gateway Mercado Pago), Fase 23 (split de comissão).
+
+---
+
 # Regras do Roadmap
 
 ## 1. Uma fase por vez
@@ -1324,7 +1398,7 @@ Uma tarefa é considerada concluída somente quando:
 
 Fase atual:
 
-`FASE 17 — Performance CONCLUÍDA; FASE 19 — Observabilidade CONCLUÍDA; FASE 20 — Produção e deploy em andamento (Etapa A concluída, Etapa B parcial); FASE 22 — Fundação do marketplace em andamento; FASE 23 — Split de pedidos, pagamento e frete por vendedor concluída no código.
+`FASE 17 — Performance CONCLUÍDA; FASE 19 — Observabilidade CONCLUÍDA; FASE 20 — Produção e deploy em andamento (Etapa A concluída, Etapa B parcial); FASE 22 — Fundação do marketplace em andamento; FASE 23 — Split de pedidos, pagamento e frete por vendedor concluída no código; FASE 24 — Pagamento via cartão de crédito planejada, não iniciada.
 
 FASE 22 iniciada: `Seller` e o papel `seller` foram introduzidos; produtos legados receberam o vendedor aprovado EloShop; `Product` agora pertence obrigatoriamente ao vendedor com `sku`/`slug` únicos por vendedor; cadastro pendente, aprovação/suspensão pela plataforma, painel escopado, URL pública por artesão e bloqueio de carrinho multi-vendedor foram implementados. O painel do vendedor usa somente `Current.user.seller`, e testes de alteração de ID cobrem o isolamento. O painel recebeu uma home editorial responsiva com busca escopada ao catálogo, métricas, produtos e pedidos recentes, atalhos operacionais e status financeiro; variantes, personalizações e galeria também são gerenciadas pelo vendedor. O onboarding financeiro foi definido e implementado com OAuth Authorization Code do Mercado Pago: o provedor realiza o KYC 6, a EloShop não coleta documentos, tokens ficam cifrados e a plataforma confirma explicitamente o KYC antes de aprovar. O modo sandbox opt-in envia `test_token=true`, identifica o ambiente no painel e mantém contas de teste inelegíveis para aprovação. Falta configurar as credenciais de uma aplicação Marketplace de testes e validar o fluxo ponta a ponta; `SellerOrder` e split pertencem à Fase 23.
 
@@ -1344,8 +1418,10 @@ FASE 18 — Segurança concluída (nenhum achado CRITICAL/HIGH). FASE 15 foi imp
 
 Próxima tarefa:
 
-`A PDP foi corrigida e VALIDADA em produção em 2026-09-06 (PR #60, deploy 8f341ea): db_runtime caiu de 83,75 ms para 10–18 ms, com a página em 31–50 ms — ver a nota "Validação em produção (2026-09-06)" na Fase 17. Com isso, os dois gargalos de JIT identificados na Fase 17 (catálogo e PDP) estão fechados. Segue em aberto como decisão do negócio: ajustar jit_above_cost (ou jit=off) no PostgreSQL da Railway, que protegeria qualquer query futura com plano superestimado, mas é mudança de infraestrutura com efeito global. Seguem bloqueadas por dependência externa: criar/configurar a aplicação Marketplace de testes do Mercado Pago, registrar a callback /painel/mercado-pago/callback, definir MERCADO_PAGO_MARKETPLACE_SANDBOX=true e validar o OAuth com uma conta TESTUSER Vendedor (Fase 22), o teste PIX ponta a ponta no sandbox (Fase 20, Etapa B), e a integração real de frete com o Melhor Envio (ADR 005, provedor decidido em 2026-09-06 mas sem código ainda).`
+`FASE 24 planejada em 2026-09-07: pagamento via cartão de crédito usando Checkout Bricks, autorização síncrona de uma etapa, parcelamento com juro repassado ao cliente. Ver o corpo da fase para arquivos, riscos e critérios de aceite. Implementação ainda não iniciada.
+
+A PDP foi corrigida e VALIDADA em produção em 2026-09-06 (PR #60, deploy 8f341ea): db_runtime caiu de 83,75 ms para 10–18 ms, com a página em 31–50 ms — ver a nota "Validação em produção (2026-09-06)" na Fase 17. Com isso, os dois gargalos de JIT identificados na Fase 17 (catálogo e PDP) estão fechados. Segue em aberto como decisão do negócio: ajustar jit_above_cost (ou jit=off) no PostgreSQL da Railway, que protegeria qualquer query futura com plano superestimado, mas é mudança de infraestrutura com efeito global. Seguem bloqueadas por dependência externa: criar/configurar a aplicação Marketplace de testes do Mercado Pago, registrar a callback /painel/mercado-pago/callback, definir MERCADO_PAGO_MARKETPLACE_SANDBOX=true e validar o OAuth com uma conta TESTUSER Vendedor (Fase 22), o teste PIX ponta a ponta no sandbox (Fase 20, Etapa B), e a integração real de frete com o Melhor Envio (ADR 005, provedor decidido em 2026-09-06 mas sem código ainda).`
 
 Última atualização:
 
-`2026-09-06`
+`2026-09-07`

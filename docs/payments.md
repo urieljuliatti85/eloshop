@@ -24,7 +24,7 @@ No MVP (Fase 7 do `ROADMAP.md`), foram implementados `authorize`/confirmação e
 
 **Decisão (Fase 7 — provisória)**: nenhum gateway real havia sido escolhido, e o MVP usou um gateway simulado (`Gateways::FakeGateway`) atrás da mesma abstração que um gateway de verdade usaria.
 
-**Decisão (Fase 20, Etapa B)**: o gateway real é o **Mercado Pago**, começando **apenas por PIX** — sem cartão nem boleto, o que evita lidar com dado sensível de cartão e tokenização no front nesta primeira volta.
+**Decisão (Fase 20, Etapa B)**: o gateway real é o **Mercado Pago**, começando **apenas por PIX** — sem cartão nem boleto, o que evita lidar com dado sensível de cartão e tokenização no front nesta primeira volta. A Fase 24 (planejada, não iniciada) revisita cartão de crédito via Checkout Bricks, mantendo PIX sem regressão; ver o corpo da fase no `ROADMAP.md`.
 
 ### Seleção do gateway
 
