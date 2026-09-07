@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_160758) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_165346) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -242,7 +242,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_160758) do
     t.check_constraint "application_fee_cents >= 0 AND application_fee_cents <= amount_cents", name: "payments_application_fee_check"
     t.check_constraint "application_fee_refunded_cents >= 0 AND application_fee_refunded_cents <= application_fee_cents", name: "payments_application_fee_refunded_check"
     t.check_constraint "installments >= 1", name: "payments_installments_check"
-    t.check_constraint "payment_method::text = ANY (ARRAY['pix'::character varying, 'credit_card'::character varying]::text[])", name: "payments_payment_method_check"
+    t.check_constraint "payment_method::text = ANY (ARRAY['pix'::character varying::text, 'credit_card'::character varying::text])", name: "payments_payment_method_check"
     t.check_constraint "processor_fee_cents IS NULL OR processor_fee_cents >= 0", name: "payments_processor_fee_check"
     t.check_constraint "refunded_amount_cents >= 0 AND refunded_amount_cents <= amount_cents", name: "payments_refunded_amount_check"
   end
@@ -389,6 +389,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_160758) do
     t.text "mercado_pago_access_token_ciphertext"
     t.datetime "mercado_pago_connected_at"
     t.boolean "mercado_pago_live_mode", default: false, null: false
+    t.string "mercado_pago_public_key"
     t.text "mercado_pago_refresh_token_ciphertext"
     t.boolean "mercado_pago_test_account"
     t.datetime "mercado_pago_token_expires_at"

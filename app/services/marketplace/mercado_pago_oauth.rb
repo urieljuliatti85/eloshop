@@ -6,7 +6,7 @@ module Marketplace
     class ConfigurationError < StandardError; end
     class RequestFailed < StandardError; end
 
-    Credentials = Data.define(:user_id, :access_token, :refresh_token, :expires_at, :live_mode, :test_account)
+    Credentials = Data.define(:user_id, :access_token, :refresh_token, :expires_at, :live_mode, :test_account, :public_key)
 
     AUTHORIZATION_URL = "https://auth.mercadopago.com.br/authorization"
     API_HOST = "api.mercadopago.com"
@@ -137,7 +137,12 @@ module Marketplace
         refresh_token: refresh_token,
         expires_at: Time.current + expires_in.seconds,
         live_mode: payload["live_mode"] == true,
-        test_account: test_account?(access_token)
+        test_account: test_account?(access_token),
+        # Pública por design — é o que o Card Payment Brick usa no navegador
+        # para tokenizar o cartão (Fase 24). Pode vir em branco se o Mercado
+        # Pago mudar o contrato da resposta; nesse caso cartão fica
+        # indisponível para o vendedor até reconectar, sem quebrar PIX.
+        public_key: payload["public_key"].to_s.presence
       )
     end
 

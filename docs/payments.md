@@ -53,6 +53,20 @@ payment_status(external_id:) → "approved" | "declined" | "pending"
 
 `Gateways::Intent` carrega `external_id` e, quando o meio for PIX, o QR code e a expiração. Os campos de PIX estão no `Intent` genérico, não no adapter, porque QR de PIX é conceito do meio de pagamento brasileiro e não do Mercado Pago — outro provedor preencheria os mesmos campos.
 
+### Cartão de crédito (Fase 24)
+
+`authorize` aceita `payment_method:` (`"pix"`/`"credit_card"`), `card_token:` e `installments:`. PIX permanece assíncrono (`Intent#status` nasce `"pending"`, a confirmação chega por webhook); cartão é síncrono — o Mercado Pago aprova ou recusa **na própria resposta HTTP**, e `Intent#status` já vem `"approved"`/`"declined"`. `Payments::Authorize` sempre grava `Payment#status` como `"pending"` na criação (o vocabulário do gateway não é um valor válido do enum) e, quando `intent.status` indica um desfecho síncrono, chama `Payments::ProcessWebhook` internamente com um `event_id` sintético (`sync-<external_id>-<status>`) — reaproveitando a mesma lógica de confirmação de pedido que a notificação real do gateway dispara depois; a idempotência por `gateway_event_id` absorve a duplicidade sem duplicar efeito.
+
+A tokenização acontece no navegador via **Checkout Bricks** (Card Payment Brick, `sdk.mercadopago.com/js/v2`) — nenhum dado de cartão trafega pelo backend, só o token gerado pelo Brick. Isso exige a **Public Key** do vendedor (`Seller#mercado_pago_public_key`), diferente do Access Token: é pública por design e não é cifrada no banco, ao contrário de `mercado_pago_access_token_ciphertext`. `Marketplace::MercadoPagoOauth::Credentials` captura `public_key` da resposta do `/oauth/token`; um vendedor conectado **antes** desta fase não tem esse campo e precisa reconectar para que a opção de cartão apareça no checkout (`Seller#mercado_pago_card_payments_available?`) — PIX continua funcionando normalmente nesse meio-tempo.
+
+O checkout agora tem uma etapa de escolha (`GET /orders/:id/payment/new` sem tentativa ainda) antes de autorizar: diferente do fluxo anterior, o `GET` não cria mais um `Payment` automaticamente. PIX autoriza assim que o cliente escolhe (`POST`, sem dado extra); cartão só autoriza depois que o Brick gera o token no navegador.
+
+**Pendências antes de habilitar cartão em produção:**
+
+* **CSP deliberadamente ampla** — `script_src`/`style_src`/`connect_src`/`frame_src` liberam `https://*.mercadopago.com` e `https://*.mlstatic.com` (ver comentário em `config/initializers/content_security_policy.rb`) porque não há lista oficial completa dos subdomínios que o Brick usa internamente — só o loader inicial (`sdk.mercadopago.com/js/v2`) está confirmado na fonte oficial (`github.com/mercadopago/sdk-js`). TODO: apertar para os domínios exatos observados no console do browser depois de rodar o Brick em desenvolvimento/sandbox.
+* **Sandbox nunca testado** — mesma situação do PIX (ver abaixo): o adapter e os testes cobrem o contrato (stub HTTP), não a API real do Mercado Pago para cartão.
+* **Verificação visual do Brick pendente** — a tela de escolha e o fluxo PIX foram validados ponta a ponta via requisições HTTP diretas; o Card Payment Brick em si (requer vendedor com Public Key real) não foi verificado num browser real nesta fase.
+
 ### Webhook
 
 A notificação do Mercado Pago **não carrega o status de forma confiável**: ela avisa que o pagamento X mudou e espera que a aplicação consulte a API. Por isso `webhook_event` faz uma chamada de volta ao gateway. Sem isso, bastaria forjar um POST para marcar um pedido como pago.

@@ -10,14 +10,58 @@
   <div class="grid gap-8 md:grid-cols-[minmax(0,1fr)_18rem]">
     <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Pedido #<%= @order.id %></p>
-      <h1 class="mb-2 mt-1 text-2xl font-bold text-ink">Finalize com PIX</h1>
-      <p class="mb-6 text-sm text-ink-muted">Valor: <%= format_price(@payment.amount_cents) %></p>
 
-      <%= render "payment",
-                 payment: @payment,
-                 order: @order,
-                 simulated_gateway: @simulated_gateway,
-                 webhook_secret: @webhook_secret %>
+      <% if @payment %>
+        <h1 class="mb-2 mt-1 text-2xl font-bold text-ink">
+          <%= @payment.pix? ? "Finalize com PIX" : "Pagamento com cartão" %>
+        </h1>
+        <p class="mb-6 text-sm text-ink-muted">Valor: <%= format_price(@payment.amount_cents) %></p>
+
+        <%= render "payment",
+                   payment: @payment,
+                   order: @order,
+                   simulated_gateway: @simulated_gateway,
+                   webhook_secret: @webhook_secret %>
+      <% else %>
+        <h1 class="mb-2 mt-1 text-2xl font-bold text-ink">Como você quer pagar?</h1>
+        <p class="mb-6 text-sm text-ink-muted">Valor: <%= format_price(@order.total_cents) %></p>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <%= form_with url: order_payment_path(@order), method: :post do |form| %>
+            <%= form.hidden_field :payment_method, value: "pix" %>
+            <%= form.submit "Pagar com PIX",
+                            class: "w-full rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+          <% end %>
+
+          <% seller = @order.seller_order.seller %>
+          <% if seller.mercado_pago_card_payments_available? %>
+            <button type="button" data-action="click->payment-method-choice#showCard"
+                    class="w-full rounded-full border border-brand-500 px-6 py-3 text-sm font-semibold text-brand-600 hover:bg-brand-50">
+              Pagar com cartão de crédito
+            </button>
+          <% end %>
+        </div>
+
+        <% if seller.mercado_pago_card_payments_available? %>
+          <div data-controller="payment-method-choice" class="mt-6">
+            <%# O Brick só é montado (via data-controller) depois de exibido —
+                não no carregamento da página: o SDK precisa medir o
+                container, e um elemento display:none tem dimensão zero,
+                fazendo os iframes internos do Brick renderizarem quebrados. %>
+            <template data-payment-method-choice-target="cardTemplate">
+              <div data-controller="card-payment-brick"
+                   data-card-payment-brick-public-key-value="<%= seller.mercado_pago_public_key %>"
+                   data-card-payment-brick-amount-value="<%= @order.total_cents / 100.0 %>"
+                   data-card-payment-brick-form-url-value="<%= order_payment_path(@order) %>">
+                <p data-card-payment-brick-target="error" hidden class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800"></p>
+                <div data-card-payment-brick-target="container"></div>
+              </div>
+            </template>
+            <div data-payment-method-choice-target="cardSection" class="mt-6"></div>
+          </div>
+          <script src="https://sdk.mercadopago.com/js/v2" nonce="<%= content_security_policy_nonce %>"></script>
+        <% end %>
+      <% end %>
     </section>
 
     <aside class="rounded-2xl bg-brand-50 p-5">

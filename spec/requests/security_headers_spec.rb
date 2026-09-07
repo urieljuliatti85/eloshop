@@ -11,7 +11,7 @@ RSpec.describe "Security headers", type: :request do
     expect(csp).to include("default-src 'self'")
     expect(csp).to include("object-src 'none'")
 
-    nonce = csp[/script-src 'self' 'nonce-([^']+)'/, 1]
+    nonce = csp[/'nonce-([^']+)'/, 1]
     expect(nonce).to be_present
   end
 end

@@ -9,7 +9,8 @@ module Marketplace
         refresh_token: refresh_token,
         expires_at: expires_at,
         live_mode: true,
-      test_account: false
+        test_account: false,
+        public_key: "TEST-public-key"
       )
     end
 
@@ -47,7 +48,8 @@ module Marketplace
         refresh_token: "foreign-refresh",
         expires_at: 180.days.from_now,
         live_mode: true,
-      test_account: false
+        test_account: false,
+        public_key: "TEST-public-key"
       )
       oauth = Object.new
       oauth.define_singleton_method(:refresh) { |**| foreign }

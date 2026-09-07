@@ -72,14 +72,15 @@ class SellerTest < ActiveSupport::TestCase
 
   # `test_account: false` é o padrão porque a maioria dos casos descreve uma
   # conta real; os testes de conta de teste passam `true` explicitamente.
-  def mercado_pago_credentials(live_mode: true, test_account: false)
+  def mercado_pago_credentials(live_mode: true, test_account: false, public_key: "TEST-public-key")
     Marketplace::MercadoPagoOauth::Credentials.new(
       user_id: "123456",
       access_token: "seller-access-token",
       refresh_token: "seller-refresh-token",
       expires_at: 180.days.from_now,
       live_mode: live_mode,
-      test_account: test_account
+      test_account: test_account,
+      public_key: public_key
     )
   end
 

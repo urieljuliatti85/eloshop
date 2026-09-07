@@ -82,7 +82,8 @@ class Seller < ApplicationRecord
       mercado_pago_token_expires_at: credentials.expires_at,
       mercado_pago_connected_at: Time.current,
       mercado_pago_live_mode: credentials.live_mode,
-      mercado_pago_test_account: credentials.test_account
+      mercado_pago_test_account: credentials.test_account,
+      mercado_pago_public_key: credentials.public_key
     }
     if mercado_pago_user_id != credentials.user_id
       connection_attributes.merge!(status: :pending, approved_at: nil)
@@ -100,9 +101,17 @@ class Seller < ApplicationRecord
       mercado_pago_connected_at: nil,
       mercado_pago_live_mode: false,
       mercado_pago_test_account: nil,
+      mercado_pago_public_key: nil,
       status: :pending,
       approved_at: nil
     )
+  end
+
+  # Cartão de crédito (Fase 24) exige a Public Key do vendedor no front; sem
+  # ela — vendedor conectado antes desta fase, por exemplo — a UI de cartão
+  # não é oferecida, mas PIX continua funcionando normalmente.
+  def mercado_pago_card_payments_available?
+    mercado_pago_connected? && mercado_pago_public_key.present?
   end
 
   def mercado_pago_access_token

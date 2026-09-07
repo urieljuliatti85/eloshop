@@ -135,7 +135,7 @@ Rails.application.routes.draw do
   resources :addresses, only: %i[index new create edit update destroy]
   resources :orders, only: %i[index new create show] do
     member { post :cancel }
-    resource :payment, only: %i[new] do
+    resource :payment, only: %i[new create] do
       get :status
     end
   end

@@ -38,9 +38,14 @@ class FullPurchaseFlowTest < ActionDispatch::IntegrationTest
     assert order.pending?
     assert_equal 2, product.reload.stock_quantity
 
-    # Cliente segue diretamente para a página de pagamento
+    # Cliente segue diretamente para a página de pagamento e escolhe PIX
     follow_redirect!
     assert_response :success
+    assert_match "Como você quer pagar?", response.body
+
+    post order_payment_path(order), params: { payment_method: "pix" }
+    assert_redirected_to new_order_payment_path(order)
+
     payment = order.payments.last
     assert payment.pending?
 

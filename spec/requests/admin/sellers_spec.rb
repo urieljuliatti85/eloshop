@@ -70,7 +70,8 @@ RSpec.describe "Admin sellers", type: :request do
       refresh_token: "refresh-token",
       expires_at: 180.days.from_now,
       live_mode: true,
-      test_account: test_account
+      test_account: test_account,
+      public_key: "TEST-public-key"
     )
   end
 end

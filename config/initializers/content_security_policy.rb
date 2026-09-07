@@ -5,15 +5,28 @@
 # único arquivo local) — ver docs/security.md. Por isso a política pode ser
 # estrita: só a própria origem, mais `data:` para imagens (necessário para
 # SVGs/ícones embutidos).
+#
+# Exceção (Fase 24): o Card Payment Brick do Mercado Pago carrega
+# https://sdk.mercadopago.com/js/v2 (confirmado na fonte oficial,
+# github.com/mercadopago/sdk-js), que por sua vez injeta iframes e faz
+# chamadas para tokenizar o cartão — sem lista oficial e definitiva de todos
+# os subdomínios usados internamente. `*.mercadopago.com`/`*.mlstatic.com`
+# (CDN estático do Mercado Livre/Mercado Pago) é deliberadamente amplo por
+# ora: TODO — apertar para os domínios exatos observados no console do
+# browser depois de rodar o Brick em desenvolvimento/sandbox (débito técnico,
+# ver CLAUDE.md §7; motivo: falta de documentação oficial completa; impacto:
+# CSP mais permissiva que o necessário só nessas diretivas; prioridade: antes
+# de habilitar cartão em produção).
 Rails.application.configure do
   config.content_security_policy do |policy|
     policy.default_src :self
     policy.font_src    :self
     policy.img_src     :self, :data
     policy.object_src  :none
-    policy.script_src  :self
-    policy.style_src   :self
-    policy.connect_src :self
+    policy.script_src  :self, "https://*.mercadopago.com", "https://*.mlstatic.com"
+    policy.style_src   :self, "https://*.mercadopago.com"
+    policy.connect_src :self, "https://*.mercadopago.com"
+    policy.frame_src   :self, "https://*.mercadopago.com"
     policy.base_uri    :self
     policy.form_action :self
   end

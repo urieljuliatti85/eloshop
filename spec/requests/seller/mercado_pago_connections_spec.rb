@@ -48,7 +48,8 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
       refresh_token: "refresh-token-secret",
       expires_at: 180.days.from_now,
       live_mode: true,
-      test_account: false
+      test_account: false,
+      public_key: "TEST-public-key"
     )
     allow(oauth).to receive(:exchange).with(code: "valid-code", code_verifier: an_instance_of(String)).and_return(credentials)
 
@@ -84,7 +85,8 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
       refresh_token: "other-refresh",
       expires_at: 180.days.from_now,
       live_mode: true,
-      test_account: false
+      test_account: false,
+      public_key: "TEST-public-key"
     )
     other_seller.connect_mercado_pago!(credentials)
     state = start_authorization
@@ -100,7 +102,7 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     seller.connect_mercado_pago!(
       Marketplace::MercadoPagoOauth::Credentials.new(
         user_id: "mp-456", access_token: "access", refresh_token: "refresh", expires_at: 180.days.from_now, live_mode: true,
-      test_account: false
+        test_account: false, public_key: "TEST-public-key"
       )
     )
     seller.update!(status: :approved, approved_at: Time.current)
