@@ -1,0 +1,39 @@
+<div class="space-y-8">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="admin-section-label mb-2">Sandbox</p>
+      <h1>Contas de teste do Mercado Pago</h1>
+      <p class="mt-2 text-sm text-slate-500">Cadastro manual das contas TESTUSER (Comprador, Vendedor, Marketplace) usadas para testar o sandbox — vêm do painel de desenvolvedor do Mercado Pago, não da API deles.</p>
+    </div>
+    <%= link_to "Nova conta", new_admin_mercado_pago_test_account_path, class: "admin-button admin-button--brand" %>
+  </header>
+
+  <% if @test_accounts.any? %>
+    <div class="admin-table-wrap">
+      <table>
+        <thead><tr><th>Tipo</th><th>Rótulo</th><th>E-mail</th><th>User ID</th><th>Usuário</th><th>Senha</th><th>Código</th><th><span class="sr-only">Ações</span></th></tr></thead>
+        <tbody>
+          <% @test_accounts.each do |account| %>
+            <tr>
+              <td><%= admin_status_badge(account.account_type) %></td>
+              <td class="font-semibold text-slate-900"><%= account.label %></td>
+              <td class="font-mono text-xs"><%= account.email.presence || "—" %></td>
+              <td class="font-mono text-xs"><%= account.mercado_pago_user_id.presence || "—" %></td>
+              <td class="font-mono text-xs"><%= account.username.presence || "—" %></td>
+              <td class="font-mono text-xs"><%= account.password.presence || "—" %></td>
+              <td class="font-mono text-xs"><%= account.verification_code.presence || "—" %></td>
+              <td>
+                <div class="flex justify-end gap-2">
+                  <%= link_to "Editar", edit_admin_mercado_pago_test_account_path(account), class: "admin-button admin-button--secondary" %>
+                  <%= button_to "Excluir", admin_mercado_pago_test_account_path(account), method: :delete, class: "admin-button admin-button--danger", form: { data: { turbo_confirm: "Excluir esta conta de teste?" } } %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="admin-empty-state">Nenhuma conta de teste cadastrada.</div>
+  <% end %>
+</div>

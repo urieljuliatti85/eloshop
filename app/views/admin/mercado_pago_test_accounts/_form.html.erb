@@ -1,0 +1,50 @@
+<%= form_with model: [ :admin, test_account ], class: "admin-form" do |form| %>
+  <% if test_account.errors.any? %>
+    <div class="admin-flash admin-flash--danger">
+      <ul>
+        <% test_account.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :account_type, "Tipo" %>
+    <%= form.select :account_type,
+          options_for_select([ [ "Comprador", "buyer" ], [ "Vendedor", "seller" ], [ "Marketplace", "marketplace" ] ], form.object.account_type),
+          {}, class: "w-full" %>
+  </div>
+
+  <div>
+    <%= form.label :label, "Rótulo" %>
+    <%= form.text_field :label, placeholder: "Ex.: Comprador BR", class: "w-full" %>
+  </div>
+
+  <div>
+    <%= form.label :email, "E-mail" %>
+    <%= form.email_field :email, class: "w-full" %>
+  </div>
+
+  <div>
+    <%= form.label :mercado_pago_user_id, "User ID" %>
+    <%= form.text_field :mercado_pago_user_id, class: "w-full" %>
+  </div>
+
+  <div>
+    <%= form.label :username, "Usuário" %>
+    <%= form.text_field :username, class: "w-full" %>
+  </div>
+
+  <div>
+    <%= form.label :password, "Senha" %>
+    <%= form.text_field :password, value: form.object.password, autocomplete: "off", class: "w-full font-mono" %>
+  </div>
+
+  <div>
+    <%= form.label :verification_code, "Código de verificação" %>
+    <%= form.text_field :verification_code, class: "w-full" %>
+  </div>
+
+  <%= form.submit "Salvar conta", class: "admin-button admin-button--brand" %>
+<% end %>

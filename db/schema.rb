@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_06_015840) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_015337) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -135,6 +135,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_015840) do
     t.datetime "updated_at", null: false
     t.index "lower((name)::text)", name: "index_materials_on_lower_name", unique: true
     t.index ["slug"], name: "index_materials_on_slug", unique: true
+  end
+
+  create_table "mercado_pago_test_accounts", force: :cascade do |t|
+    t.string "account_type", null: false
+    t.datetime "created_at", null: false
+    t.string "email"
+    t.string "label", null: false
+    t.string "mercado_pago_user_id"
+    t.text "password_ciphertext"
+    t.datetime "updated_at", null: false
+    t.string "username"
+    t.string "verification_code"
+    t.index ["account_type"], name: "index_mercado_pago_test_accounts_on_account_type"
   end
 
   create_table "order_items", force: :cascade do |t|

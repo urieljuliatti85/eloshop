@@ -21,6 +21,7 @@
       <%= admin_nav_link "Categorias", admin_categories_path, icon: :categories, controllers: %w[categories] %>
       <%= admin_nav_link "Cupons", admin_coupons_path, icon: :coupons, controllers: %w[coupons] %>
       <%= admin_nav_link "Avaliações", admin_reviews_path, icon: :reviews, controllers: %w[reviews] %>
+      <%= admin_nav_link "Contas de teste MP", admin_mercado_pago_test_accounts_path, icon: :categories, controllers: %w[mercado_pago_test_accounts] %>
       <div class="mt-2 border-t border-white/10 pt-2">
         <%= link_to root_path, class: "admin-nav-link" do %><%= admin_icon :store %><span>Ver loja</span><% end %>
         <%= button_to session_path, method: :delete, class: "admin-nav-link w-full" do %><%= admin_icon :logout %><span>Sair</span><% end %>
@@ -49,6 +50,7 @@
     <%= admin_nav_link "Categorias", admin_categories_path, icon: :categories, controllers: %w[categories] %>
     <%= admin_nav_link "Cupons", admin_coupons_path, icon: :coupons, controllers: %w[coupons] %>
     <%= admin_nav_link "Avaliações", admin_reviews_path, icon: :reviews, controllers: %w[reviews] %>
+    <%= admin_nav_link "Contas de teste MP", admin_mercado_pago_test_accounts_path, icon: :categories, controllers: %w[mercado_pago_test_accounts] %>
   </nav>
 
   <div class="admin-sidebar-footer">

@@ -44,6 +44,8 @@ Rails.application.routes.draw do
 
     resources :coupons, except: %i[show]
 
+    resources :mercado_pago_test_accounts, path: "contas-de-teste-mercado-pago", except: %i[show]
+
     resources :orders, only: %i[index show] do
       member { post :refund }
     end
