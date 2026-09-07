@@ -77,8 +77,8 @@ class Seller < ApplicationRecord
   def connect_mercado_pago!(credentials)
     connection_attributes = {
       mercado_pago_user_id: credentials.user_id,
-      mercado_pago_access_token_ciphertext: credential_encryptor.encrypt_and_sign(credentials.access_token),
-      mercado_pago_refresh_token_ciphertext: credential_encryptor.encrypt_and_sign(credentials.refresh_token),
+      mercado_pago_access_token_ciphertext: encrypt_credential(credentials.access_token, salt: CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO),
+      mercado_pago_refresh_token_ciphertext: encrypt_credential(credentials.refresh_token, salt: CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO),
       mercado_pago_token_expires_at: credentials.expires_at,
       mercado_pago_connected_at: Time.current,
       mercado_pago_live_mode: credentials.live_mode,
@@ -115,11 +115,47 @@ class Seller < ApplicationRecord
   end
 
   def mercado_pago_access_token
-    decrypt_credential(mercado_pago_access_token_ciphertext)
+    decrypt_credential(mercado_pago_access_token_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO)
   end
 
   def mercado_pago_refresh_token
-    decrypt_credential(mercado_pago_refresh_token_ciphertext)
+    decrypt_credential(mercado_pago_refresh_token_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO)
+  end
+
+  # Frete real via Melhor Envio (ADR 005, Etapa 1). Mesmo padrão do Mercado
+  # Pago: cada vendedor conecta a própria conta via OAuth, tokens cifrados.
+  # Sem user_id: a API do Melhor Envio não devolve identificador de conta no
+  # token exchange (ver Marketplace::MelhorEnvioOauth).
+  def melhor_envio_connected?
+    melhor_envio_access_token_ciphertext.present? && melhor_envio_refresh_token_ciphertext.present?
+  end
+
+  def connect_melhor_envio!(credentials, sandbox: false)
+    update!(
+      melhor_envio_access_token_ciphertext: encrypt_credential(credentials.access_token, salt: CREDENTIAL_ENCRYPTION_SALT_MELHOR_ENVIO),
+      melhor_envio_refresh_token_ciphertext: encrypt_credential(credentials.refresh_token, salt: CREDENTIAL_ENCRYPTION_SALT_MELHOR_ENVIO),
+      melhor_envio_token_expires_at: credentials.expires_at,
+      melhor_envio_connected_at: Time.current,
+      melhor_envio_sandbox: sandbox
+    )
+  end
+
+  def disconnect_melhor_envio!
+    update!(
+      melhor_envio_access_token_ciphertext: nil,
+      melhor_envio_refresh_token_ciphertext: nil,
+      melhor_envio_token_expires_at: nil,
+      melhor_envio_connected_at: nil,
+      melhor_envio_sandbox: false
+    )
+  end
+
+  def melhor_envio_access_token
+    decrypt_credential(melhor_envio_access_token_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_MELHOR_ENVIO)
+  end
+
+  def melhor_envio_refresh_token
+    decrypt_credential(melhor_envio_refresh_token_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_MELHOR_ENVIO)
   end
 
   def to_param
@@ -128,18 +164,20 @@ class Seller < ApplicationRecord
 
   private
 
-  CREDENTIAL_ENCRYPTION_SALT = "seller-mercado-pago-oauth".freeze
+  CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO = "seller-mercado-pago-oauth".freeze
+  CREDENTIAL_ENCRYPTION_SALT_MELHOR_ENVIO = "seller-melhor-envio-oauth".freeze
 
-  def credential_encryptor
-    key = Rails.application.key_generator.generate_key(
-      CREDENTIAL_ENCRYPTION_SALT,
-      ActiveSupport::MessageEncryptor.key_len
-    )
+  def credential_encryptor(salt:)
+    key = Rails.application.key_generator.generate_key(salt, ActiveSupport::MessageEncryptor.key_len)
     ActiveSupport::MessageEncryptor.new(key, cipher: "aes-256-gcm", serializer: JSON)
   end
 
-  def decrypt_credential(ciphertext)
-    credential_encryptor.decrypt_and_verify(ciphertext) if ciphertext.present?
+  def encrypt_credential(value, salt:)
+    credential_encryptor(salt: salt).encrypt_and_sign(value)
+  end
+
+  def decrypt_credential(ciphertext, salt:)
+    credential_encryptor(salt: salt).decrypt_and_verify(ciphertext) if ciphertext.present?
   end
 
   def assign_slug

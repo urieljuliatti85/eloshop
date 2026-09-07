@@ -68,6 +68,42 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.approved_at
   end
 
+  test "stores Melhor Envio tokens encrypted and disconnecting clears the connection" do
+    seller = sellers(:pending)
+    credentials = Marketplace::MelhorEnvioOauth::Credentials.new(
+      access_token: "melhor-envio-access-token",
+      refresh_token: "melhor-envio-refresh-token",
+      expires_at: 30.days.from_now
+    )
+
+    seller.connect_melhor_envio!(credentials, sandbox: true)
+
+    assert_predicate seller, :melhor_envio_connected?
+    assert seller.melhor_envio_sandbox?
+    assert_equal "melhor-envio-access-token", seller.melhor_envio_access_token
+    assert_equal "melhor-envio-refresh-token", seller.melhor_envio_refresh_token
+    assert_not_includes seller.melhor_envio_access_token_ciphertext, "melhor-envio-access-token"
+
+    seller.disconnect_melhor_envio!
+
+    assert_not_predicate seller, :melhor_envio_connected?
+    assert_nil seller.melhor_envio_access_token
+  end
+
+  test "Mercado Pago and Melhor Envio credentials are encrypted independently" do
+    seller = sellers(:pending)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.connect_melhor_envio!(
+      Marketplace::MelhorEnvioOauth::Credentials.new(
+        access_token: "melhor-envio-access-token", refresh_token: "melhor-envio-refresh-token", expires_at: 30.days.from_now
+      )
+    )
+
+    assert_not_equal seller.mercado_pago_access_token_ciphertext, seller.melhor_envio_access_token_ciphertext
+    assert_equal "seller-access-token", seller.mercado_pago_access_token
+    assert_equal "melhor-envio-access-token", seller.melhor_envio_access_token
+  end
+
   private
 
   # `test_account: false` é o padrão porque a maioria dos casos descreve uma

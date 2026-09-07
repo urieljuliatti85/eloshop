@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_165346) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_183338) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -386,6 +386,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_165346) do
   create_table "sellers", force: :cascade do |t|
     t.datetime "approved_at"
     t.datetime "created_at", null: false
+    t.text "melhor_envio_access_token_ciphertext"
+    t.datetime "melhor_envio_connected_at"
+    t.text "melhor_envio_refresh_token_ciphertext"
+    t.boolean "melhor_envio_sandbox", default: false, null: false
+    t.datetime "melhor_envio_token_expires_at"
     t.text "mercado_pago_access_token_ciphertext"
     t.datetime "mercado_pago_connected_at"
     t.boolean "mercado_pago_live_mode", default: false, null: false
