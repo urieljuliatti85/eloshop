@@ -128,6 +128,7 @@ Duas decisões seguem em aberto, ambas fora do escopo da correção: a PDP tem a
   * `MERCADO_PAGO_MARKETPLACE_APP_ID`, `MERCADO_PAGO_MARKETPLACE_CLIENT_SECRET` e `MERCADO_PAGO_MARKETPLACE_REDIRECT_URI` — aplicação OAuth Marketplace; os valores são preservados pelo IaC sem entrar no repositório
   * `MERCADO_PAGO_MARKETPLACE_SANDBOX=true` — somente durante a validação com aplicação/conta de teste; remover ou definir `false` antes do onboarding real
   * `RAILS_ENV=production` (Railway/Dockerfile já cobre isso, mas confirmar)
+  * `SENTRY_DSN` — opcional; sem ela, `config/initializers/sentry.rb` não ativa o SDK e a aplicação sobe normalmente. DSN do projeto no GlitchTip (glitchtip.com), não do Sentry SaaS — o SDK `sentry-ruby`/`sentry-rails` é compatível com o protocolo do GlitchTip sem alteração. Só o error tracking do backend está ligado, sem SDK JS nem Session Replay — decisão deliberada para não expor dados de checkout (nome, endereço) capturados em gravação de tela.
 * **Porta**: a Railway atribui `$PORT` dinamicamente; `bin/docker-entrypoint` já repassa isso pro Thruster (`HTTP_PORT`) — nada a configurar manualmente, mas é importante saber que existe essa ponte (ver comentário no arquivo).
 * **TLS**: a Railway termina HTTPS na borda e encaminha HTTP puro pro container — por isso `config.assume_ssl = true` (além de `config.force_ssl = true`, decidido na Fase 18) em `config/environments/production.rb`.
 
