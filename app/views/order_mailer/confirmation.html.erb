@@ -1,0 +1,36 @@
+<p>Olá, <%= @order.customer.name %>!</p>
+
+<p>Recebemos a confirmação do seu pagamento. Seu pedido <strong>#<%= @order.id %></strong> está confirmado e o ateliê já foi avisado.</p>
+
+<h3>O que você comprou</h3>
+<ul>
+  <% @order.order_items.each do |item| %>
+    <li>
+      <%= item.product_name %> × <%= item.quantity %> — <%= format_price(item.unit_price_cents * item.quantity) %>
+      <% if item.production_time_snapshot.present? %>
+        <br><small>Prazo de produção: <%= item.production_time_snapshot %></small>
+      <% end %>
+      <% item.personalization_entries.each do |entry| %>
+        <br><small><%= entry[:label] %>: <%= entry[:value] %></small>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
+
+<p>
+  Subtotal: <%= format_price(@order.subtotal_cents) %><br>
+  <% if @order.discount_cents.positive? %>Desconto: −<%= format_price(@order.discount_cents) %><br><% end %>
+  Frete: <%= format_price(@order.shipping_cents) %><br>
+  <strong>Total: <%= format_price(@order.total_cents) %></strong>
+</p>
+
+<h3>Entrega</h3>
+<% address = @order.shipping_address_snapshot %>
+<p>
+  <%= address["street"] %>, <%= address["number"] %><br>
+  <% if address["complement"].present? %><%= address["complement"] %><br><% end %>
+  <%= address["neighborhood"] %> — <%= address["city"] %>/<%= address["state"] %><br>
+  CEP <%= address["zip_code"] %>
+</p>
+
+<p>Peça feita à mão por <strong><%= @seller.name %></strong>. Assim que for despachada, avisamos você.</p>

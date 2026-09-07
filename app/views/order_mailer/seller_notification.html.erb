@@ -1,0 +1,40 @@
+<p>Olá, <%= @seller.name %>!</p>
+
+<p>Você recebeu uma nova venda — pedido <strong>#<%= @order.id %></strong>, já com pagamento confirmado.</p>
+
+<h3>Itens a produzir/despachar</h3>
+<ul>
+  <% @seller_order.order_items.each do |item| %>
+    <li>
+      <%= item.product_name %> (<%= item.sku %>) × <%= item.quantity %>
+      <% if item.variant_sku.present? %><br><small>Variante: <%= item.variant_sku %></small><% end %>
+      <% if item.production_time_snapshot.present? %>
+        <br><small>Prazo informado ao cliente: <%= item.production_time_snapshot %></small>
+      <% end %>
+      <% item.personalization_entries.each do |entry| %>
+        <br><small><strong><%= entry[:label] %>:</strong> <%= entry[:value] %></small>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
+
+<h3>Valores</h3>
+<p>
+  Subtotal: <%= format_price(@seller_order.subtotal_cents) %><br>
+  <% if @seller_order.discount_cents.positive? %>Desconto: −<%= format_price(@seller_order.discount_cents) %><br><% end %>
+  Frete: <%= format_price(@seller_order.shipping_cents) %><br>
+  Comissão da plataforma (<%= @seller_order.platform_fee_rate_bps / 100 %>%): −<%= format_price(@seller_order.platform_fee_cents) %><br>
+  <strong>Você recebe: <%= format_price(@seller_order.seller_amount_cents) %></strong>
+</p>
+
+<h3>Enviar para</h3>
+<% address = @order.shipping_address_snapshot %>
+<p>
+  <%= @order.customer.name %><br>
+  <%= address["street"] %>, <%= address["number"] %><br>
+  <% if address["complement"].present? %><%= address["complement"] %><br><% end %>
+  <%= address["neighborhood"] %> — <%= address["city"] %>/<%= address["state"] %><br>
+  CEP <%= address["zip_code"] %>
+</p>
+
+<p>Os detalhes completos estão no seu painel.</p>

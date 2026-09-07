@@ -17,6 +17,7 @@ module Payments
       return if PaymentEvent.exists?(gateway_event_id: @event_id)
 
       payment = nil
+      confirmed = false
       ActiveRecord::Base.transaction do
         payment = Payment.find_by(external_id: @external_id)
         raise OrderNotFound, "pagamento não encontrado para external_id=#{@external_id}" unless payment
@@ -27,8 +28,13 @@ module Payments
           processed_at: Time.current
         )
 
-        apply_status!(payment)
+        confirmed = apply_status!(payment)
       end
+
+      # Fora da transação de propósito: enfileirar dentro dela colocaria o
+      # job na fila antes do commit, e o worker poderia lê-lo (banco `queue`
+      # separado, ver CLAUDE.md) antes de o pedido existir para ele.
+      notify_confirmation(payment.order) if confirmed
 
       Rails.event.notify(
         "payment.webhook_applied",
@@ -45,20 +51,41 @@ module Payments
 
     private
 
+    # Devolve `true` somente quando ESTE evento foi o que confirmou o pedido
+    # — é o que autoriza o fan-out. A guarda de idempotência é a máquina de
+    # estados: `confirmed` não transiciona para `confirmed`, então um webhook
+    # repetido (ou a confirmação síncrona do cartão chegando junto do
+    # webhook) não dispara os avisos duas vezes.
     def apply_status!(payment)
       case @status
       when "approved"
-        return if payment.partially_refunded? || payment.refunded?
+        return false if payment.partially_refunded? || payment.refunded?
 
         attributes = { status: "paid" }
         attributes[:processor_fee_cents] = @processor_fee_cents unless @processor_fee_cents.nil?
         payment.update!(attributes)
-        payment.order.confirm! unless payment.order.confirmed?
+        return false if payment.order.confirmed?
+
+        payment.order.confirm!
+        true
       when "declined"
-        return if payment.paid? || payment.partially_refunded? || payment.refunded?
+        return false if payment.paid? || payment.partially_refunded? || payment.refunded?
 
         payment.update!(status: "failed")
+        false
+      else
+        false
       end
+    end
+
+    # Fan-out do pedido confirmado. Cada aviso é um job próprio para que a
+    # falha de um não impeça os outros: se o e-mail do cliente falhar, o
+    # artesão ainda é avisado e a venda ainda é registrada (CLAUDE.md §49,
+    # §50 — a compra não depende da entrega imediata de um e-mail).
+    def notify_confirmation(order)
+      SendOrderConfirmationJob.perform_later(order)
+      order.seller_orders.each { |seller_order| NotifySellerOfOrderJob.perform_later(seller_order) }
+      RecordOrderAnalyticsJob.perform_later(order)
     end
   end
 end

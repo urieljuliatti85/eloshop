@@ -134,6 +134,28 @@ O mesmo evento de webhook recebido duas vezes nunca pode:
 * debitar estoque duas vezes
 * enviar dois e-mails de confirmação indevidamente
 
+## Avisos do pedido confirmado (fan-out)
+
+Quando — e somente quando — um evento confirma o pedido, `Payments::ProcessWebhook` enfileira três jobs independentes:
+
+| job | destinatário | conteúdo |
+| --- | --- | --- |
+| `SendOrderConfirmationJob` | cliente | itens com prazo de produção e personalizações, totais, endereço de entrega |
+| `NotifySellerOfOrderJob` | artesão (o `User` do ateliê) | itens a produzir com SKU e personalizações, valores **com a comissão discriminada**, endereço de envio |
+| `RecordOrderAnalyticsJob` | log estruturado | evento `order.confirmed` com valores e ids, pesquisável no Log Explorer |
+
+Três decisões que sustentam isso:
+
+**Um job por aviso, não um só.** Se o e-mail do cliente falhar, o artesão ainda é avisado e a venda ainda é registrada. Um job único faria a falha de um derrubar os outros (§49).
+
+**A idempotência vem da máquina de estados, não de uma flag nova.** `ALLOWED_STATUS_TRANSITIONS` não permite `confirmed → confirmed`, e `apply_status!` devolve `true` apenas quando *aquele* evento foi o que confirmou. Um webhook repetido, um retry com `event_id` novo, ou a confirmação síncrona do cartão chegando junto do webhook — nenhum reenvia os avisos. Não foi preciso criar `confirmed_at` nem coluna de controle: a invariante já existia.
+
+**O enfileiramento é fora da transação.** Solid Queue grava num banco separado (ver `CLAUDE.md`), então um job enfileirado dentro da transação pode ser lido por um worker antes do commit — e o job encontraria um pedido que ainda não existe para ele.
+
+O disparo é único (`ProcessWebhook`) porque cartão e PIX convergem ali: a Fase 24 reaproveita esse serviço com um `event_id` sintético para a confirmação síncrona.
+
+`NotifySellerOfOrderJob` recebe o `SellerOrder`, não o `Order`, de propósito: hoje há sempre um só (o checkout aceita um vendedor), mas quando o split 1:N for liberado o fan-out passa a enfileirar um job por vendedor sem reescrever o job. Ateliê sem usuário vinculado não recebe e-mail e isso não é erro — não há destinatário, e repetir não criaria um.
+
 ## Idempotência
 
 Além dos webhooks, a criação do pagamento é idempotente por tentativa. Retries técnicos da mesma tentativa conservam a chave; uma tentativa comercialmente nova, necessária depois de recusa ou expiração, usa outra chave. O lock do pedido impede que requisições concorrentes criem registros de tentativa independentes.
