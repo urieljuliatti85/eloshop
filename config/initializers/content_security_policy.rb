@@ -6,27 +6,69 @@
 # estrita: só a própria origem, mais `data:` para imagens (necessário para
 # SVGs/ícones embutidos).
 #
-# Exceção (Fase 24): o Card Payment Brick do Mercado Pago carrega
-# https://sdk.mercadopago.com/js/v2 (confirmado na fonte oficial,
-# github.com/mercadopago/sdk-js), que por sua vez injeta iframes e faz
-# chamadas para tokenizar o cartão — sem lista oficial e definitiva de todos
-# os subdomínios usados internamente. `*.mercadopago.com`/`*.mlstatic.com`
-# (CDN estático do Mercado Livre/Mercado Pago) é deliberadamente amplo por
-# ora: TODO — apertar para os domínios exatos observados no console do
-# browser depois de rodar o Brick em desenvolvimento/sandbox (débito técnico,
-# ver CLAUDE.md §7; motivo: falta de documentação oficial completa; impacto:
-# CSP mais permissiva que o necessário só nessas diretivas; prioridade: antes
-# de habilitar cartão em produção).
+# Exceção (Fase 24): o Card Payment Brick do Mercado Pago. Os domínios abaixo
+# saíram da leitura do próprio SDK oficial servido em
+# https://sdk.mercadopago.com/js/v2 — cada um está na diretiva que
+# corresponde ao uso que o SDK faz dele, e não em todas:
+#
+#   sdk.mercadopago.com          loader <script> da view; também serve
+#                                /op-pay/prapi/index.html num iframe
+#   api-static.mercadopago.com   `sourceUrl` dos secure fields (o código dos
+#                                campos de cartão)
+#   http2.mlstatic.com           `assetsBaseUrl` do bundle do Brick
+#                                (/frontend-assets/op-cho-bricks) e os logos
+#                                de bandeira (/storage/logos-api-admin/*.png)
+#   secure-fields.mercadopago.com  `cacheUrl`: o iframe que hospeda os campos
+#                                de cartão — só frame-src, nunca script-src
+#   api.mercadopago.com          chamadas XHR do Brick (/v1, /v2, /bricks,
+#                                /op-pay/web/v1, /op-frontend-metrics/v1)
+#   api.mercadolibre.com         telemetria melidata (/tracks)
+#
+# Os domínios `-stg` (secure-fields-stg) aparecem no SDK apenas nos perfis
+# test1/test2 e não são liberados: produção usa o perfil `prod`. Se o Brick
+# quebrar no sandbox, é aqui que se olha primeiro.
+#
+# Isto substitui o `https://*.mercadopago.com`/`https://*.mlstatic.com` amplo
+# da primeira entrega da Fase 24. O curinga cobria qualquer subdomínio dos
+# dois (inclusive os de conteúdo do Mercado Livre), o que é bem mais do que
+# o Brick precisa. AINDA NÃO VERIFICADO NUM BROWSER REAL: nenhum vendedor de
+# teste tem Public Key até a aplicação Marketplace de sandbox existir, então
+# o Brick nunca chegou a montar. Se o console acusar bloqueio de CSP na
+# primeira execução real, o domínio faltante deve ser acrescentado à
+# diretiva específica — nunca voltando ao curinga.
 Rails.application.configure do
+  mercado_pago_sdk    = "https://sdk.mercadopago.com"
+  mercado_pago_static = "https://api-static.mercadopago.com"
+  mercado_pago_api    = "https://api.mercadopago.com"
+  mercado_pago_fields = "https://secure-fields.mercadopago.com"
+  mercado_libre_api   = "https://api.mercadolibre.com"
+  mercado_libre_cdn   = "https://http2.mlstatic.com"
+
   config.content_security_policy do |policy|
     policy.default_src :self
     policy.font_src    :self
-    policy.img_src     :self, :data
+    policy.img_src     :self, :data, mercado_libre_cdn
     policy.object_src  :none
-    policy.script_src  :self, "https://*.mercadopago.com", "https://*.mlstatic.com"
-    policy.style_src   :self, "https://*.mercadopago.com"
-    policy.connect_src :self, "https://*.mercadopago.com"
-    policy.frame_src   :self, "https://*.mercadopago.com"
+    policy.script_src  :self, mercado_pago_sdk, mercado_pago_static, mercado_libre_cdn
+    # `unsafe_inline` e não um domínio: o SDK não busca nenhum .css externo
+    # (zero referências a stylesheet no bundle), mas injeta <style> em
+    # runtime — o spinner de carregamento, o botão de fechar e os estilos do
+    # container do Brick. Esses <style> são criados por código de terceiro e
+    # não carregam nonce (o SDK não menciona nonce em lugar nenhum), então
+    # nenhum curinga de domínio jamais os liberaria: para estilo inline o que
+    # conta é `unsafe-inline`, e ele só vale se a diretiva NÃO tiver nonce
+    # (o browser ignora `unsafe-inline` quando há nonce). Por isso style-src
+    # saiu de `content_security_policy_nonce_directives` abaixo.
+    #
+    # O afrouxamento é real e vale reconhecer: qualquer estilo inline passa a
+    # ser aceito. O risco é contido — CSS injetado não executa script, o
+    # `script_src` segue com nonce e sem `unsafe-inline`, e a aplicação não
+    # tem nenhum <style> próprio em view (só o mailer, fora do alcance da
+    # CSP). A alternativa seria hashear cada bloco do SDK, que muda a cada
+    # release deles e quebraria o checkout sem aviso.
+    policy.style_src   :self, :unsafe_inline
+    policy.connect_src :self, mercado_pago_api, mercado_pago_static, mercado_libre_cdn, mercado_libre_api
+    policy.frame_src   :self, mercado_pago_fields, mercado_pago_sdk
     policy.base_uri    :self
     policy.form_action :self
   end
@@ -35,5 +77,8 @@ Rails.application.configure do
   # requisição) — necessário para o script inline do importmap. Não usar
   # request.session.id: fica em branco em requisições sem sessão iniciada.
   config.content_security_policy_nonce_generator = ->(request) { SecureRandom.base64(16) }
-  config.content_security_policy_nonce_directives = %w[script-src style-src]
+  # Só script-src: style-src usa `unsafe-inline` para os <style> que o SDK do
+  # Mercado Pago injeta, e a presença de nonce na diretiva faria o browser
+  # ignorar justamente esse `unsafe-inline` (ver comentário acima).
+  config.content_security_policy_nonce_directives = %w[script-src]
 end

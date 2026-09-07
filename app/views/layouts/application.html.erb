@@ -37,8 +37,7 @@
   </head>
 
   <%# `body_class` deixa uma página trocar o fundo do body — hoje só a home,
-      que usa `home-background`. A imagem em si é injetada por ela no <head>,
-      com nonce, porque a CSP é `style_src :self`. %>
+      que usa `home-background`, definida no CSS compilado. %>
   <body class="flex min-h-screen flex-col overflow-x-clip bg-white text-ink <%= content_for(:body_class) %>">
     <%= render "layouts/header" %>
 
