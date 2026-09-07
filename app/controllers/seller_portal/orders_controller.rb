@@ -11,5 +11,14 @@ module SellerPortal
       @order = @seller_order.order
       @order_items = @seller_order.order_items
     end
+
+    def cancel
+      order = current_seller.seller_orders.find_by!(order_id: params[:id]).order
+      Orders::Cancel.new.call(order)
+
+      redirect_to seller_order_path(order), notice: "Pedido cancelado e estoque devolvido."
+    rescue Orders::Cancel::InvalidCancellation => e
+      redirect_to seller_order_path(order), alert: e.message
+    end
   end
 end

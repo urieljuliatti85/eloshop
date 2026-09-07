@@ -94,7 +94,9 @@ Rails.application.routes.draw do
       resources :personalization_options, path: "personalizacoes", except: %i[index show]
       resources :product_images, path: "imagens", only: %i[destroy]
     end
-    resources :orders, only: %i[index show]
+    resources :orders, only: %i[index show] do
+      member { post :cancel }
+    end
   end
 
   namespace :api do

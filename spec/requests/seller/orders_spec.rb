@@ -29,6 +29,40 @@ RSpec.describe "Seller orders", type: :request do
     expect(response).to have_http_status(:not_found)
   end
 
+  describe "POST /painel/orders/:id/cancel" do
+    it "cancels the seller's own pending order and restores stock" do
+      order = create_order_for(own_product)
+
+      post cancel_seller_order_path(order)
+
+      expect(response).to redirect_to(seller_order_path(order))
+      expect(order.reload.cancelled?).to be(true)
+      # create_order_for monta o pedido direto, sem passar por
+      # Checkout::CreateOrder, então nunca debitou estoque de fato — o
+      # cancelamento ainda incrementa +1, o que é o comportamento correto.
+      expect(own_product.reload.stock_quantity).to eq(3)
+    end
+
+    it "refuses to cancel an order with an authorized payment" do
+      order = create_order_for(own_product)
+      order.payments.create!(gateway: "fake", external_id: "fake-seller-cancel", status: :paid, amount_cents: order.total_cents, application_fee_cents: 0)
+
+      post cancel_seller_order_path(order)
+
+      expect(response).to redirect_to(seller_order_path(order))
+      expect(order.reload.pending?).to be(true)
+    end
+
+    it "does not allow cancelling another seller's order" do
+      other_order = create_order_for(other_product)
+
+      post cancel_seller_order_path(other_order)
+
+      expect(response).to have_http_status(:not_found)
+      expect(other_order.reload.pending?).to be(true)
+    end
+  end
+
   private
 
   def create_order_for(product)
