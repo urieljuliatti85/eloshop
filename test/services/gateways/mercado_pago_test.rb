@@ -62,6 +62,47 @@ module Gateways
       end
     end
 
+    test "authorize sends the customer's real email when the seller account is live" do
+      @order.seller_order.seller.update!(mercado_pago_test_account: false)
+
+      captured = stub_request("id" => 1, "point_of_interaction" => {}) do
+        @gateway.authorize(order: @order, idempotency_key: "attempt-live", application_fee_cents: 1_349)
+      end
+
+      body = JSON.parse(captured.body)
+      assert_equal @order.customer.email, body.dig("payer", "email")
+    end
+
+    # No sandbox, o Mercado Pago recusa o pagamento (400
+    # "user_allowed_only_in_test") quando o payer.email não é uma conta
+    # TESTUSER do tipo Comprador — usar o e-mail real do cliente derruba a
+    # cobrança antes mesmo de gerar o PIX.
+    test "authorize sends the sandbox test payer email when the seller account is a TESTUSER" do
+      @order.seller_order.seller.update!(mercado_pago_test_account: true)
+
+      captured = with_env("MERCADO_PAGO_TEST_PAYER_EMAIL" => "test_payer@testuser.com") do
+        stub_request("id" => 1, "point_of_interaction" => {}) do
+          @gateway.authorize(order: @order, idempotency_key: "attempt-sandbox", application_fee_cents: 1_349)
+        end
+      end
+
+      body = JSON.parse(captured.body)
+      assert_equal "test_payer@testuser.com", body.dig("payer", "email")
+    end
+
+    test "authorize falls back to the customer's email when sandbox but no test payer is configured" do
+      @order.seller_order.seller.update!(mercado_pago_test_account: true)
+
+      captured = with_env("MERCADO_PAGO_TEST_PAYER_EMAIL" => nil) do
+        stub_request("id" => 1, "point_of_interaction" => {}) do
+          @gateway.authorize(order: @order, idempotency_key: "attempt-sandbox-fallback", application_fee_cents: 1_349)
+        end
+      end
+
+      body = JSON.parse(captured.body)
+      assert_equal @order.customer.email, body.dig("payer", "email")
+    end
+
     test "payment_status translates gateway vocabulary into the domain's" do
       { "approved" => "approved", "authorized" => "approved", "rejected" => "declined",
         "cancelled" => "declined", "in_process" => "pending", "refunded" => "refunded" }.each do |remoto, esperado|
@@ -159,6 +200,14 @@ module Gateways
     # Substitui a camada HTTP do adapter: responde sempre com o payload
     # informado e devolve a requisição que o adapter montou, para inspecionar
     # cabeçalhos e corpo depois do bloco.
+    def with_env(vars)
+      originals = vars.keys.index_with { |key| ENV[key] }
+      vars.each { |key, value| value.nil? ? ENV.delete(key) : ENV[key] = value }
+      yield
+    ensure
+      originals.each { |key, value| value.nil? ? ENV.delete(key) : ENV[key] = value }
+    end
+
     def stub_request(payload)
       captured = nil
       fake_http = Object.new

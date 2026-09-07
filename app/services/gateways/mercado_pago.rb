@@ -60,7 +60,7 @@ module Gateways
           payment_method_id: "pix",
           description: "Pedido #{order.id} — EloShop",
           external_reference: order.id.to_s,
-          payer: { email: order.customer.email }
+          payer: { email: payer_email_for(order) }
         },
         headers: { "X-Idempotency-Key" => idempotency_key },
         access_token: access_token
@@ -141,6 +141,17 @@ module Gateways
       return token if token.present?
 
       raise ConfigurationError, "a conta Mercado Pago do artesão não está conectada"
+    end
+
+    # No sandbox, o Mercado Pago recusa o pagamento (400 "user_allowed_only_
+    # in_test") quando o payer.email não é uma conta TESTUSER do tipo
+    # Comprador — o e-mail real do cliente EloShop não é aceito ali. Em
+    # produção (conta live) o e-mail do cliente segue normalmente.
+    def payer_email_for(order)
+      seller = order.seller_order.seller
+      return order.customer.email unless seller.mercado_pago_test_account?
+
+      ENV.fetch("MERCADO_PAGO_TEST_PAYER_EMAIL", order.customer.email)
     end
 
     def payment_details(external_id:)
