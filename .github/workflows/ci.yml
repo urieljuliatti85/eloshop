@@ -227,3 +227,26 @@ jobs:
             ${{ github.workspace }}/tmp/screenshots
             ${{ github.workspace }}/log/test.log
           if-no-files-found: ignore
+
+  # Só roda em push para main, depois que as duas suítes passam — a Railway
+  # já espera por "Wait for CI" antes de buildar, então a release do Sentry
+  # fica pronta antes (ou junto) do deploy real acontecer.
+  sentry_release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, minitest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v3
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: eloshop
+          SENTRY_PROJECT: ruby-rails
+        with:
+          environment: production
