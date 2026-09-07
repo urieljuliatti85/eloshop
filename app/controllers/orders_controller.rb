@@ -10,9 +10,10 @@ class OrdersController < StorefrontController
   def new
     @cart = Current.cart
     @addresses = Current.customer.addresses
-    @shipping_quotes = @addresses.index_with { |address| shipping_quote_for(address) }
+    @shipping_quotes = @addresses.index_with { |address| shipping_quotes_for(address) }
     @selected_address = @addresses.find { |address| @shipping_quotes[address].present? }
-    @shipping = @shipping_quotes[@selected_address]
+    @shipping_options = @shipping_quotes[@selected_address] || []
+    @shipping = @shipping_options.first
     @shipping_cents = @shipping&.shipping_cents
     session[:checkout_idempotency_key] ||= SecureRandom.hex(20)
   end
@@ -25,7 +26,8 @@ class OrdersController < StorefrontController
       cart: Current.cart,
       customer: Current.customer,
       address: address,
-      idempotency_key: idempotency_key
+      idempotency_key: idempotency_key,
+      shipping_quote_id: params[:shipping_quote_id].presence
     ).call
 
     session.delete(:checkout_idempotency_key)
@@ -55,8 +57,8 @@ class OrdersController < StorefrontController
     redirect_to cart_path, alert: "Seu carrinho está vazio." if Current.cart.cart_items.empty?
   end
 
-  def shipping_quote_for(address)
-    Shipping::Calculator.new(cart: @cart, address: address).call
+  def shipping_quotes_for(address)
+    Shipping::Calculator.new(cart: @cart, address: address).quotes
   rescue Shipping::Calculator::Unavailable
     nil
   end

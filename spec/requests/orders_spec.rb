@@ -98,6 +98,20 @@ RSpec.describe "Orders", type: :request do
       expect(Cart.find(cart_id).cart_items).to be_empty
     end
 
+    # O formulário devolve o identificador da opção, nunca o preço: uma opção
+    # forjada não pode virar um frete mais barato.
+    it "rejects a shipping option that was never offered" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+
+      expect do
+        post orders_path, params: { address_id: address.id, shipping_quote_id: "frete-de-graca" }
+      end.not_to change(Order, :count)
+
+      expect(response).to redirect_to(new_order_path)
+    end
+
     it "rejects an address belonging to another customer" do
       sign_in_customer
       add_to_cart

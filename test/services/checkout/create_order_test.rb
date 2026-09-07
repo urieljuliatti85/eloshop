@@ -344,5 +344,35 @@ module Checkout
         end
       end
     end
+
+    # O cliente escolhe a modalidade por identificador; o preço vem sempre da
+    # recotação no servidor (docs/checkout.md — nunca confiar no navegador).
+    test "records the shipping option chosen by the customer" do
+      product = build_product
+      cart = build_cart_with_item(product, quantity: 1)
+      quote_id = Shipping::Quote.new(carrier: "EloShop", service: "Entrega padrão", shipping_cents: 0, estimated_days: 0).id
+
+      order = CreateOrder.new(
+        cart: cart, customer: @customer, address: @address,
+        idempotency_key: SecureRandom.hex(10), shipping_quote_id: quote_id
+      ).call
+
+      assert_equal "Entrega padrão", order.shipment.service
+      assert_equal CreateOrder::SHIPPING_CENTS, order.shipping_cents
+    end
+
+    test "refuses a shipping option that was not offered" do
+      product = build_product
+      cart = build_cart_with_item(product, quantity: 1)
+
+      assert_no_difference("Order.count") do
+        assert_raises(Shipping::Calculator::Unavailable) do
+          CreateOrder.new(
+            cart: cart, customer: @customer, address: @address,
+            idempotency_key: SecureRandom.hex(10), shipping_quote_id: "transportadora-inventada"
+          ).call
+        end
+      end
+    end
   end
 end

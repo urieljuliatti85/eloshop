@@ -35,16 +35,16 @@
 
           <div class="mt-5 space-y-3">
             <% @addresses.each do |address| %>
-              <% quote = @shipping_quotes[address] %>
+              <% quote = @shipping_quotes[address]&.first %>
               <label class="flex items-start gap-3 rounded-2xl border border-gray-200 px-4 py-4 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 <%= 'opacity-60' unless quote %>">
                 <%= radio_button_tag :address_id, address.id, address == @selected_address,
                       disabled: quote.nil?, required: true, class: "mt-1",
-                      data: { checkout_target: "address", action: "change->checkout#update", shipping_cents: quote&.shipping_cents } %>
+                      data: { checkout_target: "address", action: "change->checkout#selectAddress", shipping_cents: quote&.shipping_cents } %>
                 <span class="min-w-0 flex-1 text-sm">
                   <span class="block font-semibold text-ink"><%= address.street %>, <%= address.number %></span>
                   <span class="mt-1 block text-ink-muted"><%= [address.neighborhood, address.city, address.state].compact_blank.join(" · ") %> · CEP <%= address.zip_code %></span>
                   <% if quote %>
-                    <span class="mt-2 block font-medium text-ink"><%= quote.service %> · até <%= quote.estimated_days %> dias úteis · <%= format_price(quote.shipping_cents) %></span>
+                    <span class="mt-2 block font-medium text-ink">A partir de <%= format_price(quote.shipping_cents) %> · até <%= quote.estimated_days %> dias úteis</span>
                   <% else %>
                     <span class="mt-2 block font-medium text-red-700">Entrega indisponível para este endereço.</span>
                   <% end %>
@@ -53,6 +53,31 @@
             <% end %>
           </div>
         </section>
+
+        <%# A escolha de modalidade só existe quando o vendedor conectou uma
+            conta de frete e o provedor devolveu mais de um serviço. Com a
+            tabela interna há uma linha só, e a seção some. %>
+        <% if @shipping_options.size > 1 %>
+          <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Frete</p>
+            <h2 class="mt-1 text-xl font-semibold text-ink">Escolha a entrega</h2>
+
+            <div class="mt-5 space-y-3">
+              <% @shipping_options.each_with_index do |option, index| %>
+                <label class="flex items-start gap-3 rounded-2xl border border-gray-200 px-4 py-4 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
+                  <%= radio_button_tag :shipping_quote_id, option.id, index.zero?, required: true, class: "mt-1",
+                        data: { checkout_target: "shippingOption", action: "change->checkout#update", shipping_cents: option.shipping_cents } %>
+                  <span class="min-w-0 flex-1 text-sm">
+                    <span class="block font-semibold text-ink"><%= option.carrier %> · <%= option.service %></span>
+                    <span class="mt-1 block text-ink-muted">Até <%= option.estimated_days %> dias úteis · <%= format_price(option.shipping_cents) %></span>
+                  </span>
+                </label>
+              <% end %>
+            </div>
+          </section>
+        <% elsif @shipping_options.one? %>
+          <%= hidden_field_tag :shipping_quote_id, @shipping_options.first.id %>
+        <% end %>
 
         <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
           <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Produtos</p>

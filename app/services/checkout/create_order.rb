@@ -6,11 +6,15 @@ module Checkout
     class Failed < StandardError; end
     SHIPPING_CENTS = Shipping::Calculator::BASE_CENTS
 
-    def initialize(cart:, customer:, address:, idempotency_key:)
+    # `shipping_quote_id` identifica a opção de frete escolhida pelo cliente,
+    # nunca o preço dela: o valor é sempre recalculado aqui (ver #create_order!
+    # e docs/checkout.md — o servidor não confia no que vem do navegador).
+    def initialize(cart:, customer:, address:, idempotency_key:, shipping_quote_id: nil)
       @cart = cart
       @customer = customer
       @address = address
       @idempotency_key = idempotency_key
+      @shipping_quote_id = shipping_quote_id
     end
 
     def call
@@ -35,7 +39,7 @@ module Checkout
       Order.transaction do
         cart_items = lock_and_revalidate_cart_items!
         subtotal = subtotal_cents(cart_items)
-        shipping = Shipping::Calculator.new(cart: @cart, address: @address).call
+        shipping = Shipping::Calculator.new(cart: @cart, address: @address).call(quote_id: @shipping_quote_id)
         coupon = lock_and_revalidate_coupon!(subtotal)
         discount = coupon ? coupon.discount_cents_for(subtotal) : 0
 

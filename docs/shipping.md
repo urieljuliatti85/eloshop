@@ -72,7 +72,47 @@ Regras de frete não devem ser implementadas diretamente em controllers — deve
 **Provedor definido em 2026-09-06: Melhor Envio** — ver o **ADR 005**
 (`docs/decisions/005-shipping-provider.md`), que registra por que ele foi
 escolhido, o que a documentação dele confirma e como a integração se divide em
-três etapas. Nenhuma linha foi escrita ainda.
+três etapas.
+
+### Etapa 1 — cotação real (implementada em 2026-09-07)
+
+Cada artesão conecta a própria conta do Melhor Envio pelo painel
+(`/painel/atelie`), por OAuth2, no mesmo arranjo já usado para o Mercado Pago:
+tokens cifrados em `Seller`, renovados sob lock antes de vencer
+(`Marketplace::MelhorEnvioOauth`, `Marketplace::MelhorEnvioAccessToken`). Não
+existe conta única da plataforma cotando por todos — a carteira pré-paga é de
+quem despacha. Diferenças em relação ao OAuth do Mercado Pago, confirmadas na
+documentação oficial: **sem PKCE**, `client_id` numérico, e a resposta do
+token **não traz identificador de conta**, então não há como validar que um
+token renovado pertence à mesma conta; o refresh token já está escopado ao
+vendedor no banco.
+
+`Shipping::Calculator` deixou de ser uma tabela e passou a ser o orquestrador:
+
+* cota em `Shipping::Providers::MelhorEnvio` quando o vendedor conectou a conta
+  **e** tem CEP de origem;
+* **cai na tabela interna** (R$ 15 + R$ 5/kg) quando não conectou, quando o
+  provedor falha, quando estoura o timeout ou quando nenhuma opção sobra. O ADR
+  é explícito: uma venda com frete estimado é melhor que uma venda perdida — a
+  tabela não deve ser deletada;
+* guarda a cotação por 30 minutos em `Rails.cache`, chaveada por origem,
+  destino e itens: trocar de endereço no checkout repete a mesma pergunta, e o
+  rate limit do Melhor Envio não é documentado.
+
+`#quotes` devolve **a mais barata e a mais rápida** (uma só quando coincidem);
+`#call(quote_id:)` reencontra a escolhida. Os timeouts são curtos (3s para
+conectar, 5s para ler) porque isso roda dentro do checkout.
+
+**O cliente escolhe por identificador, nunca por preço.** O formulário envia
+`shipping_quote_id` (derivado de transportadora + serviço), e
+`Checkout::CreateOrder` recota no servidor e reencontra a opção — uma opção que
+não está mais entre as ofertadas é recusada, não substituída. É a mesma regra
+que já valia para preço de produto e desconto (ver `docs/checkout.md`).
+
+**Ainda não verificado:** a integração nunca rodou contra o sandbox do Melhor
+Envio — falta credencial. Os testes stubam HTTP e cobrem o contrato do adapter
+(o que envia, o que devolve, o que descarta), não a API real. Mesma situação
+registrada para o Mercado Pago.
 
 `TODO — DECISION REQUIRED`: seguem pendentes, e travam apenas as Etapas 2 e 3
 (etiqueta e rastreio), **se existe frete grátis** — a partir de qual valor e
