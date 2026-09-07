@@ -81,6 +81,20 @@ bin/bundler-audit   # vulnerabilidades conhecidas em gems
 CI (GitHub Actions, `.github/workflows/`) roda lint, testes, testes de
 sistema, Brakeman/bundler-audit e CodeQL a cada push/PR em `main`.
 
+## Error tracking (GlitchTip)
+
+Em produção, exceções e performance do backend são reportadas para o
+[GlitchTip](https://glitchtip.com) via `sentry-ruby`/`sentry-rails`
+(`config/initializers/sentry.rb`) — o GlitchTip é compatível com o protocolo
+do Sentry, então o SDK oficial funciona sem alteração, só apontando o DSN
+para o host do GlitchTip.
+
+Ativa apenas quando `SENTRY_DSN` está definida e `RAILS_ENV=production`; sem
+a variável, o SDK não é inicializado e development/test seguem inertes. Não
+há SDK JS nem Session Replay — decisão deliberada para não expor dados de
+checkout (nome, endereço) capturados em gravação de tela. Detalhes em
+`docs/architecture.md`, seção "Deploy".
+
 ## Documentação do domínio
 
 O contexto de negócio e as decisões arquiteturais estão em `docs/`. Consulte
