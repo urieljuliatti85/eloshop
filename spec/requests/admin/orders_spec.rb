@@ -74,4 +74,46 @@ RSpec.describe "Admin orders", type: :request do
       expect(PaymentRefund.find_by(idempotency_key: "anonymous-refund")).to be_nil
     end
   end
+
+  describe "POST /admin/orders/:id/cancel" do
+    let(:seller) { Seller.create!(name: "Ateliê Cancel", status: :approved, approved_at: Time.current) }
+    let(:product) { Product.create!(seller: seller, name: "Produto", sku: "SKU-CANCEL-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active") }
+    let(:seller_order) do
+      order.seller_orders.create!(
+        seller: seller, status: :pending, subtotal_cents: 1000, shipping_cents: 500,
+        total_cents: 1500, platform_fee_cents: 150, seller_amount_cents: 1350
+      )
+    end
+    let!(:order_item) do
+      OrderItem.create!(order: order, seller_order: seller_order, product: product,
+        product_name: product.name, sku: product.sku, unit_price_cents: 1000, quantity: 1)
+    end
+
+    it "cancels a pending order and restores stock" do
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      post cancel_admin_order_path(order)
+
+      expect(response).to redirect_to(admin_order_path(order))
+      expect(order.reload.cancelled?).to be(true)
+      expect(product.reload.stock_quantity).to eq(6)
+    end
+
+    it "refuses to cancel an order with an authorized payment" do
+      order.payments.create!(gateway: "fake", external_id: "fake-cancel", status: :paid, amount_cents: 1500, application_fee_cents: 150)
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      post cancel_admin_order_path(order)
+
+      expect(response).to redirect_to(admin_order_path(order))
+      expect(order.reload.pending?).to be(true)
+    end
+
+    it "does not allow an unauthenticated cancel" do
+      post cancel_admin_order_path(order)
+
+      expect(response).to redirect_to(new_session_path)
+      expect(order.reload.pending?).to be(true)
+    end
+  end
 end

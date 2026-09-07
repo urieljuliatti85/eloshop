@@ -40,6 +40,15 @@ class OrdersController < StorefrontController
     @order = Current.customer.orders.find(params[:id])
   end
 
+  def cancel
+    order = Current.customer.orders.find(params[:id])
+    Orders::Cancel.new.call(order)
+
+    redirect_to order_path(order), notice: "Pedido cancelado."
+  rescue Orders::Cancel::InvalidCancellation => e
+    redirect_to order_path(order), alert: e.message
+  end
+
   private
 
   def ensure_cart_not_empty

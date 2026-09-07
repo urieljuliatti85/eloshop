@@ -47,7 +47,10 @@ Rails.application.routes.draw do
     resources :mercado_pago_test_accounts, path: "contas-de-teste-mercado-pago", except: %i[show]
 
     resources :orders, only: %i[index show] do
-      member { post :refund }
+      member do
+        post :refund
+        post :cancel
+      end
     end
   end
 
@@ -129,6 +132,7 @@ Rails.application.routes.draw do
   # acrescenta a gestão (listar, editar, excluir).
   resources :addresses, only: %i[index new create edit update destroy]
   resources :orders, only: %i[index new create show] do
+    member { post :cancel }
     resource :payment, only: %i[new] do
       get :status
     end

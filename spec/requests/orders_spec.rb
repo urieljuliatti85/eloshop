@@ -166,6 +166,53 @@ RSpec.describe "Orders", type: :request do
     end
   end
 
+  describe "POST /orders/:id/cancel" do
+    it "cancels the customer's own pending order and restores stock" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      post orders_path, params: { address_id: address.id }
+      order = Order.last
+
+      post cancel_order_path(order)
+
+      expect(response).to redirect_to(order_path(order))
+      expect(order.reload.cancelled?).to be(true)
+      expect(product.reload.stock_quantity).to eq(3)
+    end
+
+    it "does not cancel an order with an authorized payment" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      post orders_path, params: { address_id: address.id }
+      order = Order.last
+      order.payments.create!(gateway: "fake", external_id: "fake-cancel-own", status: :paid, amount_cents: order.total_cents, application_fee_cents: 0)
+
+      post cancel_order_path(order)
+
+      expect(response).to redirect_to(order_path(order))
+      expect(order.reload.pending?).to be(true)
+    end
+
+    it "does not allow cancelling another customer's order" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      post orders_path, params: { address_id: address.id }
+      order = Order.last
+
+      other_customer = Customer.create!(name: "Outro cancelamento", email: "other-cancel@example.com", password: "password123")
+      delete customer_session_path
+      post customer_session_path, params: { email: other_customer.email, password: "password123" }
+
+      post cancel_order_path(order)
+
+      expect(response).to have_http_status(:not_found)
+      expect(order.reload.pending?).to be(true)
+    end
+  end
+
   def create_order_for(order_customer, idempotency_key:)
     Order.create!(
       customer: order_customer,

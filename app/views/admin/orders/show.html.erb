@@ -12,6 +12,11 @@
       </div>
       <p class="mt-2 text-sm text-slate-500">Criado em <%= l(@order.created_at, format: :short) %></p>
     </div>
+    <% if @order.pending? || @order.confirmed? %>
+      <%= button_to "Cancelar pedido", cancel_admin_order_path(@order), method: :post,
+            class: "admin-button admin-button--danger",
+            form: { data: { turbo_confirm: "Cancelar este pedido e devolver o estoque?" } } %>
+    <% end %>
   </header>
 
   <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(21rem,0.65fr)]">

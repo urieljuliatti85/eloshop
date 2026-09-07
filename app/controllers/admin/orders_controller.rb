@@ -26,6 +26,15 @@ module Admin
       redirect_to admin_order_path(params[:id]), alert: e.message
     end
 
+    def cancel
+      order = Order.find(params[:id])
+      Orders::Cancel.new.call(order)
+
+      redirect_to admin_order_path(order), notice: "Pedido cancelado e estoque devolvido."
+    rescue Orders::Cancel::InvalidCancellation => e
+      redirect_to admin_order_path(order), alert: e.message
+    end
+
     private
 
     def refund_amount_cents(payment)

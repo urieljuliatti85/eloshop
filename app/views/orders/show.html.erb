@@ -12,9 +12,17 @@
   <h1 class="mb-2 text-2xl font-bold text-ink">Pedido #<%= @order.id %></h1>
   <p class="mb-6 text-sm text-ink-muted">Status: <%= @order.status %></p>
 
-  <% if @order.pending? %>
-    <%= link_to "Pagar agora", new_order_payment_path(@order), class: "mb-8 inline-block w-fit rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
-  <% end %>
+  <div class="mb-8 flex flex-wrap gap-3">
+    <% if @order.pending? %>
+      <%= link_to "Pagar agora", new_order_payment_path(@order), class: "inline-block w-fit rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
+    <% end %>
+
+    <% if @order.pending? || @order.confirmed? %>
+      <%= button_to "Cancelar pedido", cancel_order_path(@order), method: :post,
+            class: "inline-block w-fit rounded-full border border-red-200 px-8 py-3 text-sm font-semibold text-red-700 hover:bg-red-50",
+            form: { data: { turbo_confirm: "Cancelar este pedido?" } } %>
+    <% end %>
+  </div>
 
   <h2 class="mb-3 font-semibold text-ink">Itens</h2>
   <div class="divide-y divide-gray-200 border-y border-gray-200">
