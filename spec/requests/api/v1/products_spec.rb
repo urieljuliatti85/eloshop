@@ -27,9 +27,10 @@ RSpec.describe "api/v1/products", type: :request do
     properties: {
       products: { type: :array, items: PRODUCT_SCHEMA },
       page: { type: :integer },
-      total_pages: { type: :integer }
+      total_pages: { type: :integer },
+      total_count: { type: :integer }
     },
-    required: %w[products page total_pages]
+    required: %w[products page total_pages total_count]
   }.freeze
 
   path "/api/v1/products" do
@@ -38,6 +39,14 @@ RSpec.describe "api/v1/products", type: :request do
       produces "application/json"
       parameter name: :page, in: :query, type: :integer, required: false,
                 description: "Página da listagem (padrão 1)"
+      parameter name: :q, in: :query, type: :string, required: false,
+                description: "Busca por nome, descrição, categoria, tag, material ou técnica"
+      parameter name: :seller, in: :query, type: :string, required: false,
+                description: "Slug do ateliê"
+      parameter name: :category, in: :query, type: :string, required: false,
+                description: "Slug da categoria; inclui as subcategorias"
+      parameter name: :availability, in: :query, type: :string, required: false,
+                description: "Tipo de disponibilidade (standard, one_of_a_kind, made_to_order)"
 
       response "200", "produtos ativos encontrados" do
         schema LIST_SCHEMA
@@ -156,6 +165,95 @@ RSpec.describe "api/v1/products", type: :request do
           expect(product_json["availability_type"]).to eq("made_to_order")
           expect(product_json["production_time_range"]).to eq("7 a 10 dias úteis")
           expect(product_json["available_for_purchase"]).to eq(true)
+        end
+      end
+
+      response "200", "produtos ativos encontrados" do
+        schema LIST_SCHEMA
+
+        let!(:matching) { Product.create!(seller: approved_seller, name: "Vaso de cerâmica rswag filtro", sku: "RSWAG-Q-001", price_cents: 8990, stock_quantity: 3, status: :active) }
+        let!(:other) { Product.create!(seller: approved_seller, name: "Caneca rswag filtro", sku: "RSWAG-Q-002", price_cents: 4990, stock_quantity: 3, status: :active) }
+        let(:q) { "cerâmica" }
+
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          slugs = body["products"].map { |p| p["slug"] }
+
+          expect(slugs).to include(matching.slug)
+          expect(slugs).not_to include(other.slug)
+        end
+      end
+
+      response "200", "produtos ativos encontrados" do
+        schema LIST_SCHEMA
+
+        let!(:other_seller) { Seller.create!(name: "Outro ateliê rswag filtro", status: :approved, approved_at: Time.current) }
+        let!(:mine) { Product.create!(seller: approved_seller, name: "Peça do ateliê A", sku: "RSWAG-SELLERF-001", price_cents: 8990, stock_quantity: 3, status: :active) }
+        let!(:theirs) { Product.create!(seller: other_seller, name: "Peça do ateliê B", sku: "RSWAG-SELLERF-002", price_cents: 8990, stock_quantity: 3, status: :active) }
+        let(:seller) { approved_seller.slug }
+
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          slugs = body["products"].map { |p| p["slug"] }
+
+          expect(slugs).to include(mine.slug)
+          expect(slugs).not_to include(theirs.slug)
+        end
+      end
+
+      # Filtrar pela categoria pai traz também as peças das subcategorias —
+      # mesma regra do catálogo, senão um pai só com filhas viria vazio.
+      response "200", "produtos ativos encontrados" do
+        schema LIST_SCHEMA
+
+        let!(:parent_category) { Category.create!(name: "Casa rswag filtro") }
+        let!(:child_category) { Category.create!(name: "Decoração rswag filtro", parent: parent_category) }
+        let!(:in_child) { Product.create!(seller: approved_seller, category: child_category, name: "Peça na subcategoria", sku: "RSWAG-CATF-001", price_cents: 8990, stock_quantity: 3, status: :active) }
+        let!(:uncategorized) { Product.create!(seller: approved_seller, name: "Peça sem categoria", sku: "RSWAG-CATF-002", price_cents: 8990, stock_quantity: 3, status: :active) }
+        let(:category) { parent_category.slug }
+
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          slugs = body["products"].map { |p| p["slug"] }
+
+          expect(slugs).to include(in_child.slug)
+          expect(slugs).not_to include(uncategorized.slug)
+        end
+      end
+
+      response "200", "produtos ativos encontrados" do
+        schema LIST_SCHEMA
+
+        let!(:made_to_order) do
+          Product.create!(seller: approved_seller, name: "Sob encomenda rswag filtro", sku: "RSWAG-AVF-001",
+            price_cents: 15_000, stock_quantity: 0, status: :active, availability_type: :made_to_order,
+            production_time_min_days: 7, production_time_max_days: 10)
+        end
+        let!(:standard) { Product.create!(seller: approved_seller, name: "Padrão rswag filtro", sku: "RSWAG-AVF-002", price_cents: 8990, stock_quantity: 3, status: :active) }
+        let(:availability) { "made_to_order" }
+
+        run_test! do |response|
+          body = JSON.parse(response.body)
+          slugs = body["products"].map { |p| p["slug"] }
+
+          expect(slugs).to include(made_to_order.slug)
+          expect(slugs).not_to include(standard.slug)
+        end
+      end
+
+      # Slug inexistente é filtro sem resultado, não recurso ausente: a
+      # listagem responde 200 com lista vazia, não 404.
+      response "200", "produtos ativos encontrados" do
+        schema LIST_SCHEMA
+
+        let!(:product) { Product.create!(seller: approved_seller, name: "Peça qualquer rswag", sku: "RSWAG-NOCAT-001", price_cents: 8990, stock_quantity: 3, status: :active) }
+        let(:category) { "categoria-que-nao-existe" }
+
+        run_test! do |response|
+          body = JSON.parse(response.body)
+
+          expect(body["products"]).to eq([])
+          expect(body["total_count"]).to eq(0)
         end
       end
     end

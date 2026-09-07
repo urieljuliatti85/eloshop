@@ -106,6 +106,8 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :products, only: :index
+      resources :sellers, only: %i[index show], param: :slug
+      resources :categories, only: :index
       scope "sellers/:seller_slug" do
         resources :products, only: :show, param: :slug
       end

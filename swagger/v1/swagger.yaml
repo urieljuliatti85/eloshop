@@ -4,6 +4,42 @@ info:
   title: API V1
   version: v1
 paths:
+  "/api/v1/categories":
+    get:
+      summary: Lista categorias visíveis
+      tags:
+      - Categories
+      responses:
+        '200':
+          description: categorias encontradas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        breadcrumb_name:
+                          type: string
+                        parent_slug:
+                          type: string
+                          nullable: true
+                        product_count:
+                          type: integer
+                      required:
+                      - name
+                      - slug
+                      - breadcrumb_name
+                      - product_count
+                required:
+                - categories
   "/api/v1/products":
     get:
       summary: Lista produtos ativos
@@ -16,6 +52,30 @@ paths:
         description: Página da listagem (padrão 1)
         schema:
           type: integer
+      - name: q
+        in: query
+        required: false
+        description: Busca por nome, descrição, categoria, tag, material ou técnica
+        schema:
+          type: string
+      - name: seller
+        in: query
+        required: false
+        description: Slug do ateliê
+        schema:
+          type: string
+      - name: category
+        in: query
+        required: false
+        description: Slug da categoria; inclui as subcategorias
+        schema:
+          type: string
+      - name: availability
+        in: query
+        required: false
+        description: Tipo de disponibilidade (standard, one_of_a_kind, made_to_order)
+        schema:
+          type: string
       responses:
         '200':
           description: produtos ativos encontrados
@@ -71,10 +131,13 @@ paths:
                     type: integer
                   total_pages:
                     type: integer
+                  total_count:
+                    type: integer
                 required:
                 - products
                 - page
                 - total_pages
+                - total_count
   "/api/v1/sellers/{seller_slug}/products/{slug}":
     get:
       summary: Exibe um produto ativo pelo slug
@@ -139,6 +202,76 @@ paths:
                 - available_for_purchase
         '404':
           description: produto não encontrado ou não disponível publicamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+  "/api/v1/sellers":
+    get:
+      summary: Lista ateliês aprovados com peças publicadas
+      tags:
+      - Sellers
+      responses:
+        '200':
+          description: ateliês encontrados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sellers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        product_count:
+                          type: integer
+                      required:
+                      - name
+                      - slug
+                      - product_count
+                required:
+                - sellers
+  "/api/v1/sellers/{slug}":
+    get:
+      summary: Exibe um ateliê aprovado pelo slug
+      tags:
+      - Sellers
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ateliê encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  slug:
+                    type: string
+                  product_count:
+                    type: integer
+                required:
+                - name
+                - slug
+                - product_count
+        '404':
+          description: ateliê não encontrado ou não aprovado
           content:
             application/json:
               schema:

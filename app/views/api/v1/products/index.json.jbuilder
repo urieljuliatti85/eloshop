@@ -3,3 +3,4 @@ json.products @products do |product|
 end
 json.page @page
 json.total_pages @total_pages
+json.total_count @total_count
