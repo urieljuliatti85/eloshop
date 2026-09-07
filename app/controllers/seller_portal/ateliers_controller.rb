@@ -2,7 +2,7 @@ module SellerPortal
   # Dados do próprio ateliê. O escopo vem sempre de `current_seller` — nenhuma
   # ação aceita id de vendedor por parâmetro.
   class AteliersController < BaseController
-    before_action :set_mercado_pago_oauth_state, only: :show
+    before_action :set_mercado_pago_oauth_state, :set_melhor_envio_oauth_state, only: :show
 
     def show
     end

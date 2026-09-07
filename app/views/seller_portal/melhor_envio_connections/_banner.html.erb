@@ -1,0 +1,27 @@
+<section class="relative flex flex-col justify-between gap-5 overflow-hidden rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:flex-row sm:items-center sm:p-8">
+  <span class="pointer-events-none absolute -right-8 -top-10 size-40 rounded-full bg-brand-50" aria-hidden="true"></span>
+  <span class="pointer-events-none absolute -right-2 -top-2 size-24 rounded-full bg-brand-100/70" aria-hidden="true"></span>
+  <div class="relative flex max-w-3xl items-start gap-4">
+    <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#7a2410] text-white" aria-hidden="true">
+      <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 12h18"/><path d="M12 3v18"/><rect x="4" y="4" width="16" height="16" rx="2.5"/></svg>
+    </span>
+    <div>
+      <p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Frete</p>
+      <h2 class="mt-1 text-2xl font-bold">Melhor Envio</h2>
+    <% if current_seller.melhor_envio_connected? %>
+      <p class="mt-2 text-sm leading-6 text-stone-600">Conta conectada em <%= l(current_seller.melhor_envio_connected_at, format: :short) %>. Ambiente: <%= current_seller.melhor_envio_sandbox? ? "teste" : "produção" %>. O frete dos seus pedidos passa a ser cotado em tempo real.</p>
+    <% elsif @melhor_envio_oauth_configured %>
+      <p class="mt-2 text-sm leading-6 text-stone-600">Conecte sua conta do Melhor Envio para cotar o frete real dos seus pedidos. Sem conexão, o frete usa a tabela padrão da EloShop.</p>
+    <% else %>
+      <p class="mt-2 text-sm leading-6 text-amber-700">A conexão aguarda a configuração da aplicação Melhor Envio pela plataforma.</p>
+    <% end %>
+    </div>
+  </div>
+  <div class="relative shrink-0">
+    <% if current_seller.melhor_envio_connected? %>
+      <%= button_to "Desconectar", seller_melhor_envio_connection_path, method: :delete, class: "rounded-full border border-red-200 px-6 py-3 text-sm font-bold text-red-700 hover:bg-red-50", form: { data: { turbo_confirm: "Desconectar a conta? O frete volta a usar a tabela padrão." } } %>
+    <% elsif @melhor_envio_oauth_configured %>
+      <%= link_to "Conectar Melhor Envio", seller_melhor_envio_connect_path, class: "inline-flex rounded-full bg-[#7a2410] px-6 py-3 text-sm font-bold text-white hover:bg-[#4a1508]", data: { turbo: false } %>
+    <% end %>
+  </div>
+</section>

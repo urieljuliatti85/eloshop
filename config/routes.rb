@@ -83,6 +83,10 @@ Rails.application.routes.draw do
     get "mercado-pago/conectar", to: "mercado_pago_connections#create", as: :mercado_pago_connect
     get "mercado-pago/callback", to: "mercado_pago_connections#callback", as: :mercado_pago_callback
     delete "mercado-pago", to: "mercado_pago_connections#destroy", as: :mercado_pago_connection
+
+    get "melhor-envio/conectar", to: "melhor_envio_connections#create", as: :melhor_envio_connect
+    get "melhor-envio/callback", to: "melhor_envio_connections#callback", as: :melhor_envio_callback
+    delete "melhor-envio", to: "melhor_envio_connections#destroy", as: :melhor_envio_connection
     resources :products, except: :destroy do
       member do
         patch :publish

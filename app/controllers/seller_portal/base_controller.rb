@@ -21,6 +21,14 @@ module SellerPortal
       @mercado_pago_oauth_sandbox = oauth.sandbox?
     end
 
+    # Estado do OAuth do Melhor Envio (ADR 005) para o banner de frete real,
+    # exibido no ateliê — mesmo padrão do banner do Mercado Pago acima.
+    def set_melhor_envio_oauth_state
+      oauth = Marketplace::MelhorEnvioOauth.new
+      @melhor_envio_oauth_configured = oauth.configured?
+      @melhor_envio_oauth_sandbox = oauth.sandbox?
+    end
+
     # O painel tem porta própria: quem não está autenticado vai para o login
     # do ateliê, não para o da administração da plataforma.
     def request_authentication
