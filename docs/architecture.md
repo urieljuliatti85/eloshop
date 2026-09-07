@@ -169,6 +169,10 @@ railway api 'mutation($id: String!, $input: DeploymentTriggerUpdateInput!) {
 
 Para inspecionar ou reverter: `railway api 'query { deploymentTriggers(projectId: ..., environmentId: ..., serviceId: ...) { edges { node { id branch checkSuites } } } }'` e `railway service source disconnect --service eloshop-web`.
 
+**Essa configuração já se perdeu uma vez, silenciosamente.** Em 2026-09-07 o deploy de `eae9ba7` foi investigado por curiosidade e revelou `checkSuites: false`: o build começou **um segundo antes** do CI iniciar e terminou **17 s antes** do CI concluir — ou seja, a proteção descrita acima não estava valendo, embora esta documentação afirmasse que sim. Ao religar, o `id` do trigger mudou (`410015f0…` → `383b4ae8…`), o que indica que o trigger é **recriado**, e não atualizado, quando a fonte do GitHub é reconectada — e um trigger novo nasce com `checkSuites` no default `false`. Portanto: **toda vez que rodar `railway service source connect`, refaça a mutation de `checkSuites` e confirme com a query**, porque a reconexão desfaz a proteção sem nenhum aviso.
+
+Não há alarme para isso: a configuração não é versionada e nada no repositório detecta a divergência. Enquanto não existir uma verificação automática, a evidência confiável de que a proteção está valendo é comparar horários — o deploy precisa **começar depois** do CI concluir —, nunca o fato de o build ter iniciado.
+
 ### Achado corrigido durante a Fase 20
 
 `rswag-api`/`rswag-ui` estavam no grupo `development, test` do `Gemfile`, mas são montados em `/api-docs` em todos os ambientes (`config/routes.rb`) — o app quebrava no boot de produção (`uninitialized constant Rswag`) porque essas gems nunca eram exigidas fora de dev/test. Movidas para fora do grupo; só `rswag-specs` (a DSL usada nos specs) continua dev/test-only.
