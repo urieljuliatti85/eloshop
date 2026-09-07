@@ -89,11 +89,37 @@ Em produção, exceções e performance do backend são reportadas para o
 do Sentry, então o SDK oficial funciona sem alteração, só apontando o DSN
 para o host do GlitchTip.
 
-Ativa apenas quando `SENTRY_DSN` está definida e `RAILS_ENV=production`; sem
-a variável, o SDK não é inicializado e development/test seguem inertes. Não
-há SDK JS nem Session Replay — decisão deliberada para não expor dados de
-checkout (nome, endereço) capturados em gravação de tela. Detalhes em
-`docs/architecture.md`, seção "Deploy".
+Ativa apenas quando `SENTRY_DSN` está definida **e** `RAILS_ENV=production`;
+sem a variável, o SDK não é inicializado e development/test seguem inertes.
+Não há SDK JS nem Session Replay — decisão deliberada para não expor dados
+de checkout (nome, endereço) capturados em gravação de tela.
+
+### Configurar
+
+1. Crie (ou acesse) o projeto no [GlitchTip](https://glitchtip.com) e copie o
+   DSN em **Settings → Client Keys (DSN)**.
+2. Configure `SENTRY_DSN` com esse valor nas variáveis de ambiente do serviço
+   em produção (painel da Railway).
+
+### Testar a integração
+
+O SDK só ativa com `RAILS_ENV=production`. Ao usar `railway run`, o comando é
+executado **localmente**, injetando as variáveis do serviço remoto mas
+mantendo o `RAILS_ENV` do seu shell — sem sobrescrever explicitamente, o
+initializer nunca ativa e nada é enviado. Prefixe o comando:
+
+```bash
+RAILS_ENV=production railway run --service eloshop-web bin/rails runner '
+  Sentry.capture_message("Teste de integração GlitchTip", level: :info)
+  Sentry.get_current_client&.flush
+'
+```
+
+O `flush` explícito garante que o evento seja enviado antes do processo
+`runner` (de vida curta) encerrar. Depois, confira no painel do GlitchTip se
+o evento apareceu.
+
+Detalhes em `docs/architecture.md`, seção "Deploy".
 
 ## Documentação do domínio
 
