@@ -128,6 +128,7 @@ Duas decisões seguem em aberto, ambas fora do escopo da correção: a PDP tem a
   * `MERCADO_PAGO_MARKETPLACE_APP_ID`, `MERCADO_PAGO_MARKETPLACE_CLIENT_SECRET` e `MERCADO_PAGO_MARKETPLACE_REDIRECT_URI` — aplicação OAuth Marketplace; os valores são preservados pelo IaC sem entrar no repositório
   * `MERCADO_PAGO_MARKETPLACE_SANDBOX=true` — somente durante a validação com aplicação/conta de teste; remover ou definir `false` antes do onboarding real
   * `RAILS_ENV=production` (Railway/Dockerfile já cobre isso, mas confirmar)
+  * `SENTRY_DSN` — opcional; sem ela, `config/initializers/sentry.rb` não ativa o SDK e a aplicação sobe normalmente. Só o error tracking do backend está ligado (`sentry-ruby`/`sentry-rails`), sem SDK JS nem Session Replay — decisão deliberada para não expor dados de checkout (nome, endereço) capturados em gravação de tela. O `SENTRY_AUTH_TOKEN` usado pelo job `sentry_release` do CI (criação de release/vínculo de commits) é um secret do GitHub Actions, não uma variável da Railway.
 * **Porta**: a Railway atribui `$PORT` dinamicamente; `bin/docker-entrypoint` já repassa isso pro Thruster (`HTTP_PORT`) — nada a configurar manualmente, mas é importante saber que existe essa ponte (ver comentário no arquivo).
 * **TLS**: a Railway termina HTTPS na borda e encaminha HTTP puro pro container — por isso `config.assume_ssl = true` (além de `config.force_ssl = true`, decidido na Fase 18) em `config/environments/production.rb`.
 
