@@ -273,8 +273,11 @@ module Gateways
       unless response.is_a?(Net::HTTPSuccess)
         log_error_response(response, request.path)
         # Sem o corpo da resposta na mensagem: ele pode ecoar dados do
-        # pagamento, e esta exceção vai para o log.
-        raise RequestFailed, "Mercado Pago respondeu #{response.code} em #{request.path}"
+        # pagamento, e esta exceção vai para o log. Só o código de erro entra,
+        # porque é ele que diz o que houve — "respondeu 500" sozinho custou uma
+        # investigação inteira em 2026-09-08.
+        code = error_code(response)
+        raise RequestFailed, "Mercado Pago respondeu #{response.code} em #{request.path}#{" (#{code})" if code}"
       end
 
       JSON.parse(response.body.to_s)
@@ -282,9 +285,12 @@ module Gateways
       raise RequestFailed, "resposta ilegível do Mercado Pago em #{request.path}"
     end
 
-    # TEMPORÁRIO — diagnóstico do HTTP 500 em /v1/payments no sandbox (Fase
-    # 20, Etapa B). Loga só error/message/cause do corpo, nunca o payload
-    # completo (pode ecoar dados do pagamento). Remover após identificar a causa.
+    # Permanente, e não mais temporário: foi este log que identificou a causa do
+    # HTTP 500 em /v1/payments no sandbox (2026-09-08). Sem ele a exceção só
+    # dizia "respondeu 500", e a causa real — `user_allowed_only_in_test`, que
+    # o Mercado Pago devolve quando o método pedido não está habilitado na conta
+    # — ficava invisível. Loga só error/message/cause, nunca o payload completo,
+    # que pode ecoar dados do pagamento (§43).
     def log_error_response(response, path)
       body = JSON.parse(response.body.to_s)
       Rails.event.notify(
@@ -295,6 +301,16 @@ module Gateways
         message: body["message"],
         cause: body["cause"]
       )
+    rescue StandardError
+      nil
+    end
+
+    # O identificador do erro do Mercado Pago (ex.: "user_allowed_only_in_test")
+    # é seguro para a mensagem da exceção — é um código de causa, não conteúdo
+    # do pagamento. O resto do corpo continua de fora.
+    def error_code(response)
+      body = JSON.parse(response.body.to_s)
+      body["error"].presence
     rescue StandardError
       nil
     end

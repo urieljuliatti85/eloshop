@@ -111,7 +111,10 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :success
-    assert_match(/recusado ou expirado/, response.body)
+    # A asserção olha o que o cliente precisa saber — que falhou e que dá para
+    # tentar de novo — em vez da redação exata, que já mudou uma vez.
+    assert_match(/Não foi possível concluir o pagamento/, response.body)
+    assert_match(/Tentar novamente/, response.body)
     assert_no_match(/data-controller="payment-status"/, response.body)
   end
 

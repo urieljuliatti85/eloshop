@@ -20,6 +20,14 @@ class Payment < ApplicationRecord
     credit_card: "credit_card"
   }, default: "pix"
 
+  # Uma tentativa `processing` que passou disso não vai mais virar cobrança: a
+  # criação no gateway falhou. O registro continua `processing` de propósito
+  # (`Payments::Authorize` reusa a chave de idempotência, porque a cobrança pode
+  # ter nascido do outro lado), mas a tela do cliente para de prometer que ela
+  # está a caminho. O limite é generoso perto dos timeouts do gateway
+  # (5s de conexão, 15s de leitura) para não acusar falha numa cobrança lenta.
+  PROCESSING_STALE_AFTER = 2.minutes
+
   validates :gateway, presence: true
   validates :external_id, presence: true, unless: :processing?
   validates :idempotency_key, presence: true, uniqueness: true
@@ -32,6 +40,12 @@ class Payment < ApplicationRecord
 
   def expired?
     expires_at.present? && expires_at <= Time.current
+  end
+
+  # A criação da cobrança falhou e não vai se resolver sozinha — o cliente
+  # precisa tentar de novo. Ver PROCESSING_STALE_AFTER.
+  def stalled?
+    processing? && created_at.present? && created_at <= PROCESSING_STALE_AFTER.ago
   end
 
   def remaining_refundable_cents

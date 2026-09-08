@@ -82,6 +82,49 @@ RSpec.describe "Payments", type: :request do
       expect(response.body).to include("payment-status")
     end
 
+    # Uma tentativa cuja criação de cobrança falhou fica `processing` de
+    # propósito (Payments::Authorize reusa a chave de idempotência, porque a
+    # cobrança pode ter nascido no gateway). Antes disso a tela prometia
+    # "Aguarde alguns instantes" para sempre — aconteceu de verdade em produção.
+    it "admits the failure once a processing attempt goes stale" do
+      order.payments.destroy_all
+      Payment.create!(order: order, gateway: "mercado_pago", amount_cents: 1500,
+        status: "processing", idempotency_key: SecureRandom.uuid,
+        created_at: (Payment::PROCESSING_STALE_AFTER + 1.minute).ago)
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+
+      get status_order_payment_path(order)
+
+      expect(response.body).to include("Não foi possível preparar a cobrança")
+      expect(response.body).to include("Tentar novamente")
+      expect(response.body).not_to include("Aguarde alguns instantes")
+    end
+
+    it "still asks a recent processing attempt to wait" do
+      order.payments.destroy_all
+      Payment.create!(order: order, gateway: "mercado_pago", amount_cents: 1500,
+        status: "processing", idempotency_key: SecureRandom.uuid)
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+
+      get status_order_payment_path(order)
+
+      expect(response.body).to include("Aguarde alguns instantes")
+      expect(response.body).not_to include("Tentar novamente")
+    end
+
+    # Sem isso a página seguia consultando um status que nunca mudaria.
+    it "stops polling once the attempt is stale" do
+      order.payments.destroy_all
+      Payment.create!(order: order, gateway: "mercado_pago", amount_cents: 1500,
+        status: "processing", idempotency_key: SecureRandom.uuid,
+        created_at: (Payment::PROCESSING_STALE_AFTER + 1.minute).ago)
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+
+      get status_order_payment_path(order)
+
+      expect(response.body).not_to include("payment-status-url-value")
+    end
+
     it "does not expose another customer's payment" do
       other_customer = Customer.create!(name: "Outro", email: "other-status@example.com", password: "password123")
       post customer_session_path, params: { email: other_customer.email, password: "password123" }

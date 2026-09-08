@@ -176,6 +176,18 @@ O fluxo completo (autorização → callback → troca de token → conexão do 
 
 Na Fase 23, pagamentos passaram a suportar split entre vendedor e plataforma. `Payments::Authorize` usa o access token OAuth do vendedor e envia `application_fee` no PIX. A comissão é 15% do subtotal dos produtos após descontos, sem frete; a tarifa do Mercado Pago é registrada separadamente e suportada pelo vendedor. Reembolsos são operados apenas pelo admin da plataforma, usam chave de idempotência, preservam cada tentativa em `PaymentRefund` e revertem a comissão proporcionalmente sem erro acumulado de arredondamento. No primeiro lançamento, cada checkout tem um único vendedor/`SellerOrder` e usa o split público 1:1; multi-vendedor depende de habilitação comercial do split 1:N. Não são criados múltiplos PIX para uma compra nem repasses manuais a partir da conta da plataforma.
 
+## Quando a criação da cobrança falha
+
+Se a chamada ao gateway levanta, a tentativa **permanece `processing`** de propósito: a cobrança pode ter nascido do outro lado (um timeout não diz se a requisição chegou), e `Payments::Authorize#prepare_attempt` reusa esse registro para não gerar cobrança dupla — a mesma chave de idempotência vale para a próxima tentativa. `Payment#external_id` é obrigatório para qualquer status que não seja `processing`, então "falhou antes de existir cobrança" não tem outro estado onde caber.
+
+O custo disso caía sobre o cliente: a tela mostrava "Preparando a cobrança. Aguarde alguns instantes." indefinidamente, e o polling seguia consultando um status que nunca mudaria. Aconteceu em produção em 2026-09-08. `Payment#stalled?` (`PROCESSING_STALE_AFTER`, 2 min — generoso perto dos timeouts de 5s/15s do gateway) separa "ainda pode chegar" de "não vem mais": passado o limite, a tela admite a falha, oferece "Tentar novamente" e para de consultar. O registro continua `processing` no banco, então a proteção contra cobrança dupla permanece intacta.
+
+## Diagnóstico de falhas do gateway
+
+`RequestFailed` carrega o **código de erro** do Mercado Pago (`"...respondeu 500 em /v1/payments (user_allowed_only_in_test)"`), e `payment.mercado_pago_gateway_http_error` registra `error`/`message`/`cause` do corpo. O corpo completo continua fora de ambos, porque pode ecoar dados do pagamento (§43) — mas só o status HTTP não basta: em 2026-09-08 um "respondeu 500" sem código custou uma investigação inteira.
+
+**`user_allowed_only_in_test` não é sobre o pagador.** O Mercado Pago devolve esse erro quando o meio de pagamento pedido **não está habilitado na conta do vendedor**. Confirmado consultando `GET /v1/payment_methods` com o token do artesão: a conta TESTUSER de sandbox lista 19 métodos (cartão de crédito, débito, pré-pago, boleto, saldo) e **PIX não está entre eles** — contas de teste brasileiras precisam de chave PIX cadastrada para que o método apareça. Antes de investigar credenciais ou pagador, consulte `/v1/payment_methods`: é uma chamada de leitura e responde direto.
+
 ## Relação com o pedido
 
 * Pagamento aprovado deve confirmar o pedido (`Order` transita para `confirmed` — ver `docs/checkout.md` e `docs/domain.md`).
