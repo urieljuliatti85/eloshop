@@ -1,6 +1,35 @@
 require "test_helper"
 
 class PaymentTest < ActiveSupport::TestCase
+  # Uma tentativa cuja cobrança nunca foi criada permanece `processing` de
+  # propósito, para que a próxima tentativa reuse a chave de idempotência.
+  # `stalled?` é o que separa "ainda pode chegar" de "não vem mais", e é o que
+  # a tela do cliente usa para parar de prometer uma cobrança que falhou.
+  test "a processing attempt is not stalled while it is recent" do
+    payment = Payment.create!(order: orders(:one), gateway: "mercado_pago", amount_cents: 100,
+      status: "processing", idempotency_key: SecureRandom.uuid)
+
+    assert_not payment.stalled?
+  end
+
+  test "a processing attempt becomes stalled after the grace period" do
+    payment = Payment.create!(order: orders(:one), gateway: "mercado_pago", amount_cents: 100,
+      status: "processing", idempotency_key: SecureRandom.uuid,
+      created_at: (Payment::PROCESSING_STALE_AFTER + 1.minute).ago)
+
+    assert payment.stalled?
+  end
+
+  # Só `processing` fica preso: um pagamento com cobrança criada tem os próprios
+  # estados (pending/paid/failed) e nunca deve ser lido como travado.
+  test "a pending payment is never stalled, however old" do
+    payment = Payment.create!(order: orders(:one), gateway: "mercado_pago", external_id: "mp-1",
+      amount_cents: 100, status: "pending", idempotency_key: SecureRandom.uuid,
+      created_at: 1.day.ago)
+
+    assert_not payment.stalled?
+  end
+
   test "invalid without gateway" do
     payment = Payment.new(order: orders(:one), external_id: "x", amount_cents: 100)
     assert_not payment.valid?

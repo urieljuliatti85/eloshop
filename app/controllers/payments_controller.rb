@@ -32,9 +32,12 @@ class PaymentsController < StorefrontController
   rescue Gateways::UnknownGateway, Gateways::SimulatedGatewayInProduction,
     Gateways::MercadoPago::ConfigurationError, Gateways::MercadoPago::RequestFailed,
     Timeout::Error, SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError => e
-    # TEMPORÁRIO — diagnóstico da falha real de PIX no sandbox (Fase 20,
-    # Etapa B). Loga só classe e mensagem da exceção, nunca dados do pedido
-    # ou credenciais. Remover depois de identificar a causa.
+    # Permanente: foi este evento que identificou a causa da falha de PIX no
+    # sandbox (2026-09-08). Loga só classe e mensagem da exceção — que agora
+    # carrega o código de erro do gateway —, nunca dados do pedido ou
+    # credenciais. A tentativa já foi marcada `failed` por `Payments::Authorize`,
+    # então a tela do pedido oferece "Tentar novamente" em vez de prometer uma
+    # cobrança que não vem.
     Rails.event.notify("payment.authorize_failed", error_class: e.class.name, error_message: e.message)
     redirect_to order_path(@order), alert: "O pedido foi salvo, mas o pagamento está temporariamente indisponível. Tente novamente em alguns instantes."
   end

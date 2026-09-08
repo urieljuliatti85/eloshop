@@ -1,12 +1,31 @@
 <div id="payment-status"
-     <% if payment.processing? || (payment.pending? && payment.pix_qr_code.present? && !payment.expired?) %>
+     <% if (payment.processing? && !payment.stalled?) || (payment.pending? && payment.pix_qr_code.present? && !payment.expired?) %>
        data-controller="payment-status"
        data-payment-status-url-value="<%= status_order_payment_path(order) %>"
      <% end %>>
   <% if payment.paid? %>
     <p class="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800">Pagamento aprovado.</p>
+  <%# `failed` cobre dois casos diferentes para o cliente: a cobrança não
+      chegou a ser criada (falha do gateway) ou foi criada e recusada/expirou.
+      O pedido continua salvo nos dois, e o caminho é o mesmo — tentar de novo. %>
   <% elsif payment.failed? || (payment.pending? && payment.expired?) %>
-    <p class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">Pagamento recusado ou expirado.</p>
+    <div class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      <p class="font-semibold">Não foi possível concluir o pagamento.</p>
+      <p class="mt-1">A cobrança foi recusada ou expirou. Seu pedido continua salvo — você pode tentar de novo.</p>
+    </div>
+    <%= link_to "Tentar novamente", new_order_payment_path(order), class: "text-brand-600 hover:underline" %>
+  <%# `processing` é mantido de propósito quando a chamada ao gateway falha: a
+      cobrança pode ter nascido do outro lado, e a próxima tentativa precisa
+      reusar a mesma chave de idempotência (ver Payments::Authorize). Mas para
+      o cliente isso significava "Aguarde alguns instantes" para sempre, diante
+      de uma cobrança que nunca chegaria — aconteceu de verdade em 2026-09-08.
+      Passado o tempo em que uma criação normal já teria respondido, a tela
+      admite a falha e oferece o caminho de volta. %>
+  <% elsif payment.stalled? %>
+    <div class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      <p class="font-semibold">Não foi possível preparar a cobrança.</p>
+      <p class="mt-1">Seu pedido continua salvo — você pode tentar de novo.</p>
+    </div>
     <%= link_to "Tentar novamente", new_order_payment_path(order), class: "text-brand-600 hover:underline" %>
   <% elsif payment.processing? %>
     <p class="rounded-xl bg-brand-50 px-4 py-3 text-sm text-ink-muted" role="status">
