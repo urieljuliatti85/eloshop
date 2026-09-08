@@ -7,27 +7,24 @@
     <% end %>
 
     <nav class="hidden items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-medium text-ink md:flex">
-      <%# O convite some só para quem já tem ateliê — o vendedor. O admin
-          continua vendo, porque administra a plataforma sem ser artesão e
-          pode precisar chegar ao cadastro; o comprador também, já que a
-          sessão de `Customer` é independente da de `User`.
-          O rótulo repete o título da página de destino. %>
-      <%# O convite/login de artesão só aparece para quem ainda não é vendedor
-          nem admin: o admin não tem ateliê e não deve ver nenhum link do
-          painel de vendedor aqui — a área administrativa é acessada direto
-          pela URL, sem link no menu público. %>
+      <%# Cada papel de `User` vê um destino só seu: o admin, a Administração;
+          o vendedor, o painel do ateliê. O admin não é artesão, então nunca vê
+          convite nem login de ateliê. Esconder o link da Administração não
+          protegia nada (quem protege é o `require_admin!`) e só escondia a
+          área de quem tem direito a ela. O rótulo de cada item repete o
+          título da página de destino. %>
       <% signed_in_user = authenticated? ? Current.user : nil
 
          items = [ [ "Início", root_path, "home" ],
                    [ "Loja", products_path, "products" ],
                    [ "Ateliês", sellers_path, "sellers" ] ]
-         unless signed_in_user&.admin?
-           if signed_in_user&.seller?
-             items << [ "Painel do Artesão", seller_root_path, "seller_portal/dashboard" ]
-           else
-             items << [ "Entrar no Ateliê", seller_login_path, "seller_portal/sessions" ]
-             items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations" ]
-           end
+         if signed_in_user&.admin?
+           items << [ "Administração", admin_root_path, "admin/dashboard" ]
+         elsif signed_in_user&.seller?
+           items << [ "Painel do Artesão", seller_root_path, "seller_portal/dashboard" ]
+         else
+           items << [ "Entrar no Ateliê", seller_login_path, "seller_portal/sessions" ]
+           items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations" ]
          end %>
       <% items.each do |label, path, controllers| %>
         <% active = storefront_nav_active?(controllers) %>
@@ -50,6 +47,49 @@
 
           Sem JavaScript o painel não abre, mas nada se perde: Pedidos,
           Favoritos e Sair continuam no menu do hambúrguer. %>
+      <%# `User` e `Customer` são sessões independentes e podem estar ativas ao
+          mesmo tempo no mesmo navegador. Sem este bloco o topo refletia só a
+          segunda, e quem estava logado como admin ou artesão navegava a loja
+          sem nenhum sinal disso — foi exatamente o que confundiu dois perfis
+          do mesmo Chrome. Cada papel tem seu destino e seu próprio "sair"
+          (o do vendedor é `seller_logout_path`, o do admin é `session_path`). %>
+      <% if authenticated? && Current.user %>
+        <% session_identity = user_session_identity %>
+        <div class="relative hidden md:block" data-controller="account-menu"
+             data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
+          <button type="button"
+                  class="flex cursor-pointer items-center gap-2 font-medium text-ink hover:text-brand-600"
+                  aria-expanded="false" aria-haspopup="true"
+                  data-account-menu-target="button"
+                  data-action="account-menu#toggle">
+            <span class="grid size-8 place-items-center rounded-full bg-brand-600 text-xs font-bold text-white" aria-hidden="true"><%= session_identity[:identity].first.upcase %></span>
+            <span class="max-w-28 truncate"><%= session_identity[:role_label] %></span>
+            <svg class="size-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+
+          <div class="absolute right-0 top-full z-20 mt-3 w-64 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg"
+               data-account-menu-target="panel" hidden>
+            <div class="flex items-center gap-3 border-b border-gray-100 px-4 py-4">
+              <span class="grid size-10 shrink-0 place-items-center rounded-full bg-brand-600 text-sm font-bold text-white" aria-hidden="true"><%= session_identity[:identity].first.upcase %></span>
+              <div class="min-w-0">
+                <p class="truncate font-semibold text-ink"><%= session_identity[:role_label] %></p>
+                <p class="truncate text-xs text-ink-muted"><%= session_identity[:identity] %></p>
+              </div>
+            </div>
+
+            <div class="py-1">
+              <%= link_to session_identity[:panel_label], session_identity[:panel_path], class: "block px-4 py-2.5 text-sm text-ink hover:bg-sand-50 hover:text-brand-600" %>
+            </div>
+
+            <div class="border-t border-gray-100">
+              <%= button_to "Sair", session_identity[:logout_path], method: :delete, class: "w-full cursor-pointer px-4 py-2.5 text-left text-sm font-medium text-ink hover:bg-sand-50 hover:text-brand-600" %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
       <% if respond_to?(:customer_authenticated?) && customer_authenticated? && Current.customer %>
         <div class="relative hidden md:block" data-controller="account-menu"
              data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
@@ -151,19 +191,19 @@
       topo e vive só lá.) %>
   <div class="border-t border-gray-100 bg-white md:hidden" data-mobile-menu-target="panel" hidden>
     <nav class="container mx-auto flex flex-col px-5">
-      <%# Mesma regra do menu do topo: admin não vê convite/link de painel aqui. %>
+      <%# Mesma regra do menu do topo: um destino por papel de `User`. %>
       <% mobile_user = authenticated? ? Current.user : nil
 
          mobile_items = [ [ "Início", root_path, "home", true ],
                           [ "Loja", products_path, "products", true ],
                           [ "Ateliês", sellers_path, "sellers", true ] ]
-         unless mobile_user&.admin?
-           if mobile_user&.seller?
-             mobile_items << [ "Painel do Artesão", seller_root_path, "seller_portal/dashboard", true ]
-           else
-             mobile_items << [ "Entrar no Ateliê", seller_login_path, "seller_portal/sessions", true ]
-             mobile_items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations", false ]
-           end
+         if mobile_user&.admin?
+           mobile_items << [ "Administração", admin_root_path, "admin/dashboard", false ]
+         elsif mobile_user&.seller?
+           mobile_items << [ "Painel do Artesão", seller_root_path, "seller_portal/dashboard", true ]
+         else
+           mobile_items << [ "Entrar no Ateliê", seller_login_path, "seller_portal/sessions", true ]
+           mobile_items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations", false ]
          end %>
       <% mobile_items.each do |label, path, controllers, divider| %>
         <% active = storefront_nav_active?(controllers) %>
@@ -174,6 +214,21 @@
     </nav>
 
     <div class="container mx-auto flex flex-col gap-3 px-5 pb-5 pt-2">
+      <%# Espelha o bloco de identidade do topo: no mobile a sessão de `User`
+          também precisa se anunciar e ter como sair. %>
+      <% if authenticated? && Current.user %>
+        <% session_identity = user_session_identity %>
+        <div class="flex items-center gap-2 px-1 pb-1">
+          <span class="grid size-8 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-bold text-white" aria-hidden="true"><%= session_identity[:identity].first.upcase %></span>
+          <span class="min-w-0">
+            <span class="block text-base font-semibold text-ink"><%= session_identity[:role_label] %></span>
+            <span class="block truncate text-xs text-ink-muted"><%= session_identity[:identity] %></span>
+          </span>
+        </div>
+        <%= link_to session_identity[:panel_label], session_identity[:panel_path], class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
+        <%= button_to "Sair", session_identity[:logout_path], method: :delete, class: "w-full cursor-pointer rounded-full bg-ink px-5 py-3 text-base font-semibold text-white" %>
+      <% end %>
+
       <% if respond_to?(:customer_authenticated?) && customer_authenticated? %>
         <%# No painel do hambúrguer o nome é só rótulo: os destinos de conta
             já estão logo abaixo, e um link a mais para "Pedidos" seria ruído. %>

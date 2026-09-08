@@ -70,8 +70,7 @@ RSpec.describe "Storefront sellers", type: :request do
     end
 
     # A administração da plataforma não é um ateliê: o admin não vê convite,
-    # login nem painel de vendedor no menu público — acessa /admin direto
-    # pela URL.
+    # login nem painel de vendedor no menu público.
     it "hides every atelier link for a signed-in admin" do
       admin = User.create!(email_address: "admin-header@eloshop.test", password: "password123")
       sign_in_as(admin)
@@ -81,7 +80,25 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(header_nav).not_to include("Cadastre seu Ateliê")
       expect(header_nav).not_to include("Entrar no Ateliê")
       expect(header_nav).not_to include("Painel do Artesão")
-      expect(header_nav).not_to include(admin_root_path)
+    end
+
+    # Esconder a Administração não protegia nada — quem protege é o
+    # `require_admin!` — e deixava o admin sem caminho pela interface.
+    it "points a signed-in admin at the administration area" do
+      admin = User.create!(email_address: "admin-destino@eloshop.test", password: "password123")
+      sign_in_as(admin)
+
+      get root_path
+
+      expect(header_nav).to include("Administração")
+      expect(header_nav).to include(admin_root_path)
+    end
+
+    it "keeps the administration link away from a visitor" do
+      get root_path
+
+      expect(header_nav).not_to include("Administração")
+      expect(response.body).not_to include("Administrador")
     end
 
     it "points the panel link at the seller panel for an artisan" do
@@ -93,6 +110,38 @@ RSpec.describe "Storefront sellers", type: :request do
 
       expect(header_nav).to include("Painel do Artesão")
       expect(header_nav).to include(seller_root_path)
+    end
+
+    # `User` e `Customer` são sessões independentes: sem um sinal no topo,
+    # quem estava logado como admin ou artesão navegava a loja sem saber.
+    it "announces the signed-in admin session and offers a way out" do
+      admin = User.create!(email_address: "admin-identidade@eloshop.test", password: "password123")
+      sign_in_as(admin)
+
+      get root_path
+
+      expect(response.body).to include("Administrador")
+      expect(response.body).to include("admin-identidade@eloshop.test")
+      expect(response.body).to include(session_path)
+    end
+
+    it "announces the signed-in artisan session with the atelier name" do
+      seller = Seller.create!(name: "Ateliê identidade", status: :approved, approved_at: Time.current)
+      artisan = User.create!(email_address: "artesao-identidade@eloshop.test", password: "password123", role: :seller, seller: seller)
+      sign_in_as(artisan)
+
+      get root_path
+
+      expect(response.body).to include("Artesão")
+      expect(response.body).to include("Ateliê identidade")
+      expect(response.body).to include(seller_logout_path)
+    end
+
+    # O storefront de quem só compra não muda.
+    it "shows no user-session identity to a visitor" do
+      get root_path
+
+      expect(response.body).not_to include("Administrador")
     end
 
     # Só quem já tem ateliê deixa de ser convidado/ver o login.

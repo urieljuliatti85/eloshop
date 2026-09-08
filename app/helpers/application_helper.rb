@@ -6,6 +6,27 @@ module ApplicationHelper
     Array(controllers).include?(controller_path)
   end
 
+  # Identidade da sessão de `User` para o menu público: rótulo do papel, quem
+  # está logado, o destino do seu painel e por onde sair. O topo e o painel do
+  # hambúrguer mostram o mesmo bloco, então a regra mora aqui em vez de ser
+  # repetida em dois trechos de ERB que sairiam de sincronia.
+  #
+  # `seller.name` é seguro: `User` valida `seller` como obrigatório quando o
+  # papel é `seller`, e ausente quando é `admin`.
+  def user_session_identity
+    return nil unless Current.user
+
+    if Current.user.admin?
+      { role_label: "Administrador", identity: Current.user.email_address,
+        panel_label: "Administração", panel_path: admin_root_path,
+        logout_path: session_path }
+    else
+      { role_label: "Artesão", identity: Current.user.seller.name,
+        panel_label: "Painel do Artesão", panel_path: seller_root_path,
+        logout_path: seller_logout_path }
+    end
+  end
+
   # Formata um valor em centavos para exibição, ex.: 8990 => "R$ 89,90".
   #
   # Fonte única da conversão: antes cada view dividia por conta própria, em
