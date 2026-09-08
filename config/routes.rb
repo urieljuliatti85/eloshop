@@ -103,7 +103,13 @@ Rails.application.routes.draw do
     end
   end
 
-  namespace :api do
+  # `format: :json` fixo: a API v1 só tem views `.jbuilder`, então não há um
+  # segundo formato para negociar — sem isso, um `Accept: text/html` (o que o
+  # navegador manda ao colar a URL na barra) não acha view e cai numa página
+  # de exceção HTML do Rails, em vez do JSON que o endpoint sempre serve.
+  # Clientes de API (curl, fetch, SDKs, que mandam */* ou nada) já
+  # funcionavam; quem pagava o preço era quem estava conhecendo a API.
+  namespace :api, defaults: { format: :json } do
     namespace :v1 do
       resources :products, only: :index
       resources :sellers, only: %i[index show], param: :slug
