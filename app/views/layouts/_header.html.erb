@@ -191,22 +191,23 @@
       topo e vive só lá.) %>
   <div class="border-t border-gray-100 bg-white md:hidden" data-mobile-menu-target="panel" hidden>
     <nav class="container mx-auto flex flex-col px-5">
-      <%# Mesma regra do menu do topo: um destino por papel de `User`. %>
+      <%# Diferente do topo: aqui o destino do papel NÃO entra na lista, porque
+          o bloco de identidade logo abaixo já o oferece como botão — no menu
+          do hambúrguer os dois apareceriam um sobre o outro. Quem não tem
+          sessão de `User` continua recebendo o convite de artesão. %>
       <% mobile_user = authenticated? ? Current.user : nil
 
-         mobile_items = [ [ "Início", root_path, "home", true ],
-                          [ "Loja", products_path, "products", true ],
-                          [ "Ateliês", sellers_path, "sellers", true ] ]
-         if mobile_user&.admin?
-           mobile_items << [ "Administração", admin_root_path, "admin/dashboard", false ]
-         elsif mobile_user&.seller?
-           mobile_items << [ "Painel do Artesão", seller_root_path, "seller_portal/dashboard", true ]
-         else
-           mobile_items << [ "Entrar no Ateliê", seller_login_path, "seller_portal/sessions", true ]
-           mobile_items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations", false ]
+         mobile_items = [ [ "Início", root_path, "home" ],
+                          [ "Loja", products_path, "products" ],
+                          [ "Ateliês", sellers_path, "sellers" ] ]
+         unless mobile_user
+           mobile_items << [ "Entrar no Ateliê", seller_login_path, "seller_portal/sessions" ]
+           mobile_items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations" ]
          end %>
-      <% mobile_items.each do |label, path, controllers, divider| %>
-        <% active = storefront_nav_active?(controllers) %>
+      <%# O divisor separa itens, então o último não leva um. %>
+      <% mobile_items.each_with_index do |(label, path, controllers), index| %>
+        <% active = storefront_nav_active?(controllers)
+           divider = index < mobile_items.size - 1 %>
         <%= link_to label, path,
               class: "flex min-h-11 items-center py-1 text-base font-medium #{divider ? 'border-b border-gray-100 ' : ''}#{active ? 'text-brand-600' : 'text-ink'}",
               aria: { current: ("page" if active) } %>
@@ -227,6 +228,13 @@
         </div>
         <%= link_to session_identity[:panel_label], session_identity[:panel_path], class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
         <%= button_to "Sair", session_identity[:logout_path], method: :delete, class: "w-full cursor-pointer rounded-full bg-ink px-5 py-3 text-base font-semibold text-white" %>
+      <% end %>
+
+      <%# Um admin/artesão também pode comprar: as duas sessões coexistem, e o
+          bloco de comprador segue disponível. O divisor evita que os dois
+          conjuntos de ação se leiam como um só. %>
+      <% if authenticated? && Current.user && respond_to?(:customer_authenticated?) %>
+        <hr class="border-gray-100">
       <% end %>
 
       <% if respond_to?(:customer_authenticated?) && customer_authenticated? %>
