@@ -35,11 +35,25 @@ class Seller < ApplicationRecord
   validates :origin_state, length: { is: 2 }, allow_blank: true
 
   def approve!(kyc_level_6_confirmed: false)
-    unless mercado_pago_connected? && mercado_pago_real_account? && kyc_level_6_confirmed
+    unless mercado_pago_connected? && approvable_account? && kyc_level_6_confirmed
       raise VerificationRequired, "Conecte uma conta Mercado Pago de produção e confirme o KYC nível 6 antes da aprovação."
     end
 
     update!(status: :approved, approved_at: Time.current)
+  end
+
+  # Exigir conta real é a regra em produção, onde aprovar um vendedor de teste
+  # deixaria dinheiro de cliente sem destino. Em sandbox a mesma exigência
+  # torna o ambiente de teste inaprovável por construção — e, como publicar
+  # produto exige aprovação (`Product.publicly_visible`), deixa o sandbox sem
+  # catálogo e portanto sem como exercitar o checkout. Foi exatamente o que
+  # travou o ateliê de teste em 2026-09-09, depois de uma reconexão zerar uma
+  # aprovação que era anterior à salvaguarda.
+  #
+  # Falha fechado: sem `MERCADO_PAGO_MARKETPLACE_SANDBOX` ligada, o
+  # comportamento é o de produção. Nenhum ambiente afrouxa por omissão.
+  def approvable_account?
+    mercado_pago_real_account? || Marketplace::MercadoPagoOauth.sandbox?
   end
 
   def suspend!

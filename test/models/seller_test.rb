@@ -36,8 +36,12 @@ class SellerTest < ActiveSupport::TestCase
     seller = sellers(:pending)
     seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: false))
 
-    assert_raises(Seller::VerificationRequired) do
-      seller.approve!(kyc_level_6_confirmed: true)
+    # Fora do sandbox, explicitamente: a recusa não pode depender de a
+    # variável de ambiente estar setada na máquina de quem roda a suíte.
+    with_sandbox(nil) do
+      assert_raises(Seller::VerificationRequired) do
+        seller.approve!(kyc_level_6_confirmed: true)
+      end
     end
     assert_predicate seller, :pending?
   end
@@ -129,6 +133,17 @@ class SellerTest < ActiveSupport::TestCase
 
   private
 
+  # O modo sandbox vem de variável de ambiente (lida por
+  # Marketplace::MercadoPagoOauth), então o teste a define e restaura em vez
+  # de stubar — mesma convenção de test/services/gateways/mercado_pago_test.rb.
+  def with_sandbox(value)
+    original = ENV["MERCADO_PAGO_MARKETPLACE_SANDBOX"]
+    value.nil? ? ENV.delete("MERCADO_PAGO_MARKETPLACE_SANDBOX") : ENV["MERCADO_PAGO_MARKETPLACE_SANDBOX"] = value
+    yield
+  ensure
+    original.nil? ? ENV.delete("MERCADO_PAGO_MARKETPLACE_SANDBOX") : ENV["MERCADO_PAGO_MARKETPLACE_SANDBOX"] = original
+  end
+
   # `test_account: false` é o padrão porque a maioria dos casos descreve uma
   # conta real; os testes de conta de teste passam `true` explicitamente.
   def mercado_pago_credentials(live_mode: true, test_account: false, public_key: "TEST-public-key")
@@ -189,7 +204,11 @@ class SellerTest < ActiveSupport::TestCase
     assert seller.mercado_pago_connected?
     assert seller.mercado_pago_live_mode?
     assert_not seller.mercado_pago_real_account?
-    assert_raises(Seller::VerificationRequired) { seller.approve!(kyc_level_6_confirmed: true) }
+    # Explícito de propósito: sem isto o resultado dependeria de a variável
+    # de sandbox estar ou não no ambiente de quem roda a suíte.
+    with_sandbox(nil) do
+      assert_raises(Seller::VerificationRequired) { seller.approve!(kyc_level_6_confirmed: true) }
+    end
   end
 
   # Sem certeza sobre a conta, a aprovação não passa: aprovar no escuro é o
@@ -200,7 +219,46 @@ class SellerTest < ActiveSupport::TestCase
 
     assert_nil seller.mercado_pago_test_account
     assert_not seller.mercado_pago_real_account?
-    assert_raises(Seller::VerificationRequired) { seller.approve!(kyc_level_6_confirmed: true) }
+    with_sandbox(nil) do
+      assert_raises(Seller::VerificationRequired) { seller.approve!(kyc_level_6_confirmed: true) }
+    end
+  end
+
+  # Contrapartida das duas recusas acima: em sandbox o ambiente inteiro é de
+  # teste, e exigir conta real ali deixa o ateliê de teste inaprovável — logo
+  # sem catálogo publicado (`Product.publicly_visible` exige `approved`) e sem
+  # checkout para exercitar. As recusas continuam valendo fora do sandbox, que
+  # é onde a salvaguarda protege dinheiro real.
+  test "approves a Mercado Pago test account while the app runs in sandbox mode" do
+    seller = Seller.create!(name: "Ateliê de teste em sandbox")
+    seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: false, test_account: true))
+
+    assert_not seller.mercado_pago_real_account?
+
+    with_sandbox("true") do
+      assert seller.approvable_account?
+      seller.approve!(kyc_level_6_confirmed: true)
+    end
+
+    assert_predicate seller.reload, :approved?
+  end
+
+  # A configuração ausente não afrouxa nada: fora do sandbox a recusa é a
+  # mesma de antes, e sem o KYC confirmado nem o sandbox aprova.
+  test "sandbox mode does not waive the KYC confirmation" do
+    seller = Seller.create!(name: "Ateliê sem KYC")
+    seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: false, test_account: true))
+
+    with_sandbox("true") do
+      assert_raises(Seller::VerificationRequired) { seller.approve!(kyc_level_6_confirmed: false) }
+    end
+
+    with_sandbox(nil) do
+      assert_not seller.approvable_account?
+      assert_raises(Seller::VerificationRequired) { seller.approve!(kyc_level_6_confirmed: true) }
+    end
+
+    assert_predicate seller.reload, :pending?
   end
 
   test "approves a real account with KYC confirmed" do

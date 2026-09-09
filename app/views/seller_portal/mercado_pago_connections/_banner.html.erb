@@ -10,6 +10,15 @@
       <h2 class="mt-1 text-2xl font-bold">Mercado Pago</h2>
     <% if current_seller.mercado_pago_connected? %>
       <p class="mt-2 text-sm leading-6 text-stone-600">Conta conectada em <%= l(current_seller.mercado_pago_connected_at, format: :short) %>. Identificador: <%= current_seller.mercado_pago_user_id %>. Ambiente: <%= current_seller.mercado_pago_live_mode? ? "produção" : "teste" %>. A verificação de identidade acontece no Mercado Pago.</p>
+      <%# O aviso é texto, e não um `turbo_confirm`: o link precisa de
+          `turbo: false` para sair do site, e nesse caso o Turbo não
+          intercepta o clique — um confirm dependeria de JS inline, que a CSP
+          não permite. Existe porque a tela do Mercado Pago autoriza a conta
+          logada NAQUELE navegador, e autorizar outra por engano zera a
+          aprovação e despublica o catálogo (`connect_mercado_pago!`). %>
+      <% if @mercado_pago_oauth_configured %>
+        <p class="mt-2 text-sm leading-6 text-amber-700">Ao reconectar, autorize <strong>a mesma conta</strong> (identificador <%= current_seller.mercado_pago_user_id %>). Autorizar outra conta zera a aprovação do ateliê e suspende a publicação dos produtos até uma nova aprovação da plataforma.</p>
+      <% end %>
     <% elsif @mercado_pago_oauth_configured %>
       <% if @mercado_pago_oauth_sandbox %><p class="mt-2 text-sm leading-6 text-amber-700"><strong>Ambiente de teste:</strong> conecte uma conta TESTUSER do tipo Vendedor. Esta conexão não permite aprovação nem vendas reais.</p><% else %><p class="mt-2 text-sm leading-6 text-stone-600">Conclua a identificação da sua conta no Mercado Pago e autorize a EloShop a processar suas vendas.</p><% end %>
     <% else %>

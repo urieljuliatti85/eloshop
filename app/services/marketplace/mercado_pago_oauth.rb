@@ -16,6 +16,14 @@ module Marketplace
     READ_TIMEOUT = 15
     TRUE_VALUES = %w[1 true yes on].freeze
 
+    # O modo sandbox é configuração da aplicação, não de uma instância: quem
+    # precisa saber apenas "este ambiente é de teste?" — como a aprovação de
+    # vendedor em `Seller#approvable_account?` — pergunta aqui, sem montar um
+    # cliente OAuth só para ler uma variável.
+    def self.sandbox?
+      new.sandbox?
+    end
+
     def initialize(app_id: ENV["MERCADO_PAGO_MARKETPLACE_APP_ID"],
                    client_secret: ENV["MERCADO_PAGO_MARKETPLACE_CLIENT_SECRET"],
                    redirect_uri: ENV["MERCADO_PAGO_MARKETPLACE_REDIRECT_URI"],
