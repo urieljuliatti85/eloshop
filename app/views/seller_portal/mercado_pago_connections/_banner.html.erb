@@ -10,6 +10,15 @@
       <h2 class="mt-1 text-2xl font-bold">Mercado Pago</h2>
     <% if current_seller.mercado_pago_connected? %>
       <p class="mt-2 text-sm leading-6 text-stone-600">Conta conectada em <%= l(current_seller.mercado_pago_connected_at, format: :short) %>. Identificador: <%= current_seller.mercado_pago_user_id %>. Ambiente: <%= current_seller.mercado_pago_live_mode? ? "produção" : "teste" %>. A verificação de identidade acontece no Mercado Pago.</p>
+      <%# Sem `mercado_pago_public_key` o cartão simplesmente não é oferecido no
+          checkout (`payments/new`), e o vendedor não tem como descobrir por quê:
+          a opção nunca aparece, nem para ele nem para o cliente. É o caso de quem
+          conectou antes da Fase 24, já que a coluna não existia. Vem antes do
+          aviso de reconexão porque é o motivo de reconectar; o de baixo é a
+          ressalva sobre como fazê-lo. %>
+      <% if @mercado_pago_oauth_configured && !current_seller.mercado_pago_card_payments_available? %>
+        <p class="mt-2 text-sm leading-6 text-amber-700"><strong>Cartão de crédito indisponível.</strong> Suas vendas aceitam PIX, mas o cartão não é oferecido aos clientes porque sua conexão é anterior a esse meio de pagamento. Reconecte para liberá-lo.</p>
+      <% end %>
       <%# O aviso é texto, e não um `turbo_confirm`: o link precisa de
           `turbo: false` para sair do site, e nesse caso o Turbo não
           intercepta o clique — um confirm dependeria de JS inline, que a CSP

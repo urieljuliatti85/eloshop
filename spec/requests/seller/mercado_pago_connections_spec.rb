@@ -114,6 +114,38 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     expect(response.body).to include("zera a aprovação do ateliê")
   end
 
+  # Sem a Public Key o cartão não aparece no checkout, e nada na tela dizia
+  # isso: o vendedor via a conta conectada e concluía que estava tudo certo.
+  it "tells a connected seller without a public key that card payments are unavailable" do
+    connect_seller(public_key: nil)
+
+    get seller_atelier_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Cartão de crédito indisponível")
+    expect(response.body).to include("Reconecte para liberá-lo")
+  end
+
+  it "stops warning about card payments once the public key is stored" do
+    connect_seller(public_key: "TEST-public-key")
+
+    get seller_atelier_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).not_to include("Cartão de crédito indisponível")
+  end
+
+  # Sem OAuth configurado não há botão de reconectar, então o aviso mandaria o
+  # vendedor a uma ação que ele não tem.
+  it "does not warn about card payments when the platform has not configured OAuth" do
+    allow(oauth).to receive(:configured?).and_return(false)
+    connect_seller(public_key: nil)
+
+    get seller_atelier_path
+
+    expect(response.body).not_to include("Cartão de crédito indisponível")
+  end
+
   it "hides the reconnect action when the platform has not configured OAuth" do
     allow(oauth).to receive(:configured?).and_return(false)
     connect_seller(public_key: nil)
