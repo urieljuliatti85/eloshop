@@ -37,12 +37,18 @@
     <section class="admin-card p-6">
       <h2>Aprovação do artesão</h2>
       <p class="mt-2 text-sm text-slate-500">O Mercado Pago exige conta de vendedor com identificação KYC nível 6 para o split 1:1. Confirme a situação no ambiente do Mercado Pago; a EloShop não recebe nem armazena os documentos.</p>
+      <%# A mesma condição de `Seller#approve!`, e não uma cópia própria: a
+          tela desabilitava por `mercado_pago_live_mode?`, que deixou de ser o
+          critério quando a aprovação passou a aceitar conta de teste em
+          sandbox — o modelo aprovaria e o formulário não deixava nem marcar a
+          caixa. Regra de disponibilidade tem fonte única (§19). %>
+      <% approvable = @seller.mercado_pago_connected? && @seller.approvable_account? %>
       <%= form_with url: approve_admin_seller_path(@seller), method: :patch, class: "mt-5 space-y-4" do |form| %>
         <label class="flex items-start gap-3 text-sm text-slate-700">
-          <%= check_box_tag :kyc_level_6_confirmed, "1", false, required: true, disabled: !(@seller.mercado_pago_connected? && @seller.mercado_pago_live_mode?), class: "mt-1 rounded border-slate-300" %>
+          <%= check_box_tag :kyc_level_6_confirmed, "1", false, required: true, disabled: !approvable, class: "mt-1 rounded border-slate-300" %>
           <span>Confirmo que a conta conectada atende ao KYC nível 6 exigido pelo Mercado Pago.</span>
         </label>
-        <%= form.submit "Aprovar artesão", disabled: !(@seller.mercado_pago_connected? && @seller.mercado_pago_live_mode?), class: "admin-button admin-button--brand disabled:cursor-not-allowed disabled:opacity-50" %>
+        <%= form.submit "Aprovar artesão", disabled: !approvable, class: "admin-button admin-button--brand disabled:cursor-not-allowed disabled:opacity-50" %>
       <% end %>
     </section>
   <% end %>
