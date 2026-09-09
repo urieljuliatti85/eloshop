@@ -98,6 +98,53 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     expect(seller.reload).not_to be_mercado_pago_connected
   end
 
+  # Reconectar preserva a aprovação (Seller#connect_mercado_pago! só reseta o
+  # status quando o identificador muda); "Desconectar" despublicaria o catálogo.
+  it "offers reconnection alongside disconnection for a connected seller" do
+    connect_seller(public_key: "TEST-public-key")
+
+    get seller_atelier_path
+
+    expect(response).to have_http_status(:ok)
+    reconnect_link = Nokogiri::HTML(response.body).at_css("a[href='#{seller_mercado_pago_connect_path}']")
+    expect(reconnect_link.text).to eq("Reconectar")
+    expect(reconnect_link["data-turbo"]).to eq("false")
+    expect(response.body).to include("Desconectar")
+  end
+
+  it "tells a seller connected without a public key that card payments are unavailable" do
+    connect_seller(public_key: nil)
+
+    get seller_atelier_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("ainda não aceitam cartão de crédito")
+    expect(Nokogiri::HTML(response.body).at_css("a[href='#{seller_mercado_pago_connect_path}']").text).to eq("Reconectar")
+  end
+
+  it "does not warn about card payments once the public key is stored" do
+    connect_seller(public_key: "TEST-public-key")
+
+    get seller_atelier_path
+
+    expect(response.body).not_to include("ainda não aceitam cartão de crédito")
+  end
+
+  it "keeps the approval when the same account is reconnected" do
+    connect_seller(public_key: nil)
+    seller.update!(status: :approved, approved_at: 1.day.ago)
+    approved_at = seller.reload.approved_at
+    state = start_authorization
+    allow(oauth).to receive(:exchange).and_return(credentials_for(public_key: "APP_USR-public-key"))
+
+    get seller_mercado_pago_callback_path, params: { code: "valid-code", state: state }
+
+    expect(response).to redirect_to(seller_atelier_path)
+    expect(seller.reload).to be_approved
+    expect(seller.approved_at).to be_within(1.second).of(approved_at)
+    expect(seller.mercado_pago_public_key).to eq("APP_USR-public-key")
+  end
+
   it "disconnects the account and suspends publication" do
     seller.connect_mercado_pago!(
       Marketplace::MercadoPagoOauth::Credentials.new(
@@ -115,6 +162,22 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
   end
 
   private
+
+  def credentials_for(public_key: "TEST-public-key", user_id: "mp-reconnect")
+    Marketplace::MercadoPagoOauth::Credentials.new(
+      user_id: user_id,
+      access_token: "access",
+      refresh_token: "refresh",
+      expires_at: 180.days.from_now,
+      live_mode: true,
+      test_account: false,
+      public_key: public_key
+    )
+  end
+
+  def connect_seller(public_key:)
+    seller.connect_mercado_pago!(credentials_for(public_key: public_key))
+  end
 
   def start_authorization
     allow(oauth).to receive(:authorization_url) do |state:, code_challenge:|

@@ -68,6 +68,25 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.approved_at
   end
 
+  # Reconectar a mesma conta é o caminho para gravar dados que a conexão
+  # anterior não trouxe (a Public Key do cartão, por exemplo) sem passar por
+  # "Desconectar", que despublicaria o catálogo.
+  test "reconnecting the same Mercado Pago account preserves approval and refreshes the public key" do
+    seller = sellers(:pending)
+    seller.connect_mercado_pago!(mercado_pago_credentials(public_key: nil))
+    seller.approve!(kyc_level_6_confirmed: true)
+    approved_at = seller.approved_at
+
+    assert_not_predicate seller, :mercado_pago_card_payments_available?
+
+    seller.connect_mercado_pago!(mercado_pago_credentials(public_key: "APP_USR-public-key"))
+
+    assert_predicate seller, :approved?
+    assert_equal approved_at, seller.approved_at
+    assert_equal "APP_USR-public-key", seller.mercado_pago_public_key
+    assert_predicate seller, :mercado_pago_card_payments_available?
+  end
+
   test "stores Melhor Envio tokens encrypted and disconnecting clears the connection" do
     seller = sellers(:pending)
     credentials = Marketplace::MelhorEnvioOauth::Credentials.new(
