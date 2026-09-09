@@ -59,6 +59,29 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.approved_at
   end
 
+  # Contraparte do teste seguinte, e a invariante em que o botão "Reconectar"
+  # do painel se apoia: reautorizar a MESMA conta atualiza as credenciais sem
+  # tocar em `status`/`approved_at`. É o caminho de quem conectou antes da
+  # Fase 24 e precisa gravar a Public Key para o cartão aparecer — sem
+  # despublicar o catálogo, o que "Desconectar" faria.
+  test "reconnecting the same Mercado Pago account keeps the approval and stores the public key" do
+    seller = sellers(:pending)
+    seller.connect_mercado_pago!(mercado_pago_credentials(public_key: nil))
+    seller.approve!(kyc_level_6_confirmed: true)
+
+    assert_predicate seller, :approved?
+    assert_nil seller.mercado_pago_public_key
+    assert_not_predicate seller, :mercado_pago_card_payments_available?
+
+    approved_at = seller.approved_at
+    seller.connect_mercado_pago!(mercado_pago_credentials(public_key: "TEST-public-key-nova"))
+
+    assert_predicate seller, :approved?
+    assert_equal approved_at, seller.approved_at
+    assert_equal "TEST-public-key-nova", seller.mercado_pago_public_key
+    assert_predicate seller, :mercado_pago_card_payments_available?
+  end
+
   test "changing the connected Mercado Pago account requires a new approval" do
     seller = sellers(:approved)
 
