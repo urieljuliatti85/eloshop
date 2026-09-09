@@ -108,6 +108,10 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     expect(reconnect_link.text).to eq("Reconectar")
     expect(reconnect_link["data-turbo"]).to eq("false")
     expect(response.body).to include("Desconectar")
+    # O aviso é a única proteção contra autorizar a conta errada, que zera a
+    # aprovação: se ele sair da tela, o botão volta a ser uma armadilha.
+    expect(response.body).to include("autorize <strong>a mesma conta</strong>")
+    expect(response.body).to include("zera a aprovação do ateliê")
   end
 
   it "hides the reconnect action when the platform has not configured OAuth" do
