@@ -98,13 +98,44 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     expect(seller.reload).not_to be_mercado_pago_connected
   end
 
+  it "offers reconnecting alongside disconnecting once an account is connected" do
+    connect_seller(public_key: nil)
+
+    get seller_atelier_path
+
+    expect(response).to have_http_status(:ok)
+    reconnect_link = Nokogiri::HTML(response.body).at_css("a[href='#{seller_mercado_pago_connect_path}']")
+    expect(reconnect_link.text).to eq("Reconectar")
+    expect(reconnect_link["data-turbo"]).to eq("false")
+    expect(response.body).to include("Desconectar")
+  end
+
+  it "hides the reconnect action when the platform has not configured OAuth" do
+    allow(oauth).to receive(:configured?).and_return(false)
+    connect_seller(public_key: nil)
+
+    get seller_atelier_path
+
+    expect(response).to have_http_status(:ok)
+    expect(Nokogiri::HTML(response.body).at_css("a[href='#{seller_mercado_pago_connect_path}']")).to be_nil
+  end
+
+  # O botão "Reconectar" aponta para a mesma rota de conectar, então ela tem
+  # de aceitar ser chamada com uma conta já vinculada — é justamente o caso de
+  # quem precisa gravar a Public Key sem se despublicar.
+  it "starts authorization again for a seller that is already connected" do
+    connect_seller(public_key: nil)
+    seller.update!(status: :approved, approved_at: Time.current)
+
+    state = start_authorization
+
+    expect(state).to be_present
+    expect(response).to have_http_status(:redirect)
+    expect(seller.reload).to be_approved
+  end
+
   it "disconnects the account and suspends publication" do
-    seller.connect_mercado_pago!(
-      Marketplace::MercadoPagoOauth::Credentials.new(
-        user_id: "mp-456", access_token: "access", refresh_token: "refresh", expires_at: 180.days.from_now, live_mode: true,
-        test_account: false, public_key: "TEST-public-key"
-      )
-    )
+    connect_seller
     seller.update!(status: :approved, approved_at: Time.current)
 
     delete seller_mercado_pago_connection_path
@@ -115,6 +146,15 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
   end
 
   private
+
+  def connect_seller(public_key: "TEST-public-key")
+    seller.connect_mercado_pago!(
+      Marketplace::MercadoPagoOauth::Credentials.new(
+        user_id: "mp-456", access_token: "access", refresh_token: "refresh", expires_at: 180.days.from_now,
+        live_mode: true, test_account: false, public_key: public_key
+      )
+    )
+  end
 
   def start_authorization
     allow(oauth).to receive(:authorization_url) do |state:, code_challenge:|

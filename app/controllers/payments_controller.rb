@@ -35,9 +35,13 @@ class PaymentsController < StorefrontController
     # Permanente: foi este evento que identificou a causa da falha de PIX no
     # sandbox (2026-09-08). Loga só classe e mensagem da exceção — que agora
     # carrega o código de erro do gateway —, nunca dados do pedido ou
-    # credenciais. A tentativa já foi marcada `failed` por `Payments::Authorize`,
-    # então a tela do pedido oferece "Tentar novamente" em vez de prometer uma
-    # cobrança que não vem.
+    # credenciais. A tentativa **permanece `processing`**: a cobrança pode ter
+    # nascido do outro lado, e manter o registro preserva a chave de
+    # idempotência para que uma nova tentativa não cobre duas vezes (marcar
+    # `failed` aqui foi tentado e revertido em 2026-09-08, porque quebra
+    # justamente esse reuso). Quem admite a falha na tela do pedido e oferece
+    # "Tentar novamente" é `Payment#stalled?`, passados os 2 minutos de
+    # `PROCESSING_STALE_AFTER`.
     Rails.event.notify("payment.authorize_failed", error_class: e.class.name, error_message: e.message)
     redirect_to order_path(@order), alert: "O pedido foi salvo, mas o pagamento está temporariamente indisponível. Tente novamente em alguns instantes."
   end
