@@ -38,16 +38,54 @@ module SellerPortal
       @oauth ||= Marketplace::MelhorEnvioOauth.new
     end
 
+    # TEMPORÁRIO (2026-09-12): a conexão falha em produção sem gravar nada e
+    # sem alerta visível — o guard recusa, mas não dizia por quê, e as quatro
+    # causas possíveis (sessão perdida no retorno cross-site, TTL, state
+    # divergente, created_at ausente) pedem correções diferentes. Loga só a
+    # PRESENÇA de cada chave e o motivo; nunca o state nem o digest, que são
+    # segredo de sessão (§43). Remover junto com a correção da causa.
     def valid_state?(received_state)
       stored_digest = session.delete(:melhor_envio_oauth_state_digest)
       stored_created_at = session.delete(:melhor_envio_oauth_created_at)
-      return false if stored_digest.blank? || received_state.blank?
-      return false if Time.zone.at(Integer(stored_created_at)) < OAUTH_STATE_TTL.ago
+
+      reason = state_rejection_reason(stored_digest, stored_created_at, received_state)
+      if reason
+        log_state_rejection(reason, stored_digest, stored_created_at, received_state)
+        return false
+      end
+
+      true
+    end
+
+    def state_rejection_reason(stored_digest, stored_created_at, received_state)
+      return "stored_digest_missing" if stored_digest.blank?
+      return "received_state_missing" if received_state.blank?
+      return "created_at_missing" if stored_created_at.blank?
+
+      begin
+        return "state_expired" if Time.zone.at(Integer(stored_created_at)) < OAUTH_STATE_TTL.ago
+      rescue ArgumentError, TypeError
+        return "created_at_unparseable"
+      end
 
       received_digest = Digest::SHA256.hexdigest(received_state)
-      ActiveSupport::SecurityUtils.secure_compare(stored_digest, received_digest)
-    rescue ArgumentError, TypeError
-      false
+      return "digest_mismatch" unless ActiveSupport::SecurityUtils.secure_compare(stored_digest, received_digest)
+
+      nil
+    end
+
+    def log_state_rejection(reason, stored_digest, stored_created_at, received_state)
+      Rails.event.notify(
+        "marketplace.melhor_envio_oauth.state_rejected",
+        reason: reason,
+        stored_digest_present: stored_digest.present?,
+        created_at_present: stored_created_at.present?,
+        received_state_present: received_state.present?,
+        session_id_present: session.id.present?,
+        seller_id: current_seller&.id
+      )
+    rescue StandardError
+      nil
     end
   end
 end
