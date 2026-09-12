@@ -26,24 +26,28 @@
         <h1 class="mb-2 mt-1 text-2xl font-bold text-ink">Como você quer pagar?</h1>
         <p class="mb-6 text-sm text-ink-muted">Valor: <%= format_price(@order.total_cents) %></p>
 
-        <div class="grid gap-4 sm:grid-cols-2">
-          <%= form_with url: order_payment_path(@order), method: :post do |form| %>
-            <%= form.hidden_field :payment_method, value: "pix" %>
-            <%= form.submit "Pagar com PIX",
-                            class: "w-full rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
-          <% end %>
+        <% seller = @order.seller_order.seller %>
+        <%# O botão de cartão e a seção do Brick precisam ficar sob o MESMO
+            data-controller: Stimulus só liga um data-action ao controller
+            que o contém. Com o botão fora deste elemento o clique não
+            chegava a showCard e nada acontecia na tela. %>
+        <div data-controller="payment-method-choice">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <%= form_with url: order_payment_path(@order), method: :post do |form| %>
+              <%= form.hidden_field :payment_method, value: "pix" %>
+              <%= form.submit "Pagar com PIX",
+                              class: "w-full rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+            <% end %>
 
-          <% seller = @order.seller_order.seller %>
+            <% if seller.mercado_pago_card_payments_available? %>
+              <button type="button" data-action="click->payment-method-choice#showCard"
+                      class="w-full rounded-full border border-brand-500 px-6 py-3 text-sm font-semibold text-brand-600 hover:bg-brand-50">
+                Pagar com cartão de crédito
+              </button>
+            <% end %>
+          </div>
+
           <% if seller.mercado_pago_card_payments_available? %>
-            <button type="button" data-action="click->payment-method-choice#showCard"
-                    class="w-full rounded-full border border-brand-500 px-6 py-3 text-sm font-semibold text-brand-600 hover:bg-brand-50">
-              Pagar com cartão de crédito
-            </button>
-          <% end %>
-        </div>
-
-        <% if seller.mercado_pago_card_payments_available? %>
-          <div data-controller="payment-method-choice" class="mt-6">
             <%# O Brick só é montado (via data-controller) depois de exibido —
                 não no carregamento da página: o SDK precisa medir o
                 container, e um elemento display:none tem dimensão zero,
@@ -58,9 +62,9 @@
               </div>
             </template>
             <div data-payment-method-choice-target="cardSection" class="mt-6"></div>
-          </div>
-          <script src="https://sdk.mercadopago.com/js/v2" nonce="<%= content_security_policy_nonce %>"></script>
-        <% end %>
+            <script src="https://sdk.mercadopago.com/js/v2" nonce="<%= content_security_policy_nonce %>"></script>
+          <% end %>
+        </div>
       <% end %>
     </section>
 
