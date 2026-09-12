@@ -118,6 +118,66 @@ module Marketplace
       assert_not_includes error.message, "leaked"
     end
 
+    # O HTTP 403 de 2026-09-12 chegou sem explicação porque o corpo da
+    # resposta era descartado — e é nele que o Melhor Envio diz o motivo.
+    test "logs the provider error fields on an HTTP failure" do
+      events = []
+      reporter = Object.new
+      reporter.define_singleton_method(:notify) { |name, **payload| events << [ name, payload ] }
+      oauth = MelhorEnvioOauth.new(
+        client_id: "123",
+        client_secret: "client-secret",
+        redirect_uri: "https://eloshop.example/painel/melhor-envio/callback",
+        event_reporter: reporter
+      )
+      fake_http = Object.new
+      fake_http.define_singleton_method(:request) do |_request|
+        Net::HTTPForbidden.new("1.1", "403", "Forbidden").tap do |response|
+          response.define_singleton_method(:body) do
+            '{"error":"invalid_scope","error_description":"escopo nao autorizado","access_token":"leaked"}'
+          end
+        end
+      end
+      oauth.instance_variable_set(:@http, fake_http)
+
+      assert_raises(MelhorEnvioOauth::RequestFailed) { oauth.exchange(code: "bad-code") }
+
+      name, payload = events.last
+      assert_equal "marketplace.melhor_envio_oauth.failed", name
+      assert_equal "http_error", payload[:failure_reason]
+      assert_equal "403", payload[:http_status]
+      assert_equal "invalid_scope", payload[:error]
+      assert_equal "escopo nao autorizado", payload[:error_description]
+      # O corpo pode trazer credencial; só os campos de erro são registrados.
+      assert_not_includes payload.to_s, "leaked"
+    end
+
+    test "records the status when the error body is unreadable" do
+      events = []
+      reporter = Object.new
+      reporter.define_singleton_method(:notify) { |name, **payload| events << [ name, payload ] }
+      oauth = MelhorEnvioOauth.new(
+        client_id: "123",
+        client_secret: "client-secret",
+        redirect_uri: "https://eloshop.example/painel/melhor-envio/callback",
+        event_reporter: reporter
+      )
+      fake_http = Object.new
+      fake_http.define_singleton_method(:request) do |_request|
+        Net::HTTPForbidden.new("1.1", "403", "Forbidden").tap do |response|
+          response.define_singleton_method(:body) { "<html>proxy error</html>" }
+        end
+      end
+      oauth.instance_variable_set(:@http, fake_http)
+
+      assert_raises(MelhorEnvioOauth::RequestFailed) { oauth.exchange(code: "bad-code") }
+
+      name, payload = events.last
+      assert_equal "marketplace.melhor_envio_oauth.failed", name
+      assert_equal "403", payload[:http_status]
+      assert_equal "corpo ilegível", payload[:error]
+    end
+
     test "translates network failures without leaking internals" do
       fake_http = Object.new
       fake_http.define_singleton_method(:request) { |_request| raise Net::OpenTimeout, "internal host details" }
