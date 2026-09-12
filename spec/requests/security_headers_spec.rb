@@ -38,6 +38,11 @@ RSpec.describe "Security headers", type: :request do
 
     expect(directive("frame-src")).to include("https://secure-fields.mercadopago.com")
     expect(directive("connect-src")).to include("https://api.mercadopago.com")
+
+    # O mesmo domínio serve para dois usos: hospeda o iframe dos campos e
+    # recebe XHR do SDK ao montar o Brick. Faltar em connect-src bloqueava a
+    # montagem — observado no console em 2026-09-12.
+    expect(directive("connect-src")).to include("https://secure-fields.mercadopago.com")
   end
 
   # script-src com nonce e SEM unsafe-inline é o que sustenta a política:
