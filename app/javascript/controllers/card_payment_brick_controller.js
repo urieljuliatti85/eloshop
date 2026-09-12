@@ -41,6 +41,11 @@ export default class extends Controller {
     await bricksBuilder.create("cardPayment", this.containerTarget.id, {
       initialization: { amount: this.amountValue },
       callbacks: {
+        // `onReady` é obrigatório: sem ele o SDK rejeita a inicialização com
+        // "Callbacks onReady and/or onError are required" e o Brick nunca
+        // renderiza — fica só o skeleton. Não temos o que fazer quando fica
+        // pronto (o formulário aparece sozinho), mas a função precisa existir.
+        onReady: () => {},
         onSubmit: (cardFormData) => this.submitToken(cardFormData),
         onError: (error) => this.showError(error?.message || "Não foi possível processar o cartão.")
       }
