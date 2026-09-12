@@ -106,7 +106,10 @@ module Marketplace
       request.body = body.to_json
 
       response = http.request(request)
-      raise RequestFailed, "#{failure_message} (HTTP #{response.code})" unless response.is_a?(Net::HTTPSuccess)
+      unless response.is_a?(Net::HTTPSuccess)
+        log_error_response(response)
+        raise RequestFailed, "#{failure_message} (HTTP #{response.code})"
+      end
 
       payload = JSON.parse(response.body.to_s)
       build_credentials(payload)
@@ -115,6 +118,42 @@ module Marketplace
       raise RequestFailed, "Melhor Envio devolveu credenciais inválidas"
     rescue Timeout::Error, SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError
       raise RequestFailed, "Não foi possível conectar ao Melhor Envio. Tente novamente."
+    end
+
+    # O HTTP 403 na vinculação (2026-09-12) não dizia nada além do código: a
+    # exceção descartava o corpo, que é justamente onde o Melhor Envio explica
+    # a recusa. Mesmo padrão e mesmo motivo do log de erro do gateway do
+    # Mercado Pago, criado em 2026-09-08 para um 500 opaco — sem ele a
+    # investigação vira dedução a partir do código de status.
+    #
+    # Loga só os campos de erro documentados (error, error_description,
+    # message, hint), nunca o corpo inteiro: a resposta de sucesso deste
+    # endpoint traz access_token/refresh_token, e um dia o de erro pode
+    # ecoá-los (§43).
+    def log_error_response(response)
+      body = JSON.parse(response.body.to_s)
+      @event_reporter.notify(
+        "marketplace.melhor_envio_oauth.failed",
+        failure_reason: "http_error",
+        http_status: response.code,
+        error: body["error"],
+        error_description: body["error_description"],
+        message: body["message"],
+        hint: body["hint"]
+      )
+    rescue StandardError
+      # Corpo ilegível (não-JSON, vazio, HTML de erro do proxy): o status
+      # ainda é informação, e é melhor registrá-lo do que perder o evento.
+      begin
+        @event_reporter.notify(
+          "marketplace.melhor_envio_oauth.failed",
+          failure_reason: "http_error",
+          http_status: response.code,
+          error: "corpo ilegível"
+        )
+      rescue StandardError
+        nil
+      end
     end
 
     def log_invalid_payload(payload)
