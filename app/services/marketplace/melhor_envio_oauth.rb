@@ -168,23 +168,41 @@ module Marketplace
     # este trecho vai para o log: não é lugar de HTML nem de conteúdo que o
     # provedor possa ecoar de volta (§43).
     BODY_EXCERPT_LIMIT = 300
+    WHITESPACE = [ " ", "\t", "\n", "\r", "\f", "\v" ].freeze
 
-    # **Trunca ANTES de aplicar as regex**, e a ordem é a correção de um
-    # achado real (CodeQL rb/polynomial-redos, PR #84): `<[^>]*>` sobre o
-    # corpo inteiro é polinomial em entrada com muitos `<` sem fechamento —
-    # 4,7 ms para 100 KB, crescendo com o tamanho. O corpo vem de terceiro
-    # (aqui, de um WAF), então é entrada não confiável. Truncado primeiro, o
-    # custo é constante: 0,02 ms no mesmo caso.
+    # Sem regex, de propósito. A versão anterior usava `<[^>]*>` e o CodeQL
+    # apontou `rb/polynomial-redos` (PR #84): o corpo vem de terceiro — aqui,
+    # de um WAF — e uma entrada com muitos `<` sem fechamento faz o
+    # backtracking crescer com o tamanho (medido: 10,9 ms para 200 KB).
+    # Truncar antes reduzia o custo, mas não convence a análise estática nem
+    # elimina a classe do problema: a regex continua recebendo dado externo.
     #
-    # O limite maior no slice inicial dá folga para a marcação que será
-    # removida, sem deixar a regex ver a string inteira.
+    # A varredura abaixo é linear e sem backtracking — um caractere por vez,
+    # alternando entre "dentro" e "fora" de uma tag, colapsando espaços no
+    # mesmo passo. O `first` inicial mantém o trabalho limitado de qualquer
+    # forma, com folga para a marcação que será descartada.
     def body_excerpt(response)
-      response.body.to_s
-        .first(BODY_EXCERPT_LIMIT * 4)
-        .gsub(/<[^>]*>/, " ")
-        .gsub(/\s+/, " ")
-        .strip
-        .first(BODY_EXCERPT_LIMIT)
+      source = response.body.to_s.first(BODY_EXCERPT_LIMIT * 4)
+      out = +""
+      inside_tag = false
+
+      source.each_char do |char|
+        case char
+        when "<" then inside_tag = true
+        when ">" then inside_tag = false
+        else
+          next if inside_tag
+
+          if WHITESPACE.include?(char)
+            out << " " unless out.end_with?(" ")
+          else
+            out << char
+          end
+        end
+        break if out.length > BODY_EXCERPT_LIMIT
+      end
+
+      out.strip.first(BODY_EXCERPT_LIMIT)
     end
 
     def log_invalid_payload(payload)
