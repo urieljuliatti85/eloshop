@@ -7,8 +7,18 @@ class PaymentsController < StorefrontController
   # mostra o estado atual — reautorizar aqui reintroduziria o antigo
   # comportamento de "todo GET autoriza", que quebra para cartão (o token só
   # existe depois do Brick, não antes de renderizar a página).
+  #
+  # `?retry=1` volta para a escolha do meio mesmo havendo tentativa: é o que o
+  # "Tentar novamente" da tela de falha usa. Sem isso o cliente ficava em beco
+  # sem saída — o link levava a esta mesma ação, que reencontrava a tentativa
+  # travada e renderizava de novo a mesma mensagem de erro. Para cartão a volta
+  # à escolha é obrigatória, porque o token do Brick é de uso único: só
+  # remontando o Brick existe um token novo para enviar. A tentativa em si não
+  # é descartada aqui — quem a retoma é `Payments::Authorize`, reusando o
+  # `processing` e a chave de idempotência para não cobrar duas vezes.
   def new
     @payment = @order.payments.order(:created_at).last
+    @payment = nil if params[:retry].present? && @payment&.retryable?
     @gateway = Gateways.build
     @simulated_gateway = @gateway.is_a?(Gateways::FakeGateway)
     @webhook_secret = Gateways::FakeGateway::WEBHOOK_SECRET if @simulated_gateway

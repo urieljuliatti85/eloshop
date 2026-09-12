@@ -48,6 +48,18 @@ class Payment < ApplicationRecord
     processing? && created_at.present? && created_at <= PROCESSING_STALE_AFTER.ago
   end
 
+  # Estados em que oferecer "tentar de novo" é correto: a cobrança falhou, ou
+  # expirou, ou nunca chegou a ser criada. Fonte única para a view (que decide
+  # se mostra o caminho de volta) e para o controller (que decide se aceita
+  # voltar à escolha do meio) — as duas perguntas são a mesma, e separá-las
+  # deixaria a tela oferecendo um link que a ação recusa.
+  #
+  # `authorized`/`paid` ficam de fora de propósito: ali há cobrança válida, e
+  # refazer arriscaria cobrar duas vezes.
+  def retryable?
+    failed? || stalled? || (pending? && expired?)
+  end
+
   def remaining_refundable_cents
     amount_cents - refunded_amount_cents
   end

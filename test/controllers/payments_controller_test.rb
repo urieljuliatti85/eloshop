@@ -22,6 +22,43 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  # O "Tentar novamente" da tela de falha levava a esta mesma ação sem o
+  # parâmetro, que reencontrava a tentativa travada e renderizava de novo a
+  # mesma mensagem de erro: beco sem saída, observado em produção em
+  # 2026-09-12. Para cartão a volta à escolha é a única saída possível, porque
+  # o token do Brick é de uso único.
+  test "retrying a stalled attempt returns to the payment method choice" do
+    sign_in_customer(customers(:one))
+    order = build_order_without_payment
+    order.payments.create!(
+      gateway: "fake", status: "processing", payment_method: "credit_card",
+      amount_cents: order.total_cents, idempotency_key: SecureRandom.uuid,
+      created_at: (Payment::PROCESSING_STALE_AFTER + 1.minute).ago
+    )
+
+    get new_order_payment_path(order, retry: 1)
+
+    assert_response :success
+    assert_match "Como você quer pagar?", response.body
+  end
+
+  # A contrapartida: uma cobrança válida não pode ser refeita por um parâmetro
+  # na URL — seria o caminho para cobrar o cliente duas vezes.
+  test "retrying does nothing when the payment is still valid" do
+    sign_in_customer(customers(:one))
+    order = build_order_without_payment
+    order.payments.create!(
+      gateway: "fake", status: "paid", payment_method: "credit_card",
+      external_id: "mp-#{SecureRandom.hex(4)}",
+      amount_cents: order.total_cents, idempotency_key: SecureRandom.uuid
+    )
+
+    get new_order_payment_path(order, retry: 1)
+
+    assert_response :success
+    assert_no_match "Como você quer pagar?", response.body
+  end
+
   test "an order without a payment attempt yet shows the payment method choice" do
     sign_in_customer(customers(:one))
     order = build_order_without_payment

@@ -13,7 +13,7 @@
       <p class="font-semibold">Não foi possível concluir o pagamento.</p>
       <p class="mt-1">A cobrança foi recusada ou expirou. Seu pedido continua salvo — você pode tentar de novo.</p>
     </div>
-    <%= link_to "Tentar novamente", new_order_payment_path(order), class: "text-brand-600 hover:underline" %>
+    <%= link_to "Tentar novamente", new_order_payment_path(order, retry: 1), class: "text-brand-600 hover:underline" %>
   <%# `processing` é mantido de propósito quando a chamada ao gateway falha: a
       cobrança pode ter nascido do outro lado, e a próxima tentativa precisa
       reusar a mesma chave de idempotência (ver Payments::Authorize). Mas para
@@ -26,7 +26,7 @@
       <p class="font-semibold">Não foi possível preparar a cobrança.</p>
       <p class="mt-1">Seu pedido continua salvo — você pode tentar de novo.</p>
     </div>
-    <%= link_to "Tentar novamente", new_order_payment_path(order), class: "text-brand-600 hover:underline" %>
+    <%= link_to "Tentar novamente", new_order_payment_path(order, retry: 1), class: "text-brand-600 hover:underline" %>
   <% elsif payment.processing? %>
     <p class="rounded-xl bg-brand-50 px-4 py-3 text-sm text-ink-muted" role="status">
       Preparando a cobrança. Aguarde alguns instantes.
