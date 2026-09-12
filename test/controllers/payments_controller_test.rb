@@ -68,6 +68,28 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_match "Pagar com cartão de crédito", response.body
   end
 
+  # O SDK injeta em runtime um <script> inline com o widget antifraude e só
+  # aplica nonce nele se receber `deviceProfileCspNonce`. Sem esse valor a CSP
+  # bloqueia o script: o Brick fica preso no skeleton e o antifraude não roda
+  # — observado em produção em 2026-09-12. O nonce tem de ser o mesmo do
+  # cabeçalho, senão o browser bloqueia igual.
+  test "the card brick receives the same csp nonce sent in the header" do
+    sign_in_customer(customers(:one))
+    sellers(:approved).update!(
+      mercado_pago_user_id: "mp-user-1",
+      mercado_pago_public_key: "TEST-public-key",
+      mercado_pago_access_token_ciphertext: "x",
+      mercado_pago_refresh_token_ciphertext: "x"
+    )
+    order = build_order_without_payment
+
+    get new_order_payment_path(order)
+
+    nonce = response.body[/data-card-payment-brick-csp-nonce-value="([^"]+)"/, 1]
+    assert nonce.present?, "o Brick precisa receber um nonce"
+    assert_includes response.headers["Content-Security-Policy"], "'nonce-#{nonce}'"
+  end
+
   test "choosing credit card authorizes synchronously and confirms the order" do
     sign_in_customer(customers(:one))
     order = build_order_without_payment

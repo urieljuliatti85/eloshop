@@ -56,7 +56,8 @@
               <div data-controller="card-payment-brick"
                    data-card-payment-brick-public-key-value="<%= seller.mercado_pago_public_key %>"
                    data-card-payment-brick-amount-value="<%= @order.total_cents / 100.0 %>"
-                   data-card-payment-brick-form-url-value="<%= order_payment_path(@order) %>">
+                   data-card-payment-brick-form-url-value="<%= order_payment_path(@order) %>"
+                   data-card-payment-brick-csp-nonce-value="<%= content_security_policy_nonce %>">
                 <p data-card-payment-brick-target="error" hidden class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800"></p>
                 <div data-card-payment-brick-target="container"></div>
               </div>
