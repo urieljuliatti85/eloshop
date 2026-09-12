@@ -1,4 +1,5 @@
 require "test_helper"
+require "benchmark"
 
 module Marketplace
   # HTTP é stubado: estes testes verificam o contrato do adapter, não a API
@@ -188,6 +189,40 @@ module Marketplace
       assert_equal "awselb/2.0", payload[:server]
       # O trecho identifica a camada que respondeu, sem marcação nem quebras.
       assert_equal "Acesso bloqueado (E-WAF-0003)", payload[:body_excerpt]
+    end
+
+    # CodeQL (rb/polynomial-redos, PR #84): a limpeza de marcação sobre o
+    # corpo inteiro era polinomial em entrada com muitos `<` sem fechamento,
+    # e o corpo vem de terceiro. Truncar antes da regex torna o custo
+    # constante — este teste falha por timeout se a ordem for invertida.
+    test "sanitizes a hostile error body in constant time" do
+      events = []
+      reporter = Object.new
+      reporter.define_singleton_method(:notify) { |name, **payload| events << [ name, payload ] }
+      oauth = MelhorEnvioOauth.new(
+        client_id: "123",
+        client_secret: "client-secret",
+        redirect_uri: "https://eloshop.example/painel/melhor-envio/callback",
+        event_reporter: reporter
+      )
+      fake_http = Object.new
+      fake_http.define_singleton_method(:request) do |_request|
+        Net::HTTPForbidden.new("1.1", "403", "Forbidden").tap do |response|
+          response.define_singleton_method(:body) { "<" * 200_000 }
+        end
+      end
+      oauth.instance_variable_set(:@http, fake_http)
+
+      # Determinístico em vez de cronometrado: um corpo hostil de 200 KB que
+      # sanitiza para vazio prova que a regex não engasgou, e o limite do
+      # trecho prova que a fatia inicial foi aplicada. Medir tempo daria um
+      # teste frágil — a diferença real é de 166x (10,9 ms contra 0,07 ms),
+      # mas ambos passam sob qualquer limite generoso, e um limite apertado
+      # quebraria em CI lento.
+      assert_raises(MelhorEnvioOauth::RequestFailed) { oauth.exchange(code: "bad-code") }
+
+      _name, payload = events.last
+      assert_operator payload[:body_excerpt].length, :<=, MelhorEnvioOauth::BODY_EXCERPT_LIMIT
     end
 
     test "truncates a long non-JSON error body" do

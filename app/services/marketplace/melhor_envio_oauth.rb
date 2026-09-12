@@ -169,8 +169,18 @@ module Marketplace
     # provedor possa ecoar de volta (§43).
     BODY_EXCERPT_LIMIT = 300
 
+    # **Trunca ANTES de aplicar as regex**, e a ordem é a correção de um
+    # achado real (CodeQL rb/polynomial-redos, PR #84): `<[^>]*>` sobre o
+    # corpo inteiro é polinomial em entrada com muitos `<` sem fechamento —
+    # 4,7 ms para 100 KB, crescendo com o tamanho. O corpo vem de terceiro
+    # (aqui, de um WAF), então é entrada não confiável. Truncado primeiro, o
+    # custo é constante: 0,02 ms no mesmo caso.
+    #
+    # O limite maior no slice inicial dá folga para a marcação que será
+    # removida, sem deixar a regex ver a string inteira.
     def body_excerpt(response)
       response.body.to_s
+        .first(BODY_EXCERPT_LIMIT * 4)
         .gsub(/<[^>]*>/, " ")
         .gsub(/\s+/, " ")
         .strip
