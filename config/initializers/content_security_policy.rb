@@ -19,7 +19,8 @@
 #                                (/frontend-assets/op-cho-bricks) e os logos
 #                                de bandeira (/storage/logos-api-admin/*.png)
 #   secure-fields.mercadopago.com  `cacheUrl`: o iframe que hospeda os campos
-#                                de cartão — só frame-src, nunca script-src
+#                                de cartão — frame-src E connect-src (o SDK
+#                                também faz XHR para ele), nunca script-src
 #   api.mercadopago.com          chamadas XHR do Brick (/v1, /v2, /bricks,
 #                                /op-pay/web/v1, /op-frontend-metrics/v1)
 #   api.mercadolibre.com         telemetria melidata (/tracks)
@@ -31,11 +32,13 @@
 # Isto substitui o `https://*.mercadopago.com`/`https://*.mlstatic.com` amplo
 # da primeira entrega da Fase 24. O curinga cobria qualquer subdomínio dos
 # dois (inclusive os de conteúdo do Mercado Livre), o que é bem mais do que
-# o Brick precisa. AINDA NÃO VERIFICADO NUM BROWSER REAL: nenhum vendedor de
-# teste tem Public Key até a aplicação Marketplace de sandbox existir, então
-# o Brick nunca chegou a montar. Se o console acusar bloqueio de CSP na
-# primeira execução real, o domínio faltante deve ser acrescentado à
-# diretiva específica — nunca voltando ao curinga.
+# o Brick precisa. VERIFICADO NUM BROWSER EM 2026-09-12, com
+# vendedor real: a lista de domínios estava certa, mas faltavam dois usos que
+# a leitura do bundle não revelou — o script inline do antifraude, resolvido
+# passando `deviceProfileCspNonce` ao SDK (ver o controller do Brick), e o XHR
+# para secure-fields, acrescentado ao connect-src. Segue valendo a regra: se o
+# console acusar bloqueio, acrescente o domínio à diretiva específica — nunca
+# volte ao curinga.
 Rails.application.configure do
   mercado_pago_sdk    = "https://sdk.mercadopago.com"
   mercado_pago_static = "https://api-static.mercadopago.com"
@@ -54,7 +57,8 @@ Rails.application.configure do
     # (zero referências a stylesheet no bundle), mas injeta <style> em
     # runtime — o spinner de carregamento, o botão de fechar e os estilos do
     # container do Brick. Esses <style> são criados por código de terceiro e
-    # não carregam nonce (o SDK não menciona nonce em lugar nenhum), então
+    # não carregam nonce (o SDK só aceita nonce para o script do antifraude,
+    # via `deviceProfileCspNonce`; para <style> não há opção equivalente), então
     # nenhum curinga de domínio jamais os liberaria: para estilo inline o que
     # conta é `unsafe-inline`, e ele só vale se a diretiva NÃO tiver nonce
     # (o browser ignora `unsafe-inline` quando há nonce). Por isso style-src
@@ -67,7 +71,13 @@ Rails.application.configure do
     # CSP). A alternativa seria hashear cada bloco do SDK, que muda a cada
     # release deles e quebraria o checkout sem aviso.
     policy.style_src   :self, :unsafe_inline
-    policy.connect_src :self, mercado_pago_api, mercado_pago_static, mercado_libre_cdn, mercado_libre_api
+    # `mercado_pago_fields` também em connect-src, não só em frame-src: além de
+    # hospedar o iframe dos campos, o SDK faz XHR para esse mesmo domínio ao
+    # montar o Brick (`fetchPage`). Observado no console em 2026-09-12 —
+    # "Connecting to 'https://secure-fields.mercadopago.com/' violates ...
+    # connect-src". Não afrouxa nada: é o domínio que já confiamos para o
+    # iframe, agora na diretiva que o outro uso exige.
+    policy.connect_src :self, mercado_pago_api, mercado_pago_static, mercado_pago_fields, mercado_libre_cdn, mercado_libre_api
     policy.frame_src   :self, mercado_pago_fields, mercado_pago_sdk
     policy.base_uri    :self
     policy.form_action :self
