@@ -1,4 +1,5 @@
 require "test_helper"
+require "benchmark"
 
 module Marketplace
   # HTTP é stubado: estes testes verificam o contrato do adapter, não a API
@@ -152,7 +153,11 @@ module Marketplace
       assert_not_includes payload.to_s, "leaked"
     end
 
-    test "records the status when the error body is unreadable" do
+    # O 403 de 2026-09-12 era uma página de WAF (`E-WAF-0003`) servida pelo
+    # load balancer antes da API. Sem o trecho do corpo, o log dizia só
+    # "corpo ilegível" e não distinguia "o provedor recusou" de "a requisição
+    # não chegou ao provedor".
+    test "records the provider layer when the error body is not JSON" do
       events = []
       reporter = Object.new
       reporter.define_singleton_method(:notify) { |name, **payload| events << [ name, payload ] }
@@ -165,7 +170,11 @@ module Marketplace
       fake_http = Object.new
       fake_http.define_singleton_method(:request) do |_request|
         Net::HTTPForbidden.new("1.1", "403", "Forbidden").tap do |response|
-          response.define_singleton_method(:body) { "<html>proxy error</html>" }
+          response["content-type"] = "text/html"
+          response["server"] = "awselb/2.0"
+          response.define_singleton_method(:body) do
+            "<html>\n  <body>\n    <h1>Acesso bloqueado (E-WAF-0003)</h1>\n  </body>\n</html>"
+          end
         end
       end
       oauth.instance_variable_set(:@http, fake_http)
@@ -175,7 +184,69 @@ module Marketplace
       name, payload = events.last
       assert_equal "marketplace.melhor_envio_oauth.failed", name
       assert_equal "403", payload[:http_status]
-      assert_equal "corpo ilegível", payload[:error]
+      assert_equal "corpo não-JSON", payload[:error]
+      assert_equal "text/html", payload[:content_type]
+      assert_equal "awselb/2.0", payload[:server]
+      # O trecho identifica a camada que respondeu, sem marcação nem quebras.
+      assert_equal "Acesso bloqueado (E-WAF-0003)", payload[:body_excerpt]
+    end
+
+    # CodeQL (rb/polynomial-redos, PR #84): a limpeza de marcação sobre o
+    # corpo inteiro era polinomial em entrada com muitos `<` sem fechamento,
+    # e o corpo vem de terceiro. Truncar antes da regex torna o custo
+    # constante — este teste falha por timeout se a ordem for invertida.
+    test "sanitizes a hostile error body in constant time" do
+      events = []
+      reporter = Object.new
+      reporter.define_singleton_method(:notify) { |name, **payload| events << [ name, payload ] }
+      oauth = MelhorEnvioOauth.new(
+        client_id: "123",
+        client_secret: "client-secret",
+        redirect_uri: "https://eloshop.example/painel/melhor-envio/callback",
+        event_reporter: reporter
+      )
+      fake_http = Object.new
+      fake_http.define_singleton_method(:request) do |_request|
+        Net::HTTPForbidden.new("1.1", "403", "Forbidden").tap do |response|
+          response.define_singleton_method(:body) { "<" * 200_000 }
+        end
+      end
+      oauth.instance_variable_set(:@http, fake_http)
+
+      # Determinístico em vez de cronometrado: um corpo hostil de 200 KB que
+      # sanitiza para vazio prova que a regex não engasgou, e o limite do
+      # trecho prova que a fatia inicial foi aplicada. Medir tempo daria um
+      # teste frágil — a diferença real é de 166x (10,9 ms contra 0,07 ms),
+      # mas ambos passam sob qualquer limite generoso, e um limite apertado
+      # quebraria em CI lento.
+      assert_raises(MelhorEnvioOauth::RequestFailed) { oauth.exchange(code: "bad-code") }
+
+      _name, payload = events.last
+      assert_operator payload[:body_excerpt].length, :<=, MelhorEnvioOauth::BODY_EXCERPT_LIMIT
+    end
+
+    test "truncates a long non-JSON error body" do
+      events = []
+      reporter = Object.new
+      reporter.define_singleton_method(:notify) { |name, **payload| events << [ name, payload ] }
+      oauth = MelhorEnvioOauth.new(
+        client_id: "123",
+        client_secret: "client-secret",
+        redirect_uri: "https://eloshop.example/painel/melhor-envio/callback",
+        event_reporter: reporter
+      )
+      fake_http = Object.new
+      fake_http.define_singleton_method(:request) do |_request|
+        Net::HTTPForbidden.new("1.1", "403", "Forbidden").tap do |response|
+          response.define_singleton_method(:body) { "x" * 5_000 }
+        end
+      end
+      oauth.instance_variable_set(:@http, fake_http)
+
+      assert_raises(MelhorEnvioOauth::RequestFailed) { oauth.exchange(code: "bad-code") }
+
+      _name, payload = events.last
+      assert_equal MelhorEnvioOauth::BODY_EXCERPT_LIMIT, payload[:body_excerpt].length
     end
 
     test "translates network failures without leaking internals" do

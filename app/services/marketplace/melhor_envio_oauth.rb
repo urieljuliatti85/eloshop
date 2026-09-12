@@ -142,18 +142,67 @@ module Marketplace
         hint: body["hint"]
       )
     rescue StandardError
-      # Corpo ilegível (não-JSON, vazio, HTML de erro do proxy): o status
-      # ainda é informação, e é melhor registrá-lo do que perder o evento.
+      # Corpo não-JSON: em 2026-09-12 foi exatamente este caso, e registrar
+      # só "corpo ilegível" custou um acesso por SSH ao contêiner para
+      # descobrir que o 403 era `E-WAF-0003`, uma página de WAF servida pelo
+      # load balancer antes da API. O trecho inicial identifica a camada que
+      # respondeu — é a diferença entre "o provedor recusou" e "a requisição
+      # nem chegou lá".
       begin
         @event_reporter.notify(
           "marketplace.melhor_envio_oauth.failed",
           failure_reason: "http_error",
           http_status: response.code,
-          error: "corpo ilegível"
+          error: "corpo não-JSON",
+          content_type: response["content-type"],
+          server: response["server"],
+          body_excerpt: body_excerpt(response)
         )
       rescue StandardError
         nil
       end
+    end
+
+    # Só o começo do corpo, sem marcação e sem quebras de linha. O limite
+    # existe porque a página de erro pode ser longa, e a sanitização porque
+    # este trecho vai para o log: não é lugar de HTML nem de conteúdo que o
+    # provedor possa ecoar de volta (§43).
+    BODY_EXCERPT_LIMIT = 300
+    WHITESPACE = [ " ", "\t", "\n", "\r", "\f", "\v" ].freeze
+
+    # Sem regex, de propósito. A versão anterior usava `<[^>]*>` e o CodeQL
+    # apontou `rb/polynomial-redos` (PR #84): o corpo vem de terceiro — aqui,
+    # de um WAF — e uma entrada com muitos `<` sem fechamento faz o
+    # backtracking crescer com o tamanho (medido: 10,9 ms para 200 KB).
+    # Truncar antes reduzia o custo, mas não convence a análise estática nem
+    # elimina a classe do problema: a regex continua recebendo dado externo.
+    #
+    # A varredura abaixo é linear e sem backtracking — um caractere por vez,
+    # alternando entre "dentro" e "fora" de uma tag, colapsando espaços no
+    # mesmo passo. O `first` inicial mantém o trabalho limitado de qualquer
+    # forma, com folga para a marcação que será descartada.
+    def body_excerpt(response)
+      source = response.body.to_s.first(BODY_EXCERPT_LIMIT * 4)
+      out = +""
+      inside_tag = false
+
+      source.each_char do |char|
+        case char
+        when "<" then inside_tag = true
+        when ">" then inside_tag = false
+        else
+          next if inside_tag
+
+          if WHITESPACE.include?(char)
+            out << " " unless out.end_with?(" ")
+          else
+            out << char
+          end
+        end
+        break if out.length > BODY_EXCERPT_LIMIT
+      end
+
+      out.strip.first(BODY_EXCERPT_LIMIT)
     end
 
     def log_invalid_payload(payload)
