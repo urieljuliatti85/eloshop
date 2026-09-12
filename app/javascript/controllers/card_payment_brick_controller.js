@@ -6,7 +6,7 @@ import { Controller } from "@hotwired/stimulus"
 // <script> separada na view, porque não é um módulo ES compatível com
 // importmap; este controller só assume que já está disponível ao conectar.
 export default class extends Controller {
-  static values = { publicKey: String, amount: Number, formUrl: String }
+  static values = { publicKey: String, amount: Number, formUrl: String, cspNonce: String }
   static targets = ["container", "error"]
 
   connect() {
@@ -25,7 +25,17 @@ export default class extends Controller {
       this.containerTarget.id = `card-payment-brick-${Math.random().toString(36).slice(2)}`
     }
 
-    const mp = new window.MercadoPago(this.publicKeyValue, { locale: "pt-BR" })
+    // `deviceProfileCspNonce` é opção do próprio SDK: ele injeta em runtime
+    // um <script> inline com o widget antifraude (device profile) e aplica
+    // este nonce nele. Sem isso a CSP bloqueia o script — o Brick fica preso
+    // no skeleton e o antifraude não roda. A alternativa seria `unsafe-inline`
+    // em `script-src`, que desligaria a proteção contra XSS justamente na
+    // tela onde o cliente digita o cartão. Mesmo padrão já visto no `style-src`
+    // (2026-09-07), onde o SDK também injeta sem nonce — lá não havia opção.
+    const mp = new window.MercadoPago(this.publicKeyValue, {
+      locale: "pt-BR",
+      deviceProfileCspNonce: this.cspNonceValue
+    })
     const bricksBuilder = mp.bricks()
 
     await bricksBuilder.create("cardPayment", this.containerTarget.id, {
