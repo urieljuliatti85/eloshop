@@ -142,18 +142,39 @@ module Marketplace
         hint: body["hint"]
       )
     rescue StandardError
-      # Corpo ilegível (não-JSON, vazio, HTML de erro do proxy): o status
-      # ainda é informação, e é melhor registrá-lo do que perder o evento.
+      # Corpo não-JSON: em 2026-09-12 foi exatamente este caso, e registrar
+      # só "corpo ilegível" custou um acesso por SSH ao contêiner para
+      # descobrir que o 403 era `E-WAF-0003`, uma página de WAF servida pelo
+      # load balancer antes da API. O trecho inicial identifica a camada que
+      # respondeu — é a diferença entre "o provedor recusou" e "a requisição
+      # nem chegou lá".
       begin
         @event_reporter.notify(
           "marketplace.melhor_envio_oauth.failed",
           failure_reason: "http_error",
           http_status: response.code,
-          error: "corpo ilegível"
+          error: "corpo não-JSON",
+          content_type: response["content-type"],
+          server: response["server"],
+          body_excerpt: body_excerpt(response)
         )
       rescue StandardError
         nil
       end
+    end
+
+    # Só o começo do corpo, sem marcação e sem quebras de linha. O limite
+    # existe porque a página de erro pode ser longa, e a sanitização porque
+    # este trecho vai para o log: não é lugar de HTML nem de conteúdo que o
+    # provedor possa ecoar de volta (§43).
+    BODY_EXCERPT_LIMIT = 300
+
+    def body_excerpt(response)
+      response.body.to_s
+        .gsub(/<[^>]*>/, " ")
+        .gsub(/\s+/, " ")
+        .strip
+        .first(BODY_EXCERPT_LIMIT)
     end
 
     def log_invalid_payload(payload)
