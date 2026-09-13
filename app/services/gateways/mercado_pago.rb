@@ -302,7 +302,66 @@ module Gateways
         cause: body["cause"]
       )
     rescue StandardError
+      log_non_json_error_response(response, path)
+    end
+
+    # Mesma lacuna que o Melhor Envio tinha até o PR #84: quando o corpo não é
+    # JSON, o `rescue` anterior devolvia `nil` e **nenhum evento era emitido** —
+    # o log ficava sem qualquer registro da falha. Lá isso custou um acesso por
+    # SSH ao contêiner para descobrir que um 403 era `E-WAF-0003`, uma página
+    # de WAF servida pelo load balancer antes da API.
+    #
+    # O risco aqui é o mesmo: um 500 opaco de `/v1/payments` não distingue "o
+    # Mercado Pago recusou" de "a requisição nem chegou ao Mercado Pago". O
+    # content-type, o `server` e o trecho inicial identificam a camada que
+    # respondeu.
+    def log_non_json_error_response(response, path)
+      Rails.event.notify(
+        "payment.mercado_pago_gateway_http_error",
+        path: path,
+        http_status: response.code,
+        error: "corpo não-JSON",
+        content_type: response["content-type"],
+        server: response["server"],
+        body_excerpt: body_excerpt(response)
+      )
+    rescue StandardError
       nil
+    end
+
+    BODY_EXCERPT_LIMIT = 300
+    WHITESPACE = [ " ", "\t", "\n", "\r", "\f", "\v" ].freeze
+
+    # Sem regex, de propósito — mesma razão do PR #84: `<[^>]*>` sobre corpo de
+    # terceiro é `rb/polynomial-redos` (CodeQL), porque uma entrada com muitos
+    # `<` sem fechamento faz o backtracking crescer com o tamanho. A varredura
+    # abaixo é linear, alternando entre "dentro" e "fora" de uma tag e
+    # colapsando espaços no mesmo passo.
+    #
+    # O trecho vai para o log, então sai sem marcação e truncado: não é lugar
+    # de HTML nem de conteúdo que o provedor possa ecoar de volta (§43).
+    def body_excerpt(response)
+      source = response.body.to_s.first(BODY_EXCERPT_LIMIT * 4)
+      out = +""
+      inside_tag = false
+
+      source.each_char do |char|
+        case char
+        when "<" then inside_tag = true
+        when ">" then inside_tag = false
+        else
+          next if inside_tag
+
+          if WHITESPACE.include?(char)
+            out << " " unless out.end_with?(" ")
+          else
+            out << char
+          end
+        end
+        break if out.length > BODY_EXCERPT_LIMIT
+      end
+
+      out.strip.first(BODY_EXCERPT_LIMIT)
     end
 
     # O identificador do erro do Mercado Pago (ex.: "user_allowed_only_in_test")

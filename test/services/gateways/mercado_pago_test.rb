@@ -239,7 +239,90 @@ module Gateways
       end
     end
 
+    # O log de erro existe desde 2026-09-08 justamente porque "respondeu 500"
+    # sozinho não diz nada. Só o código de causa entra na exceção; o corpo,
+    # que pode ecoar dados do pagamento, fica de fora (§43).
+    test "logs the error code when the gateway refuses with JSON" do
+      capture_rails_events("payment.mercado_pago_gateway_http_error") do |events|
+        stub_error_response(
+          code: "400",
+          body: { "error" => "user_allowed_only_in_test", "message" => "conta de teste", "cause" => [] }.to_json,
+          content_type: "application/json"
+        ) do
+          erro = assert_raises(MercadoPago::RequestFailed) { @gateway.payment_status(external_id: "1") }
+          assert_includes erro.message, "user_allowed_only_in_test"
+          assert_not_includes erro.message, "conta de teste"
+        end
+
+        payload = events.last[:payload]
+        assert_equal "400", payload[:http_status]
+        assert_equal "user_allowed_only_in_test", payload[:error]
+      end
+    end
+
+    # Mesma lacuna que o Melhor Envio tinha até o PR #84: corpo não-JSON caía
+    # num `rescue` que devolvia nil, e nenhum evento era emitido. Um 500 opaco
+    # de /v1/payments não distingue "o Mercado Pago recusou" de "a requisição
+    # nem chegou ao Mercado Pago" — o trecho do corpo identifica a camada.
+    test "records the responding layer when the error body is not JSON" do
+      capture_rails_events("payment.mercado_pago_gateway_http_error") do |events|
+        stub_error_response(
+          code: "403",
+          body: "<html>\n  <body>\n    <h1>Acesso bloqueado (E-WAF-0003)</h1>\n  </body>\n</html>",
+          content_type: "text/html",
+          server: "awselb/2.0"
+        ) do
+          assert_raises(MercadoPago::RequestFailed) { @gateway.payment_status(external_id: "1") }
+        end
+
+        payload = events.last[:payload]
+        assert_equal "403", payload[:http_status]
+        assert_equal "corpo não-JSON", payload[:error]
+        assert_equal "text/html", payload[:content_type]
+        assert_equal "awselb/2.0", payload[:server]
+        # Sem marcação e sem quebras de linha, só o que identifica a camada.
+        assert_equal "Acesso bloqueado (E-WAF-0003)", payload[:body_excerpt]
+      end
+    end
+
+    # CodeQL (rb/polynomial-redos, PR #84): limpar marcação com regex sobre
+    # corpo de terceiro é polinomial numa entrada com muitos `<` sem
+    # fechamento. Determinístico em vez de cronometrado, pela mesma razão
+    # registrada no teste equivalente do Melhor Envio: um corpo hostil de
+    # 200 KB que sanitiza para vazio prova que a varredura não engasgou, e
+    # medir tempo daria um teste frágil em CI lento.
+    test "sanitizes a hostile error body without backtracking" do
+      capture_rails_events("payment.mercado_pago_gateway_http_error") do |events|
+        stub_error_response(code: "403", body: "<" * 200_000, content_type: "text/html") do
+          assert_raises(MercadoPago::RequestFailed) { @gateway.payment_status(external_id: "1") }
+        end
+
+        payload = events.last[:payload]
+        assert_equal "", payload[:body_excerpt]
+        assert_operator payload[:body_excerpt].length, :<=, MercadoPago::BODY_EXCERPT_LIMIT
+      end
+    end
+
     private
+
+    # Responde com um erro HTTP em vez do payload de sucesso do stub_request,
+    # para exercitar o caminho de log da falha.
+    def stub_error_response(code:, body:, content_type: nil, server: nil)
+      fake_http = Object.new
+
+      fake_http.define_singleton_method(:request) do |_req|
+        Net::HTTPResponse.send(:response_class, code).new("1.1", code, "Error").tap do |response|
+          response["content-type"] = content_type if content_type
+          response["server"] = server if server
+          response.define_singleton_method(:body) { body }
+        end
+      end
+
+      @gateway.instance_variable_set(:@http, fake_http)
+      yield
+    ensure
+      @gateway.remove_instance_variable(:@http) if @gateway.instance_variable_defined?(:@http)
+    end
 
     def signed_request(signature: nil, data_id: "12345", request_id: "req-1", ts: "1700000000")
       manifest = "id:#{data_id};request-id:#{request_id};ts:#{ts};"
