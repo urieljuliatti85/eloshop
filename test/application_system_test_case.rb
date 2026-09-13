@@ -1,7 +1,21 @@
 require "test_helper"
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
-  driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ]
+  # Sem isso, o Chrome passa a bloquear cliques em qualquer teste que logue
+  # (formulário com campo password) mais de duas vezes na mesma sessão do
+  # browser: o gerenciador de senhas intercepta a interação sem lançar
+  # exceção, sem erro no console e sem sequer registrar a tentativa de
+  # navegação no histórico (Page.getNavigationHistory) — o clique acontece,
+  # mas nenhuma requisição chega ao servidor. Reproduzido de forma
+  # determinística (sempre a partir da 3ª navegação pós-login na mesma
+  # sessão) e confirmado como a causa raiz do teste de sistema instável
+  # registrado no débito técnico do ROADMAP.
+  driven_by :selenium, using: :headless_chrome, screen_size: [ 1400, 1400 ] do |driver_option|
+    driver_option.add_argument("--password-store=basic")
+    driver_option.add_preference("credentials_enable_service", false)
+    driver_option.add_preference("profile.password_manager_enabled", false)
+    driver_option.add_preference("profile.password_manager_leak_detection", false)
+  end
 end
 
 # O default do Capybara (2s) é curto demais para o runner do CI, mais lento
