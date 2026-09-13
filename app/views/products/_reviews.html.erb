@@ -2,17 +2,23 @@
   <h2 class="mb-8 text-2xl font-bold text-ink">Avaliações</h2>
 
   <% if reviews.any? %>
-    <div class="space-y-6">
+    <div class="space-y-4">
       <% reviews.each do |review| %>
-        <div class="border-b border-gray-100 pb-6">
-          <div class="flex items-center gap-2">
-            <span class="font-semibold text-ink">★ <%= review.rating %>/5</span>
-            <% if review.verified_purchase? %>
-              <span class="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-600">Compra verificada</span>
-            <% end %>
+        <div class="flex items-start gap-4 rounded-[1.5rem] bg-gradient-to-r from-brand-50 to-brand-200 px-5 py-5 sm:px-6">
+          <span class="grid h-11 w-11 flex-none place-items-center rounded-full bg-white text-sm font-bold text-brand-600" aria-hidden="true">
+            <%= review.customer.name.first.upcase %>
+          </span>
+
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-semibold text-ink">★ <%= review.rating %>/5</span>
+              <% if review.verified_purchase? %>
+                <span class="rounded-full bg-white/60 px-2 py-0.5 text-xs font-medium text-brand-700">Compra verificada</span>
+              <% end %>
+            </div>
+            <p class="mt-2 text-ink-muted"><%= review.comment %></p>
+            <p class="mt-2 text-xs text-ink-muted"><%= review.customer.name %> · <%= review.created_at.strftime("%d/%m/%Y") %></p>
           </div>
-          <p class="mt-2 text-ink-muted"><%= review.comment %></p>
-          <p class="mt-2 text-xs text-ink-muted"><%= review.customer.name %> · <%= review.created_at.strftime("%d/%m/%Y") %></p>
         </div>
       <% end %>
     </div>
