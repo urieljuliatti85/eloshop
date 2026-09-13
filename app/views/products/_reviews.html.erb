@@ -1,47 +1,47 @@
 <div id="avaliacoes" class="mt-20 max-w-2xl">
-  <div class="rounded-[2rem] bg-gradient-to-r from-white to-brand-600 px-6 py-8 sm:px-10">
-    <h2 class="mb-6 text-2xl font-bold text-ink">Avaliações</h2>
+  <div class="rounded-[2rem] bg-gradient-to-r from-[#D5533D] to-[#DE705B] px-6 py-8 sm:px-10">
+    <h2 class="mb-6 text-2xl font-bold text-white">Avaliações</h2>
 
     <% if reviews.any? %>
       <div class="space-y-4">
         <% reviews.each do |review| %>
-          <div class="flex items-start gap-4 rounded-[1.5rem] bg-white/60 px-5 py-5 sm:px-6">
+          <div class="flex items-start gap-4 rounded-[1.5rem] bg-white/15 px-5 py-5 sm:px-6">
             <span class="grid h-11 w-11 flex-none place-items-center rounded-full bg-white text-sm font-bold text-brand-600" aria-hidden="true">
               <%= review.customer.name.first.upcase %>
             </span>
 
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
-                <span class="font-semibold text-ink">★ <%= review.rating %>/5</span>
+                <span class="font-semibold text-white">★ <%= review.rating %>/5</span>
                 <% if review.verified_purchase? %>
-                  <span class="rounded-full bg-white/80 px-2 py-0.5 text-xs font-medium text-brand-700">Compra verificada</span>
+                  <span class="rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium text-brand-700">Compra verificada</span>
                 <% end %>
               </div>
-              <p class="mt-2 text-ink-muted"><%= review.comment %></p>
-              <p class="mt-2 text-xs text-ink-muted"><%= review.customer.name %> · <%= review.created_at.strftime("%d/%m/%Y") %></p>
+              <p class="mt-2 text-white/90"><%= review.comment %></p>
+              <p class="mt-2 text-xs text-white/70"><%= review.customer.name %> · <%= review.created_at.strftime("%d/%m/%Y") %></p>
             </div>
           </div>
         <% end %>
       </div>
     <% else %>
-      <p class="text-ink-muted">Este produto ainda não tem avaliações.</p>
+      <p class="text-white/90">Este produto ainda não tem avaliações.</p>
     <% end %>
 
     <div class="mt-10">
       <% if existing_review %>
         <% status_labels = { "pending" => "aguardando aprovação", "approved" => "publicada", "rejected" => "rejeitada" } %>
-        <p class="text-sm text-ink-muted">
+        <p class="text-sm text-white/90">
           Você já avaliou este produto (<%= existing_review.rating %>/5, <%= status_labels[existing_review.status] %>).
         </p>
       <% elsif customer_authenticated? %>
-        <h3 class="mb-3 font-semibold text-ink">Deixe sua avaliação</h3>
+        <h3 class="mb-3 font-semibold text-white">Deixe sua avaliação</h3>
 
         <%= form_with model: Review.new, url: product_reviews_path(product.seller, product.slug), class: "flex flex-col gap-4" do |form| %>
           <div>
-            <label class="mb-1 block text-sm font-medium text-ink">Nota</label>
+            <label class="mb-1 block text-sm font-medium text-white">Nota</label>
             <div class="flex gap-4">
               <% (1..5).each do |value| %>
-                <label class="flex items-center gap-1.5 text-sm text-ink">
+                <label class="flex items-center gap-1.5 text-sm text-white">
                   <%= form.radio_button :rating, value, required: true, class: "h-4 w-4 accent-brand-600" %> <%= value %>
                 </label>
               <% end %>
@@ -49,15 +49,15 @@
           </div>
 
           <div>
-            <%= form.label :comment, "Comentário", class: "mb-1 block text-sm font-medium text-ink" %>
-            <%= form.text_area :comment, required: true, rows: 4, class: "w-full rounded-xl border border-white/70 bg-white/70 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+            <%= form.label :comment, "Comentário", class: "mb-1 block text-sm font-medium text-white" %>
+            <%= form.text_area :comment, required: true, rows: 4, class: "w-full rounded-xl border border-white/70 bg-white/90 px-3 py-2 text-ink focus:border-white focus:outline-none" %>
           </div>
 
-          <%= form.submit "Enviar avaliação", class: "w-fit rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+          <%= form.submit "Enviar avaliação", class: "w-fit rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand-600 hover:bg-white/90 cursor-pointer" %>
         <% end %>
       <% else %>
-        <p class="text-sm text-ink-muted">
-          <%= link_to "Entre na sua conta", new_customer_session_path, class: "text-brand-600 hover:underline" %> para avaliar este produto.
+        <p class="text-sm text-white/90">
+          <%= link_to "Entre na sua conta", new_customer_session_path, class: "text-white underline hover:text-white/80" %> para avaliar este produto.
         </p>
       <% end %>
     </div>
