@@ -17,7 +17,8 @@
 
          items = [ [ "Início", root_path, "home" ],
                    [ "Loja", products_path, "products" ],
-                   [ "Ateliês", sellers_path, "sellers" ] ]
+                   [ "Ateliês", sellers_path, "sellers" ],
+                   [ "Como funciona", how_it_works_path, "how_it_works" ] ]
          if signed_in_user&.admin?
            items << [ "Administração", admin_root_path, "admin/dashboard" ]
          elsif signed_in_user&.seller?
@@ -199,7 +200,8 @@
 
          mobile_items = [ [ "Início", root_path, "home" ],
                           [ "Loja", products_path, "products" ],
-                          [ "Ateliês", sellers_path, "sellers" ] ]
+                          [ "Ateliês", sellers_path, "sellers" ],
+                          [ "Como funciona", how_it_works_path, "how_it_works" ] ]
          unless mobile_user
            mobile_items << [ "Entrar no Ateliê", seller_login_path, "seller_portal/sessions" ]
            mobile_items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations" ]

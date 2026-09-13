@@ -1,0 +1,231 @@
+<% content_for :title, "Como funciona | EloShop" %>
+<% content_for :meta_description, "Entenda o passo a passo de como comprar e como vender na EloShop: carrinho, frete, pagamento, cadastro de ateliê e comissão." %>
+
+<div class="container mx-auto max-w-3xl px-5 pb-16 pt-8" data-controller="tabs">
+  <h1 class="flex items-center gap-3 text-3xl font-bold text-ink">
+    <svg class="h-7 w-7 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+    Como funciona
+  </h1>
+  <p class="mt-4 text-ink-muted">
+    A EloShop é um marketplace: cada peça é vendida diretamente por um ateliê ou artesão
+    independente, não pela plataforma.
+  </p>
+
+  <%# Sem JS, a aba "Quem vende" continua acessível — as duas seções abaixo
+      renderizam por padrão, e o CSS/JS só entra para alternar a visibilidade
+      quando o Stimulus conecta. %>
+  <div role="tablist" class="mt-8 inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-medium">
+    <button type="button" role="tab" data-tabs-target="tab" data-tab-name="compra" data-action="tabs#select"
+            aria-selected="true" class="rounded-full px-5 py-2 transition">
+      Quem compra
+    </button>
+    <button type="button" role="tab" data-tabs-target="tab" data-tab-name="vende" data-action="tabs#select"
+            aria-selected="false" class="rounded-full px-5 py-2 text-ink-muted transition">
+      Quem vende
+    </button>
+  </div>
+
+  <div data-tabs-target="panel" data-tab-name="compra">
+    <ol class="mt-12 space-y-10">
+      <li class="flex gap-5">
+        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">1</span>
+        <div>
+          <h2 class="font-semibold text-ink">Escolha a peça</h2>
+          <p class="mt-1 text-ink-muted">
+            Cada produto mostra quem faz a peça, se é produzida em série, peça única ou feita sob
+            encomenda. Quando for sob encomenda, o prazo de produção aparece antes de você comprar.
+          </p>
+        </div>
+      </li>
+
+      <li class="flex gap-5">
+        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">2</span>
+        <div>
+          <h2 class="font-semibold text-ink">Adicione ao carrinho</h2>
+          <p class="mt-1 text-ink-muted">
+            O carrinho aceita produtos de um único ateliê por vez. Se você quiser comprar de dois
+            artesãos diferentes, são dois pedidos separados — cada um com seu próprio frete e
+            pagamento.
+          </p>
+        </div>
+      </li>
+
+      <li class="flex gap-5">
+        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">3</span>
+        <div>
+          <h2 class="font-semibold text-ink">Endereço e frete</h2>
+          <p class="mt-1 text-ink-muted">
+            Informe o endereço de entrega e o frete é calculado antes da confirmação. O prazo total
+            soma produção (quando aplicável) e transporte.
+          </p>
+        </div>
+      </li>
+
+      <li class="flex gap-5">
+        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">4</span>
+        <div>
+          <h2 class="font-semibold text-ink">Pagamento</h2>
+          <p class="mt-1 text-ink-muted">
+            O pagamento é processado pelo Mercado Pago. PIX está disponível para todos os ateliês;
+            cartão de crédito aparece quando o ateliê já habilitou essa opção. O valor pago vai
+            direto para o ateliê responsável pela peça — a EloShop nunca guarda dinheiro do vendedor.
+          </p>
+        </div>
+      </li>
+
+      <li class="flex gap-5">
+        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">5</span>
+        <div>
+          <h2 class="font-semibold text-ink">Acompanhe o pedido</h2>
+          <p class="mt-1 text-ink-muted">
+            Depois da confirmação, você acompanha o status do pedido em
+            <%= link_to "Meus pedidos", orders_path, class: "text-brand-600 underline hover:text-brand-700" %>
+            — do pagamento confirmado até o envio.
+          </p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="mt-16 rounded-[2rem] bg-mist-100 px-6 py-8 sm:px-10">
+      <h2 class="text-xl font-bold text-ink">Perguntas comuns</h2>
+
+      <dl class="mt-6 space-y-6">
+        <div>
+          <dt class="font-semibold text-ink">Quem é responsável pela peça: a EloShop ou o ateliê?</dt>
+          <dd class="mt-1 text-ink-muted">O ateliê. Nota fiscal, produção e qualidade da peça são responsabilidade de quem vende.</dd>
+        </div>
+
+        <div>
+          <dt class="font-semibold text-ink">Posso comprar de ateliês diferentes num único pedido?</dt>
+          <dd class="mt-1 text-ink-muted">Não por enquanto — cada compra é feita com um único ateliê. Para comprar de outro, é um novo pedido.</dd>
+        </div>
+
+        <div>
+          <dt class="font-semibold text-ink">O que acontece se eu não pagar o PIX a tempo?</dt>
+          <dd class="mt-1 text-ink-muted">O código expira e você pode gerar um novo, sem duplicar o pedido.</dd>
+        </div>
+
+        <div>
+          <dt class="font-semibold text-ink">Como funcionam cancelamento e reembolso?</dt>
+          <dd class="mt-1 text-ink-muted">
+            Fale com a gente pelo <%= link_to "contato", new_contact_path, class: "text-brand-600 underline hover:text-brand-700" %>
+            informando o número do pedido.
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <div data-tabs-target="panel" data-tab-name="vende">
+    <p class="mt-8 text-ink-muted">
+      Na EloShop, cada ateliê vende suas próprias peças como um negócio independente. O pagamento
+      recebido pelo cliente vai direto para a sua conta do Mercado Pago — a plataforma cobra apenas
+      uma comissão sobre a venda.
+    </p>
+
+    <ol class="mt-10 space-y-10">
+      <li class="flex gap-5">
+        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">1</span>
+        <div>
+          <h2 class="font-semibold text-ink">Cadastre seu ateliê</h2>
+          <p class="mt-1 text-ink-muted">
+            Crie sua conta de vendedor e o painel do ateliê já fica disponível para você começar a
+            cadastrar produtos.
+          </p>
+        </div>
+      </li>
+
+      <li class="flex gap-5">
+        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">2</span>
+        <div>
+          <h2 class="font-semibold text-ink">Conecte sua conta do Mercado Pago</h2>
+          <p class="mt-1 text-ink-muted">
+            É o Mercado Pago quem verifica sua identidade — a EloShop nunca coleta ou guarda seus
+            documentos. Enquanto a conexão não é aprovada, seu catálogo não fica visível na loja.
+          </p>
+        </div>
+      </li>
+
+      <li class="flex gap-5">
+        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">3</span>
+        <div>
+          <h2 class="font-semibold text-ink">Cadastre seus produtos</h2>
+          <p class="mt-1 text-ink-muted">
+            Fotos, preço, materiais, peso e dimensões (para o cálculo de frete), disponibilidade —
+            estoque, peça única ou sob encomenda — e prazo de produção quando for o caso.
+          </p>
+        </div>
+      </li>
+
+      <li class="flex gap-5">
+        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">4</span>
+        <div>
+          <h2 class="font-semibold text-ink">Conecte o Melhor Envio (opcional)</h2>
+          <p class="mt-1 text-ink-muted">
+            Conectar sua conta do Melhor Envio faz o frete ser cotado em tempo real, com base no
+            peso, dimensões e endereço de origem do seu ateliê. Sem essa conexão, o cliente ainda
+            vê uma estimativa de frete — só que calculada por uma tabela interna, não pela
+            transportadora real.
+          </p>
+        </div>
+      </li>
+
+      <li class="flex gap-5">
+        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">5</span>
+        <div>
+          <h2 class="font-semibold text-ink">Receba os pedidos</h2>
+          <p class="mt-1 text-ink-muted">
+            Quando um cliente compra, você vê o pedido no painel do ateliê com os itens, a
+            personalização escolhida e o endereço de entrega.
+          </p>
+        </div>
+      </li>
+
+      <li class="flex gap-5">
+        <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">6</span>
+        <div>
+          <h2 class="font-semibold text-ink">Receba o pagamento</h2>
+          <p class="mt-1 text-ink-muted">
+            O valor do pedido (descontada a comissão da plataforma) vai direto para a sua conta do
+            Mercado Pago. A tarifa cobrada pelo Mercado Pago na transação é por sua conta, como em
+            qualquer venda processada por ele.
+          </p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="mt-16 rounded-[2rem] bg-mist-100 px-6 py-8 sm:px-10">
+      <h2 class="text-xl font-bold text-ink">Comissão e responsabilidades</h2>
+
+      <dl class="mt-6 space-y-6">
+        <div>
+          <dt class="font-semibold text-ink">Quanto a EloShop cobra?</dt>
+          <dd class="mt-1 text-ink-muted">15% sobre o valor dos produtos, já descontado qualquer cupom — o frete não entra nesse cálculo.</dd>
+        </div>
+
+        <div>
+          <dt class="font-semibold text-ink">Quem emite a nota fiscal?</dt>
+          <dd class="mt-1 text-ink-muted">O ateliê. Nota fiscal e impostos são responsabilidade de quem vende.</dd>
+        </div>
+
+        <div>
+          <dt class="font-semibold text-ink">Quem decide cancelamentos e reembolsos?</dt>
+          <dd class="mt-1 text-ink-muted">A plataforma opera e decide reembolsos e disputas; a comissão é devolvida proporcionalmente quando isso acontece.</dd>
+        </div>
+
+        <div>
+          <dt class="font-semibold text-ink">Posso vender para vários clientes ao mesmo tempo?</dt>
+          <dd class="mt-1 text-ink-muted">Sim — cada checkout de cliente é isolado por ateliê, então não há conflito entre pedidos de vendedores diferentes.</dd>
+        </div>
+      </dl>
+    </div>
+
+    <p class="mt-10">
+      <%= link_to "Cadastrar meu ateliê", new_seller_registration_path,
+            class: "inline-block rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
+    </p>
+  </div>
+</div>
