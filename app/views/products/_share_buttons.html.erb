@@ -3,14 +3,9 @@
   share_text = "Confira #{product.name} na EloShop"
   twitter_share_url = "https://twitter.com/intent/tweet?text=#{ERB::Util.url_encode(share_text)}&url=#{ERB::Util.url_encode(product_share_url)}"
   facebook_share_url = "https://www.facebook.com/sharer/sharer.php?u=#{ERB::Util.url_encode(product_share_url)}"
-  product_image_url = rails_blob_url(product.main_image) if product.main_image.attached?
 %>
 <div data-controller="share"
      data-share-url-value="<%= product_share_url %>"
-     data-share-title-value="<%= share_text %>"
-     data-share-image-url-value="<%= product_image_url %>"
-     data-share-twitter-url-value="<%= twitter_share_url %>"
-     data-share-facebook-url-value="<%= facebook_share_url %>"
      class="flex items-center gap-2">
   <a href="<%= twitter_share_url %>"
      target="_blank" rel="noopener noreferrer"
