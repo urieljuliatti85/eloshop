@@ -1,0 +1,38 @@
+<%
+  product_share_url = product_url(product.seller, product.slug)
+  share_text = "Confira #{product.name} na EloShop"
+  twitter_share_url = "https://twitter.com/intent/tweet?text=#{ERB::Util.url_encode(share_text)}&url=#{ERB::Util.url_encode(product_share_url)}"
+  facebook_share_url = "https://www.facebook.com/sharer/sharer.php?u=#{ERB::Util.url_encode(product_share_url)}"
+%>
+<div data-controller="share"
+     data-share-url-value="<%= product_share_url %>"
+     data-share-twitter-url-value="<%= twitter_share_url %>"
+     data-share-facebook-url-value="<%= facebook_share_url %>"
+     class="flex items-center gap-2">
+  <a href="<%= twitter_share_url %>"
+     target="_blank" rel="noopener noreferrer"
+     aria-label="Compartilhar #{product.name} no X"
+     class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink shadow hover:text-brand-500">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+  </a>
+
+  <a href="<%= facebook_share_url %>"
+     target="_blank" rel="noopener noreferrer"
+     aria-label="Compartilhar #{product.name} no Facebook"
+     class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink shadow hover:text-brand-500">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
+      <path d="M13.5 21.75v-8.1h2.72l.41-3.15h-3.13V8.49c0-.91.25-1.53 1.56-1.53h1.67V4.14C15.99 4.1 15.02 4 13.9 4c-2.36 0-3.97 1.44-3.97 4.08v2.42H7.19v3.15h2.74v8.1z"/>
+    </svg>
+  </a>
+
+  <button type="button" data-action="share#shareOnInstagram"
+          aria-label="Compartilhar #{product.name} no Instagram"
+          title="Compartilhar no Instagram"
+          class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink shadow hover:text-brand-500 cursor-pointer">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
+      <path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.72 3.72 0 0 1-1.38-.9 3.72 3.72 0 0 1-.9-1.38c-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41 1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07c-1.28.06-2.15.26-2.91.56-.79.31-1.46.72-2.13 1.38A5.9 5.9 0 0 0 .63 4.14c-.3.76-.5 1.63-.56 2.91C.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.28.26 2.15.56 2.91.31.79.72 1.46 1.38 2.13.66.66 1.34 1.07 2.13 1.38.76.3 1.63.5 2.91.56 1.28.06 1.69.07 4.95.07s3.67-.01 4.95-.07c1.28-.06 2.15-.26 2.91-.56a5.9 5.9 0 0 0 2.13-1.38 5.9 5.9 0 0 0 1.38-2.13c.3-.76.5-1.63.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.28-.26-2.15-.56-2.91a5.9 5.9 0 0 0-1.38-2.13A5.9 5.9 0 0 0 19.86.63c-.76-.3-1.63-.5-2.91-.56C15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1 0 12 18.16 6.16 6.16 0 0 0 12 5.84zm0 10.16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.41-10.4a1.44 1.44 0 1 1-2.88 0 1.44 1.44 0 0 1 2.88 0z"/>
+    </svg>
+  </button>
+</div>
