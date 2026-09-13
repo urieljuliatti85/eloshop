@@ -132,6 +132,9 @@ Rails.application.routes.draw do
   # visível para quem publica a imagem — ver db/seeds/images/credits.yml.
   get "creditos", to: "credits#show", as: :credits
 
+  get "como-funciona", to: "how_it_works#customer", as: :how_it_works
+  get "como-vender", to: "how_it_works#seller", as: :how_to_sell
+
   resources :customers, only: %i[new create]
   resource :customer_session, only: %i[new create destroy]
 

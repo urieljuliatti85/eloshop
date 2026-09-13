@@ -1,0 +1,104 @@
+<% content_for :title, "Como funciona | EloShop" %>
+<% content_for :meta_description, "Entenda o passo a passo de como comprar na EloShop: carrinho, frete, pagamento e acompanhamento do pedido." %>
+
+<div class="container mx-auto max-w-3xl px-5 py-16">
+  <h1 class="text-3xl font-bold text-ink">Como funciona para quem compra</h1>
+  <p class="mt-4 text-ink-muted">
+    A EloShop é um marketplace: cada peça é vendida diretamente por um ateliê ou artesão independente,
+    não pela plataforma. Veja o passo a passo da compra.
+  </p>
+
+  <ol class="mt-12 space-y-10">
+    <li class="flex gap-5">
+      <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">1</span>
+      <div>
+        <h2 class="font-semibold text-ink">Escolha a peça</h2>
+        <p class="mt-1 text-ink-muted">
+          Cada produto mostra quem faz a peça, se é produzida em série, peça única ou feita sob
+          encomenda. Quando for sob encomenda, o prazo de produção aparece antes de você comprar.
+        </p>
+      </div>
+    </li>
+
+    <li class="flex gap-5">
+      <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">2</span>
+      <div>
+        <h2 class="font-semibold text-ink">Adicione ao carrinho</h2>
+        <p class="mt-1 text-ink-muted">
+          O carrinho aceita produtos de um único ateliê por vez. Se você quiser comprar de dois
+          artesãos diferentes, são dois pedidos separados — cada um com seu próprio frete e
+          pagamento.
+        </p>
+      </div>
+    </li>
+
+    <li class="flex gap-5">
+      <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">3</span>
+      <div>
+        <h2 class="font-semibold text-ink">Endereço e frete</h2>
+        <p class="mt-1 text-ink-muted">
+          Informe o endereço de entrega e o frete é calculado antes da confirmação. O prazo total
+          soma produção (quando aplicável) e transporte.
+        </p>
+      </div>
+    </li>
+
+    <li class="flex gap-5">
+      <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">4</span>
+      <div>
+        <h2 class="font-semibold text-ink">Pagamento</h2>
+        <p class="mt-1 text-ink-muted">
+          O pagamento é processado pelo Mercado Pago. PIX está disponível para todos os ateliês;
+          cartão de crédito aparece quando o ateliê já habilitou essa opção. O valor pago vai direto
+          para o ateliê responsável pela peça — a EloShop nunca guarda dinheiro do vendedor.
+        </p>
+      </div>
+    </li>
+
+    <li class="flex gap-5">
+      <span class="grid h-10 w-10 flex-none place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-600">5</span>
+      <div>
+        <h2 class="font-semibold text-ink">Acompanhe o pedido</h2>
+        <p class="mt-1 text-ink-muted">
+          Depois da confirmação, você acompanha o status do pedido em
+          <%= link_to "Meus pedidos", orders_path, class: "text-brand-600 underline hover:text-brand-700" %>
+          — do pagamento confirmado até o envio.
+        </p>
+      </div>
+    </li>
+  </ol>
+
+  <div class="mt-16 rounded-[2rem] bg-mist-100 px-6 py-8 sm:px-10">
+    <h2 class="text-xl font-bold text-ink">Perguntas comuns</h2>
+
+    <dl class="mt-6 space-y-6">
+      <div>
+        <dt class="font-semibold text-ink">Quem é responsável pela peça: a EloShop ou o ateliê?</dt>
+        <dd class="mt-1 text-ink-muted">O ateliê. Nota fiscal, produção e qualidade da peça são responsabilidade de quem vende.</dd>
+      </div>
+
+      <div>
+        <dt class="font-semibold text-ink">Posso comprar de ateliês diferentes num único pedido?</dt>
+        <dd class="mt-1 text-ink-muted">Não por enquanto — cada compra é feita com um único ateliê. Para comprar de outro, é um novo pedido.</dd>
+      </div>
+
+      <div>
+        <dt class="font-semibold text-ink">O que acontece se eu não pagar o PIX a tempo?</dt>
+        <dd class="mt-1 text-ink-muted">O código expira e você pode gerar um novo, sem duplicar o pedido.</dd>
+      </div>
+
+      <div>
+        <dt class="font-semibold text-ink">Como funcionam cancelamento e reembolso?</dt>
+        <dd class="mt-1 text-ink-muted">
+          Fale com a gente pelo <%= link_to "contato", new_contact_path, class: "text-brand-600 underline hover:text-brand-700" %>
+          informando o número do pedido.
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <p class="mt-10 text-sm text-ink-muted">
+    É artesão e quer vender na EloShop?
+    <%= link_to "Veja como funciona para quem vende", how_to_sell_path, class: "text-brand-600 underline hover:text-brand-700" %>.
+  </p>
+</div>
