@@ -57,7 +57,7 @@ payment_status(external_id:) → "approved" | "declined" | "pending"
 
 `authorize` aceita `payment_method:` (`"pix"`/`"credit_card"`), `card_token:` e `installments:`. PIX permanece assíncrono (`Intent#status` nasce `"pending"`, a confirmação chega por webhook); cartão é síncrono — o Mercado Pago aprova ou recusa **na própria resposta HTTP**, e `Intent#status` já vem `"approved"`/`"declined"`. `Payments::Authorize` sempre grava `Payment#status` como `"pending"` na criação (o vocabulário do gateway não é um valor válido do enum) e, quando `intent.status` indica um desfecho síncrono, chama `Payments::ProcessWebhook` internamente com um `event_id` sintético (`sync-<external_id>-<status>`) — reaproveitando a mesma lógica de confirmação de pedido que a notificação real do gateway dispara depois; a idempotência por `gateway_event_id` absorve a duplicidade sem duplicar efeito.
 
-A tokenização acontece no navegador via **Checkout Bricks** (Card Payment Brick, `sdk.mercadopago.com/js/v2`) — nenhum dado de cartão trafega pelo backend, só o token gerado pelo Brick. Isso exige a **Public Key** do vendedor (`Seller#mercado_pago_public_key`), diferente do Access Token: é pública por design e não é cifrada no banco, ao contrário de `mercado_pago_access_token_ciphertext`. `Marketplace::MercadoPagoOauth::Credentials` captura `public_key` da resposta do `/oauth/token`; um vendedor conectado **antes** desta fase não tem esse campo e precisa reconectar para que a opção de cartão apareça no checkout (`Seller#mercado_pago_card_payments_available?`) — PIX continua funcionando normalmente nesse meio-tempo.
+A tokenização acontece no navegador via **Checkout Bricks** (Card Payment Brick, `sdk.mercadopago.com/js/v2`) — nenhum dado de cartão trafega pelo backend, só o token gerado pelo Brick. Isso exige a **Public Key** do vendedor (`Seller#mercado_pago_public_key`), diferente do Access Token: é pública por design e não é cifrada no banco, ao contrário de `mercado_pago_access_token_ciphertext`. `Marketplace::MercadoPagoOauth::Credentials` captura `public_key` da resposta do `/oauth/token`; um vendedor conectado **antes** desta fase não tem esse campo e precisa reconectar para que a opção de cartão apareça no checkout (`Seller#mercado_pago_card_payments_available?`) — PIX continua funcionando normalmente nesse meio-tempo. Em produção isso já foi feito para o vendedor de sandbox: ver "Estado das contas em produção" abaixo.
 
 O checkout agora tem uma etapa de escolha (`GET /orders/:id/payment/new` sem tentativa ainda) antes de autorizar: diferente do fluxo anterior, o `GET` não cria mais um `Payment` automaticamente. PIX autoriza assim que o cliente escolhe (`POST`, sem dado extra); cartão só autoriza depois que o Brick gera o token no navegador.
 
@@ -176,7 +176,23 @@ O vínculo do vendedor com o Mercado Pago foi introduzido na Fase 22 via OAuth A
 
 O sandbox é opt-in por `MERCADO_PAGO_MARKETPLACE_SANDBOX=true`. Nesse modo, a troca do authorization code envia o parâmetro documentado `test_token=true` e o painel identifica explicitamente que a conta TESTUSER não permite aprovação nem vendas reais. A variável vem somente do ambiente, nunca da requisição do vendedor. Produção é o padrão seguro e não envia `test_token`. As credenciais da aplicação Marketplace de testes devem ficar separadas das produtivas.
 
-O fluxo completo (autorização → callback → troca de token → conexão do `Seller`) já rodou ponta a ponta no sandbox com uma conta TESTUSER do tipo Vendedor, confirmando PKCE e o Client Secret corretos. A conexão resultante continua em produção (`Ateliê do Mercado Pago`, `live_mode: false`, 2026-09-06), ao lado de uma conexão real (`Ateliê da Ana`, `live_mode: true`). Nenhuma das duas tem `mercado_pago_public_key`, porque ambas são anteriores à Fase 24 — reconectar grava a chave e é o que falta para o cartão; o PIX não depende dela. Para conferir esse estado, consulte o `Seller` no banco de produção via `railway ssh` (`/admin/contas-de-teste-mercado-pago` é um cofre opcional de credenciais e estar vazio não significa ausência de conta de teste).
+O fluxo completo (autorização → callback → troca de token → conexão do `Seller`) já rodou ponta a ponta no sandbox com uma conta TESTUSER do tipo Vendedor, confirmando PKCE e o Client Secret corretos. A conexão resultante continua em produção (`Ateliê do Mercado Pago`, `live_mode: false`, 2026-09-06), ao lado de uma conexão real (`Ateliê da Ana`, `live_mode: true`).
+
+#### Estado das contas em produção (conferido em 2026-09-13)
+
+Cinco `Seller` existem no banco de produção, e **apenas um oferece cartão**:
+
+| Vendedor | `live_mode` | Public Key | Cartão no checkout |
+| --- | --- | --- | --- |
+| `EloShop` | `true` | — | não |
+| `Ateliê da Ana` | `true` | — | não |
+| `Rock Store` | `false` | — | não |
+| `House of Horror` | `false` | — | não |
+| `Ateliê do Mercado Pago` | `false` | **sim** | **sim** |
+
+O `Ateliê do Mercado Pago` reconectou em 2026-09-12 e gravou a `mercado_pago_public_key` — é por isso que a verificação visual do Brick daquele dia foi possível, e **nenhuma reconexão é necessária para testar cartão hoje**. `Rock Store` e `House of Horror` não constam do restante desta documentação e têm origem não apurada.
+
+Este estado vive no banco de produção e muda por fora do repositório: depois de qualquer conexão ou reconexão de vendedor, confira o `Seller` via `railway ssh` em vez de confiar nesta tabela (`/admin/contas-de-teste-mercado-pago` é um cofre opcional de credenciais e estar vazio não significa ausência de conta de teste).
 
 Na Fase 23, pagamentos passaram a suportar split entre vendedor e plataforma. `Payments::Authorize` usa o access token OAuth do vendedor e envia `application_fee` no PIX. A comissão é 15% do subtotal dos produtos após descontos, sem frete; a tarifa do Mercado Pago é registrada separadamente e suportada pelo vendedor. Reembolsos são operados apenas pelo admin da plataforma, usam chave de idempotência, preservam cada tentativa em `PaymentRefund` e revertem a comissão proporcionalmente sem erro acumulado de arredondamento. No primeiro lançamento, cada checkout tem um único vendedor/`SellerOrder` e usa o split público 1:1; multi-vendedor depende de habilitação comercial do split 1:N. Não são criados múltiplos PIX para uma compra nem repasses manuais a partir da conta da plataforma.
 
