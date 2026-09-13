@@ -25,6 +25,8 @@ pt-BR:
     attributes:
       user:
         email_address: "E-mail"
+      cart_item:
+        product: "Produto"
     errors:
       models:
         user:
