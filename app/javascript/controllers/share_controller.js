@@ -1,12 +1,14 @@
 import { Controller } from "@hotwired/stimulus"
 
 // X e Facebook usam link nativo (href + target="_blank"), sem JS. Instagram
-// não tem web intent (só aceita compartilhamento via app nativo), então usamos
-// a Web Share API do navegador: no mobile ela abre a folha de compartilhamento
-// do sistema, de onde o cliente escolhe Instagram Stories/DM já com a imagem
-// e o link do produto. Sem suporte (a maioria dos desktops), caímos para
-// copiar o link em uma nova aba.
+// não tem web intent (nenhuma URL do Instagram aceita link/texto por
+// parâmetro), então usamos a Web Share API do navegador: no mobile ela abre
+// a folha de compartilhamento nativa do sistema com título, link e a imagem
+// do produto, de onde o cliente escolhe Instagram Stories/DM. Sem suporte
+// (a maioria dos desktops), copiamos o link para a área de transferência —
+// nunca abrimos aba ou popup, para não deixar uma tela em branco.
 export default class extends Controller {
+  static targets = ["instagramButton"]
   static values = { url: String, title: String, imageUrl: String }
 
   async shareOnInstagram(event) {
@@ -17,8 +19,7 @@ export default class extends Controller {
       if (shared) return
     }
 
-    const tab = window.open("about:blank", "_blank", "noopener,noreferrer")
-    if (tab) this.renderFallbackTab(tab)
+    await this.copyLink()
   }
 
   async shareViaSystemSheet() {
@@ -50,17 +51,19 @@ export default class extends Controller {
     }
   }
 
-  renderFallbackTab(tab) {
-    const url = this.urlValue
-    tab.document.title = "Compartilhar no Instagram"
-    tab.document.body.style.cssText = "font-family: sans-serif; padding: 24px; color: #1a1a1a; max-width: 480px; margin: 0 auto;"
-    tab.document.body.innerHTML = `
-      <p style="margin: 0 0 12px; font-size: 14px;">Seu navegador não suporta compartilhamento direto. Copie o link abaixo e cole na sua bio ou em um story:</p>
-      <input type="text" readonly style="width: 100%; padding: 8px; font-size: 13px; box-sizing: border-box;">
-    `
-    const input = tab.document.querySelector("input")
-    input.value = url
-    input.addEventListener("focus", () => input.select())
-    input.focus()
+  async copyLink() {
+    try {
+      await navigator.clipboard.writeText(this.urlValue)
+      this.flashCopied()
+    } catch {
+      window.prompt("Copie o link:", this.urlValue)
+    }
+  }
+
+  flashCopied() {
+    const button = this.instagramButtonTarget
+    const original = button.innerHTML
+    button.textContent = "Link copiado!"
+    setTimeout(() => { button.innerHTML = original }, 2000)
   }
 }
