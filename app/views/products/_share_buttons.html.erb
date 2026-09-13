@@ -11,7 +11,7 @@
      class="flex items-center gap-2">
   <a href="<%= twitter_share_url %>"
      target="_blank" rel="noopener noreferrer"
-     aria-label="Compartilhar #{product.name} no X"
+     aria-label="Compartilhar <%= product.name %> no X"
      class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink shadow hover:text-brand-500">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -20,7 +20,7 @@
 
   <a href="<%= facebook_share_url %>"
      target="_blank" rel="noopener noreferrer"
-     aria-label="Compartilhar #{product.name} no Facebook"
+     aria-label="Compartilhar <%= product.name %> no Facebook"
      class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink shadow hover:text-brand-500">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
       <path d="M13.5 21.75v-8.1h2.72l.41-3.15h-3.13V8.49c0-.91.25-1.53 1.56-1.53h1.67V4.14C15.99 4.1 15.02 4 13.9 4c-2.36 0-3.97 1.44-3.97 4.08v2.42H7.19v3.15h2.74v8.1z"/>
@@ -28,7 +28,7 @@
   </a>
 
   <button type="button" data-action="share#shareOnInstagram"
-          aria-label="Compartilhar #{product.name} no Instagram"
+          aria-label="Compartilhar <%= product.name %> no Instagram"
           title="Compartilhar no Instagram"
           class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink shadow hover:text-brand-500 cursor-pointer">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
