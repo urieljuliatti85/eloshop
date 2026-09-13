@@ -1499,6 +1499,23 @@ No frete (ADR 005), a Etapa 1 está implementada e **a configuração já foi fe
 
 A PDP foi corrigida e VALIDADA em produção em 2026-09-06 (PR #60, deploy 8f341ea): db_runtime caiu de 83,75 ms para 10–18 ms, com a página em 31–50 ms — ver a nota "Validação em produção (2026-09-06)" na Fase 17. Com isso, os dois gargalos de JIT identificados na Fase 17 (catálogo e PDP) estão fechados. Segue em aberto como decisão do negócio: ajustar jit_above_cost (ou jit=off) no PostgreSQL da Railway, que protegeria qualquer query futura com plano superestimado, mas é mudança de infraestrutura com efeito global. A Fase 22 **não está mais bloqueada**: a aplicação Marketplace está configurada e o OAuth já foi validado no sandbox — ver o parágrafo de 2026-09-08. O PIX no sandbox (Fase 20, Etapa B) **não é exercitável**: credencial de teste não paga PIX, então a validação ponta a ponta exige produção com conta real — decisão de negócio pendente. O cartão (Fase 24) é o caminho viável no sandbox e **não exige mais nenhum passo preparatório**: o `Ateliê do Mercado Pago` reconectou em 2026-09-12 e a Public Key está gravada (confirmado no banco em 2026-09-13), sendo ele o único dos cinco vendedores que oferece cartão no checkout. Segue bloqueada por dependência externa a integração real de frete com o Melhor Envio (ADR 005): o código existe desde 2026-09-07 e a aplicação OAuth foi configurada em 2026-09-12 — o bloqueio agora é o WAF do provedor devolvendo `E-WAF-0003` ao IP da Railway, e depende de chamado.`
 
+**DÉBITO TÉCNICO — teste de sistema instável** (registrado em 2026-09-13):
+
+```text
+TODO: test/system/seller_portal_mobile_test.rb:23 é instável no CI
+Motivo: `click_link` seguido de `assert_current_path` corre contra a
+        navegação do Turbo; o viewport de 390px forçado via CDP e o
+        runner do GitHub (mais lento que a máquina local) agravam.
+        Hipótese, não diagnóstico — confirmar pelo screenshot que o CI
+        salva em tmp/screenshots antes de corrigir.
+Impacto: CI vermelho intermitente DESCARTA o deploy do commit
+        (`SKIPPED`), e o rerun verde não o recupera — ver
+        docs/architecture.md, "Deploy automático a partir do GitHub".
+Prioridade: média — não afeta produção, mas trava entrega em silêncio
+```
+
+Evidência de que é instabilidade e não regressão: falhou duas vezes no CI de `19e2095` (commit que só alterou documentação), passou localmente (25 runs, 99 asserções) e passou no rerun do **mesmo commit**, sem nenhuma alteração de código.
+
 Última atualização:
 
 `2026-09-13`

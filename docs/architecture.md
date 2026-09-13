@@ -173,6 +173,12 @@ Para inspecionar ou reverter: `railway api 'query { deploymentTriggers(projectId
 
 Não há alarme para isso: a configuração não é versionada e nada no repositório detecta a divergência. Enquanto não existir uma verificação automática, a evidência confiável de que a proteção está valendo é comparar horários — o deploy precisa **começar depois** do CI concluir —, nunca o fato de o build ter iniciado.
 
+**CI vermelho descarta o deploy, e um rerun verde NÃO o recupera** (observado em 2026-09-13 com `19e2095`). A sequência foi: push, CI falha, a Railway marca o deploy como **`SKIPPED`** segundos depois (19:39:23 o CI, 19:39:29 o descarte). O job foi reexecutado e ficou verde nos seis, mas **nenhum deploy novo foi disparado**: o gatilho reage ao check suite do push, e um rerun manual não gera esse evento. Resultado: o commit fica no GitHub com CI verde e **fora de produção**, sem nada sinalizando a diferença.
+
+Pior, `latestDeployment` na API da Railway aponta para o último deploy **bem-sucedido**, ignorando o `SKIPPED` — então consultar só o status devolve `SUCCESS` de um commit anterior e parece confirmar um deploy que não aconteceu. **Confira sempre o `commitHash` junto do status**, nunca o status sozinho; é o mesmo erro de método do §51 (sinal indireto em vez de evidência), aqui na forma de um campo que responde a outra pergunta. Para retomar um commit descartado: `railway redeploy`, ou um commit novo por cima — o rerun não basta.
+
+Isso torna um **teste instável mais caro do que parece**: ele não custa só um CI vermelho, ele descarta silenciosamente o deploy daquele commit. Ver o TODO do `seller_portal_mobile_test.rb` no ROADMAP.
+
 ### Achado corrigido durante a Fase 20
 
 `rswag-api`/`rswag-ui` estavam no grupo `development, test` do `Gemfile`, mas são montados em `/api-docs` em todos os ambientes (`config/routes.rb`) — o app quebrava no boot de produção (`uninitialized constant Rswag`) porque essas gems nunca eram exigidas fora de dev/test. Movidas para fora do grupo; só `rswag-specs` (a DSL usada nos specs) continua dev/test-only.
