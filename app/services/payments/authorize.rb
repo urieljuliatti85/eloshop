@@ -85,9 +85,19 @@ module Payments
           pending.update!(status: "failed")
         end
 
-        processing = @order.payments.processing.find_by(gateway: @gateway.name)
+        processing = @order.payments.processing.find_by(gateway: @gateway.name, payment_method: @payment_method)
         return processing if processing
 
+        # Uma tentativa "processing" de outro meio (ex.: cartão travado em
+        # 500 do gateway) não é retomada aqui: a chave de idempotência dela
+        # pertence a uma chamada com payment_method diferente, e reenviá-la
+        # sob outro meio foi o bug observado em produção. Ela também não vira
+        # "failed": um "processing" nunca tem external_id (validação do
+        # model), e a cobrança pode ter nascido do outro lado do gateway — o
+        # mesmo motivo pelo qual PaymentsController#create preserva
+        # "processing" no rescue. Ela continua existindo, e Payment#stalled?
+        # já é quem a torna visível como falha depois de
+        # PROCESSING_STALE_AFTER, sem violar a invariante.
         @order.payments.create!(
           gateway: @gateway.name,
           status: "processing",
