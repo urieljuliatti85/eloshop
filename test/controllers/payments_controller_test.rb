@@ -98,6 +98,22 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_match "O pedido foi salvo, mas o pagamento está temporariamente indisponível", response.body
   end
 
+  test "an invalid installments value shows the generic payment error instead of crashing" do
+    sign_in_customer(customers(:one))
+    order = build_order_without_payment
+
+    [ "0", "-1", "abc" ].each do |invalid_installments|
+      assert_no_difference("Payment.count") do
+        post order_payment_path(order),
+          params: { payment_method: "credit_card", card_token: "any-token", installments: invalid_installments }
+      end
+
+      assert_redirected_to order_path(order)
+      follow_redirect!
+      assert_match "O pedido foi salvo, mas o pagamento está temporariamente indisponível", response.body
+    end
+  end
+
   test "the card payment option only appears when the seller has a public key" do
     sign_in_customer(customers(:one))
     order = build_order_without_payment

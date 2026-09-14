@@ -29,13 +29,15 @@ class PaymentsController < StorefrontController
   # pelo Card Payment Brick no navegador antes de chegar aqui.
   def create
     payment_method = params[:payment_method]
+    installments = Integer(params[:installments].presence || 1, exception: false)
+    raise ArgumentError, "installments inválido" unless installments&.positive?
 
     @payment = Payments::Authorize.new(
       order: @order,
       gateway: Gateways.build,
       payment_method: payment_method,
       card_token: params[:card_token],
-      installments: (params[:installments].presence || 1).to_i
+      installments: installments
     ).call
 
     redirect_to new_order_payment_path(@order)
