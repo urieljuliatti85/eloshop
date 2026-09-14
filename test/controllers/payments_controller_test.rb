@@ -81,6 +81,23 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     assert order.payments.sole.pending?
   end
 
+  # Um payment_method fora do enum não podia crashar com 500: nenhum outro
+  # lugar da cadeia trata ArgumentError, e o formulário nunca deveria mandar
+  # isso — mas um POST manual ou um bug de front-end não pode derrubar a
+  # página de pagamento.
+  test "an unknown payment method shows the generic payment error instead of crashing" do
+    sign_in_customer(customers(:one))
+    order = build_order_without_payment
+
+    assert_no_difference("Payment.count") do
+      post order_payment_path(order), params: { payment_method: "boleto" }
+    end
+
+    assert_redirected_to order_path(order)
+    follow_redirect!
+    assert_match "O pedido foi salvo, mas o pagamento está temporariamente indisponível", response.body
+  end
+
   test "the card payment option only appears when the seller has a public key" do
     sign_in_customer(customers(:one))
     order = build_order_without_payment
