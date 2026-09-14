@@ -41,7 +41,8 @@ class PaymentsController < StorefrontController
     redirect_to new_order_payment_path(@order)
   rescue Gateways::UnknownGateway, Gateways::SimulatedGatewayInProduction,
     Gateways::MercadoPago::ConfigurationError, Gateways::MercadoPago::RequestFailed,
-    Timeout::Error, SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError => e
+    Timeout::Error, SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError,
+    ArgumentError => e
     # Permanente: foi este evento que identificou a causa da falha de PIX no
     # sandbox (2026-09-08). Loga só classe e mensagem da exceção — que agora
     # carrega o código de erro do gateway —, nunca dados do pedido ou
