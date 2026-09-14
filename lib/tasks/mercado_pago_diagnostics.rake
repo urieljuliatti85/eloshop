@@ -5,18 +5,22 @@
 #
 # Uso:
 #   bin/rails "mercado_pago:diagnose_application_fee[<order_id>]"  # já rodado — application_fee descartado
-#   bin/rails "mercado_pago:diagnose_request_shape[<order_id>]"    # description/tipo numérico
+#   bin/rails "mercado_pago:diagnose_request_shape[<order_id>]"    # já rodado — descartado
+#   bin/rails "mercado_pago:diagnose_capture_request_id[<order_id>]"  # X-Request-Id + corpo mascarado + resposta completa, para o suporte
 #
 # O pedido precisa ter um seller_order cujo Seller já esteja conectado ao
 # Mercado Pago (mercado_pago_connected?) — normalmente o de sandbox
-# (uriel@artesao.com.br, ver CLAUDE.md). Nunca loga o access token nem o corpo
-# completo da resposta — só status HTTP e código de erro.
+# (uriel@artesao.com.br, ver CLAUDE.md). As duas primeiras tasks nunca logam
+# o access token nem o corpo completo da resposta — só status HTTP e código
+# de erro; foi o suficiente até o suporte pedir dados de correlação exatos.
 #
-# O suporte também pediu o X-Request-Id da resposta 500: nenhuma das duas
-# tasks captura esse header hoje. Para correlacionar com os logs do Mercado
-# Pago, use o horário de cada chamada impresso abaixo — captura-lo
-# corretamente é mudança separada em app/services/gateways/mercado_pago.rb,
-# fora do escopo deste diagnóstico pontual.
+# diagnose_capture_request_id é a exceção deliberada: o suporte pediu
+# especificamente X-Request-Id, o corpo enviado e a resposta completa em JSON
+# para correlacionar a tentativa do lado deles. Task pontual, só para este
+# chamado — não increve captura de corpo completo em Gateways::MercadoPago
+# (permaneceria ecoando dados do pagamento em todo log de produção, §43).
+# O access token nunca é impresso; o e-mail do payer é mascarado antes de
+# imprimir o corpo enviado.
 namespace :mercado_pago do
   desc "Isola se application_fee causa o 500 genérico em /v1/payments (sandbox)"
   task :diagnose_application_fee, [ :order_id ] => :environment do |_task, args|
@@ -55,6 +59,57 @@ namespace :mercado_pago do
       transaction_amount: (order.total_cents / 100.0).round(2), description: "Pedido #{order.id} - EloShop")
     run_raw_case("C — transaction_amount como Integer, sem description", access_token: access_token,
       transaction_amount: order.total_cents / 100, description: nil)
+  end
+
+  desc "Captura X-Request-Id, corpo enviado (mascarado) e resposta completa de uma falha, para enviar ao suporte (sandbox)"
+  task :diagnose_capture_request_id, [ :order_id ] => :environment do |_task, args|
+    require "net/http"
+    require "json"
+
+    order = Order.find(args[:order_id])
+    seller = connected_seller_for(order)
+    access_token = Marketplace::MercadoPagoAccessToken.new(seller: seller).call
+    idempotency_key = SecureRandom.uuid
+
+    body = {
+      transaction_amount: order.total_cents / 100,
+      payment_method_id: "pix",
+      payer: { email: ENV.fetch("MERCADO_PAGO_TEST_PAYER_EMAIL") }
+    }
+
+    http = Net::HTTP.new("api.mercadopago.com", 443)
+    http.use_ssl = true
+    http.open_timeout = 5
+    http.read_timeout = 15
+
+    request = Net::HTTP::Post.new("/v1/payments")
+    request["Authorization"] = "Bearer #{access_token}"
+    request["Content-Type"] = "application/json"
+    request["X-Idempotency-Key"] = idempotency_key
+    request.body = body.to_json
+
+    puts "Pedido ##{order.id} — vendedor ##{seller.id} — #{Time.current.iso8601}"
+    puts "=" * 72
+
+    response = http.request(request)
+    masked_body = body.deep_dup
+    masked_body[:payer][:email] = masked_body[:payer][:email].sub(/\A[^@]+/) { |local| "#{local[0]}***" }
+
+    puts "\nCorpo enviado (e-mail mascarado):"
+    puts JSON.pretty_generate(masked_body)
+
+    puts "\nHTTP #{response.code}"
+    puts "X-Request-Id: #{response["x-request-id"] || "(não presente na resposta)"}"
+    puts "X-Idempotency-Key enviado: #{idempotency_key}"
+
+    puts "\nResposta completa:"
+    begin
+      puts JSON.pretty_generate(JSON.parse(response.body.to_s))
+    rescue JSON::ParserError
+      puts response.body
+    end
+  rescue KeyError
+    abort "MERCADO_PAGO_TEST_PAYER_EMAIL não configurada — necessária para o payer.email em conta de teste."
   end
 
   def connected_seller_for(order)
