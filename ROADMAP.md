@@ -1499,22 +1499,9 @@ No frete (ADR 005), a Etapa 1 está implementada e **a configuração já foi fe
 
 A PDP foi corrigida e VALIDADA em produção em 2026-09-06 (PR #60, deploy 8f341ea): db_runtime caiu de 83,75 ms para 10–18 ms, com a página em 31–50 ms — ver a nota "Validação em produção (2026-09-06)" na Fase 17. Com isso, os dois gargalos de JIT identificados na Fase 17 (catálogo e PDP) estão fechados. Segue em aberto como decisão do negócio: ajustar jit_above_cost (ou jit=off) no PostgreSQL da Railway, que protegeria qualquer query futura com plano superestimado, mas é mudança de infraestrutura com efeito global. A Fase 22 **não está mais bloqueada**: a aplicação Marketplace está configurada e o OAuth já foi validado no sandbox — ver o parágrafo de 2026-09-08. O PIX no sandbox (Fase 20, Etapa B) **não é exercitável**: credencial de teste não paga PIX, então a validação ponta a ponta exige produção com conta real — decisão de negócio pendente. O cartão (Fase 24) é o caminho viável no sandbox e **não exige mais nenhum passo preparatório**: o `Ateliê do Mercado Pago` reconectou em 2026-09-12 e a Public Key está gravada (confirmado no banco em 2026-09-13), sendo ele o único dos cinco vendedores que oferece cartão no checkout. Segue bloqueada por dependência externa a integração real de frete com o Melhor Envio (ADR 005): o código existe desde 2026-09-07 e a aplicação OAuth foi configurada em 2026-09-12 — o bloqueio agora é o WAF do provedor devolvendo `E-WAF-0003` ao IP da Railway, e depende de chamado.`
 
-**DÉBITO TÉCNICO — teste de sistema instável** (registrado em 2026-09-13):
+**DÉBITO TÉCNICO — teste de sistema instável — RESOLVIDO em 2026-09-13.** A hipótese registrada mais cedo no mesmo dia (`click_link` correndo contra o Turbo, agravado pelo viewport CDP e por um runner mais lento) **estava errada** e nunca foi mais que uma suposição não verificada. A causa raiz é o **gerenciador de senhas do Chrome**: qualquer teste de sistema que envie um formulário de login (campo `type="password"`) mais de duas vezes na mesma sessão do browser passa a ter cliques subsequentes silenciosamente ignorados — sem exceção, sem erro no console, sem sequer registrar a tentativa no histórico de navegação do Chrome (`Page.getNavigationHistory` via CDP trava e nunca mais cresce) e sem nenhuma requisição chegando ao servidor Rails. Não tem relação com Turbo, com o viewport mobile ou com o teste específico: reproduzido de forma determinística (100% das vezes, sempre a partir da terceira navegação pós-login) também no layout desktop, sem nenhuma emulação de CDP, e até contornando o clique do Selenium inteiramente com `Input.dispatchMouseEvent` puro — o clique acontece, mas o Chrome nunca reconhece a interação como gesto de navegação.
 
-```text
-TODO: test/system/seller_portal_mobile_test.rb:23 é instável no CI
-Motivo: `click_link` seguido de `assert_current_path` corre contra a
-        navegação do Turbo; o viewport de 390px forçado via CDP e o
-        runner do GitHub (mais lento que a máquina local) agravam.
-        Hipótese, não diagnóstico — confirmar pelo screenshot que o CI
-        salva em tmp/screenshots antes de corrigir.
-Impacto: CI vermelho intermitente DESCARTA o deploy do commit
-        (`SKIPPED`), e o rerun verde não o recupera — ver
-        docs/architecture.md, "Deploy automático a partir do GitHub".
-Prioridade: média — não afeta produção, mas trava entrega em silêncio
-```
-
-Evidência de que é instabilidade e não regressão: falhou duas vezes no CI de `19e2095` (commit que só alterou documentação), passou localmente (25 runs, 99 asserções) e passou no rerun do **mesmo commit**, sem nenhuma alteração de código.
+Corrigido em `test/application_system_test_case.rb`, desabilitando o gerenciador de senhas nas opções do driver (`--password-store=basic` + `credentials_enable_service`/`profile.password_manager_enabled`/`profile.password_manager_leak_detection` como preferências). Validado com 8 execuções seguidas da suíte completa de sistema (antes ~20% de falha por execução, sempre no mesmo padrão) e 8 execuções isoladas do teste antes instável, todas verdes; Minitest completo (546 runs) e rubocop também verdes. Erro de método registrado: a hipótese original citava viewport/Turbo sem nunca ter sido testada isoladamente — a suposição "provavelmente é X" foi escrita como se fosse diagnóstico. A investigação real seguiu o §51 (reproduzir, medir, isolar): reproduzido localmente em loop, instrumentado com CDP (`Page.getNavigationHistory`, `elementFromPoint`, eventos `turbo:*`/`click` no document) até isolar que nenhum evento de clique chegava sequer ao listener nativo do `document`, e só então testada a hipótese do gerenciador de senhas do Chrome (via pesquisa de issues conhecidas do Selenium/Chromium) antes de aplicar a correção.
 
 Última atualização:
 

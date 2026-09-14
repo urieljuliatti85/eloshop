@@ -72,6 +72,8 @@ O checkout agora tem uma etapa de escolha (`GET /orders/:id/payment/new` sem ten
 
 * **Cinco defeitos achados no dia da verificação visual**, nenhum detectável pelas suítes, que passavam verdes em todos: botão fora do escopo do controller Stimulus (#76); `<script>` inline do antifraude bloqueado pela CSP, resolvido com `deviceProfileCspNonce` (#77); `onReady` ausente, que fazia `cardPayment.js` recusar inicializar (#78); `secure-fields` faltando no `connect-src` (#79); e o "Tentar novamente" apontando para a própria tela de falha, beco sem saída fatal para cartão porque o token do Brick é de uso único (#80). Request spec vê o elemento no HTML e passa; as specs de CSP afirmam que o cabeçalho está bem formado, nunca que o SDK funciona sob ele.
 
+**Cartão salvo não existe e não está planejado para esta fase.** O cliente informa o cartão a cada compra; nada é persistido além de `card_brand`/`card_last_four` no `Payment`, para exibição. O ADR 006 (`docs/decisions/006-saved-cards.md`) registra o desenho e o motivo estrutural de a funcionalidade não ser trivial aqui: o cofre de cartões do Mercado Pago pertence à conta que cobrou, e quem cobra é o artesão — um cartão salvo seria escopado ao par (cliente, vendedor), nunca uma carteira única da EloShop. Está `Proposed`, com cinco decisões de negócio pendentes.
+
 ### Webhook
 
 A notificação do Mercado Pago **não carrega o status de forma confiável**: ela avisa que o pagamento X mudou e espera que a aplicação consulte a API. Por isso `webhook_event` faz uma chamada de volta ao gateway. Sem isso, bastaria forjar um POST para marcar um pedido como pago.
