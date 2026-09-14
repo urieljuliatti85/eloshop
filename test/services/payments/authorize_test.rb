@@ -28,6 +28,17 @@ module Payments
       end
     end
 
+    # Sempre levanta — simula o HTTP 500 opaco observado em produção
+    # (Mercado Pago, /v1/payments), que deixa a tentativa presa em
+    # "processing" de propósito (ver PaymentsController#create).
+    class AlwaysFailingGateway
+      def name = "mercado_pago"
+
+      def authorize(order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1)
+        raise Gateways::MercadoPago::RequestFailed, "Mercado Pago respondeu 500 em /v1/payments"
+      end
+    end
+
     def build_order
       customer = Customer.create!(name: "Cliente", email: "#{SecureRandom.hex(4)}@example.com", password: "password123")
       address = customer.addresses.create!(street: "Rua", number: "1", neighborhood: "B", city: "C", state: "SP", zip_code: "00000-000")
@@ -146,6 +157,51 @@ module Payments
         ).call
       end
       assert payment.reload.paid?
+    end
+
+    test "switching payment method after a stalled attempt creates a new attempt instead of resending it under another method" do
+      order = build_order
+      gateway = AlwaysFailingGateway.new
+
+      assert_raises(Gateways::MercadoPago::RequestFailed) do
+        Authorize.new(order: order, gateway: gateway, payment_method: "credit_card", card_token: "any-token").call
+      end
+      stalled_card_payment = order.payments.processing.sole
+      assert_equal "credit_card", stalled_card_payment.payment_method
+
+      assert_raises(Gateways::MercadoPago::RequestFailed) do
+        Authorize.new(order: order, gateway: gateway, payment_method: "pix").call
+      end
+
+      assert_equal 2, order.payments.count
+      pix_attempt = order.payments.processing.where(payment_method: "pix").sole
+      assert_not_equal stalled_card_payment.id, pix_attempt.id
+      assert_not_equal stalled_card_payment.idempotency_key, pix_attempt.idempotency_key
+
+      # A tentativa de cartão presa não é tocada: nunca teve external_id (é
+      # inválida fora de "processing") e a cobrança pode ter nascido do outro
+      # lado do gateway, então marcá-la "failed" aqui reintroduziria o mesmo
+      # problema que PaymentsController#create evita de propósito.
+      stalled_card_payment.reload
+      assert stalled_card_payment.processing?
+      assert_nil stalled_card_payment.external_id
+    end
+
+    test "resuming the same payment method after a stalled attempt still reuses the idempotency key" do
+      order = build_order
+      gateway = AlwaysFailingGateway.new
+
+      assert_raises(Gateways::MercadoPago::RequestFailed) do
+        Authorize.new(order: order, gateway: gateway, payment_method: "credit_card", card_token: "any-token").call
+      end
+      stalled = order.payments.processing.sole
+
+      assert_raises(Gateways::MercadoPago::RequestFailed) do
+        Authorize.new(order: order, gateway: gateway, payment_method: "credit_card", card_token: "any-token").call
+      end
+
+      assert_equal 1, order.payments.count
+      assert_equal stalled.id, order.payments.processing.sole.id
     end
 
     test "resumes a processing attempt with the same key after timeout" do
