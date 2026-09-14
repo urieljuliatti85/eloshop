@@ -40,5 +40,37 @@ RSpec.describe "Admin dashboard", type: :request do
       expect(response.body).to include("Acompanhe o que precisa de atenção")
       expect(response.body).to include("admin-sidebar")
     end
+
+    it "shows the total platform commission net of refunds, only for paid orders" do
+      sign_in_as(user, password: "password")
+      customer = Customer.create!(name: "Cliente comissão", email: "comissao@example.com", password: "password123")
+
+      confirmed_order = create_order_with_seller_order!(customer: customer, status: "confirmed", subtotal_cents: 10_000, platform_fee_refunded_cents: 0)
+      partially_refunded_order = create_order_with_seller_order!(customer: customer, status: "partially_refunded", subtotal_cents: 10_000, platform_fee_refunded_cents: 300)
+      pending_order = create_order_with_seller_order!(customer: customer, status: "pending", subtotal_cents: 10_000, platform_fee_refunded_cents: 0)
+
+      get admin_root_path
+
+      expect(response.body).to include("Comissão total")
+      # 1.500 (confirmado) + (1.500 - 300) (parcialmente reembolsado) = 2.700 = R$ 27,00 — pending_order não entra na soma.
+      expect(response.body).to include(ApplicationController.helpers.format_price(2_700))
+      expect([ confirmed_order, partially_refunded_order, pending_order ]).to all(be_persisted)
+    end
+  end
+
+  def create_order_with_seller_order!(customer:, status:, subtotal_cents:, platform_fee_refunded_cents:)
+    order = Order.create!(
+      customer: customer, status: status, subtotal_cents: subtotal_cents, shipping_cents: 0, total_cents: subtotal_cents,
+      shipping_address_snapshot: { street: "Rua", number: "1" }, idempotency_key: SecureRandom.uuid
+    )
+    platform_fee_cents = SellerOrder.platform_fee_cents_for(subtotal_cents: subtotal_cents, discount_cents: 0)
+    SellerOrder.create!(
+      order: order, seller: approved_seller, currency: "BRL",
+      subtotal_cents: subtotal_cents, discount_cents: 0, shipping_cents: 0, total_cents: subtotal_cents,
+      platform_fee_rate_bps: SellerOrder::PLATFORM_FEE_RATE_BPS, platform_fee_cents: platform_fee_cents,
+      seller_amount_cents: subtotal_cents - platform_fee_cents,
+      refunded_amount_cents: 0, platform_fee_refunded_cents: platform_fee_refunded_cents
+    )
+    order
   end
 end

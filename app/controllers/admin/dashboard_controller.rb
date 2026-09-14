@@ -16,6 +16,10 @@ module Admin
 
       @pending_reviews = Review.pending.includes(:product, :customer).order(created_at: :desc).limit(RECENT_LIMIT)
       @pending_reviews_count = Review.pending.count
+
+      @platform_fee_cents = SellerOrder.joins(:order)
+        .where(orders: { status: %w[confirmed partially_refunded refunded] })
+        .sum("platform_fee_cents - platform_fee_refunded_cents")
     end
   end
 end

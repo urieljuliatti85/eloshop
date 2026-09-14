@@ -8,7 +8,7 @@
     <%= link_to "Ver loja", root_path, class: "admin-button admin-button--secondary" %>
   </header>
 
-  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Indicadores principais">
+  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores principais">
     <article class="admin-stat-card">
       <p class="admin-section-label relative z-10">Pedidos pendentes</p>
       <p class="admin-stat-value relative z-10"><%= @pending_orders_count %></p>
@@ -19,10 +19,15 @@
       <p class="admin-stat-value relative z-10"><%= @low_stock_items.count %></p>
       <%= link_to "Gerenciar produtos", admin_products_path, class: "admin-link relative z-10 mt-3 inline-block text-sm" %>
     </article>
-    <article class="admin-stat-card sm:col-span-2 xl:col-span-1">
+    <article class="admin-stat-card">
       <p class="admin-section-label relative z-10">Avaliações pendentes</p>
       <p class="admin-stat-value relative z-10"><%= @pending_reviews_count %></p>
       <%= link_to "Moderar avaliações", admin_reviews_path(status: "pending"), class: "admin-link relative z-10 mt-3 inline-block text-sm" %>
+    </article>
+    <article class="admin-stat-card">
+      <p class="admin-section-label relative z-10">Comissão total</p>
+      <p class="admin-stat-value relative z-10"><%= format_price(@platform_fee_cents) %></p>
+      <p class="relative z-10 mt-3 text-sm text-slate-500">Líquida de reembolsos, em pedidos pagos</p>
     </article>
   </section>
 
