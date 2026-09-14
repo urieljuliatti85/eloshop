@@ -98,6 +98,22 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_match "O pedido foi salvo, mas o pagamento está temporariamente indisponível", response.body
   end
 
+  # A tentativa chama o gateway do Mercado Pago a cada POST — sem limite,
+  # nada impede um cliente (ou um retry automático de front-end) de martelar
+  # a cobrança repetidamente, o que custa dinheiro/reputação no provedor e
+  # pode mascarar o próprio 500 sob investigação como ruído de volume.
+  test "hammering the payment attempt is rate limited" do
+    sign_in_customer(customers(:one))
+    order = build_order_without_payment
+
+    10.times { post order_payment_path(order), params: { payment_method: "pix" } }
+    post order_payment_path(order), params: { payment_method: "pix" }
+
+    assert_redirected_to order_path(order)
+    follow_redirect!
+    assert_match "Muitas tentativas", response.body
+  end
+
   test "an invalid installments value shows the generic payment error instead of crashing" do
     sign_in_customer(customers(:one))
     order = build_order_without_payment

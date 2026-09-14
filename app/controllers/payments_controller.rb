@@ -1,5 +1,6 @@
 class PaymentsController < StorefrontController
   before_action :set_order
+  rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to order_path(@order), alert: "Muitas tentativas. Tente novamente em alguns minutos." }
 
   # Mostra a tela de pagamento sem criar/autorizar nada. Um pedido sem
   # nenhuma tentativa ainda oferece a escolha do meio de pagamento; um pedido
