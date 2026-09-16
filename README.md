@@ -81,13 +81,11 @@ bin/bundler-audit   # vulnerabilidades conhecidas em gems
 CI (GitHub Actions, `.github/workflows/`) roda lint, testes, testes de
 sistema, Brakeman/bundler-audit e CodeQL a cada push/PR em `main`.
 
-## Error tracking (GlitchTip)
+## Error tracking (Sentry)
 
 Em produção, exceções e performance do backend são reportadas para o
-[GlitchTip](https://glitchtip.com) via `sentry-ruby`/`sentry-rails`
-(`config/initializers/sentry.rb`) — o GlitchTip é compatível com o protocolo
-do Sentry, então o SDK oficial funciona sem alteração, só apontando o DSN
-para o host do GlitchTip.
+[Sentry](https://sentry.io) (organização `eloshop`, projeto `eloshop`) via
+`sentry-ruby`/`sentry-rails` (`config/initializers/sentry.rb`).
 
 Ativa apenas quando `SENTRY_DSN` está definida **e** `RAILS_ENV=production`;
 sem a variável, o SDK não é inicializado e development/test seguem inertes.
@@ -96,8 +94,8 @@ de checkout (nome, endereço) capturados em gravação de tela.
 
 ### Configurar
 
-1. Crie (ou acesse) o projeto no [GlitchTip](https://glitchtip.com) e copie o
-   DSN em **Settings → Client Keys (DSN)**.
+1. Acesse o projeto `eloshop` em [eloshop.sentry.io](https://eloshop.sentry.io)
+   e copie o DSN em **Settings → Client Keys (DSN)**.
 2. Configure `SENTRY_DSN` com esse valor nas variáveis de ambiente do serviço
    em produção (painel da Railway).
 
@@ -110,13 +108,13 @@ initializer nunca ativa e nada é enviado. Prefixe o comando:
 
 ```bash
 RAILS_ENV=production railway run --service eloshop-web bin/rails runner '
-  Sentry.capture_message("Teste de integração GlitchTip", level: :info)
+  Sentry.capture_message("Teste de integração Sentry", level: :info)
   Sentry.get_current_client&.flush
 '
 ```
 
 O `flush` explícito garante que o evento seja enviado antes do processo
-`runner` (de vida curta) encerrar. Depois, confira no painel do GlitchTip se
+`runner` (de vida curta) encerrar. Depois, confira no painel do Sentry se
 o evento apareceu.
 
 Detalhes em `docs/architecture.md`, seção "Deploy".

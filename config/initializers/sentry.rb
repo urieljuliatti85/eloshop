@@ -4,16 +4,14 @@
 # não envia nada (comportamento padrão do sentry-ruby), então isso é defensivo
 # apenas para não exigir a credencial em development/test/CI.
 #
-# O DSN aponta para o GlitchTip (glitchtip.com), não para o Sentry SaaS — o
-# GlitchTip fala o mesmo protocolo do Sentry, então o SDK oficial funciona sem
-# alteração, só trocando o host embutido no DSN.
+# O DSN aponta para o Sentry SaaS (projeto "eloshop" em eloshop.sentry.io).
 if Rails.env.production? && ENV["SENTRY_DSN"].present?
   Sentry.init do |config|
     config.dsn = ENV["SENTRY_DSN"]
     config.breadcrumbs_logger = [ :active_support_logger, :http_logger ]
 
     # Amostragem de performance: baixa por padrão para não inflar custo/volume
-    # em um app com tráfego de e-commerce; ajuste conforme o plano do GlitchTip.
+    # em um app com tráfego de e-commerce; ajuste conforme o plano do Sentry.
     config.traces_sample_rate = 0.1
 
     # Nunca envie corpo de request/response — pode conter endereço, e-mail,
