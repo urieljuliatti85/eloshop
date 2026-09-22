@@ -13,6 +13,7 @@
     </summary>
     <nav aria-label="Navegação administrativa">
       <%= admin_nav_link "Dashboard", admin_root_path, icon: :dashboard, controllers: %w[dashboard] %>
+      <%= admin_nav_link "Financials", admin_financials_path, icon: :financials, controllers: %w[financials] %>
       <%= admin_nav_link "Produtos", admin_products_path, icon: :products, controllers: %w[products product_variants personalization_options product_images] %>
       <%= admin_nav_link "Artesãos", admin_sellers_path, icon: :customers, controllers: %w[sellers] %>
       <%= admin_nav_link "Pedidos", admin_orders_path, icon: :orders, controllers: %w[orders] %>
@@ -42,6 +43,7 @@
   <nav class="admin-nav" aria-label="Navegação administrativa">
     <p class="admin-nav-label">Gestão</p>
     <%= admin_nav_link "Dashboard", admin_root_path, icon: :dashboard, controllers: %w[dashboard] %>
+    <%= admin_nav_link "Financials", admin_financials_path, icon: :financials, controllers: %w[financials] %>
     <%= admin_nav_link "Produtos", admin_products_path, icon: :products, controllers: %w[products product_variants personalization_options product_images] %>
     <%= admin_nav_link "Artesãos", admin_sellers_path, icon: :customers, controllers: %w[sellers] %>
     <%= admin_nav_link "Pedidos", admin_orders_path, icon: :orders, controllers: %w[orders] %>
