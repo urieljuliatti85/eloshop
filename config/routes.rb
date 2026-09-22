@@ -6,6 +6,7 @@ Rails.application.routes.draw do
 
   namespace :admin do
     root to: "dashboard#index"
+    get "analytics", to: "analytics#index", as: :analytics
     get "financials", to: "financials#index", as: :financials
     post "financials/reconciliation", to: "financials#refresh_reconciliation", as: :financials_reconciliation
 

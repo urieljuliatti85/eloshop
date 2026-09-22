@@ -31,6 +31,23 @@
     </article>
   </section>
 
+  <section class="space-y-4" aria-labelledby="dashboard-analytics-title">
+    <div class="flex items-end justify-between gap-4">
+      <div>
+        <p class="admin-section-label">Audiência</p>
+        <h2 id="dashboard-analytics-title" class="mt-1">Últimos 30 dias</h2>
+      </div>
+      <%= link_to "Abrir Analytics", admin_analytics_path, class: "admin-link text-sm" %>
+    </div>
+    <% if @analytics_snapshot %>
+      <%= render "admin/analytics/summary_cards", snapshot: @analytics_snapshot %>
+    <% elsif @analytics_unavailable %>
+      <div class="admin-card p-5 text-sm text-slate-600">O Google Analytics está temporariamente indisponível. Os demais dados do dashboard continuam atualizados.</div>
+    <% else %>
+      <div class="admin-card p-5 text-sm text-slate-600">Configure o Google Analytics para acompanhar usuários, sessões e visualizações no dashboard.</div>
+    <% end %>
+  </section>
+
   <section class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,0.75fr)]">
     <div class="admin-card overflow-hidden">
       <div class="admin-card-header">

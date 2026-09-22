@@ -112,6 +112,18 @@ Correção aplicada: `ProductsController#index` usa `preload` (associações e `
 
 Duas decisões seguem em aberto, ambas fora do escopo da correção: a PDP tem a mesma causa em escala menor (`related_products` também usa `includes` + `with_attached_main_image`; `db_runtime` de 83,75 ms medido na mesma janela, contra ~10 ms do catálogo já corrigido), e ajustar `jit_above_cost` no PostgreSQL da Railway protegeria qualquer query futura com plano superestimado, mas é mudança de infraestrutura com efeito global.
 
+## Google Analytics no Admin
+
+O Analytics tem duas partes independentes. A vitrine pública carrega o `gtag.js` somente depois de consentimento explícito; carrinho, checkout, pedidos, conta do comprador, painel do artesão e Admin nunca recebem o controller de rastreamento. Mesmo nas páginas permitidas, a aplicação envia caminhos virtuais estáveis (`/inicio`, `/catalogo`, `/produto`, `/artesao` etc.), sem slug, ID, query string, e-mail ou URL real. Google Signals e personalização de anúncios ficam desligados. A preferência dura 180 dias e pode ser reaberta no rodapé.
+
+O Admin consulta a Google Analytics Data API por uma conta de serviço com acesso somente de leitura. `/admin` mostra usuários ativos, sessões e visualizações dos últimos 30 dias; `/admin/analytics` acrescenta evolução diária e as dez páginas virtuais mais acessadas. O resultado fica em cache por 15 minutos para não transformar cada visita ao Admin numa chamada externa. Falha ou configuração ausente degrada para um aviso e não derruba o dashboard. A chave JSON nunca entra no banco, HTML ou log; somente a classe do erro da consulta é emitida em evento estruturado.
+
+Configuração necessária:
+
+* `GOOGLE_ANALYTICS_MEASUREMENT_ID` — identificador `G-...` do fluxo Web; habilita a coleta consentida.
+* `GOOGLE_ANALYTICS_PROPERTY_ID` — ID numérico da propriedade GA4 usado pela Data API.
+* `GOOGLE_ANALYTICS_CREDENTIALS_JSON` — JSON integral da conta de serviço. É segredo e deve ficar numa variável privada da Railway. A conta precisa ser adicionada como Leitor na propriedade, e a Google Analytics Data API precisa estar habilitada no projeto Google Cloud correspondente.
+
 ## Deploy (Fase 20)
 
 **Decisão**: Railway (PaaS), não Kamal — `config/deploy.yml` fica no repositório sem uso, preservado para uma eventual migração futura pra VPS própria, mas o deploy real hoje é via Dockerfile + configuração da Railway. Sem domínio próprio ainda — usa o subdomínio `*.up.railway.app` que a Railway atribui automaticamente.
@@ -130,6 +142,7 @@ Duas decisões seguem em aberto, ambas fora do escopo da correção: a PDP tem a
   * `MERCADO_PAGO_MARKETPLACE_SANDBOX=true` — somente durante a validação com aplicação/conta de teste; remover ou definir `false` antes do onboarding real
   * `MELHOR_ENVIO_CLIENT_ID`, `MELHOR_ENVIO_CLIENT_SECRET` e `MELHOR_ENVIO_REDIRECT_URI` — aplicação OAuth do Melhor Envio (frete real, ADR 005); sem elas o painel mostra "aguarda a configuração" e o checkout usa a tabela interna de frete
   * `MELHOR_ENVIO_SANDBOX=true` — somente durante a validação com a conta de teste do Melhor Envio (saldo fictício); remover ou definir `false` antes de cotar frete real
+  * `GOOGLE_ANALYTICS_MEASUREMENT_ID`, `GOOGLE_ANALYTICS_PROPERTY_ID` e `GOOGLE_ANALYTICS_CREDENTIALS_JSON` — opcionais; habilitam respectivamente a coleta consentida na vitrine e os relatórios agregados do Admin. O JSON da conta de serviço é segredo e nunca deve ser versionado
   * `RAILS_ENV=production` (Railway/Dockerfile já cobre isso, mas confirmar)
   * `SENTRY_DSN` — opcional; sem ela, `config/initializers/sentry.rb` não ativa o SDK e a aplicação sobe normalmente. DSN do projeto `eloshop` no Sentry SaaS (eloshop.sentry.io) — até 2026-09-16 apontava para um GlitchTip auto-hospedado; a troca só mudou o valor da variável, o SDK `sentry-ruby`/`sentry-rails` é o mesmo. Só o error tracking do backend está ligado, sem SDK JS nem Session Replay — decisão deliberada para não expor dados de checkout (nome, endereço) capturados em gravação de tela. Ao testar via `railway run`, o comando roda localmente com `RAILS_ENV` do shell (não sobrescrito para `production`), então o initializer não ativa — use `RAILS_ENV=production railway run ...` para reproduzir o guard corretamente. **`railway run` não serve para consultar o banco de produção**: como roda local, o `DATABASE_URL` do serviço aponta para `postgres.railway.internal`, host que só resolve dentro da rede da Railway, e a falha aparece como `ActiveRecord::NoDatabaseError: Database not found: railway` — enganosa, porque parece banco inexistente. Para ler o banco de produção use `railway ssh --service eloshop-web 'bin/rails runner "..."'`, que executa dentro do contêiner (foi o método usado no diagnóstico da PDP e na apuração do estado do Mercado Pago).
 * **Porta**: a Railway atribui `$PORT` dinamicamente; `bin/docker-entrypoint` já repassa isso pro Thruster (`HTTP_PORT`) — nada a configurar manualmente, mas é importante saber que existe essa ponte (ver comentário no arquivo).

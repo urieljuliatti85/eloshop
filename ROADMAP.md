@@ -1513,6 +1513,8 @@ ONBOARDING DO ATELIÊ implementado em 2026-09-22 em `/painel/primeiros-passos`. 
 
 ACOMPANHAMENTO DE ENTREGA DO ARTESÃO implementado em 2026-09-22. `/painel/orders` mostra a situação operacional da entrega e o detalhe ganhou a linha do tempo “Pedido recebido → Em preparação → Enviado → Entregue”; retirada local usa “Pronto para retirada → Retirado”. O artesão avança manualmente `Shipment` somente depois do pagamento confirmado, sem pular etapas, com `shipped_at` e `delivered_at` registrados. A ação parte sempre de `current_seller`, preservando o isolamento entre ateliês. Etiqueta, rastreamento automático e webhook do Melhor Envio continuam fora deste MVP e deverão reutilizar essas mesmas transições quando a dependência externa for liberada.
 
+GOOGLE ANALYTICS NO ADMIN implementado em 2026-09-22. O dashboard administrativo ganhou o resumo de usuários ativos, sessões e visualizações dos últimos 30 dias, e a nova aba `/admin/analytics` acrescenta evolução diária e páginas mais acessadas usando a Google Analytics Data API oficial, em cache por 15 minutos. A coleta na vitrine é consentida e deliberadamente limitada a páginas públicas: envia apenas caminhos virtuais sem slug, ID ou query string; carrinho, checkout, pedidos, conta, Admin e painel do artesão não carregam o Google. As três variáveis são preservadas pela IaC sem valores no repositório; ausência ou falha externa gera estado orientativo sem derrubar o Admin.
+
 Última atualização:
 
 `2026-09-22`

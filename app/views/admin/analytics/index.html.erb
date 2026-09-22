@@ -1,0 +1,97 @@
+<div class="space-y-8">
+  <header class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="admin-section-label mb-2">Audiência</p>
+      <h1>Analytics</h1>
+      <p class="mt-2 text-sm text-slate-500">Dados agregados das páginas públicas nos últimos 30 dias.</p>
+    </div>
+    <%= link_to "Abrir Google Analytics", "https://analytics.google.com/", class: "admin-button admin-button--secondary", target: "_blank", rel: "noopener" %>
+  </header>
+
+  <% if @analytics_configuration_issues.present? %>
+    <section class="admin-card p-5 sm:p-6" aria-labelledby="analytics-configuration-title">
+      <span class="admin-badge admin-badge--warning">Configuração pendente</span>
+      <h2 id="analytics-configuration-title" class="mt-4">Conecte a propriedade GA4</h2>
+      <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+        A coleta e a leitura dos relatórios são independentes. Configure as variáveis abaixo na Railway e conceda à conta de serviço acesso de Leitor na propriedade do Google Analytics.
+      </p>
+      <ul class="mt-5 space-y-2 text-sm text-slate-700">
+        <% @analytics_configuration_issues.each do |variable| %>
+          <li><code class="rounded bg-slate-100 px-2 py-1 font-mono text-xs"><%= variable %></code></li>
+        <% end %>
+        <% unless @analytics_measurement_configured %>
+          <li><code class="rounded bg-slate-100 px-2 py-1 font-mono text-xs">GOOGLE_ANALYTICS_MEASUREMENT_ID</code> — necessário para coletar novas visitas.</li>
+        <% end %>
+      </ul>
+      <p class="mt-5 text-xs leading-5 text-slate-500">A chave JSON permanece somente nas variáveis privadas do servidor e nunca é exibida nesta página.</p>
+    </section>
+  <% elsif @analytics_error.present? %>
+    <section class="admin-card p-5 sm:p-6" aria-labelledby="analytics-error-title">
+      <span class="admin-badge admin-badge--danger">Consulta indisponível</span>
+      <h2 id="analytics-error-title" class="mt-4">Não foi possível atualizar os dados</h2>
+      <p class="mt-2 text-sm text-slate-600"><%= @analytics_error %></p>
+    </section>
+  <% else %>
+    <% unless @analytics_measurement_configured %>
+      <div class="admin-card border-amber-200 p-5 text-sm text-amber-900">
+        Os relatórios podem ser consultados, mas novas visitas não serão coletadas até configurar <code class="font-mono text-xs">GOOGLE_ANALYTICS_MEASUREMENT_ID</code>.
+      </div>
+    <% end %>
+    <%= render "summary_cards", snapshot: @analytics_snapshot %>
+
+    <section class="admin-card overflow-hidden" aria-labelledby="analytics-trend-title">
+      <div class="admin-card-header">
+        <div>
+          <p class="admin-section-label">Evolução</p>
+          <h2 id="analytics-trend-title" class="mt-1">Visualizações por dia</h2>
+        </div>
+        <p class="text-xs text-slate-500">Atualizado em <%= l(@analytics_snapshot.fetched_at, format: :short) %></p>
+      </div>
+      <% if @analytics_snapshot.daily.any? %>
+        <% max_views = [@analytics_snapshot.daily.map(&:page_views).max.to_i, 1].max %>
+        <div class="overflow-x-auto p-5 sm:p-6">
+          <div class="flex min-w-[48rem] items-end gap-2" style="height: 15rem" role="img" aria-label="Gráfico de visualizações diárias">
+            <% @analytics_snapshot.daily.each do |point| %>
+              <% height = [((point.page_views.to_f / max_views) * 100).round, 3].max %>
+              <div class="flex min-w-0 flex-1 flex-col items-center justify-end gap-2" title="<%= l(point.date, format: :short) %>: <%= point.page_views %> visualizações">
+                <span class="text-[0.65rem] font-semibold text-slate-500"><%= point.page_views %></span>
+                <span class="w-full rounded-t-md bg-brand-500" style="height: <%= height %>%"></span>
+                <span class="text-[0.6rem] text-slate-500"><%= point.date.strftime("%d/%m") %></span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% else %>
+        <p class="m-5 admin-empty-state">Ainda não há visualizações no período.</p>
+      <% end %>
+    </section>
+
+    <section class="admin-card overflow-hidden" aria-labelledby="analytics-pages-title">
+      <div class="admin-card-header">
+        <div>
+          <p class="admin-section-label">Conteúdo</p>
+          <h2 id="analytics-pages-title" class="mt-1">Páginas mais acessadas</h2>
+        </div>
+      </div>
+      <% if @analytics_snapshot.top_pages.any? %>
+        <div class="overflow-x-auto">
+          <table>
+            <thead><tr><th>Página</th><th>Caminho medido</th><th>Visualizações</th><th>Usuários ativos</th></tr></thead>
+            <tbody>
+              <% @analytics_snapshot.top_pages.each do |page| %>
+                <tr>
+                  <td class="font-semibold text-slate-900"><%= page.title %></td>
+                  <td><code class="text-xs"><%= page.path %></code></td>
+                  <td><%= number_with_delimiter(page.page_views) %></td>
+                  <td><%= number_with_delimiter(page.active_users) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <p class="m-5 admin-empty-state">Ainda não há páginas registradas no período.</p>
+      <% end %>
+    </section>
+  <% end %>
+</div>

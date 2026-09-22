@@ -1,10 +1,8 @@
 # Be sure to restart your server when you modify this file.
 #
-# A aplicação não carrega nenhum script, estilo, fonte ou imagem de origem
-# externa (importmap vendoriza tudo localmente, Tailwind é compilado num
-# único arquivo local) — ver docs/security.md. Por isso a política pode ser
-# estrita: só a própria origem, mais `data:` para imagens (necessário para
-# SVGs/ícones embutidos).
+# A aplicação vendoriza os pacotes JS e compila o Tailwind localmente. As
+# únicas origens externas são integrações explícitas: Mercado Pago no checkout
+# e, após consentimento, Google Analytics nas páginas públicas permitidas.
 #
 # Exceção (Fase 24): o Card Payment Brick do Mercado Pago. Os domínios abaixo
 # saíram da leitura do próprio SDK oficial servido em
@@ -46,13 +44,18 @@ Rails.application.configure do
   mercado_pago_fields = "https://secure-fields.mercadopago.com"
   mercado_libre_api   = "https://api.mercadolibre.com"
   mercado_libre_cdn   = "https://http2.mlstatic.com"
+  google_tag_manager  = "https://www.googletagmanager.com"
+  google_analytics    = "https://www.google-analytics.com"
+  google_analytics_eu = "https://region1.google-analytics.com"
+  google_analytics_ui = "https://analytics.google.com"
+  google              = "https://www.google.com"
 
   config.content_security_policy do |policy|
     policy.default_src :self
     policy.font_src    :self
-    policy.img_src     :self, :data, mercado_libre_cdn
+    policy.img_src     :self, :data, mercado_libre_cdn, google_tag_manager, google_analytics, google_analytics_eu
     policy.object_src  :none
-    policy.script_src  :self, mercado_pago_sdk, mercado_pago_static, mercado_libre_cdn
+    policy.script_src  :self, mercado_pago_sdk, mercado_pago_static, mercado_libre_cdn, google_tag_manager
     # `unsafe_inline` e não um domínio: o SDK não busca nenhum .css externo
     # (zero referências a stylesheet no bundle), mas injeta <style> em
     # runtime — o spinner de carregamento, o botão de fechar e os estilos do
@@ -77,7 +80,8 @@ Rails.application.configure do
     # "Connecting to 'https://secure-fields.mercadopago.com/' violates ...
     # connect-src". Não afrouxa nada: é o domínio que já confiamos para o
     # iframe, agora na diretiva que o outro uso exige.
-    policy.connect_src :self, mercado_pago_api, mercado_pago_static, mercado_pago_fields, mercado_libre_cdn, mercado_libre_api
+    policy.connect_src :self, mercado_pago_api, mercado_pago_static, mercado_pago_fields, mercado_libre_cdn, mercado_libre_api,
+      google_tag_manager, google_analytics, google_analytics_eu, google_analytics_ui, google
     policy.frame_src   :self, mercado_pago_fields, mercado_pago_sdk
     policy.base_uri    :self
     policy.form_action :self
