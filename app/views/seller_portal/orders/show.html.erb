@@ -8,6 +8,7 @@
   }
   shipment = @seller_order.shipment
   address = @order.shipping_address_snapshot
+  payment = @order.payments.max_by(&:created_at)
 %>
 
 <div class="space-y-6">
@@ -88,6 +89,9 @@
         <% end %>
       </ul>
       <dl class="mt-6 space-y-2 border-t border-brand-100 pt-5 text-sm">
+        <% if payment %>
+          <div class="flex justify-between"><dt>Meio de pagamento</dt><dd class="font-semibold"><%= payment_method_label(payment) %></dd></div>
+        <% end %>
         <div class="flex justify-between"><dt>Subtotal após descontos</dt><dd><%= format_price(@seller_order.commission_base_cents) %></dd></div>
         <div class="flex justify-between"><dt>Comissão EloShop (15%)</dt><dd>− <%= format_price(@seller_order.platform_fee_cents) %></dd></div>
         <div class="flex justify-between"><dt>Frete</dt><dd><%= format_price(@seller_order.shipping_cents) %></dd></div>

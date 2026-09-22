@@ -1,8 +1,16 @@
+<% payment = @order.payments.max_by(&:created_at) %>
+
 <div class="w-full max-w-2xl">
   <%= link_to "← Meus pedidos", orders_path, class: "mb-6 inline-block text-sm font-semibold text-brand-600 hover:underline" %>
 
   <h1 class="mb-2 text-2xl font-bold text-ink">Pedido #<%= @order.id %></h1>
   <p class="mb-6 text-sm text-ink-muted">Status: <%= @order.status %></p>
+
+  <% if payment %>
+    <p class="mb-6 inline-block rounded-full bg-mist-100 px-4 py-2 text-sm text-ink">
+      Pago com <span class="font-semibold"><%= payment_method_label(payment) %></span>
+    </p>
+  <% end %>
 
   <div class="mb-8 flex flex-wrap gap-3">
     <% if @order.pending? %>
