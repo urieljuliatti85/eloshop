@@ -126,6 +126,7 @@ Duas decisões seguem em aberto, ambas fora do escopo da correção: a PDP tem a
   * `DATABASE_URL` — injetada automaticamente pelo addon Postgres da Railway
   * `RAILS_STORAGE_PATH` — caminho do volume persistente (ver acima)
   * `MERCADO_PAGO_MARKETPLACE_APP_ID`, `MERCADO_PAGO_MARKETPLACE_CLIENT_SECRET` e `MERCADO_PAGO_MARKETPLACE_REDIRECT_URI` — aplicação OAuth Marketplace; os valores são preservados pelo IaC sem entrar no repositório
+  * `MERCADO_PAGO_MARKETPLACE_ACCESS_TOKEN` — Access Token de produção da aplicação Marketplace, usado somente pela conciliação do Sales Report em `/admin/financials`; é diferente do Client Secret e dos tokens OAuth dos artesãos, e também é preservado pelo IaC sem entrar no repositório
   * `MERCADO_PAGO_MARKETPLACE_SANDBOX=true` — somente durante a validação com aplicação/conta de teste; remover ou definir `false` antes do onboarding real
   * `MELHOR_ENVIO_CLIENT_ID`, `MELHOR_ENVIO_CLIENT_SECRET` e `MELHOR_ENVIO_REDIRECT_URI` — aplicação OAuth do Melhor Envio (frete real, ADR 005); sem elas o painel mostra "aguarda a configuração" e o checkout usa a tabela interna de frete
   * `MELHOR_ENVIO_SANDBOX=true` — somente durante a validação com a conta de teste do Melhor Envio (saldo fictício); remover ou definir `false` antes de cotar frete real

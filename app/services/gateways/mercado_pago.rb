@@ -71,6 +71,13 @@ module Gateways
       payment_details(external_id: external_id)[:status]
     end
 
+    # Informações financeiras que não chegam no relatório de vendas do
+    # marketplace. A data de liberação pertence ao pagamento individual e é
+    # consultada somente durante a conciliação manual do Admin.
+    def reconciliation_details(external_id:)
+      payment_details(external_id: external_id).slice(:processor_fee_cents, :money_release_date)
+    end
+
     def refund(payment:, amount_cents:, idempotency_key:)
       access_token = access_token_for(payment.order)
       response = post(
@@ -212,7 +219,8 @@ module Gateways
       response = get("/v1/payments/#{external_id}", access_token: access_token)
       {
         status: STATUS_MAP.fetch(response["status"].to_s, "pending"),
-        processor_fee_cents: processor_fee_cents(response)
+        processor_fee_cents: processor_fee_cents(response),
+        money_release_date: parse_time(response["money_release_date"])
       }
     end
 

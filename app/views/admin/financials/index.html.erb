@@ -83,6 +83,100 @@
     </dl>
   </section>
 
+  <section class="admin-card overflow-hidden" aria-labelledby="reconciliation-title">
+    <div class="admin-card-header gap-4">
+      <div>
+        <p class="admin-section-label">Relatório oficial</p>
+        <h2 id="reconciliation-title" class="mt-1">Conciliação Mercado Pago</h2>
+      </div>
+      <div class="flex flex-wrap items-center justify-end gap-3">
+        <% if @official_report %>
+          <%= admin_status_badge("active", label: "Conciliado") %>
+        <% elsif @sales_report_configured %>
+          <%= admin_status_badge("pending", label: "Aguardando atualização") %>
+        <% else %>
+          <%= admin_status_badge("inactive", label: "Não configurado") %>
+        <% end %>
+
+        <% if @sales_report_configured %>
+          <%= button_to "Atualizar relatório", admin_financials_reconciliation_path,
+                method: :post,
+                class: "admin-button admin-button--primary" %>
+        <% end %>
+      </div>
+    </div>
+
+    <% if !@sales_report_configured %>
+      <div class="border-b border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 sm:px-6">
+        Adicione <code class="font-semibold">MERCADO_PAGO_MARKETPLACE_ACCESS_TOKEN</code> às variáveis do serviço web no Railway para habilitar a leitura do relatório oficial. O valor do token nunca aparece no Admin.
+      </div>
+    <% elsif @official_report %>
+      <div class="border-b border-slate-100 px-5 py-4 text-sm text-slate-500 sm:px-6">
+        Última atualização: <strong class="text-slate-800"><%= l(@official_report.fetched_at, format: :short) %></strong>
+        · <%= @official_report.entries.size %> registros oficiais.
+        A data de liberação vem da consulta individual do pagamento, pois não faz parte do relatório de vendas.
+      </div>
+    <% else %>
+      <div class="border-b border-slate-100 px-5 py-4 text-sm text-slate-500 sm:px-6">
+        A integração está configurada. Clique em “Atualizar relatório” para buscar o demonstrativo mais recente do Mercado Pago.
+      </div>
+    <% end %>
+
+    <% if @reconciliation_rows.any? %>
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Venda</th>
+              <th>Artesão</th>
+              <th class="text-right">Valor</th>
+              <th class="text-right">Comissão</th>
+              <th class="text-right">Tarifa MP</th>
+              <th class="text-right">Líquido artesão</th>
+              <th>Liberação</th>
+              <th>Fonte</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @reconciliation_rows.each do |row| %>
+              <tr>
+                <td>
+                  <% if row.fetch(:payment) %>
+                    <%= link_to "Pedido ##{row.fetch(:sale_reference)}", admin_order_path(row.fetch(:payment).order), class: "font-semibold text-slate-900 hover:text-amber-700" %>
+                  <% else %>
+                    <span class="font-semibold text-slate-900">Venda <%= row.fetch(:sale_reference) %></span>
+                  <% end %>
+                  <p class="mt-1 text-xs text-slate-500"><%= row.fetch(:sold_at) ? l(row.fetch(:sold_at), format: :short) : "Data não informada" %></p>
+                </td>
+                <td class="font-medium text-slate-800"><%= row.fetch(:artisan) %></td>
+                <td class="text-right font-medium"><%= row.fetch(:gross_cents).nil? ? "—" : format_price(row.fetch(:gross_cents)) %></td>
+                <td class="text-right"><%= row.fetch(:commission_cents).nil? ? "—" : format_price(row.fetch(:commission_cents)) %></td>
+                <td class="text-right"><%= row.fetch(:processor_fee_cents).nil? ? "—" : format_price(row.fetch(:processor_fee_cents)) %></td>
+                <td class="text-right font-semibold text-slate-900"><%= row.fetch(:net_cents).nil? ? "—" : format_price(row.fetch(:net_cents)) %></td>
+                <td>
+                  <% if row.fetch(:release_at) %>
+                    <span class="font-medium text-slate-800"><%= l(row.fetch(:release_at), format: :short) %></span>
+                  <% else %>
+                    <span class="text-slate-400">Não informada</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if row.fetch(:official) %>
+                    <%= admin_status_badge("active", label: "Mercado Pago") %>
+                  <% else %>
+                    <%= admin_status_badge("pending", label: "Somente EloShop") %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="m-5 admin-empty-state">Ainda não há pagamentos do Mercado Pago para conciliar.</p>
+    <% end %>
+  </section>
+
   <section class="admin-card overflow-hidden" aria-labelledby="seller-pendencies-title">
     <div class="admin-card-header">
       <div>
