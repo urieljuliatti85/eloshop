@@ -45,6 +45,18 @@ RSpec.describe "Security headers", type: :request do
     expect(directive("connect-src")).to include("https://secure-fields.mercadopago.com")
   end
 
+  it "libera o Google Analytics apenas nas diretivas necessárias" do
+    expect(directive("script-src")).to include("https://www.googletagmanager.com")
+    expect(directive("connect-src")).to include(
+      "https://www.googletagmanager.com",
+      "https://www.google-analytics.com",
+      "https://region1.google-analytics.com",
+      "https://analytics.google.com"
+    )
+    expect(directive("frame-src")).not_to include("https://www.googletagmanager.com")
+    expect(directive("style-src")).not_to include("https://www.googletagmanager.com")
+  end
+
   # script-src com nonce e SEM unsafe-inline é o que sustenta a política:
   # o afrouxamento de estilo inline (necessário para os <style> que o SDK
   # injeta) não pode transbordar para script.

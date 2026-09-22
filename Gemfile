@@ -63,6 +63,10 @@ gem "rswag-ui"
 # SDK oficial do Mercado Pago [https://github.com/mercadopago/sdk-ruby]
 gem "mercadopago-sdk"
 
+# Cliente oficial da Google Analytics Data API. A coleta pública usa gtag.js;
+# esta gem é somente para os relatórios agregados e read-only do Admin.
+gem "google-analytics-data", "~> 0.9"
+
 # Error tracking (backend). Protocolo compatível com Sentry — aponta para o
 # GlitchTip via SENTRY_DSN [https://github.com/getsentry/sentry-ruby]
 gem "sentry-ruby"

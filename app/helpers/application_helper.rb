@@ -1,4 +1,31 @@
 module ApplicationHelper
+  GOOGLE_ANALYTICS_MEASUREMENT_ID_PATTERN = /\AG-[A-Z0-9]+\z/
+  GOOGLE_ANALYTICS_PUBLIC_PAGES = {
+    "home#show" => { path: "/inicio", title: "Início" },
+    "products#index" => { path: "/catalogo", title: "Catálogo" },
+    "products#show" => { path: "/produto", title: "Produto" },
+    "sellers#index" => { path: "/artesaos", title: "Artesãos" },
+    "sellers#show" => { path: "/artesao", title: "Ateliê" },
+    "how_it_works#show" => { path: "/como-funciona", title: "Como funciona" },
+    "contacts#new" => { path: "/contato", title: "Contato" },
+    "seller_registrations#new" => { path: "/seja-um-artesao", title: "Seja um artesão" },
+    "credits#show" => { path: "/creditos", title: "Créditos" }
+  }.freeze
+
+  def google_analytics_measurement_id
+    measurement_id = ENV["GOOGLE_ANALYTICS_MEASUREMENT_ID"].to_s.strip.upcase
+    measurement_id if measurement_id.match?(GOOGLE_ANALYTICS_MEASUREMENT_ID_PATTERN)
+  end
+
+  # Somente páginas públicas e sem identidade entram no Analytics. O caminho
+  # enviado é virtual e estável: não inclui slug, id, query string ou URL real.
+  # Carrinho, checkout, pedidos, conta, admin e painel do artesão ficam fora.
+  def google_analytics_public_page
+    return unless request.get? || request.head?
+
+    GOOGLE_ANALYTICS_PUBLIC_PAGES["#{controller_path}##{action_name}"]
+  end
+
   # O item do menu fica marcado pelo controller da requisição, não pela URL
   # exata: "Loja" continua ativo na página de um produto, e "Painel do Artesão"
   # em qualquer tela do painel.

@@ -64,6 +64,9 @@ export default defineRailway(() => {
     // segredo nenhum para o repositório.
     env: {
       DATABASE_URL: preserve(),
+      GOOGLE_ANALYTICS_CREDENTIALS_JSON: preserve(),
+      GOOGLE_ANALYTICS_MEASUREMENT_ID: preserve(),
+      GOOGLE_ANALYTICS_PROPERTY_ID: preserve(),
       MERCADO_PAGO_MARKETPLACE_APP_ID: preserve(),
       MERCADO_PAGO_MARKETPLACE_ACCESS_TOKEN: preserve(),
       MERCADO_PAGO_MARKETPLACE_CLIENT_SECRET: preserve(),

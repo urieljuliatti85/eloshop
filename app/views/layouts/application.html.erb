@@ -38,7 +38,18 @@
 
   <%# `body_class` deixa uma página trocar o fundo do body — hoje só a home,
       que usa `home-background`, definida no CSS compilado. %>
-  <body class="flex min-h-screen flex-col overflow-x-clip bg-white text-ink <%= content_for(:body_class) %>">
+  <% analytics_page = google_analytics_public_page %>
+  <% analytics_enabled = google_analytics_measurement_id.present? && analytics_page.present? %>
+  <%# Páginas medidas usam navegação completa: ao entrar em carrinho, conta ou
+      pedido, o documento anterior (inclusive o script do Google) é destruído. %>
+  <body class="flex min-h-screen flex-col overflow-x-clip bg-white text-ink <%= content_for(:body_class) %>"
+        <% if analytics_enabled %>
+          data-controller="google-analytics"
+          data-turbo="false"
+          data-google-analytics-measurement-id-value="<%= google_analytics_measurement_id %>"
+          data-google-analytics-page-path-value="<%= analytics_page[:path] %>"
+          data-google-analytics-page-title-value="<%= analytics_page[:title] %>"
+        <% end %>>
     <%= render "layouts/header" %>
     <%= render "layouts/flash_message", message: flash[:notice], variant: :success %>
     <%= render "layouts/flash_message", message: flash[:alert], variant: :error %>
@@ -48,5 +59,6 @@
     </main>
 
     <%= render "layouts/footer" %>
+    <%= render "layouts/google_analytics" if analytics_enabled %>
   </body>
 </html>

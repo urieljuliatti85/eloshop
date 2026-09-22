@@ -20,6 +20,18 @@ module Admin
       @platform_fee_cents = SellerOrder.joins(:order)
         .where(orders: { status: %w[confirmed partially_refunded refunded] })
         .sum("platform_fee_cents - platform_fee_refunded_cents")
+
+      load_google_analytics
+    end
+
+    private
+
+    def load_google_analytics
+      report = ::Analytics::GoogleAnalyticsReport.new
+      @analytics_configured = report.configured?
+      @analytics_snapshot = report.snapshot if @analytics_configured
+    rescue ::Analytics::GoogleAnalyticsReport::ReportUnavailable
+      @analytics_unavailable = true
     end
   end
 end

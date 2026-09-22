@@ -1,0 +1,17 @@
+<div class="grid gap-4 sm:grid-cols-3" aria-label="Resumo do Google Analytics">
+  <article class="admin-stat-card">
+    <p class="admin-section-label relative z-10">Usuários ativos</p>
+    <p class="admin-stat-value relative z-10"><%= number_with_delimiter(snapshot.active_users) %></p>
+    <p class="relative z-10 mt-3 text-sm text-slate-500">Pessoas que interagiram com o site</p>
+  </article>
+  <article class="admin-stat-card">
+    <p class="admin-section-label relative z-10">Sessões</p>
+    <p class="admin-stat-value relative z-10"><%= number_with_delimiter(snapshot.sessions) %></p>
+    <p class="relative z-10 mt-3 text-sm text-slate-500">Visitas iniciadas no período</p>
+  </article>
+  <article class="admin-stat-card">
+    <p class="admin-section-label relative z-10">Visualizações</p>
+    <p class="admin-stat-value relative z-10"><%= number_with_delimiter(snapshot.page_views) %></p>
+    <p class="relative z-10 mt-3 text-sm text-slate-500">Páginas públicas visualizadas</p>
+  </article>
+</div>
