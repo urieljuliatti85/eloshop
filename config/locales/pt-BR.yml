@@ -1,4 +1,11 @@
 pt-BR:
+  flash:
+    success:
+      title: "Sucesso!"
+      close: "Fechar mensagem de sucesso"
+    error:
+      title: "Algo deu errado"
+      close: "Fechar mensagem de erro"
   date:
     formats:
       short: "%d/%m/%Y"
@@ -27,6 +34,10 @@ pt-BR:
         email_address: "E-mail"
       cart_item:
         product: "Produto"
+      product:
+        fixed_shipping: "Valor do frete fixo"
+        fixed_shipping_cents: "Valor do frete fixo"
+        fixed_shipping_estimated_days: "Prazo do frete fixo"
     errors:
       models:
         user:

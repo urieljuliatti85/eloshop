@@ -107,12 +107,45 @@ RSpec.describe "Seller products", type: :request do
 
     expect(response).to redirect_to(seller_product_path(own_product))
     expect(own_product.reload).to be_draft
+
+    follow_redirect!
+    expect(response.body).to include('class="app-flash app-flash--error"')
+    expect(response.body).to include("Algo deu errado", "Fechar mensagem de erro")
   end
 
   it "exposes weight and dimension fields on the product form" do
     get new_seller_product_path
 
     expect(response.body).to include("product_weight_grams", "product_length_cm", "product_width_cm", "product_height_cm")
+  end
+
+  it "shows and saves the product delivery configuration" do
+    get edit_seller_product_path(own_product)
+
+    expect(response.body).to include("Frete deste produto")
+    expect(response.body).to include("Permitir retirada gratuita deste produto")
+
+    patch seller_product_path(own_product), params: { product: {
+      fixed_shipping: "20,00", fixed_shipping_estimated_days: "8", local_pickup_enabled: "1"
+    } }
+
+    own_product.reload
+    expect(own_product.fixed_shipping_cents).to eq(2000)
+    expect(own_product.fixed_shipping_estimated_days).to eq(8)
+    expect(own_product).to be_local_pickup_enabled
+
+    follow_redirect!
+    expect(response.body).to include('data-controller="flash"')
+    expect(response.body).to include("Sucesso!", "Produto atualizado com sucesso.", "Fechar mensagem de sucesso")
+  end
+
+  it "rejects an incomplete product delivery configuration" do
+    patch seller_product_path(own_product), params: { product: {
+      fixed_shipping: "20,00", fixed_shipping_estimated_days: ""
+    } }
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(own_product.reload.fixed_shipping_cents).to be_nil
   end
 
   it "publishes once name, price and shipping dimensions are set" do

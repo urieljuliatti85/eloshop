@@ -24,9 +24,9 @@
     </div>
 
     <%# Endereço de onde a peça é despachada — não é o endereço de cobrança
-        nem aparece na loja. Opcional por ora: o cálculo real de frete ainda
-        depende de decisão de negócio (docs/shipping.md), mas quem preencher
-        precisa preencher inteiro, porque meio endereço não despacha nada. %>
+        nem aparece na loja. Continua opcional enquanto a entrega fixa e o
+        fallback não precisam de origem; quem preencher precisa completar,
+        porque meio endereço não atende ao provedor. %>
     <fieldset class="border-t border-stone-200 pt-6">
       <legend class="sr-only">Endereço de origem</legend>
       <p class="text-sm font-semibold text-stone-700">De onde você envia</p>

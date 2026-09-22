@@ -68,6 +68,24 @@ class ProductTest < ActiveSupport::TestCase
     assert_includes product.errors[:stock_quantity], "must be greater than or equal to 0"
   end
 
+  test "accepts a complete fixed shipping configuration in reais" do
+    product = products(:one)
+    product.assign_attributes(fixed_shipping: "20,00", fixed_shipping_estimated_days: 8)
+
+    assert product.valid?
+    assert_equal 2000, product.fixed_shipping_cents
+    assert_predicate product, :fixed_shipping_configured?
+  end
+
+  test "requires fixed shipping price and delivery time together" do
+    product = products(:one)
+    product.assign_attributes(fixed_shipping: "20,00")
+
+    assert_not product.valid?
+    assert_includes product.errors[:fixed_shipping_estimated_days], "can't be blank"
+    assert_not_predicate product, :fixed_shipping_configured?
+  end
+
   test "assigns slug from name when slug is blank" do
     product = Product.new(name: "Tapete de Fibra Natural", sku: "TAPETE-001", price_cents: 1000, stock_quantity: 1, currency: "BRL")
     product.valid?

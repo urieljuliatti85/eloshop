@@ -81,7 +81,7 @@
         <% if @order.shipment %>
           <div class="mt-5 border-t border-slate-100 pt-5 text-sm text-slate-600">
             <p><span class="font-semibold text-slate-800">Modalidade:</span> <%= @order.shipment.carrier %> — <%= @order.shipment.service %></p>
-            <p class="mt-1"><span class="font-semibold text-slate-800">Prazo estimado:</span> <%= @order.shipment.estimated_days %> dias úteis</p>
+            <p class="mt-1"><span class="font-semibold text-slate-800">Prazo:</span> <%= shipping_estimate_label(@order.shipment) %></p>
           </div>
         <% end %>
       </section>

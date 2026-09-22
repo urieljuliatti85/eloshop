@@ -82,7 +82,8 @@ module SellerPortal
       params.expect(product: [
         :name, :description, :price, :currency, :sku, :stock_quantity, :main_image,
         :availability_type, :production_time_min_days, :production_time_max_days, :category_id,
-        :weight_grams, :length_cm, :width_cm, :height_cm, images: []
+        :weight_grams, :length_cm, :width_cm, :height_cm,
+        :fixed_shipping, :fixed_shipping_estimated_days, :local_pickup_enabled, images: []
       ]).except(:images)
     end
   end

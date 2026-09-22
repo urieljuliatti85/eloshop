@@ -2,6 +2,7 @@ class Product < ApplicationRecord
   include MoneyAttribute
 
   money_attribute :price
+  money_attribute :fixed_shipping
 
   class InvalidStatusTransition < StandardError; end
 
@@ -70,6 +71,10 @@ class Product < ApplicationRecord
   validates :stock_quantity, numericality: { greater_than_or_equal_to: 0 }
   validates :weight_grams, :length_cm, :width_cm, :height_cm,
             numericality: { greater_than: 0 }, allow_nil: true
+  validates :fixed_shipping_cents, :fixed_shipping_estimated_days,
+            presence: true, if: :fixed_shipping_started?
+  validates :fixed_shipping_cents, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :fixed_shipping_estimated_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   # Peso e dimensões são exigidos para PUBLICAR, não para rascunhar: o
   # vendedor cadastra a peça enquanto ainda a está fazendo, mas não anuncia
@@ -185,6 +190,14 @@ class Product < ApplicationRecord
     return nil unless availability_type_made_to_order?
 
     "#{production_time_min_days} a #{production_time_max_days} dias úteis"
+  end
+
+  def fixed_shipping_started?
+    fixed_shipping_cents.present? || fixed_shipping_estimated_days.present?
+  end
+
+  def fixed_shipping_configured?
+    fixed_shipping_cents.present? && fixed_shipping_estimated_days.present?
   end
 
   scope :matching_query, ->(query) {

@@ -14,6 +14,11 @@ RSpec.describe "Customer sessions", type: :request do
       expect(response).to redirect_to(root_path)
       expect(response.cookies).to have_key("customer_session_id")
       expect(Cart.order(:created_at).last.customer).to eq(customer)
+
+      follow_redirect!
+      expect(response.body).to include('data-controller="flash"')
+      expect(response.body).to include("Sucesso!", "Login realizado com sucesso.", "Fechar mensagem de sucesso")
+      expect(response.body).not_to include("Congratulations!")
     end
 
     it "returns to checkout after authentication" do
@@ -31,6 +36,11 @@ RSpec.describe "Customer sessions", type: :request do
 
       expect(response).to redirect_to(new_customer_session_path)
       expect(response.cookies["customer_session_id"]).to be_nil
+
+      follow_redirect!
+      expect(response.body).to include('class="app-flash app-flash--error"')
+      expect(response.body).to include("Algo deu errado", "E-mail ou senha inválidos.", "Fechar mensagem de erro")
+      expect(response.body).not_to include("Oh no!")
     end
 
     it "does not grant admin access" do

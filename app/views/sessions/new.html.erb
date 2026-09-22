@@ -5,14 +5,6 @@
   <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Administração</p>
   <h1 class="mb-8 mt-2 text-2xl font-bold text-ink">Entrar</h1>
 
-  <% if alert = flash[:alert] %>
-    <p class="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800" id="alert"><%= alert %></p>
-  <% end %>
-
-  <% if notice = flash[:notice] %>
-    <p class="mb-6 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800" id="notice"><%= notice %></p>
-  <% end %>
-
   <%# Labels visíveis, como no login do cliente: o placeholder sozinho some
       quando o campo é preenchido, e some para o leitor de tela (§62). %>
   <%= form_with url: session_url, class: "flex flex-col gap-4" do |form| %>

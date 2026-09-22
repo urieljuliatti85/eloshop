@@ -2,9 +2,12 @@
 
 ## Status
 
-Accepted — provedor definido em 2026-09-06: **Melhor Envio**. Nenhuma
-integração foi escrita ainda; as decisões de etiqueta e frete grátis seguem
-pendentes e travam apenas as Etapas 2 e 3.
+Accepted — provedor definido em 2026-09-06: **Melhor Envio**. A Etapa 1 foi
+implementada, mas a cotação em produção está bloqueada pelo WAF do provedor
+(`E-WAF-0003`) contra o IP de saída da Railway. Como alternativa operacional
+do MVP, cada produto pode configurar frete fixo nacional e retirada gratuita;
+a tabela interna permanece como último fallback. As decisões de etiqueta e
+frete grátis promocional seguem pendentes e travam apenas as Etapas 2 e 3.
 
 Opções revisadas em 2026-09-06 com a documentação pública dos provedores
 ([Melhor Envio](https://docs.melhorenvio.com.br/reference/introducao-api-melhor-envio)).
@@ -12,7 +15,7 @@ Preço e política desses serviços mudam: confirmar antes de assinar.
 
 ## Context
 
-`docs/shipping.md` traz um `TODO — DECISION REQUIRED` sobre qual transportadora ou serviço de cálculo integrar. O frete hoje é calculado por `Shipping::Calculator`, uma tabela interna: R$ 15,00 de base mais R$ 5,00 por quilo, com prazo de 5 ou 8 dias conforme a faixa de CEP. O valor não reflete custo real de envio.
+`docs/shipping.md` trazia um `TODO — DECISION REQUIRED` sobre qual transportadora ou serviço de cálculo integrar. `Shipping::Calculator` hoje tenta o Melhor Envio e, quando indisponível, usa o frete fixo configurado nos produtos ou a tabela interna de R$ 15,00 de base mais R$ 5,00 por quilo. O valor dos fallbacks não reflete necessariamente o custo real de envio.
 
 O que já existe e não precisa ser construído:
 
