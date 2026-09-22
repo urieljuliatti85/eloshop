@@ -1,6 +1,7 @@
 class User < ApplicationRecord
   has_secure_password
   has_many :sessions, dependent: :destroy
+  has_many :order_messages, as: :sender, dependent: :restrict_with_error
   belongs_to :seller, optional: true
 
   enum :role, { admin: "admin", seller: "seller" }, default: "admin"

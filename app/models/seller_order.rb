@@ -1,10 +1,12 @@
 class SellerOrder < ApplicationRecord
   PLATFORM_FEE_RATE_BPS = 1_500
   BASIS_POINTS = 10_000
+  MESSAGEABLE_STATUSES = %w[confirmed partially_refunded refunded].freeze
 
   belongs_to :order
   belongs_to :seller
   has_many :order_items, dependent: :restrict_with_error
+  has_many :order_messages, dependent: :destroy
   has_one :shipment, dependent: :destroy
 
   enum :status, {
@@ -38,6 +40,13 @@ class SellerOrder < ApplicationRecord
 
   def remaining_refundable_cents
     total_cents - refunded_amount_cents
+  end
+
+  # A conversa nasce apenas quando a compra existe de fato. Reembolsos não
+  # apagam o canal: comprador e artesão ainda podem precisar combinar
+  # devolução, retirada ou esclarecer o que aconteceu.
+  def accepts_messages?
+    status.in?(MESSAGEABLE_STATUSES)
   end
 
   def platform_fee_refund_for(amount_cents, reserved_amount_cents: 0, reserved_fee_cents: 0)
