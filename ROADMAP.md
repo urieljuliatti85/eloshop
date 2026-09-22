@@ -1509,6 +1509,8 @@ CONCILIAÇÃO FINANCEIRA DO MARKETPLACE implementada em 2026-09-22. A aba `/admi
 
 FRETE CONFIGURÁVEL POR PRODUTO implementado em 2026-09-22 como alternativa de baixo custo ao bloqueio externo do Melhor Envio. No formulário de cada produto, o vendedor pode definir valor fixo nacional por unidade e prazo máximo, habilitar retirada gratuita ou manter tudo vazio para usar o fallback interno existente. No checkout, os valores são somados por unidade, prevalece o maior prazo e a retirada só aparece quando todos os itens a permitem. O cliente envia somente o identificador da opção e o servidor recalcula a cotação, impedindo preço forjado. A prioridade é Melhor Envio disponível → frete dos produtos → tabela interna. Etiqueta e rastreio permanecem fora deste MVP.
 
+ONBOARDING DO ATELIÊ implementado em 2026-09-22 em `/painel/primeiros-passos`. A página explica endereço de origem, conexão OAuth com o Mercado Pago, cadastro do primeiro produto com as opções de frete e o fluxo de monetização. O progresso é derivado de dados existentes — endereço completo, conta conectada, produto cadastrado e ateliê aprovado — sem tabela, cookie ou estado paralelo. A comissão exibida vem de `SellerOrder::PLATFORM_FEE_RATE_BPS`, evitando divergência entre a explicação e o cálculo do checkout.
+
 Última atualização:
 
 `2026-09-22`

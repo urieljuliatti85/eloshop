@@ -26,6 +26,7 @@ RSpec.describe "Seller dashboard", type: :request do
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("Crie, publique e acompanhe cada venda")
     expect(response.body).to include("Buscar no seu catálogo")
+    expect(response.body).to include("Primeiros passos", seller_getting_started_path)
     expect(response.body).to include("Cesto Horizonte")
     expect(response.body).to include("Pedido ##{seller_order.order_id}")
     expect(response.body).to include("Cliente do Ateliê")

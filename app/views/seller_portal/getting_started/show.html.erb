@@ -1,0 +1,134 @@
+<% content_for :title, "Primeiros passos | #{current_seller.name}" %>
+
+<div class="space-y-8">
+  <header class="overflow-hidden rounded-[2rem] bg-[#5c1a0b] px-6 py-8 text-white shadow-sm sm:px-9 sm:py-10">
+    <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#fbbeb6]">Comece por aqui</p>
+        <h1 class="mt-2 max-w-3xl text-3xl font-black tracking-tight sm:text-4xl">Prepare seu ateliê para vender na EloShop</h1>
+        <p class="mt-4 max-w-2xl text-sm leading-6 text-white/75 sm:text-base">Acompanhe o que já está pronto e entenda por que cada etapa é necessária para publicar produtos, receber pagamentos e organizar suas entregas.</p>
+      </div>
+
+      <div class="rounded-2xl border border-white/15 bg-white/10 p-5">
+        <div class="flex items-end justify-between gap-4">
+          <p class="text-sm font-semibold text-white/80">Seu progresso</p>
+          <p class="text-2xl font-black"><%= @completed_steps_count %> de <%= @steps.size %></p>
+        </div>
+        <div class="mt-4 h-2.5 overflow-hidden rounded-full bg-black/25"
+             role="progressbar"
+             aria-label="Progresso dos primeiros passos"
+             aria-valuemin="0"
+             aria-valuemax="<%= @steps.size %>"
+             aria-valuenow="<%= @completed_steps_count %>">
+          <div class="h-full rounded-full bg-[#f88f81] transition-[width]" style="width: <%= @progress_percentage %>%"></div>
+        </div>
+        <p class="mt-3 text-xs text-white/65"><%= @completed_steps_count %> de <%= @steps.size %> etapas concluídas</p>
+      </div>
+    </div>
+  </header>
+
+  <ol class="space-y-5" aria-label="Etapas para preparar o ateliê">
+    <li>
+      <section class="rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8" aria-labelledby="getting-started-address">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">1</span>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h2 id="getting-started-address" class="text-2xl font-bold text-stone-950">Preencha o endereço do ateliê</h2>
+              <%= render "status", completed: @steps[:address] %>
+            </div>
+            <p class="mt-3 text-sm leading-6 text-stone-600">Esse é o endereço de origem das suas encomendas. Ele ajuda a EloShop a identificar de onde o produto será enviado e será usado nas integrações de frete quando elas estiverem disponíveis.</p>
+            <p class="mt-2 text-sm leading-6 text-stone-600">O endereço não substitui o endereço de entrega do cliente e não altera a página pública do produto.</p>
+            <%= link_to(@steps[:address] ? "Revisar endereço" : "Cadastrar endereço", edit_seller_atelier_path, class: "mt-5 inline-flex min-h-11 items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-600") %>
+          </div>
+        </div>
+      </section>
+    </li>
+
+    <li>
+      <section class="rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8" aria-labelledby="getting-started-payment">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">2</span>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h2 id="getting-started-payment" class="text-2xl font-bold text-stone-950">Conecte sua conta do Mercado Pago</h2>
+              <%= render "status", completed: @steps[:mercado_pago] %>
+            </div>
+            <p class="mt-3 text-sm leading-6 text-stone-600">A conta conectada é o destino dos seus recebimentos. O Mercado Pago processa o pagamento do cliente, separa automaticamente a comissão da EloShop e disponibiliza o restante na sua conta conforme o prazo do próprio provedor.</p>
+
+            <div class="mt-5 rounded-2xl bg-stone-50 p-5">
+              <h3 class="font-bold text-stone-950">Como a conexão funciona</h3>
+              <ol class="mt-3 grid gap-3 text-sm leading-6 text-stone-600 sm:grid-cols-2">
+                <li><strong class="text-stone-900">1.</strong> Você abre o Mercado Pago a partir da EloShop.</li>
+                <li><strong class="text-stone-900">2.</strong> Entra na conta que receberá suas vendas.</li>
+                <li><strong class="text-stone-900">3.</strong> Autoriza a EloShop a processar os pagamentos.</li>
+                <li><strong class="text-stone-900">4.</strong> Retorna automaticamente ao seu painel.</li>
+              </ol>
+            </div>
+
+            <p class="mt-4 text-sm leading-6 text-stone-600"><strong>A EloShop não recebe sua senha nem armazena seus documentos.</strong> A identificação e a análise da conta acontecem no Mercado Pago. Conectar a conta não aprova o ateliê automaticamente: a plataforma ainda confirma se ele está pronto para vender.</p>
+
+            <div class="mt-5">
+              <% if @steps[:mercado_pago] %>
+                <%= link_to "Ver conexão", seller_atelier_path, class: "inline-flex min-h-11 items-center rounded-full border border-brand-200 px-6 py-3 text-sm font-bold text-brand-700 transition hover:bg-brand-50" %>
+              <% elsif @mercado_pago_oauth_configured %>
+                <%= link_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-600", data: { turbo: false } %>
+              <% else %>
+                <p class="inline-flex rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">A conexão aguarda a configuração do Mercado Pago pela plataforma.</p>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </section>
+    </li>
+
+    <li>
+      <section class="rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8" aria-labelledby="getting-started-product">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">3</span>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h2 id="getting-started-product" class="text-2xl font-bold text-stone-950">Cadastre seu primeiro produto</h2>
+              <%= render "status", completed: @steps[:product] %>
+            </div>
+            <p class="mt-3 text-sm leading-6 text-stone-600">Inclua fotos, descrição, preço, estoque, peso e dimensões. O produto pode ficar como rascunho enquanto você prepara os detalhes; para publicá-lo, o ateliê precisa estar aprovado e os dados de envio precisam estar completos.</p>
+
+            <div class="mt-5 grid gap-3 sm:grid-cols-3">
+              <div class="rounded-2xl border border-brand-100 bg-brand-50/50 p-4"><h3 class="font-bold text-stone-950">Frete fixo</h3><p class="mt-1 text-sm leading-5 text-stone-600">Defina valor por unidade e prazo máximo para o produto.</p></div>
+              <div class="rounded-2xl border border-brand-100 bg-brand-50/50 p-4"><h3 class="font-bold text-stone-950">Retirada gratuita</h3><p class="mt-1 text-sm leading-5 text-stone-600">Permita que o cliente combine a retirada diretamente com você.</p></div>
+              <div class="rounded-2xl border border-brand-100 bg-brand-50/50 p-4"><h3 class="font-bold text-stone-950">Cálculo padrão</h3><p class="mt-1 text-sm leading-5 text-stone-600">Deixe o frete fixo vazio para usar o cálculo disponível na plataforma.</p></div>
+            </div>
+
+            <%= link_to(@steps[:product] ? "Gerenciar produtos" : "Cadastrar produto", @steps[:product] ? seller_products_path : new_seller_product_path, class: "mt-5 inline-flex min-h-11 items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-600") %>
+          </div>
+        </div>
+      </section>
+    </li>
+
+    <li>
+      <section class="rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8" aria-labelledby="getting-started-money">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">4</span>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h2 id="getting-started-money" class="text-2xl font-bold text-stone-950">Entenda como você recebe</h2>
+              <%= render "status", completed: @steps[:approval] %>
+            </div>
+            <p class="mt-3 text-sm leading-6 text-stone-600">Quando o ateliê está aprovado, seus produtos podem ser publicados e vendidos. O repasse é automático pelo Mercado Pago; você não precisa solicitar uma transferência manual à EloShop.</p>
+
+            <div class="mt-5 grid gap-px overflow-hidden rounded-2xl border border-brand-100 bg-brand-100 md:grid-cols-4">
+              <div class="bg-white p-5"><p class="text-xs font-bold uppercase tracking-wider text-brand-600">1. Compra</p><p class="mt-2 text-sm leading-5 text-stone-600">O cliente paga no checkout da EloShop.</p></div>
+              <div class="bg-white p-5"><p class="text-xs font-bold uppercase tracking-wider text-brand-600">2. Processamento</p><p class="mt-2 text-sm leading-5 text-stone-600">O Mercado Pago autoriza e registra a transação.</p></div>
+              <div class="bg-white p-5"><p class="text-xs font-bold uppercase tracking-wider text-brand-600">3. Comissão</p><p class="mt-2 text-sm leading-5 text-stone-600">A EloShop recebe <strong><%= number_to_percentage(@platform_fee_percentage, precision: 2, strip_insignificant_zeros: true) %></strong> sobre os produtos após descontos. O frete não entra nessa comissão.</p></div>
+              <div class="bg-white p-5"><p class="text-xs font-bold uppercase tracking-wider text-brand-600">4. Saldo</p><p class="mt-2 text-sm leading-5 text-stone-600">O restante, incluindo o frete, segue para sua conta, descontadas as tarifas do Mercado Pago.</p></div>
+            </div>
+
+            <p class="mt-4 text-sm leading-6 text-stone-600">O prazo de liberação e as tarifas são definidos pelo Mercado Pago. Nota fiscal e obrigações tributárias da venda são responsabilidade do artesão; cancelamentos e reembolsos são tratados pela plataforma.</p>
+
+            <%= link_to(@steps[:approval] ? "Acompanhar pedidos" : "Ver situação do ateliê", @steps[:approval] ? seller_orders_path : seller_atelier_path, class: "mt-5 inline-flex min-h-11 items-center rounded-full border border-brand-200 px-6 py-3 text-sm font-bold text-brand-700 transition hover:bg-brand-50") %>
+          </div>
+        </div>
+      </section>
+    </li>
+  </ol>
+</div>
