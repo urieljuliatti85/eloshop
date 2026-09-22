@@ -1,3 +1,4 @@
+require "csv"
 require "test_helper"
 
 class Admin::FinancialsControllerTest < ActionDispatch::IntegrationTest
@@ -161,6 +162,50 @@ class Admin::FinancialsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".admin-badge", text: "Mercado Pago"
     assert_select "td", text: "R$ 88,26"
     assert_includes response.body, "25/09/2026"
+  end
+
+  test "admin can filter reconciliation rows by period, seller and release status" do
+    payment = payments(:one)
+    payment.update!(gateway: "mercado_pago", status: "paid", external_id: "mp-payment-1")
+    Rails.cache.write(
+      Admin::FinancialsController::RELEASE_DATES_CACHE_KEY,
+      { payment.external_id => "2026-09-25T12:00:00Z" },
+      expires_in: 1.hour
+    )
+    sign_in_as(users(:one))
+
+    get admin_financials_path, params: {
+      seller_id: sellers(:approved).id,
+      date_from: "2026-09-01",
+      date_to: "2026-09-30",
+      release_status: "released"
+    }
+
+    assert_response :success
+    assert_select "td", text: sellers(:approved).name, minimum: 1
+    assert_select "a", text: /Pedido ##{payment.order_id}/, minimum: 1
+  end
+
+  test "admin can export reconciliation rows as csv with current filters" do
+    payment = payments(:one)
+    payment.update!(gateway: "mercado_pago", status: "paid", external_id: "mp-payment-1")
+    Rails.cache.write(
+      Admin::FinancialsController::RELEASE_DATES_CACHE_KEY,
+      { payment.external_id => "2026-09-25T12:00:00Z" },
+      expires_in: 1.hour
+    )
+    sign_in_as(users(:one))
+
+    get admin_financials_export_path, params: {
+      seller_id: sellers(:approved).id,
+      release_status: "released"
+    }
+
+    assert_response :success
+    assert_equal "text/csv", response.media_type
+    rows = CSV.parse(response.body)
+    assert_includes rows.first, "Venda"
+    assert_includes rows.first, "Data de liberação"
   end
 
   private

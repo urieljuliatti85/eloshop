@@ -122,6 +122,46 @@
       </div>
     <% end %>
 
+    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm sm:p-5">
+      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="admin-section-label">Filtros</p>
+          <h3 class="mt-1 text-base font-semibold text-slate-900">Conciliação por período e vendedor</h3>
+        </div>
+        <%= link_to "Exportar CSV", admin_financials_export_path(@filters), class: "admin-button admin-button--secondary" %>
+      </div>
+
+      <%= form_with url: admin_financials_path, method: :get, class: "space-y-4" do |form| %>
+        <div class="grid gap-3 md:grid-cols-4 xl:grid-cols-5">
+          <div>
+            <%= form.label :date_from, "De", class: "mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500" %>
+            <%= form.date_field :date_from, value: @filters[:date_from], class: "admin-input" %>
+          </div>
+          <div>
+            <%= form.label :date_to, "Até", class: "mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500" %>
+            <%= form.date_field :date_to, value: @filters[:date_to], class: "admin-input" %>
+          </div>
+          <div>
+            <%= form.label :seller_id, "Artesão", class: "mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500" %>
+            <%= form.select :seller_id,
+                  options_for_select(@sellers, @filters[:seller_id]),
+                  { include_blank: "Todos" },
+                  class: "admin-input" %>
+          </div>
+          <div>
+            <%= form.label :release_status, "Liberação", class: "mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500" %>
+            <%= form.select :release_status,
+                  [["Todos", "all"], ["Liberados", "released"], ["Pendentes", "pending"]],
+                  { selected: @filters[:release_status].presence || "all" },
+                  class: "admin-input" %>
+          </div>
+          <div class="flex items-end">
+            <%= form.submit "Filtrar", class: "admin-button admin-button--primary w-full" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
     <% if @reconciliation_rows.any? %>
       <div class="overflow-x-auto">
         <table>
@@ -176,6 +216,47 @@
       <p class="m-5 admin-empty-state">Ainda não há pagamentos do Mercado Pago para conciliar.</p>
     <% end %>
   </section>
+
+  <% if @seller_summary.any? %>
+    <section class="admin-card overflow-hidden" aria-labelledby="seller-summary-title">
+      <div class="admin-card-header">
+        <div>
+          <p class="admin-section-label">Resumo executivo</p>
+          <h2 id="seller-summary-title" class="mt-1">Resumo por vendedor</h2>
+        </div>
+        <span class="admin-badge admin-badge--neutral"><%= @seller_summary.size %> artesãos</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Artesão</th>
+              <th class="text-right">Vendas</th>
+              <th class="text-right">Comissão</th>
+              <th class="text-right">Tarifa MP</th>
+              <th class="text-right">Líquido</th>
+              <th class="text-right">Liberados</th>
+              <th class="text-right">Pendentes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @seller_summary.each do |entry| %>
+              <tr>
+                <td class="font-medium text-slate-800"><%= entry[:name] %></td>
+                <td class="text-right"><%= format_price(entry[:gross_cents]) %></td>
+                <td class="text-right"><%= format_price(entry[:commission_cents]) %></td>
+                <td class="text-right"><%= format_price(entry[:processor_fee_cents]) %></td>
+                <td class="text-right font-semibold text-slate-900"><%= format_price(entry[:net_cents]) %></td>
+                <td class="text-right"><%= entry[:released_count] %></td>
+                <td class="text-right"><%= entry[:pending_count] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% end %>
 
   <section class="admin-card overflow-hidden" aria-labelledby="seller-pendencies-title">
     <div class="admin-card-header">
