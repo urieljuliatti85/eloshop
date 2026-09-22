@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -418,6 +418,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_160000) do
     t.check_constraint "total_cents = (subtotal_cents - discount_cents + shipping_cents)", name: "seller_orders_total_check"
   end
 
+  create_table "seller_terms_acceptances", force: :cascade do |t|
+    t.datetime "accepted_at", null: false
+    t.datetime "created_at", null: false
+    t.string "ip_address", null: false
+    t.bigint "seller_id", null: false
+    t.string "terms_digest", null: false
+    t.text "terms_text", null: false
+    t.string "terms_version", null: false
+    t.datetime "updated_at", null: false
+    t.text "user_agent"
+    t.bigint "user_id", null: false
+    t.index ["seller_id"], name: "index_seller_terms_acceptances_on_seller_id"
+    t.index ["user_id", "terms_version"], name: "index_seller_terms_acceptances_on_user_id_and_terms_version", unique: true
+  end
+
   create_table "sellers", force: :cascade do |t|
     t.datetime "approved_at"
     t.datetime "created_at", null: false
@@ -551,6 +566,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_160000) do
   add_foreign_key "reviews", "products"
   add_foreign_key "seller_orders", "orders", on_delete: :cascade
   add_foreign_key "seller_orders", "sellers"
+  add_foreign_key "seller_terms_acceptances", "sellers"
+  add_foreign_key "seller_terms_acceptances", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "shipments", "seller_orders", on_delete: :cascade
   add_foreign_key "users", "sellers"

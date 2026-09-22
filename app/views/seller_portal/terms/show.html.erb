@@ -1,0 +1,21 @@
+<div class="mx-auto max-w-4xl space-y-6">
+  <header>
+    <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Marketplace EloShop</p>
+    <h1 class="mt-2 text-3xl font-bold text-ink">Termos Comerciais do Marketplace</h1>
+    <p class="mt-2 text-sm text-ink-muted">Versão <%= @terms_version %>. Leia o texto integral antes de aceitar.</p>
+  </header>
+
+  <article class="whitespace-pre-line rounded-2xl border border-brand-100 bg-white p-6 text-sm leading-7 text-stone-700 shadow-sm sm:p-8"><%= @terms_text %></article>
+
+  <% if Current.user&.seller? %>
+    <%= form_with url: seller_terms_path, method: :post, class: "rounded-2xl border border-brand-100 bg-white p-6 shadow-sm sm:p-8" do %>
+      <label class="flex items-start gap-3 text-sm text-stone-700">
+        <%= check_box_tag :terms_accepted, "1", false, required: true, class: "mt-1" %>
+        <span>Li e aceito os termos comerciais na versão <strong><%= @terms_version %></strong>.</span>
+      </label>
+      <%= submit_tag "Aceitar termos comerciais", class: "mt-5 cursor-pointer rounded-full bg-brand-500 px-6 py-3 font-semibold text-white hover:bg-brand-600" %>
+    <% end %>
+  <% else %>
+    <p class="text-sm text-ink-muted">Para aceitar os termos e acessar o painel, entre na sua conta de artesão.</p>
+  <% end %>
+</div>

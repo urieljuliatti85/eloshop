@@ -27,6 +27,7 @@ module AuthenticationHelpers
   end
 
   def sign_in_as(user, password: "password123")
+    accept_current_seller_terms(user)
     post session_path, params: { email_address: user.email_address, password: password }
     follow_redirect! if response.redirect?
   end
@@ -36,10 +37,30 @@ module AuthenticationHelpers
   end
 
   def approved_seller
-    @approved_seller ||= Seller.create!(
-      name: "Ateliê Spec #{SecureRandom.hex(4)}",
-      status: :approved,
-      approved_at: Time.current
+    @approved_seller ||= begin
+      seller = Seller.create!(
+        name: "Ateliê Spec #{SecureRandom.hex(4)}",
+        status: :approved,
+        approved_at: Time.current
+      )
+      user = User.create!(
+        email_address: "seller-terms-#{SecureRandom.hex(4)}@example.com",
+        password: "password123",
+        role: :seller,
+        seller: seller
+      )
+      SellerTermsAcceptance.record!(user: user, seller: seller, request: ActionDispatch::TestRequest.create)
+      seller
+    end
+  end
+
+  def accept_current_seller_terms(user)
+    return unless user.seller?
+
+    SellerTermsAcceptance.record!(
+      user: user,
+      seller: user.seller,
+      request: ActionDispatch::TestRequest.create
     )
   end
 end

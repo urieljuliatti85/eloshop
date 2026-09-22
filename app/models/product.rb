@@ -103,6 +103,7 @@ class Product < ApplicationRecord
 
   def publish!
     raise InvalidStatusTransition, "o vendedor precisa estar aprovado antes da publicação" unless seller.approved?
+    raise InvalidStatusTransition, "aceite os termos comerciais antes de publicar" unless seller.terms_accepted?
 
     unless valid?(:publication)
       raise InvalidStatusTransition, errors.full_messages_for(:base).first ||

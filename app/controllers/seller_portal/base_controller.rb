@@ -3,6 +3,7 @@ module SellerPortal
     layout "seller"
 
     before_action :require_seller!
+    before_action :require_current_terms!
 
     helper_method :current_seller
 
@@ -38,6 +39,13 @@ module SellerPortal
 
     def require_seller!
       redirect_to seller_login_path unless Current.user&.seller?
+    end
+
+    def require_current_terms!
+      return if SellerTermsAcceptance.current_for?(Current.user)
+
+      session[:return_to_after_terms] = request.fullpath
+      redirect_to seller_terms_path
     end
   end
 end

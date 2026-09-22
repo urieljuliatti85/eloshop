@@ -122,6 +122,22 @@ O Admin consulta a Google Analytics Data API por uma conta de serviço com acess
 
 O mesmo dashboard mostra o funil próprio da EloShop nos últimos 30 dias: visualizações públicas, carrinhos e checkouts iniciados, pedidos pagos, taxa de conversão, conversão do checkout e receita confirmada. Essas métricas são independentes do consentimento do GA4 e continuam disponíveis quando a integração externa está ausente.
 
+## Termos comerciais do artesão
+
+O cadastro do artesão apresenta os Termos Comerciais do Marketplace em uma
+versão imutável (`SellerTerms::VERSION`) e exige checkbox explícito. O aceite
+grava a versão, o texto integral, o SHA-256 do texto, data/hora, usuário,
+vendedor, IP e user-agent em `seller_terms_acceptances`. Vendedores criados
+antes da implantação ou diante de uma nova versão são redirecionados para o
+aceite antes de acessar o painel; `Product#publish!` repete a barreira no
+domínio para impedir publicação por qualquer outra porta.
+
+O texto é uma minuta operacional: comissão de 15% sobre produtos após
+descontos (sem frete), tarifas do Mercado Pago, repasses, reembolsos,
+chargebacks, responsabilidades fiscais, suspensão, encerramento e alterações
+contratuais devem ser revisados e aprovados por advogado antes da operação
+comercial. Alterações exigem nova versão e novo aceite quando aplicável.
+
 Configuração necessária:
 
 * `GOOGLE_ANALYTICS_MEASUREMENT_ID` — identificador `G-...` do fluxo Web; habilita a coleta consentida.

@@ -15,6 +15,12 @@
     <div><%= form.label :email_address, "E-mail", for: "user_email_address" %><%= form.email_field :email_address, name: "user[email_address]", id: "user_email_address", value: @user.email_address, required: true, autocomplete: "email", class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
     <div><%= form.label :password, "Senha", for: "user_password" %><%= form.password_field :password, name: "user[password]", id: "user_password", required: true, autocomplete: "new-password", maxlength: 72, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
     <div><%= form.label :password_confirmation, "Confirmar senha", for: "user_password_confirmation" %><%= form.password_field :password_confirmation, name: "user[password_confirmation]", id: "user_password_confirmation", required: true, autocomplete: "new-password", maxlength: 72, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
+    <div class="rounded-xl border border-brand-100 bg-brand-50/50 p-4 text-sm text-stone-700">
+      <label class="flex items-start gap-3">
+        <%= check_box_tag :terms_accepted, "1", params[:terms_accepted] == "1", required: true, class: "mt-1" %>
+        <span>Li e aceito os <%= link_to "Termos Comerciais do Marketplace", seller_terms_path, target: "_blank", rel: "noopener", class: "font-semibold text-brand-700 underline" %> (<%= SellerTerms.version %>), incluindo comissão, reembolsos, chargebacks e responsabilidades fiscais.</span>
+      </label>
+    </div>
     <%= form.submit "Criar cadastro", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 font-semibold text-white hover:bg-brand-600" %>
   <% end %>
 </div>

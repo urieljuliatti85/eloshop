@@ -5,12 +5,14 @@ RSpec.describe "Seller registrations", type: :request do
     expect do
       post seller_registration_path, params: {
         seller: { name: "Ateliê da Serra" },
-        user: { email_address: "serra@example.com", password: "password123", password_confirmation: "password123" }
+        user: { email_address: "serra@example.com", password: "password123", password_confirmation: "password123" },
+        terms_accepted: "1"
       }
     end.to change(Seller, :count).by(1).and change(User.seller, :count).by(1)
 
     seller = Seller.find_by!(slug: "atelie-da-serra")
     expect(seller).to be_pending
+    expect(SellerTermsAcceptance.exists?(seller: seller, terms_version: SellerTerms.version)).to be(true)
     expect(response).to redirect_to(seller_root_path)
   end
 

@@ -12,6 +12,7 @@ class Seller < ApplicationRecord
   ].freeze
 
   has_many :users, dependent: :restrict_with_error
+  has_many :seller_terms_acceptances, dependent: :restrict_with_error
   has_many :products, dependent: :restrict_with_error
   has_many :seller_orders, dependent: :restrict_with_error
 
@@ -174,6 +175,10 @@ class Seller < ApplicationRecord
 
   def to_param
     slug
+  end
+
+  def terms_accepted?
+    SellerTermsAcceptance.exists?(seller: self, terms_version: SellerTerms.version)
   end
 
   private
