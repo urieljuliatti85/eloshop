@@ -1,3 +1,5 @@
+require "csv"
+
 module Admin
   class FinancialsController < BaseController
     SETTLED_ORDER_STATUSES = %w[confirmed partially_refunded refunded].freeze
@@ -9,6 +11,8 @@ module Admin
     RECONCILIATION_CACHE_TTL = 24.hours
 
     def index
+      @filters = financial_filters
+      @sellers = Seller.order(:name).pluck(:name, :id)
       load_integration_status
       load_financial_summary
       load_reconciliation
@@ -28,6 +32,46 @@ module Admin
     rescue Marketplace::MercadoPagoSalesReport::ReportUnavailable,
       Marketplace::MercadoPagoSalesReport::RequestFailed => e
       redirect_to admin_financials_path, alert: e.message
+    end
+
+    def export
+      @filters = financial_filters
+      @sellers = Seller.order(:name).pluck(:name, :id)
+      load_integration_status
+      load_financial_summary
+      load_reconciliation
+
+      csv = CSV.generate(headers: true) do |rows|
+        rows << [
+          "Venda",
+          "Artesão",
+          "Valor",
+          "Comissão",
+          "Tarifa MP",
+          "Líquido artesão",
+          "Data da venda",
+          "Data de liberação",
+          "Status de liberação",
+          "Fonte"
+        ]
+
+        @reconciliation_rows.each do |row|
+          rows << [
+            row.fetch(:sale_reference),
+            row.fetch(:artisan),
+            format_csv_money(row.fetch(:gross_cents)),
+            format_csv_money(row.fetch(:commission_cents)),
+            format_csv_money(row.fetch(:processor_fee_cents)),
+            format_csv_money(row.fetch(:net_cents)),
+            row.fetch(:sold_at) ? row.fetch(:sold_at).to_date.iso8601 : "",
+            row.fetch(:release_at) ? row.fetch(:release_at).to_date.iso8601 : "",
+            row.fetch(:release_at).present? ? "Liberado" : "Pendente",
+            row.fetch(:official) ? "Mercado Pago" : "Somente EloShop"
+          ]
+        end
+      end
+
+      send_data csv, filename: "conciliacao-financeira-#{Date.current.iso8601}.csv", type: "text/csv"
     end
 
     private
@@ -65,7 +109,60 @@ module Admin
       report_client = Marketplace::MercadoPagoSalesReport.new
       @sales_report_configured = report_client.configured?
       @official_report = report_client.cached
-      @reconciliation_rows = reconciliation_rows(@official_report, cached_release_dates)
+      @reconciliation_rows = apply_filters(reconciliation_rows(@official_report, cached_release_dates))
+      @seller_summary = summarize_by_seller(@reconciliation_rows)
+    end
+
+    def financial_filters
+      params.permit(:seller_id, :date_from, :date_to, :release_status).to_h.symbolize_keys
+    end
+
+    def apply_filters(rows)
+      seller_id = @filters[:seller_id].presence
+      date_from = parse_date(@filters[:date_from])
+      date_to = parse_date(@filters[:date_to])
+      release_status = @filters[:release_status].presence || "all"
+
+      rows.select do |row|
+        if seller_id.present? && row.fetch(:seller_id).to_s != seller_id.to_s
+          next false
+        end
+
+        sold_at = row.fetch(:sold_at)
+        if sold_at.present?
+          sold_on = sold_at.to_date
+          next false if date_from.present? && sold_on < date_from
+          next false if date_to.present? && sold_on > date_to
+        elsif date_from.present? || date_to.present?
+          next false
+        end
+
+        if release_status != "all"
+          is_released = row.fetch(:release_at).present?
+          next false if release_status == "released" && !is_released
+          next false if release_status == "pending" && is_released
+        end
+
+        true
+      end
+    end
+
+    def summarize_by_seller(rows)
+      seller_totals = rows.group_by { |row| row.fetch(:seller_id) || row.fetch(:artisan) }
+
+      seller_totals.map do |seller_key, seller_rows|
+        seller = Seller.find_by(id: seller_key) || Seller.find_by(name: seller_key)
+        {
+          seller: seller,
+          name: seller&.name || seller_rows.first.fetch(:artisan),
+          gross_cents: seller_rows.sum { |row| row.fetch(:gross_cents).to_i },
+          commission_cents: seller_rows.sum { |row| row.fetch(:commission_cents).to_i },
+          processor_fee_cents: seller_rows.sum { |row| row.fetch(:processor_fee_cents).to_i },
+          net_cents: seller_rows.sum { |row| row.fetch(:net_cents).to_i },
+          released_count: seller_rows.count { |row| row.fetch(:release_at).present? },
+          pending_count: seller_rows.count { |row| row.fetch(:release_at).blank? }
+        }
+      end.sort_by { |entry| entry[:net_cents] }.reverse
     end
 
     def reconciliation_rows(report, release_dates)
@@ -99,9 +196,11 @@ module Admin
       gross_cents = entry&.transaction_amount_cents || local_gross_cents(payment)
       commission_cents = entry&.marketplace_fee_cents || local_commission_cents(payment)
       processor_fee_cents = entry&.mercado_pago_fee_cents || payment&.processor_fee_cents
+      seller_id = seller_order&.seller_id || Seller.find_by(name: entry&.collector_name)&.id
 
       {
         payment: payment,
+        seller_id: seller_id,
         sale_reference: payment&.order_id || entry&.external_reference || entry&.payment_id,
         artisan: seller_order&.seller&.name || entry&.collector_name || "Não identificado",
         gross_cents: gross_cents,
@@ -156,6 +255,18 @@ module Admin
       Time.zone.parse(value.to_s) if value.present?
     rescue ArgumentError, TypeError
       nil
+    end
+
+    def parse_date(value)
+      Date.iso8601(value.to_s)
+    rescue Date::Error, TypeError, ArgumentError
+      nil
+    end
+
+    def format_csv_money(amount)
+      return "" if amount.nil?
+
+      view_context.format_price(amount)
     end
 
     def load_seller_pendencies

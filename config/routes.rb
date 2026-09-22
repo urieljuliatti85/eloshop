@@ -8,6 +8,7 @@ Rails.application.routes.draw do
     root to: "dashboard#index"
     get "analytics", to: "analytics#index", as: :analytics
     get "financials", to: "financials#index", as: :financials
+    get "financials/export", to: "financials#export", as: :financials_export
     post "financials/reconciliation", to: "financials#refresh_reconciliation", as: :financials_reconciliation
 
     resources :sellers, only: %i[index show] do
