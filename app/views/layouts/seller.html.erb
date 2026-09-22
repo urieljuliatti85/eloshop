@@ -52,14 +52,16 @@
             ["Primeiros passos", seller_getting_started_path],
             ["Produtos", seller_products_path],
             ["Pedidos", seller_orders_path],
+            ["Mensagens", seller_messages_path],
             ["Dados do Ateliê", seller_atelier_path],
             ["Novo produto", new_seller_product_path]
           ].each do |label, path| %>
+            <% active = current_page?(path) || (label == "Mensagens" && controller_name == "order_messages") %>
             <%# min-h-11: no celular estes são os alvos de toque principais do
                 painel, e a altura do texto sozinha ficava abaixo de 40px. %>
             <%= link_to label, path,
-                  class: "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-4 transition #{current_page?(path) ? 'bg-brand-500 text-white shadow-sm' : 'text-stone-600 hover:bg-brand-50 hover:text-brand-700'}",
-                  aria: (current_page?(path) ? { current: "page" } : {}) %>
+                  class: "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-4 transition #{active ? 'bg-brand-500 text-white shadow-sm' : 'text-stone-600 hover:bg-brand-50 hover:text-brand-700'}",
+                  aria: (active ? { current: "page" } : {}) %>
           <% end %>
         </nav>
         <div class="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white via-white/90 to-transparent shadow-[inset_-12px_0_10px_-10px_rgba(28,25,23,0.15)] lg:hidden" aria-hidden="true"></div>

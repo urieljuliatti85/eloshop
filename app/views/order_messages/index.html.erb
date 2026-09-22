@@ -1,0 +1,10 @@
+<div class="mx-auto w-full max-w-3xl">
+  <%= render "conversation",
+        order: @order,
+        messages: @messages,
+        message: @message,
+        current_sender: Current.customer,
+        counterpart_name: @seller_order.seller.name,
+        back_path: order_path(@order),
+        form_url: order_messages_path(@order) %>
+</div>

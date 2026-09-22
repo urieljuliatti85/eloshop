@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -171,6 +171,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_090000) do
     t.index ["product_id"], name: "index_order_items_on_product_id"
     t.index ["product_variant_id"], name: "index_order_items_on_product_variant_id"
     t.index ["seller_order_id"], name: "index_order_items_on_seller_order_id"
+  end
+
+  create_table "order_messages", force: :cascade do |t|
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.bigint "seller_order_id", null: false
+    t.bigint "sender_id", null: false
+    t.string "sender_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["seller_order_id", "created_at", "id"], name: "index_order_messages_on_conversation_order"
+    t.index ["seller_order_id"], name: "index_order_messages_on_seller_order_id"
+    t.index ["sender_type", "sender_id"], name: "index_order_messages_on_sender"
+    t.check_constraint "char_length(btrim(body)) >= 1 AND char_length(btrim(body)) <= 2000", name: "order_messages_body_length_check"
+    t.check_constraint "sender_type::text = ANY (ARRAY['Customer'::character varying, 'User'::character varying]::text[])", name: "order_messages_sender_type_check"
   end
 
   create_table "orders", force: :cascade do |t|
@@ -500,6 +514,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_090000) do
   add_foreign_key "order_items", "product_variants"
   add_foreign_key "order_items", "products"
   add_foreign_key "order_items", "seller_orders", on_delete: :cascade
+  add_foreign_key "order_messages", "seller_orders", on_delete: :cascade
   add_foreign_key "orders", "coupons"
   add_foreign_key "orders", "customers"
   add_foreign_key "payment_events", "payments"

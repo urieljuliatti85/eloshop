@@ -109,6 +109,9 @@ Rails.application.routes.draw do
         patch :deliver
       end
     end
+    get "mensagens", to: "order_messages#index", as: :messages
+    get "orders/:order_id/messages", to: "order_messages#show", as: :order_messages
+    post "orders/:order_id/messages", to: "order_messages#create"
   end
 
   # `format: :json` fixo: a API v1 só tem views `.jbuilder`, então não há um
@@ -160,6 +163,7 @@ Rails.application.routes.draw do
   resources :addresses, only: %i[index new create edit update destroy]
   resources :orders, only: %i[index new create show] do
     member { post :cancel }
+    resources :messages, only: %i[index create], controller: "order_messages"
     resource :payment, only: %i[new create] do
       get :status
     end

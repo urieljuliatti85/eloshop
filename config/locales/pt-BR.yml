@@ -38,12 +38,21 @@ pt-BR:
         fixed_shipping: "Valor do frete fixo"
         fixed_shipping_cents: "Valor do frete fixo"
         fixed_shipping_estimated_days: "Prazo do frete fixo"
+      order_message:
+        body: "Mensagem"
+        sender: "Remetente"
+        seller_order: "Pedido"
     errors:
       models:
         user:
           attributes:
             email_address:
               taken: "já está em uso"
+        order_message:
+          attributes:
+            body:
+              blank: "não pode ficar em branco"
+              too_long: "é muito longa (máximo de %{count} caracteres)"
   number:
     currency:
       format:
