@@ -25,6 +25,25 @@ RSpec.describe "Seller postal code lookup", type: :request do
     expect(response).to have_http_status(:not_found)
   end
 
+  it "returns street suggestions scoped by state and city" do
+    suggestion = PostalCodeLookup::Suggestion.new(
+      zip_code: "01310-100", street: "Avenida Paulista", neighborhood: "Bela Vista", city: "São Paulo", state: "SP"
+    )
+    allow_any_instance_of(PostalCodeLookup).to receive(:search)
+      .with(state: "SP", city: "São Paulo", street: "Paulista")
+      .and_return([ suggestion ])
+
+    get seller_atelier_postal_codes_path, params: { state: "SP", city: "São Paulo", street: "Paulista" }
+
+    expect(response).to have_http_status(:ok)
+    expect(JSON.parse(response.body)).to eq([
+      {
+        "zip_code" => "01310-100", "street" => "Avenida Paulista", "neighborhood" => "Bela Vista",
+        "city" => "São Paulo", "state" => "SP"
+      }
+    ])
+  end
+
   it "requires a signed-in seller" do
     sign_out
 
