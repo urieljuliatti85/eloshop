@@ -16,6 +16,7 @@ class ProductsController < StorefrontController
   allow_unauthenticated_customer_access
 
   def index
+    Analytics::Funnel.track("view_catalog")
     @sort = SORT_OPTIONS.key?(params[:sort]) ? params[:sort] : DEFAULT_SORT
     @per_page = PER_PAGE_OPTIONS.include?(params[:per_page].to_i) ? params[:per_page].to_i : PER_PAGE
 
@@ -79,6 +80,7 @@ class ProductsController < StorefrontController
     # categorias — cada nível seria outra query.
     seller = Seller.approved.find_by!(slug: params[:seller_slug])
     @product = seller.products.publicly_visible.includes(:product_variants, category: :parent).find_by!(slug: params[:slug])
+    Analytics::Funnel.track("view_product", product: @product, seller: seller)
     # preload, e não includes: mesmo mecanismo do catálogo (ver comentário em
     # #index) — com includes, a capa (main_image) arrasta as tabelas de
     # variante do Active Storage, o plano ganha 15 JOINs e o custo estimado

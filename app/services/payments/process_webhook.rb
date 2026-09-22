@@ -35,6 +35,7 @@ module Payments
       # job na fila antes do commit, e o worker poderia lê-lo (banco `queue`
       # separado, ver CLAUDE.md) antes de o pedido existir para ele.
       notify_confirmation(payment.order) if confirmed
+      Analytics::Funnel.track("payment_failed", seller: payment.order.seller_order.seller) if @status == "declined"
 
       Rails.event.notify(
         "payment.webhook_applied",
@@ -83,6 +84,8 @@ module Payments
     # artesão ainda é avisado e a venda ainda é registrada (CLAUDE.md §49,
     # §50 — a compra não depende da entrega imediata de um e-mail).
     def notify_confirmation(order)
+      seller = order.seller_orders.first&.seller
+      Analytics::Funnel.track("order_confirmed", seller: seller, amount_cents: order.total_cents)
       SendOrderConfirmationJob.perform_later(order)
       order.seller_orders.each { |seller_order| NotifySellerOfOrderJob.perform_later(seller_order) }
       RecordOrderAnalyticsJob.perform_later(order)

@@ -26,6 +26,7 @@ class CartItemsController < StorefrontController
     item.quantity = (item.persisted? ? item.quantity : 0) + requested_quantity
 
     if item.save
+      Analytics::Funnel.track("add_to_cart", product: item.product, seller: item.product.seller)
       redirect_to cart_path, notice: "Produto adicionado ao carrinho."
     else
       fallback_path = item.product ? product_path(item.product.seller, item.product.slug) : products_path

@@ -82,6 +82,8 @@ A aplicação usa os eventos estruturados nativos do Rails 8.1 (`Rails.event`), 
 
 Os payloads de domínio contêm somente IDs internos, valores em centavos, gateway e status — nunca e-mail, endereço, personalização ou credencial. `config.active_job.log_arguments = false` impede que argumentos de mailers/jobs levem dados pessoais para os logs. `Observability::JsonErrorSubscriber` registra classe, origem, severidade e até dez frames do backtrace, mas deliberadamente não registra a mensagem da exceção nem contexto arbitrário fornecido por código de aplicação.
 
+O funil de compra agregado usa a tabela `funnel_events`, com contadores por dia e dimensões opcionais de produto/vendedor. Os eventos permitidos são `view_catalog`, `view_product`, `add_to_cart`, `checkout_started`, `payment_started`, `order_confirmed` e `payment_failed`. Não há cliente, sessão, IP, UTM ou payload de gateway nessa tabela; receita só entra como total em centavos no evento de pedido confirmado. O `upsert` é aditivo e concorrente, e a confirmação é registrada na transição idempotente do webhook, não no retry do job de notificação.
+
 Cada request recebe `request_id` e método no contexto do Event Reporter. Somente eventos explicitamente permitidos são exportados: conclusão de request, Active Job e os eventos de checkout/pagamento acima. Eventos de início de request, parâmetros, argumentos de job, mensagens de exceção e URLs de redirect não saem no JSON, evitando que entrada do cliente ou tokens presentes em URLs virem telemetria. Consultas úteis no Log Explorer da Railway:
 
 ```text
@@ -117,6 +119,24 @@ Duas decisões seguem em aberto, ambas fora do escopo da correção: a PDP tem a
 O Analytics tem duas partes independentes. A vitrine pública carrega o `gtag.js` somente depois de consentimento explícito; carrinho, checkout, pedidos, conta do comprador, painel do artesão e Admin nunca recebem o controller de rastreamento. Mesmo nas páginas permitidas, a aplicação envia caminhos virtuais estáveis (`/inicio`, `/catalogo`, `/produto`, `/artesao` etc.), sem slug, ID, query string, e-mail ou URL real. Google Signals e personalização de anúncios ficam desligados. A preferência dura 180 dias e pode ser reaberta no rodapé.
 
 O Admin consulta a Google Analytics Data API por uma conta de serviço com acesso somente de leitura. `/admin` mostra usuários ativos, sessões e visualizações dos últimos 30 dias; `/admin/analytics` acrescenta evolução diária e as dez páginas virtuais mais acessadas. O resultado fica em cache por 15 minutos para não transformar cada visita ao Admin numa chamada externa. Falha ou configuração ausente degrada para um aviso e não derruba o dashboard. A chave JSON nunca entra no banco, HTML ou log; somente a classe do erro da consulta é emitida em evento estruturado.
+
+O mesmo dashboard mostra o funil próprio da EloShop nos últimos 30 dias: visualizações públicas, carrinhos e checkouts iniciados, pedidos pagos, taxa de conversão, conversão do checkout e receita confirmada. Essas métricas são independentes do consentimento do GA4 e continuam disponíveis quando a integração externa está ausente.
+
+## Termos comerciais do artesão
+
+O cadastro do artesão apresenta os Termos Comerciais do Marketplace em uma
+versão imutável (`SellerTerms::VERSION`) e exige checkbox explícito. O aceite
+grava a versão, o texto integral, o SHA-256 do texto, data/hora, usuário,
+vendedor, IP e user-agent em `seller_terms_acceptances`. Vendedores criados
+antes da implantação ou diante de uma nova versão são redirecionados para o
+aceite antes de acessar o painel; `Product#publish!` repete a barreira no
+domínio para impedir publicação por qualquer outra porta.
+
+O texto é uma minuta operacional: comissão de 15% sobre produtos após
+descontos (sem frete), tarifas do Mercado Pago, repasses, reembolsos,
+chargebacks, responsabilidades fiscais, suspensão, encerramento e alterações
+contratuais devem ser revisados e aprovados por advogado antes da operação
+comercial. Alterações exigem nova versão e novo aceite quando aplicável.
 
 Configuração necessária:
 

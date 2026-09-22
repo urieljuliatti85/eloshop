@@ -12,14 +12,16 @@ class SellerRegistrationsController < ApplicationController
     @seller = Seller.new(seller_params)
     @user = User.new(user_params.merge(role: :seller, seller: @seller))
 
-    if @seller.valid? && @user.valid?
+    if @seller.valid? && @user.valid? && params[:terms_accepted] == "1"
       Seller.transaction do
         @seller.save!
         @user.save!
+        SellerTermsAcceptance.record!(user: @user, seller: @seller, request: request)
       end
       start_new_session_for(@user)
       redirect_to seller_root_path, notice: "Cadastro recebido. A publicação será liberada após a aprovação da plataforma."
     else
+      @user.errors.add(:base, "aceite os termos comerciais para criar o cadastro") unless params[:terms_accepted] == "1"
       render :new, status: :unprocessable_entity
     end
   rescue ActiveRecord::RecordNotUnique

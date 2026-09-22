@@ -8,6 +8,8 @@
     <%= link_to "Abrir Google Analytics", "https://analytics.google.com/", class: "admin-button admin-button--secondary", target: "_blank", rel: "noopener" %>
   </header>
 
+  <%= render "funnel_summary", snapshot: @funnel_snapshot %>
+
   <% if @analytics_configuration_issues.present? %>
     <section class="admin-card p-5 sm:p-6" aria-labelledby="analytics-configuration-title">
       <span class="admin-badge admin-badge--warning">Configuração pendente</span>

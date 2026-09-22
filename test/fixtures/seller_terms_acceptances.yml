@@ -1,0 +1,9 @@
+seller_terms_acceptance:
+  user: seller
+  seller: approved
+  terms_version: seller-marketplace-v1-2026-09-22
+  terms_text: <%= SellerTerms.text.to_json %>
+  terms_digest: <%= Digest::SHA256.hexdigest(SellerTerms.text) %>
+  accepted_at: <%= 1.day.ago %>
+  ip_address: 127.0.0.1
+  user_agent: test
