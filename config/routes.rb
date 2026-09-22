@@ -6,6 +6,7 @@ Rails.application.routes.draw do
 
   namespace :admin do
     root to: "dashboard#index"
+    get "financials", to: "financials#index", as: :financials
 
     resources :sellers, only: %i[index show] do
       member do

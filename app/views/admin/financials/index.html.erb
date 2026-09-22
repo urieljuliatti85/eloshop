@@ -1,0 +1,152 @@
+<div class="space-y-8">
+  <header>
+    <p class="admin-section-label mb-2">Operação financeira</p>
+    <h1>Financials</h1>
+    <p class="mt-2 text-sm text-slate-500">Status da integração com o Mercado Pago, valores da plataforma e contas que exigem ação.</p>
+  </header>
+
+  <section class="admin-card overflow-hidden" aria-labelledby="integration-title">
+    <div class="admin-card-header">
+      <div>
+        <p class="admin-section-label">Plataforma</p>
+        <h2 id="integration-title" class="mt-1">Integração Mercado Pago</h2>
+      </div>
+      <%= admin_status_badge(@integration_ready ? "active" : "pending", label: @integration_ready ? "Operacional" : "Requer atenção") %>
+    </div>
+
+    <dl class="grid gap-px bg-slate-100 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="bg-white p-5">
+        <dt class="text-sm text-slate-500">Gateway de produção</dt>
+        <dd class="mt-2"><%= admin_status_badge(@gateway_active ? "active" : "inactive", label: @gateway_active ? "Mercado Pago ativo" : "Não ativo") %></dd>
+      </div>
+      <div class="bg-white p-5">
+        <dt class="text-sm text-slate-500">OAuth do marketplace</dt>
+        <dd class="mt-2"><%= admin_status_badge(@oauth_configured ? "active" : "inactive", label: @oauth_configured ? "Configurado" : "Não configurado") %></dd>
+      </div>
+      <div class="bg-white p-5">
+        <dt class="text-sm text-slate-500">Webhook assinado</dt>
+        <dd class="mt-2"><%= admin_status_badge(@webhook_configured ? "active" : "inactive", label: @webhook_configured ? "Configurado" : "Não configurado") %></dd>
+      </div>
+      <div class="bg-white p-5">
+        <dt class="text-sm text-slate-500">Ambiente</dt>
+        <dd class="mt-2 font-semibold text-slate-900"><%= @sandbox ? "Teste" : "Produção" %></dd>
+      </div>
+    </dl>
+
+    <div class="border-t border-slate-100 px-5 py-4 text-sm text-slate-500 sm:px-6">
+      Último webhook do Mercado Pago processado:
+      <strong class="text-slate-800"><%= @last_webhook_at ? l(@last_webhook_at, format: :short) : "nenhum registrado" %></strong>.
+      Nenhuma credencial secreta é exibida nesta página.
+    </div>
+  </section>
+
+  <section class="admin-card overflow-hidden" aria-labelledby="financial-summary-title">
+    <div class="admin-card-header">
+      <div>
+        <p class="admin-section-label">Pedidos confirmados</p>
+        <h2 id="financial-summary-title" class="mt-1">Movimentação financeira</h2>
+      </div>
+      <span class="admin-badge admin-badge--neutral"><%= @payment_attempts_count %> tentativas MP</span>
+    </div>
+
+    <div class="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-3 sm:p-6">
+      <article class="admin-stat-card">
+        <p class="admin-section-label relative z-10">Vendas líquidas</p>
+        <p class="admin-stat-value relative z-10"><%= format_price(@net_sales_cents) %></p>
+        <p class="relative z-10 mt-3 text-sm text-slate-500">Total confirmado após reembolsos.</p>
+      </article>
+      <article class="admin-stat-card">
+        <p class="admin-section-label relative z-10">Comissão EloShop</p>
+        <p class="admin-stat-value relative z-10"><%= format_price(@platform_fee_cents) %></p>
+        <p class="relative z-10 mt-3 text-sm text-slate-500">Comissão líquida após reembolsos.</p>
+      </article>
+      <article class="admin-stat-card">
+        <p class="admin-section-label relative z-10">Valor dos artesãos</p>
+        <p class="admin-stat-value relative z-10"><%= format_price(@seller_net_cents) %></p>
+        <p class="relative z-10 mt-3 text-sm text-slate-500">Valor líquido destinado aos vendedores.</p>
+      </article>
+    </div>
+
+    <dl class="grid gap-px border-t border-slate-100 bg-slate-100 sm:grid-cols-3">
+      <div class="flex items-center justify-between gap-4 bg-white px-5 py-4 sm:px-6">
+        <dt class="text-sm text-slate-500">Em andamento</dt>
+        <dd class="admin-badge admin-badge--warning"><%= @payments_in_progress_count %></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 bg-white px-5 py-4 sm:px-6">
+        <dt class="text-sm text-slate-500">Confirmados</dt>
+        <dd class="admin-badge admin-badge--success"><%= @successful_payments_count %></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 bg-white px-5 py-4 sm:px-6">
+        <dt class="text-sm text-slate-500">Falharam</dt>
+        <dd class="admin-badge admin-badge--danger"><%= @failed_payments_count %></dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="admin-card overflow-hidden" aria-labelledby="seller-pendencies-title">
+    <div class="admin-card-header">
+      <div>
+        <p class="admin-section-label">Marketplace</p>
+        <h2 id="seller-pendencies-title" class="mt-1">Artesãos com pendências</h2>
+      </div>
+      <span class="admin-badge <%= @seller_pendencies.any? ? 'admin-badge--warning' : 'admin-badge--success' %>"><%= @seller_pendencies.count %></span>
+    </div>
+
+    <% if @seller_pendencies.any? %>
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Artesão</th>
+              <th>Conta Mercado Pago</th>
+              <th>Meios disponíveis</th>
+              <th>Pendências</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @seller_pendencies.each do |entry| %>
+              <% seller = entry.fetch(:seller) %>
+              <tr>
+                <td>
+                  <p class="font-semibold text-slate-900"><%= seller.name %></p>
+                  <div class="mt-1"><%= admin_status_badge(seller.status) %></div>
+                </td>
+                <td>
+                  <% if seller.mercado_pago_connected? %>
+                    <span class="font-semibold text-emerald-700">Conectada</span>
+                    <p class="mt-1 text-xs text-slate-500">
+                      <% if seller.mercado_pago_test_account == true %>
+                        TESTUSER
+                      <% elsif seller.mercado_pago_test_account == false %>
+                        Conta de produção
+                      <% else %>
+                        Tipo não confirmado
+                      <% end %>
+                    </p>
+                  <% else %>
+                    <span class="font-semibold text-amber-700">Não conectada</span>
+                  <% end %>
+                </td>
+                <td class="text-sm text-slate-600">
+                  <p>PIX: <strong><%= seller.mercado_pago_connected? ? "disponível" : "indisponível" %></strong></p>
+                  <p class="mt-1">Cartão: <strong><%= seller.mercado_pago_card_payments_available? ? "disponível" : "indisponível" %></strong></p>
+                </td>
+                <td>
+                  <ul class="space-y-1 text-sm text-slate-600">
+                    <% entry.fetch(:issues).each do |issue| %>
+                      <li>• <%= issue %></li>
+                    <% end %>
+                  </ul>
+                </td>
+                <td class="text-right"><%= link_to "Ver artesão", admin_seller_path(seller), class: "admin-button admin-button--secondary" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="m-5 admin-empty-state">Todos os artesãos estão prontos para receber pagamentos.</p>
+    <% end %>
+  </section>
+</div>
