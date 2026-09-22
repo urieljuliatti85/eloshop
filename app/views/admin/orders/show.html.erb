@@ -107,6 +107,7 @@
         </div>
         <% if payment %>
           <dl class="mt-4 space-y-3 text-sm">
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Meio de pagamento</dt><dd class="font-semibold text-slate-800"><%= payment_method_label(payment) %></dd></div>
             <div class="flex justify-between gap-4"><dt class="text-slate-500">Gateway</dt><dd class="font-semibold text-slate-800"><%= payment.gateway.humanize %></dd></div>
             <div class="flex justify-between gap-4"><dt class="text-slate-500">Valor</dt><dd class="font-semibold text-slate-800"><%= format_price(payment.amount_cents) %></dd></div>
             <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão EloShop</dt><dd class="font-semibold text-slate-800"><%= format_price(payment.application_fee_cents) %></dd></div>
