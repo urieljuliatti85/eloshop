@@ -1,4 +1,8 @@
-  <% if form.object.errors.any? %>
+<div data-controller="postal-code"
+     data-postal-code-url-value="<%= address_postal_code_path(cep: "00000000") %>"
+     data-postal-code-search-url-value="<%= address_postal_codes_path %>">
+  <div class="flex flex-col gap-4">
+    <% if form.object.errors.any? %>
     <div class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
       <ul class="list-inside list-disc">
         <% form.object.errors.full_messages.each do |message| %>
@@ -6,45 +10,75 @@
         <% end %>
       </ul>
     </div>
-  <% end %>
+    <% end %>
 
-  <div class="grid grid-cols-3 gap-4">
-    <div class="col-span-2">
+    <p class="text-sm text-ink-muted">
+      Digite o CEP para preencher automaticamente ou informe UF, cidade e rua para buscar o endereço.
+    </p>
+
+    <div>
+      <%= form.label :zip_code, "CEP", class: "mb-1 block text-sm font-medium text-ink" %>
+      <%= form.text_field :zip_code,
+        inputmode: "numeric",
+        autocomplete: "postal-code",
+        placeholder: "00000-000",
+        data: { postal_code_target: "zipCode", action: "input->postal-code#lookup" },
+        class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+    </div>
+
+    <div class="grid grid-cols-3 gap-4">
+      <div>
+        <%= form.label :state, "UF", class: "mb-1 block text-sm font-medium text-ink" %>
+        <%= form.text_field :state,
+          maxlength: 2,
+          autocomplete: "address-level1",
+          data: { postal_code_target: "state", action: "input->postal-code#search" },
+          class: "w-full rounded-xl border border-gray-300 px-3 py-2 uppercase focus:border-brand-500 focus:outline-none" %>
+      </div>
+
+      <div class="col-span-2">
+        <%= form.label :city, "Cidade", class: "mb-1 block text-sm font-medium text-ink" %>
+        <%= form.text_field :city,
+          autocomplete: "address-level2",
+          data: { postal_code_target: "city", action: "input->postal-code#search" },
+          class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+      </div>
+    </div>
+
+    <div class="relative">
       <%= form.label :street, "Rua", class: "mb-1 block text-sm font-medium text-ink" %>
-      <%= form.text_field :street, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+      <%= form.text_field :street,
+        autocomplete: "address-line1",
+        data: { postal_code_target: "street", action: "input->postal-code#search" },
+        class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+      <div data-postal-code-target="suggestions"
+           role="listbox"
+           hidden
+           class="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg"></div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-4">
+      <div>
+        <%= form.label :number, "Número", class: "mb-1 block text-sm font-medium text-ink" %>
+        <%= form.text_field :number, autocomplete: "address-line2", class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+      </div>
+
+      <div class="col-span-2">
+        <%= form.label :complement, "Complemento", class: "mb-1 block text-sm font-medium text-ink" %>
+        <%= form.text_field :complement, autocomplete: "address-line3", class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+      </div>
     </div>
 
     <div>
-      <%= form.label :number, "Número", class: "mb-1 block text-sm font-medium text-ink" %>
-      <%= form.text_field :number, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
-    </div>
-  </div>
-
-  <div>
-    <%= form.label :complement, "Complemento", class: "mb-1 block text-sm font-medium text-ink" %>
-    <%= form.text_field :complement, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
-  </div>
-
-  <div>
-    <%= form.label :neighborhood, "Bairro", class: "mb-1 block text-sm font-medium text-ink" %>
-    <%= form.text_field :neighborhood, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
-  </div>
-
-  <div class="grid grid-cols-3 gap-4">
-    <div class="col-span-2">
-      <%= form.label :city, "Cidade", class: "mb-1 block text-sm font-medium text-ink" %>
-      <%= form.text_field :city, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+      <%= form.label :neighborhood, "Bairro", class: "mb-1 block text-sm font-medium text-ink" %>
+      <%= form.text_field :neighborhood,
+        autocomplete: "address-level3",
+        data: { postal_code_target: "neighborhood" },
+        class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
     </div>
 
-    <div>
-      <%= form.label :state, "Estado", class: "mb-1 block text-sm font-medium text-ink" %>
-      <%= form.text_field :state, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
-    </div>
-  </div>
+    <p data-postal-code-target="status" aria-live="polite" class="min-h-5 text-xs text-ink-muted"></p>
 
-  <div>
-    <%= form.label :zip_code, "CEP", class: "mb-1 block text-sm font-medium text-ink" %>
-    <%= form.text_field :zip_code, class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+    <%= form.submit "Salvar endereço", class: "mt-2 w-fit cursor-pointer rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
   </div>
-
-  <%= form.submit "Salvar endereço", class: "mt-2 w-fit rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+</div>

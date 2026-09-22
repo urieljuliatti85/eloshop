@@ -81,6 +81,7 @@ Rails.application.routes.draw do
     resource :atelier, only: %i[show edit update], controller: "ateliers", path: "atelie"
 
     get "atelie/cep/:cep", to: "postal_codes#show", as: :atelier_postal_code, constraints: { cep: /\d{5}-?\d{3}/ }
+    get "atelie/enderecos", to: "postal_codes#index", as: :atelier_postal_codes
 
     get "mercado-pago/conectar", to: "mercado_pago_connections#create", as: :mercado_pago_connect
     get "mercado-pago/callback", to: "mercado_pago_connections#callback", as: :mercado_pago_callback
@@ -148,6 +149,9 @@ Rails.application.routes.draw do
 
   # `new`/`create` já eram usados dentro do checkout; a área do cliente
   # acrescenta a gestão (listar, editar, excluir).
+  get "addresses/postal-code/:cep", to: "postal_codes#show", as: :address_postal_code,
+    constraints: { cep: /\d{5}-?\d{3}/ }
+  get "addresses/postal-codes", to: "postal_codes#index", as: :address_postal_codes
   resources :addresses, only: %i[index new create edit update destroy]
   resources :orders, only: %i[index new create show] do
     member { post :cancel }

@@ -32,6 +32,18 @@ RSpec.describe "Addresses", type: :request do
       expect(Address.last.customer).to eq(customer)
     end
 
+    it "renders CEP lookup and street autocomplete controls" do
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+
+      get new_address_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('data-controller="postal-code"')
+      expect(response.body).to include(address_postal_code_path(cep: "00000000"))
+      expect(response.body).to include(address_postal_codes_path)
+      expect(response.body).to include('data-postal-code-target="suggestions"')
+    end
+
     it "returns to checkout after registering the required address" do
       post customer_session_path, params: { email: customer.email, password: "password123" }
 
