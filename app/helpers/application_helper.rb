@@ -52,4 +52,10 @@ module ApplicationHelper
 
     number_with_precision(cents / 100r, precision: 2, separator: ",", delimiter: "")
   end
+
+  def shipping_estimate_label(shipping)
+    return "Retirada combinada com o ateliê" if shipping.local_pickup?
+
+    "Até #{shipping.estimated_days} dias úteis"
+  end
 end

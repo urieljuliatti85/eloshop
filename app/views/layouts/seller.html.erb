@@ -65,9 +65,10 @@
       </div>
     </header>
 
+    <%= render "layouts/flash_message", message: flash[:notice], variant: :success %>
+    <%= render "layouts/flash_message", message: flash[:alert], variant: :error %>
+
     <main class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-      <% if flash[:notice] %><p class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800" role="status"><%= flash[:notice] %></p><% end %>
-      <% if flash[:alert] %><p class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800" role="alert"><%= flash[:alert] %></p><% end %>
       <div class="seller-content"><%= yield %></div>
     </main>
   </body>

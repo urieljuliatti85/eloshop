@@ -31,10 +31,17 @@ Confirmação
 No MVP (Fase 5 do `ROADMAP.md`), o fluxo é reduzido às etapas essenciais:
 
 ```text
-Carrinho → Identificação/Endereço → Frete (valor fixo) → Resumo → Pagamento → Pedido
+Carrinho → Identificação/Endereço → Escolha da entrega → Resumo → Pagamento → Pedido
 ```
 
 A etapa "Cupons" (Fase 13) não é uma página própria do checkout: o cupom é aplicado no carrinho (`POST /cart/apply_coupon`) e revalidado no momento da finalização, junto com estoque e frete — ver `Coupon` em `docs/domain.md`. "Personalizações" (Fase 10) segue o mesmo padrão: a escolha acontece antes, na página do produto/ao adicionar ao carrinho (ver `PersonalizationOption` em `docs/domain.md`) — o resumo do pedido só exibe o que já foi escolhido, não pede pra preencher de novo.
+
+Cada produto pode oferecer entrega nacional por preço/prazo fixos e retirada
+gratuita. No carrinho, os valores são somados por unidade e prevalece o maior
+prazo; retirada só é possível quando todos os produtos a permitem. O cliente
+escolhe uma das opções exibidas, mas o formulário envia somente
+`shipping_quote_id`: `Checkout::CreateOrder` reconstrói as opções no servidor e
+rejeita qualquer identificador que não tenha sido ofertado.
 
 ## Princípio central: nunca confiar no cliente
 

@@ -11,4 +11,8 @@ class Shipment < ApplicationRecord
 
   validates :carrier, :service, :shipping_cents, :estimated_days, presence: true
   validates :shipping_cents, :estimated_days, numericality: { greater_than_or_equal_to: 0 }
+
+  def local_pickup?
+    service == Shipping::Quote::LOCAL_PICKUP_SERVICE
+  end
 end

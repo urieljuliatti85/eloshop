@@ -2,10 +2,6 @@
   <h1 class="mb-2 text-2xl font-bold text-ink">Atualize sua senha</h1>
   <p class="mb-8 text-sm text-ink-muted">Escolha uma nova senha para entrar na sua conta.</p>
 
-  <% if alert = flash[:alert] %>
-    <p class="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800" id="alert"><%= alert %></p>
-  <% end %>
-
   <%= form_with url: password_path(params[:token]), method: :put, class: "flex flex-col gap-4" do |form| %>
     <div>
       <%= form.label :password, "Nova senha", class: "mb-1 block text-sm font-medium text-ink" %>

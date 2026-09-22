@@ -2,14 +2,6 @@
   <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Painel do Artesão</p>
   <h1 class="mb-8 mt-2 text-2xl font-bold text-ink">Entrar no Ateliê</h1>
 
-  <% if alert = flash[:alert] %>
-    <p class="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800" id="alert"><%= alert %></p>
-  <% end %>
-
-  <% if notice = flash[:notice] %>
-    <p class="mb-6 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800" id="notice"><%= notice %></p>
-  <% end %>
-
   <%= form_with url: seller_login_path, class: "flex flex-col gap-4" do |form| %>
     <div>
       <%= form.label :email_address, "E-mail", class: "mb-1 block text-sm font-medium text-ink" %>

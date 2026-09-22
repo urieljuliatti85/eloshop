@@ -79,6 +79,10 @@ RSpec.describe "Admin admins", type: :request do
 
       expect { delete admin_admin_path(user) }.not_to change(User.admin, :count)
       expect(flash[:alert]).to include("própria conta")
+
+      follow_redirect!
+      expect(response.body).to include('class="app-flash app-flash--error"')
+      expect(response.body).to include("Algo deu errado", "Fechar mensagem de erro")
     end
 
     # Sem admin nenhum, o painel fica inacessível e sem caminho de volta.

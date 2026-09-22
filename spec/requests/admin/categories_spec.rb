@@ -82,6 +82,10 @@ RSpec.describe "Admin categories", type: :request do
       end.to change(Category, :count).by(1)
 
       expect(response).to redirect_to(admin_categories_path)
+
+      follow_redirect!
+      expect(response.body).to include('data-controller="flash"')
+      expect(response.body).to include("Sucesso!", "Categoria criada com sucesso.", "Fechar mensagem de sucesso")
     end
 
     it "creates a subcategory" do

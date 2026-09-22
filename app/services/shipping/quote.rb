@@ -11,5 +11,11 @@ module Shipping
     def id
       "#{carrier}|#{service}".parameterize
     end
+
+    def local_pickup?
+      service == Shipping::Quote::LOCAL_PICKUP_SERVICE
+    end
   end
+
+  Quote::LOCAL_PICKUP_SERVICE = "Retirada no ateliê"
 end

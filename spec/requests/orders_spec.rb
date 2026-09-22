@@ -70,6 +70,25 @@ RSpec.describe "Orders", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    it "shows the seller fixed delivery and free pickup options" do
+      product.update!(
+        fixed_shipping_cents: 2000,
+        fixed_shipping_estimated_days: 8,
+        local_pickup_enabled: true
+      )
+      sign_in_customer
+      add_to_cart
+      customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+
+      get new_order_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Ateliê · Entrega padrão")
+      expect(response.body).to include("Até 8 dias úteis · R$ 20,00")
+      expect(response.body).to include("Ateliê · Retirada no ateliê")
+      expect(response.body).to include("Retirada combinada com o ateliê · R$ 0,00")
+    end
   end
 
   describe "POST /orders" do
@@ -110,6 +129,26 @@ RSpec.describe "Orders", type: :request do
       end.not_to change(Order, :count)
 
       expect(response).to redirect_to(new_order_path)
+    end
+
+    it "creates a free local-pickup shipment when the customer chooses it" do
+      product.update!(local_pickup_enabled: true)
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      pickup_id = Shipping::Quote.new(
+        carrier: "Ateliê",
+        service: Shipping::Quote::LOCAL_PICKUP_SERVICE,
+        shipping_cents: 0,
+        estimated_days: 0
+      ).id
+
+      post orders_path, params: { address_id: address.id, shipping_quote_id: pickup_id }
+
+      shipment = Order.last.seller_orders.sole.shipment
+      expect(response).to redirect_to(new_order_payment_path(Order.last))
+      expect(shipment).to be_local_pickup
+      expect(shipment.shipping_cents).to be_zero
     end
 
     it "rejects an address belonging to another customer" do

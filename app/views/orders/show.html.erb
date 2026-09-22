@@ -1,14 +1,6 @@
 <div class="w-full max-w-2xl">
   <%= link_to "← Meus pedidos", orders_path, class: "mb-6 inline-block text-sm font-semibold text-brand-600 hover:underline" %>
 
-  <% if notice %>
-    <p class="mb-6 rounded bg-green-50 px-4 py-3 text-sm text-green-800"><%= notice %></p>
-  <% end %>
-
-  <% if alert %>
-    <p class="mb-6 rounded bg-red-50 px-4 py-3 text-sm text-red-800"><%= alert %></p>
-  <% end %>
-
   <h1 class="mb-2 text-2xl font-bold text-ink">Pedido #<%= @order.id %></h1>
   <p class="mb-6 text-sm text-ink-muted">Status: <%= @order.status %></p>
 
@@ -63,7 +55,7 @@
     <% if @order.shipment %>
       <div class="flex justify-between text-ink-muted">
         <span><%= @order.shipment.service %></span>
-        <span>até <%= @order.shipment.estimated_days %> dias úteis</span>
+        <span><%= shipping_estimate_label(@order.shipment) %></span>
       </div>
     <% end %>
     <div class="flex justify-between text-base font-semibold text-ink">

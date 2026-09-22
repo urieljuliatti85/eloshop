@@ -40,16 +40,10 @@
       que usa `home-background`, definida no CSS compilado. %>
   <body class="flex min-h-screen flex-col overflow-x-clip bg-white text-ink <%= content_for(:body_class) %>">
     <%= render "layouts/header" %>
+    <%= render "layouts/flash_message", message: flash[:notice], variant: :success %>
+    <%= render "layouts/flash_message", message: flash[:alert], variant: :error %>
 
     <main class="container mx-auto flex-1 px-5 py-12">
-      <% if flash[:notice] %>
-        <p class="mb-6 rounded bg-green-50 px-4 py-3 text-sm text-green-800"><%= flash[:notice] %></p>
-      <% end %>
-
-      <% if flash[:alert] %>
-        <p class="mb-6 rounded bg-red-50 px-4 py-3 text-sm text-red-800"><%= flash[:alert] %></p>
-      <% end %>
-
       <%= yield %>
     </main>
 

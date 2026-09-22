@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_183338) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -313,8 +313,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_183338) do
     t.datetime "created_at", null: false
     t.string "currency", default: "BRL", null: false
     t.text "description"
+    t.integer "fixed_shipping_cents"
+    t.integer "fixed_shipping_estimated_days"
     t.integer "height_cm"
     t.integer "length_cm"
+    t.boolean "local_pickup_enabled", default: false, null: false
     t.string "name", null: false
     t.integer "price_cents", null: false
     t.integer "production_time_max_days"
@@ -333,6 +336,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_183338) do
     t.index ["seller_id", "slug"], name: "index_products_on_seller_id_and_slug", unique: true
     t.index ["seller_id"], name: "index_products_on_seller_id"
     t.index ["status"], name: "index_products_on_status"
+    t.check_constraint "(fixed_shipping_cents IS NULL) = (fixed_shipping_estimated_days IS NULL)", name: "products_fixed_shipping_complete_check"
+    t.check_constraint "fixed_shipping_cents IS NULL OR fixed_shipping_cents > 0", name: "products_fixed_shipping_cents_check"
+    t.check_constraint "fixed_shipping_estimated_days IS NULL OR fixed_shipping_estimated_days > 0", name: "products_fixed_shipping_days_check"
     t.check_constraint "stock_quantity >= 0", name: "products_stock_quantity_check"
   end
 

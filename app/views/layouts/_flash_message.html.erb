@@ -1,0 +1,37 @@
+<% if message.present? %>
+  <% is_error = variant == :error %>
+  <div class="app-flash app-flash--<%= variant %>"
+       role="<%= is_error ? 'alert' : 'status' %>"
+       aria-live="<%= is_error ? 'assertive' : 'polite' %>"
+       aria-atomic="true"
+       data-controller="flash">
+    <div class="app-flash__badge" aria-hidden="true">
+      <% if is_error %>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+          <path d="M12 6v8"/>
+          <path d="M12 18h.01"/>
+        </svg>
+      <% else %>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m5 12 4 4L19 6"/>
+        </svg>
+      <% end %>
+    </div>
+
+    <div class="min-w-0 flex-1">
+      <p class="app-flash__title"><%= t("flash.#{variant}.title") %></p>
+      <p class="app-flash__message"><%= message %></p>
+    </div>
+
+    <button type="button"
+            class="app-flash__close"
+            aria-label="<%= t("flash.#{variant}.close") %>"
+            data-action="flash#dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <path d="M6 6l12 12M18 6 6 18"/>
+      </svg>
+    </button>
+
+    <span class="app-flash__accent" aria-hidden="true"></span>
+  </div>
+<% end %>

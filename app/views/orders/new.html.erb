@@ -9,10 +9,6 @@
     </ol>
   </header>
 
-  <% if alert %>
-    <p class="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800"><%= alert %></p>
-  <% end %>
-
   <% if @addresses.empty? %>
     <section class="max-w-2xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <h2 class="text-xl font-semibold text-ink">Cadastre o endereço de entrega</h2>
@@ -44,7 +40,7 @@
                   <span class="block font-semibold text-ink"><%= address.street %>, <%= address.number %></span>
                   <span class="mt-1 block text-ink-muted"><%= [address.neighborhood, address.city, address.state].compact_blank.join(" · ") %> · CEP <%= address.zip_code %></span>
                   <% if quote %>
-                    <span class="mt-2 block font-medium text-ink">A partir de <%= format_price(quote.shipping_cents) %> · até <%= quote.estimated_days %> dias úteis</span>
+                    <span class="mt-2 block font-medium text-ink">A partir de <%= format_price(quote.shipping_cents) %> · <%= shipping_estimate_label(quote) %></span>
                   <% else %>
                     <span class="mt-2 block font-medium text-red-700">Entrega indisponível para este endereço.</span>
                   <% end %>
@@ -54,9 +50,8 @@
           </div>
         </section>
 
-        <%# A escolha de modalidade só existe quando o vendedor conectou uma
-            conta de frete e o provedor devolveu mais de um serviço. Com a
-            tabela interna há uma linha só, e a seção some. %>
+        <%# A escolha só aparece quando há mais de uma modalidade: cotações do
+            provedor ou entrega acompanhada de retirada no ateliê. %>
         <% if @shipping_options.size > 1 %>
           <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
             <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Frete</p>
@@ -69,7 +64,7 @@
                         data: { checkout_target: "shippingOption", action: "change->checkout#update", shipping_cents: option.shipping_cents } %>
                   <span class="min-w-0 flex-1 text-sm">
                     <span class="block font-semibold text-ink"><%= option.carrier %> · <%= option.service %></span>
-                    <span class="mt-1 block text-ink-muted">Até <%= option.estimated_days %> dias úteis · <%= format_price(option.shipping_cents) %></span>
+                    <span class="mt-1 block text-ink-muted"><%= shipping_estimate_label(option) %> · <%= format_price(option.shipping_cents) %></span>
                   </span>
                 </label>
               <% end %>

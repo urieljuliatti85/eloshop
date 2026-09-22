@@ -33,7 +33,8 @@ module Shipping
     def quotes
       validate!
 
-      remote_quotes.presence || [ fallback_quote ]
+      delivery_quotes = remote_quotes.presence || [ product_shipping_quote || fallback_quote ]
+      all_products_allow_pickup? ? delivery_quotes + [ local_pickup_quote ] : delivery_quotes
     end
 
     # A opção escolhida pelo cliente, revalidada contra a cotação do
@@ -92,6 +93,46 @@ module Shipping
         service: "Entrega padrão",
         shipping_cents: BASE_CENTS + ((total_weight_grams / 1000.0).ceil * PER_KILOGRAM_CENTS),
         estimated_days: estimated_days_for(destination_zip_code)
+      )
+    end
+
+    # Cada produto define seu próprio custo. O valor é por unidade; no mesmo
+    # pedido, os custos são somados e o maior prazo é o prometido ao cliente.
+    # Produtos legados sem configuração continuam usando a parcela estimada
+    # da tabela interna. Se nenhum produto configurou nada, `fallback_quote`
+    # preserva exatamente o cálculo anterior para o carrinho inteiro.
+    def product_shipping_quote
+      return unless cart_items.any? { |item| item.product.fixed_shipping_configured? }
+
+      Quote.new(
+        carrier: "Ateliê",
+        service: "Entrega padrão",
+        shipping_cents: cart_items.sum { |item| shipping_cents_for(item) },
+        estimated_days: cart_items.map { |item| estimated_days_for_item(item) }.max
+      )
+    end
+
+    def shipping_cents_for(item)
+      product = item.product
+      return product.fixed_shipping_cents * item.quantity if product.fixed_shipping_configured?
+
+      BASE_CENTS + (((product.weight_grams.to_i * item.quantity) / 1000.0).ceil * PER_KILOGRAM_CENTS)
+    end
+
+    def estimated_days_for_item(item)
+      item.product.fixed_shipping_estimated_days || estimated_days_for(destination_zip_code)
+    end
+
+    def all_products_allow_pickup?
+      cart_items.present? && cart_items.all? { |item| item.product.local_pickup_enabled? }
+    end
+
+    def local_pickup_quote
+      Quote.new(
+        carrier: "Ateliê",
+        service: Shipping::Quote::LOCAL_PICKUP_SERVICE,
+        shipping_cents: 0,
+        estimated_days: 0
       )
     end
 

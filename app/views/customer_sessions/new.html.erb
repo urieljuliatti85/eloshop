@@ -1,10 +1,6 @@
 <div class="mx-auto w-full max-w-md">
   <h1 class="mb-8 text-2xl font-bold text-ink">Entrar</h1>
 
-  <% if alert %>
-    <p class="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800"><%= alert %></p>
-  <% end %>
-
   <%= form_with url: customer_session_path, class: "flex flex-col gap-4" do |form| %>
     <div>
       <%= form.label :email, "E-mail", class: "mb-1 block text-sm font-medium text-ink" %>

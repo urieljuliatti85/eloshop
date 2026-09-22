@@ -16,11 +16,25 @@ Tempo de transporte
 
 "Tempo de produção" (relevante apenas para produtos feitos sob encomenda — ver `docs/inventory.md`) nunca deve ser confundido com "tempo de transporte". Um produto sob encomenda deve exibir ao cliente, no mínimo, o prazo de produção antes da compra, e esse prazo deve ser registrado no pedido no momento da compra.
 
-## Escopo do MVP
+## Escopo do MVP atual
 
-No MVP (Fase 5 do `ROADMAP.md`), não há cálculo real de frete nem produtos sob encomenda. O frete é um valor fixo/manual associado ao pedido, apenas para permitir que o fluxo de checkout seja concluído de ponta a ponta.
+Cada produto pode configurar no seu formulário do Painel do Artesão uma
+entrega nacional com valor fixo por unidade e prazo máximo em dias úteis. O
+produto também pode permitir retirada gratuita no ateliê. Quando há entrega e
+retirada, o cliente escolhe a modalidade no checkout; o navegador envia apenas
+o identificador da opção, e o servidor recalcula e valida preço e prazo antes
+de criar o pedido.
 
-**Decisão de negócio**: frete fixo de R$ 15,00 (`Checkout::CreateOrder::SHIPPING_CENTS`) para qualquer pedido, até a Fase 12 trazer o cálculo real via Correios.
+Se nenhum produto configurar frete fixo, o checkout mantém o fallback interno
+de R$ 15,00 mais R$ 5,00 por quilo, com prazo de 5 ou 8 dias conforme a faixa
+de CEP. Assim, vendedores existentes continuam vendendo sem migração de dados.
+Configurar apenas valor ou apenas prazo é inválido.
+
+Em um carrinho com mais de um produto, os valores configurados são somados por
+unidade e o maior prazo vira a promessa do pedido. Produto legado sem
+configuração, quando misturado com produtos configurados, contribui com sua
+parcela do fallback interno. A retirada só aparece se todos os produtos do
+carrinho a permitirem.
 
 ## Frete real (Fase 12)
 
@@ -102,6 +116,13 @@ vendedor no banco.
 `#quotes` devolve **a mais barata e a mais rápida** (uma só quando coincidem);
 `#call(quote_id:)` reencontra a escolhida. Os timeouts são curtos (3s para
 conectar, 5s para ler) porque isso roda dentro do checkout.
+
+Enquanto o WAF do Melhor Envio impede a cotação a partir da Railway, a ordem de
+resolução é: cotação externa válida; na ausência dela, frete fixo dos produtos;
+por fim, tabela interna. A retirada gratuita, quando habilitada, é acrescentada
+como opção independente em todos esses casos. O endereço do cliente ainda é
+obrigatório no MVP, inclusive para retirada, porque o checkout e o pedido
+preservam o mesmo snapshot de endereço.
 
 **O cliente escolhe por identificador, nunca por preço.** O formulário envia
 `shipping_quote_id` (derivado de transportadora + serviço), e
