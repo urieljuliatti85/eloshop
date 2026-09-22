@@ -12,6 +12,16 @@ RSpec.describe "Seller commercial terms", type: :request do
     expect(response.body).to include("chargebacks")
   end
 
+  it "shows the acceptance form to a signed-in seller" do
+    sign_in_without_terms(user)
+
+    get seller_terms_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Li e aceito os termos comerciais")
+    expect(response.body).to include('name="terms_accepted"')
+  end
+
   it "blocks the seller panel until the current version is accepted" do
     sign_in_without_terms(user)
 
