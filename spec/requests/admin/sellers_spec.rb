@@ -1,8 +1,20 @@
 require "rails_helper"
 
 RSpec.describe "Admin sellers", type: :request do
+  before do
+    SellerTermsAcceptance.delete_all
+    Session.delete_all
+    FunnelEvent.delete_all
+    OrderMessage.delete_all
+    Shipment.delete_all
+    clear_product_data!
+    SellerOrder.delete_all
+    User.delete_all
+    Seller.delete_all
+  end
+
   let(:admin) { User.create!(email_address: "admin-#{SecureRandom.hex(4)}@example.com", password: "password123") }
-  let(:seller) { Seller.create!(name: "Ateliê Pendente") }
+  let(:seller) { Seller.create!(name: "Ateliê Pendente #{SecureRandom.hex(4)}") }
   let(:seller_user) { User.create!(email_address: "seller-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
 
   it "lets platform admins approve a seller" do
@@ -82,6 +94,79 @@ RSpec.describe "Admin sellers", type: :request do
     get admin_seller_path(seller)
 
     expect(response.body).not_to include(seller_atelier_url)
+  end
+
+  it "shows the current commercial terms acceptance for the seller" do
+    sign_in_as(admin)
+    acceptance = SellerTermsAcceptance.create!(
+      user: seller_user,
+      seller: seller,
+      terms_version: SellerTerms.version,
+      terms_text: SellerTerms.text,
+      terms_digest: Digest::SHA256.hexdigest(SellerTerms.text),
+      accepted_at: Time.current,
+      ip_address: "127.0.0.1",
+      user_agent: "AdminSpec/1.0"
+    )
+
+    get admin_seller_path(seller)
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Termos Comerciais do Marketplace")
+    expect(response.body).to include(acceptance.terms_version)
+    expect(response.body).to include(acceptance.user.email_address)
+  end
+
+  it "shows pending commercial terms status in the seller list" do
+    sign_in_as(admin)
+    seller # ensure the seller record exists before the page renders
+
+    get admin_sellers_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Termos")
+    expect(response.body).to include("Pendente")
+    expect(response.body).to include(seller.name)
+    expect(response.body).to include("Em risco")
+    expect(response.body).to include("Termos pendentes")
+    expect(response.body).to include("Suspensos")
+  end
+
+  it "filters sellers by commercial terms status" do
+    sign_in_as(admin)
+    accepted_seller = Seller.create!(name: "Ateliê Aceito #{SecureRandom.hex(4)}")
+    accepted_user = User.create!(email_address: "seller-accepted-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: accepted_seller)
+    SellerTermsAcceptance.create!(
+      user: accepted_user,
+      seller: accepted_seller,
+      terms_version: SellerTerms.version,
+      terms_text: SellerTerms.text,
+      terms_digest: Digest::SHA256.hexdigest(SellerTerms.text),
+      accepted_at: Time.current,
+      ip_address: "127.0.0.1",
+      user_agent: "AdminSpec/1.0"
+    )
+
+    get admin_sellers_path(terms: "pending_terms")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).not_to include(accepted_seller.name)
+
+    get admin_sellers_path(terms: "accepted")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include(accepted_seller.name)
+  end
+
+  it "combines marketplace status and pending terms filters" do
+    sign_in_as(admin)
+    pending_terms_seller = Seller.create!(name: "Ateliê sem termos #{SecureRandom.hex(4)}", status: :approved)
+    User.create!(email_address: "seller-terms-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: pending_terms_seller)
+
+    get admin_sellers_path(status: "approved", terms: "pending_terms")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include(pending_terms_seller.name)
   end
 
   it "keeps the platform panel unavailable to sellers" do

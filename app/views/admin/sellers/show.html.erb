@@ -19,6 +19,24 @@
     </section>
 
     <section class="admin-card p-6">
+      <p class="admin-section-label">Termos Comerciais do Marketplace</p>
+      <% acceptance = @seller.latest_terms_acceptance %>
+      <% if acceptance %>
+        <p class="mt-2 font-semibold text-emerald-700">Aceito</p>
+        <p class="mt-2 text-sm text-slate-500">Versão: <%= acceptance.terms_version %></p>
+        <p class="mt-1 text-sm text-slate-500">Aceito em: <%= l(acceptance.accepted_at, format: :short) %></p>
+        <p class="mt-1 text-sm text-slate-500">Usuário: <%= acceptance.user&.email_address || "—" %></p>
+        <p class="mt-1 text-sm text-slate-500">IP: <%= acceptance.ip_address || "—" %></p>
+        <% if acceptance.user_agent.present? %>
+          <p class="mt-1 break-all text-xs text-slate-500">User-Agent: <%= acceptance.user_agent %></p>
+        <% end %>
+      <% else %>
+        <p class="mt-2 font-semibold text-amber-700">Ainda não aceitou</p>
+        <p class="mt-2 text-sm text-slate-500">Este vendedor ainda não confirmou a versão atual dos termos comerciais do marketplace.</p>
+      <% end %>
+    </section>
+
+    <section class="admin-card p-6">
       <p class="admin-section-label">Mercado Pago</p>
       <% if @seller.mercado_pago_connected? %>
         <p class="mt-2 font-semibold text-emerald-700">Conta conectada</p>

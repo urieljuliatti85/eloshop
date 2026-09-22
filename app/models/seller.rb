@@ -181,6 +181,10 @@ class Seller < ApplicationRecord
     SellerTermsAcceptance.exists?(seller: self, terms_version: SellerTerms.version)
   end
 
+  def latest_terms_acceptance
+    seller_terms_acceptances.order(accepted_at: :desc).first
+  end
+
   private
 
   CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO = "seller-mercado-pago-oauth".freeze

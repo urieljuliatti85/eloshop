@@ -12,7 +12,7 @@ RSpec.describe "Admin dashboard", type: :request do
       expect(response).to redirect_to(new_session_path)
     end
 
-    it "shows pending orders, correct inventory values, and pending reviews" do
+    it "shows pending orders, correct inventory values, pending reviews, and seller risk summary" do
       post session_path, params: { email_address: user.email_address, password: "password" }
       customer = Customer.create!(name: "Cliente dashboard", email: "dash@example.com", password: "password123")
       pending_product = Product.create!(seller: approved_seller, name: "Vaso baixo estoque", sku: "DASH-001", price_cents: 5_000, stock_quantity: 2, currency: "BRL", status: :active)
@@ -20,6 +20,12 @@ RSpec.describe "Admin dashboard", type: :request do
       variant_product = Product.create!(seller: approved_seller, name: "Camiseta com variações", sku: "DASH-VAR-001", price_cents: 5_000, stock_quantity: 0, currency: "BRL", status: :active)
       low_stock_variant = variant_product.product_variants.create!(sku: "DASH-VAR-P", price_cents: 5_000, stock_quantity: 2, size: "P")
       sold_out_variant = variant_product.product_variants.create!(sku: "DASH-VAR-G", price_cents: 5_000, stock_quantity: 0, size: "G")
+      risk_seller = Seller.create!(name: "Ateliê em risco #{SecureRandom.hex(4)}", status: :approved)
+      User.create!(email_address: "risk-seller-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: risk_seller)
+      seller_terms_unaccepted = Seller.create!(name: "Ateliê sem termos #{SecureRandom.hex(4)}")
+      User.create!(email_address: "pending-terms-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller_terms_unaccepted)
+      suspended_seller = Seller.create!(name: "Ateliê suspenso #{SecureRandom.hex(4)}", status: :suspended)
+      User.create!(email_address: "suspended-seller-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: suspended_seller)
       order = Order.create!(
         customer: customer, status: "pending", subtotal_cents: 1_000, shipping_cents: 500, total_cents: 1_500,
         shipping_address_snapshot: { street: "Rua", number: "1" }, idempotency_key: SecureRandom.uuid
@@ -29,6 +35,9 @@ RSpec.describe "Admin dashboard", type: :request do
       get admin_root_path
 
       expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Em risco")
+      expect(response.body).to include("Termos pendentes")
+      expect(response.body).to include("Suspensos")
       expect(response.body).to include(pending_product.name)
       expect(response.body).to include(sold_out_product.name)
       expect(response.body).to include("#{variant_product.name} — #{low_stock_variant.to_label}", "#{variant_product.name} — #{sold_out_variant.to_label}")
