@@ -1,8 +1,20 @@
 require "rails_helper"
 
 RSpec.describe "Admin sellers", type: :request do
+  before do
+    SellerTermsAcceptance.delete_all
+    Session.delete_all
+    FunnelEvent.delete_all
+    OrderMessage.delete_all
+    Shipment.delete_all
+    clear_product_data!
+    SellerOrder.delete_all
+    User.delete_all
+    Seller.delete_all
+  end
+
   let(:admin) { User.create!(email_address: "admin-#{SecureRandom.hex(4)}@example.com", password: "password123") }
-  let(:seller) { Seller.create!(name: "Ateliê Pendente") }
+  let(:seller) { Seller.create!(name: "Ateliê Pendente #{SecureRandom.hex(4)}") }
   let(:seller_user) { User.create!(email_address: "seller-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
 
   it "lets platform admins approve a seller" do
@@ -107,6 +119,7 @@ RSpec.describe "Admin sellers", type: :request do
 
   it "shows pending commercial terms status in the seller list" do
     sign_in_as(admin)
+    seller # ensure the seller record exists before the page renders
 
     get admin_sellers_path
 
