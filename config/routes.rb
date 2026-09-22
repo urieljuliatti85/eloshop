@@ -76,6 +76,7 @@ Rails.application.routes.draw do
     delete "sair", to: "sessions#destroy", as: :logout
 
     root to: "dashboard#index"
+    get "primeiros-passos", to: "getting_started#show", as: :getting_started
     # Dados do próprio ateliê. Sempre a partir de `current_seller`, nunca de
     # um id na URL — é a regra do painel inteiro.
     resource :atelier, only: %i[show edit update], controller: "ateliers", path: "atelie"
