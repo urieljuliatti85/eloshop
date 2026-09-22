@@ -29,6 +29,82 @@ RSpec.describe "Seller orders", type: :request do
     expect(response).to have_http_status(:not_found)
   end
 
+  it "shows the delivery timeline for the seller order" do
+    order = create_order_for(own_product)
+    order.confirm!
+    create_shipment_for(order)
+
+    get seller_order_path(order)
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Linha do tempo")
+    expect(response.body).to include("Pedido recebido")
+    expect(response.body).to include("Em preparação")
+    expect(response.body).to include("Marcar como enviado")
+  end
+
+  it "uses pickup wording for an order collected at the atelier" do
+    order = create_order_for(own_product)
+    order.confirm!
+    create_shipment_for(order, service: Shipping::Quote::LOCAL_PICKUP_SERVICE)
+
+    get seller_order_path(order)
+
+    expect(response.body).to include("Pronto para retirada")
+    expect(response.body).to include("Retirado")
+    expect(response.body).to include("Marcar como pronto para retirada")
+  end
+
+  describe "PATCH /painel/orders/:id/ship" do
+    it "marks the seller's confirmed order as shipped" do
+      order = create_order_for(own_product)
+      order.confirm!
+      shipment = create_shipment_for(order)
+
+      patch ship_seller_order_path(order)
+
+      expect(response).to redirect_to(seller_order_path(order))
+      expect(shipment.reload).to be_shipped
+      expect(shipment.shipped_at).to be_present
+    end
+
+    it "does not advance an unpaid order" do
+      order = create_order_for(own_product)
+      shipment = create_shipment_for(order)
+
+      patch ship_seller_order_path(order)
+
+      expect(response).to redirect_to(seller_order_path(order))
+      expect(shipment.reload).to be_pending
+    end
+
+    it "does not allow updating another seller's shipment" do
+      other_order = create_order_for(other_product)
+      other_order.confirm!
+      shipment = create_shipment_for(other_order)
+
+      patch ship_seller_order_path(other_order)
+
+      expect(response).to have_http_status(:not_found)
+      expect(shipment.reload).to be_pending
+    end
+  end
+
+  describe "PATCH /painel/orders/:id/deliver" do
+    it "marks a shipped order as delivered" do
+      order = create_order_for(own_product)
+      order.confirm!
+      shipment = create_shipment_for(order)
+      shipment.mark_shipped!
+
+      patch deliver_seller_order_path(order)
+
+      expect(response).to redirect_to(seller_order_path(order))
+      expect(shipment.reload).to be_delivered
+      expect(shipment.delivered_at).to be_present
+    end
+  end
+
   describe "POST /painel/orders/:id/cancel" do
     it "cancels the seller's own pending order and restores stock" do
       order = create_order_for(own_product)
@@ -94,5 +170,14 @@ RSpec.describe "Seller orders", type: :request do
         quantity: 1
       )
     end
+  end
+
+  def create_shipment_for(order, service: "Entrega padrão")
+    order.seller_order.create_shipment!(
+      carrier: "Entrega EloShop",
+      service: service,
+      shipping_cents: order.shipping_cents,
+      estimated_days: 5
+    )
   end
 end

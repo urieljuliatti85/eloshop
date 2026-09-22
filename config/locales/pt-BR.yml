@@ -78,3 +78,13 @@ pt-BR:
       cancelled: "Cancelado"
       partially_refunded: "Reembolso parcial"
       refunded: "Reembolsado"
+  shipments:
+    fulfillment_states:
+      awaiting_payment: "Aguardando pagamento"
+      preparing: "Em preparação"
+      shipped: "Enviado"
+      ready_for_pickup: "Pronto para retirada"
+      delivered: "Entregue"
+      picked_up: "Retirado"
+      closed: "Acompanhamento encerrado"
+      unavailable: "Entrega não configurada"
