@@ -8,7 +8,7 @@
   <%= link_to product_path(product.seller, product.slug), class: "flex flex-1 flex-col" do %>
     <div class="relative aspect-square overflow-hidden rounded-2xl bg-mist-100">
       <% if product.main_image.attached? %>
-        <%= image_tag product.main_image, class: "h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]", alt: product.name, loading: "lazy" %>
+        <%= image_tag product.main_image, class: "h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]", alt: product.name, loading: "lazy", width: 400, height: 400 %>
       <% end %>
 
       <% unless available %>
