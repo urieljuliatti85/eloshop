@@ -1511,6 +1511,8 @@ FRETE CONFIGURÁVEL POR PRODUTO implementado em 2026-09-22 como alternativa de b
 
 ONBOARDING DO ATELIÊ implementado em 2026-09-22 em `/painel/primeiros-passos`. A página explica endereço de origem, conexão OAuth com o Mercado Pago, cadastro do primeiro produto com as opções de frete e o fluxo de monetização. O progresso é derivado de dados existentes — endereço completo, conta conectada, produto cadastrado e ateliê aprovado — sem tabela, cookie ou estado paralelo. A comissão exibida vem de `SellerOrder::PLATFORM_FEE_RATE_BPS`, evitando divergência entre a explicação e o cálculo do checkout.
 
+ACOMPANHAMENTO DE ENTREGA DO ARTESÃO implementado em 2026-09-22. `/painel/orders` mostra a situação operacional da entrega e o detalhe ganhou a linha do tempo “Pedido recebido → Em preparação → Enviado → Entregue”; retirada local usa “Pronto para retirada → Retirado”. O artesão avança manualmente `Shipment` somente depois do pagamento confirmado, sem pular etapas, com `shipped_at` e `delivered_at` registrados. A ação parte sempre de `current_seller`, preservando o isolamento entre ateliês. Etiqueta, rastreamento automático e webhook do Melhor Envio continuam fora deste MVP e deverão reutilizar essas mesmas transições quando a dependência externa for liberada.
+
 Última atualização:
 
 `2026-09-22`

@@ -151,3 +151,23 @@ Produtos artesanais podem ter necessidades especiais de embalagem (peso da embal
 `Shipment` é criado com o `SellerOrder` em status `pending`, preservando transportadora,
 modalidade, preço e prazo estimado. Código de rastreamento e transições de envio
 serão preenchidos quando houver integração operacional com a transportadora.
+
+### Acompanhamento operacional do MVP
+
+Enquanto etiqueta e rastreamento automático não existem, o artesão atualiza a
+entrega manualmente no detalhe do pedido em `/painel/orders/:id`. A linha do
+tempo usa os campos que já pertencem a `Shipment`:
+
+```text
+Pedido recebido → Em preparação → Enviado → Entregue
+```
+
+Para retirada no ateliê, as duas últimas etapas são “Pronto para retirada” e
+“Retirado”. O pedido só pode avançar depois da confirmação do pagamento, não
+pode pular a etapa de envio/pronto para retirada e grava `shipped_at` e
+`delivered_at`. Pedidos cancelados ou totalmente reembolsados não avançam.
+
+Essa atualização é deliberadamente manual: não cria etiqueta, não afirma que
+uma transportadora confirmou a entrega e não depende da integração bloqueada
+com o Melhor Envio. Quando a Etapa 3 do ADR 005 existir, os webhooks do
+provedor deverão convergir para as mesmas transições de `Shipment`.

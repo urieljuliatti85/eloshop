@@ -103,7 +103,11 @@ Rails.application.routes.draw do
       resources :product_images, path: "imagens", only: %i[destroy]
     end
     resources :orders, only: %i[index show] do
-      member { post :cancel }
+      member do
+        post :cancel
+        patch :ship
+        patch :deliver
+      end
     end
   end
 
