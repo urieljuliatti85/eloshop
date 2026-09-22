@@ -3,7 +3,26 @@ module Admin
     before_action :set_seller, only: %i[show approve suspend]
 
     def index
-      @sellers = Seller.includes(:users).order(created_at: :desc)
+      all_sellers = Seller.includes(:users, :seller_terms_acceptances).order(created_at: :desc).to_a
+
+      @sellers_in_risk = all_sellers.count { |seller| seller.approved? && !seller.terms_accepted? }
+      @terms_pending_sellers_count = all_sellers.count { |seller| !seller.terms_accepted? }
+      @suspended_sellers_count = all_sellers.count(&:suspended?)
+
+      @sellers = all_sellers
+
+      if params[:status].present? && %w[pending approved suspended].include?(params[:status])
+        @sellers = @sellers.select { |seller| seller.status == params[:status] }
+      end
+
+      case params[:terms].presence
+      when "accepted"
+        @sellers = @sellers.select { |seller| seller.terms_accepted? }
+      when "pending_terms"
+        @sellers = @sellers.select { |seller| !seller.terms_accepted? }
+      else
+        @sellers
+      end
     end
 
     def show

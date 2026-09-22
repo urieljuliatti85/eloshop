@@ -8,6 +8,33 @@
     <%= link_to "Ver loja", root_path, class: "admin-button admin-button--secondary" %>
   </header>
 
+  <section class="grid gap-4 md:grid-cols-3" aria-label="Resumo do marketplace">
+    <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-xs font-semibold uppercase tracking-wide text-amber-800">Em risco</p>
+        <span class="inline-flex h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+      </div>
+      <p class="mt-2 text-3xl font-black text-amber-900"><%= @sellers_in_risk %></p>
+      <p class="mt-1 text-sm text-amber-800/80">Aprovados sem aceite atual</p>
+    </div>
+    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600">Termos pendentes</p>
+        <span class="inline-flex h-2.5 w-2.5 rounded-full bg-slate-400"></span>
+      </div>
+      <p class="mt-2 text-3xl font-black text-slate-900"><%= @seller_terms_pending_count %></p>
+      <p class="mt-1 text-sm text-slate-600">Artesãos aguardando aceite</p>
+    </div>
+    <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4 shadow-sm">
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-xs font-semibold uppercase tracking-wide text-rose-800">Suspensos</p>
+        <span class="inline-flex h-2.5 w-2.5 rounded-full bg-rose-500"></span>
+      </div>
+      <p class="mt-2 text-3xl font-black text-rose-900"><%= @suspended_sellers_count %></p>
+      <p class="mt-1 text-sm text-rose-800/80">Vendedores bloqueados</p>
+    </div>
+  </section>
+
   <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores principais">
     <article class="admin-stat-card">
       <p class="admin-section-label relative z-10">Pedidos pendentes</p>
