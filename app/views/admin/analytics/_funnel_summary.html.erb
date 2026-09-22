@@ -1,0 +1,32 @@
+<section class="space-y-4" aria-labelledby="funnel-summary-title">
+  <div>
+    <p class="admin-section-label">Conversão própria</p>
+    <h2 id="funnel-summary-title" class="mt-1">Funil de compra</h2>
+    <p class="mt-1 text-sm text-slate-500">Contagens agregadas dos últimos 30 dias, sem dados pessoais.</p>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <% [
+      ["Visitas públicas", snapshot.counts["view_catalog"] + snapshot.counts["view_product"], "Catálogo e produtos"],
+      ["Carrinhos iniciados", snapshot.counts["add_to_cart"], "Itens adicionados"],
+      ["Checkouts iniciados", snapshot.counts["checkout_started"], "Pedidos em preparação"],
+      ["Pedidos pagos", snapshot.counts["order_confirmed"], "#{snapshot.conversion_rate}% das visitas"]
+    ].each do |label, value, detail| %>
+      <article class="admin-stat-card">
+        <p class="admin-section-label relative z-10"><%= label %></p>
+        <p class="admin-stat-value relative z-10"><%= number_with_delimiter(value) %></p>
+        <p class="relative z-10 mt-3 text-sm text-slate-500"><%= detail %></p>
+      </article>
+    <% end %>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <article class="admin-card p-5">
+      <p class="admin-section-label">Receita confirmada</p>
+      <p class="mt-2 text-2xl font-bold text-slate-900"><%= format_price(snapshot.confirmed_revenue_cents) %></p>
+    </article>
+    <article class="admin-card p-5">
+      <p class="admin-section-label">Conversão do checkout</p>
+      <p class="mt-2 text-2xl font-bold text-slate-900"><%= number_to_percentage(snapshot.checkout_conversion_rate, precision: 2) %></p>
+      <p class="mt-1 text-sm text-slate-500">Pedidos pagos entre checkouts iniciados</p>
+    </article>
+  </div>
+</section>

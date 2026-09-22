@@ -18,6 +18,10 @@ class PaymentsController < StorefrontController
   # é descartada aqui — quem a retoma é `Payments::Authorize`, reusando o
   # `processing` e a chave de idempotência para não cobrar duas vezes.
   def new
+    unless session[:analytics_payment_started_order_id] == @order.id
+      Analytics::Funnel.track("payment_started", seller: @order.seller_orders.first&.seller)
+    end
+    session[:analytics_payment_started_order_id] = @order.id
     @payment = @order.payments.order(:created_at).last
     @payment = nil if params[:retry].present? && @payment&.retryable?
     @gateway = Gateways.build

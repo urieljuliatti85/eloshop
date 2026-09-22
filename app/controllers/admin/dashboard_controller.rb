@@ -21,6 +21,7 @@ module Admin
         .where(orders: { status: %w[confirmed partially_refunded refunded] })
         .sum("platform_fee_cents - platform_fee_refunded_cents")
 
+      @funnel_snapshot = ::Analytics::FunnelReport.new.snapshot
       load_google_analytics
     end
 

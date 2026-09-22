@@ -15,7 +15,9 @@ class OrdersController < StorefrontController
     @shipping_options = @shipping_quotes[@selected_address] || []
     @shipping = @shipping_options.first
     @shipping_cents = @shipping&.shipping_cents
+    checkout_started = session[:checkout_idempotency_key].blank?
     session[:checkout_idempotency_key] ||= SecureRandom.hex(20)
+    Analytics::Funnel.track("checkout_started") if checkout_started
   end
 
   def create

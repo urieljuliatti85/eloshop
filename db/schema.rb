@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_22_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_22_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -128,6 +128,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_150000) do
     t.index ["email"], name: "index_customers_on_email", unique: true
   end
 
+  create_table "funnel_events", force: :cascade do |t|
+    t.integer "amount_cents", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "event_count", default: 0, null: false
+    t.string "event_name", null: false
+    t.date "occurred_on", null: false
+    t.bigint "product_id"
+    t.bigint "seller_id"
+    t.datetime "updated_at", null: false
+    t.index ["event_name", "occurred_on", "product_id", "seller_id"], name: "index_funnel_events_on_dimensions", unique: true, nulls_not_distinct: true
+    t.index ["occurred_on", "event_name"], name: "index_funnel_events_on_occurred_on_and_event_name"
+    t.check_constraint "amount_cents >= 0", name: "funnel_events_amount_cents_check"
+    t.check_constraint "event_count >= 0", name: "funnel_events_event_count_check"
+  end
+
   create_table "materials", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name", null: false
@@ -184,7 +199,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_150000) do
     t.index ["seller_order_id"], name: "index_order_messages_on_seller_order_id"
     t.index ["sender_type", "sender_id"], name: "index_order_messages_on_sender"
     t.check_constraint "char_length(btrim(body)) >= 1 AND char_length(btrim(body)) <= 2000", name: "order_messages_body_length_check"
-    t.check_constraint "sender_type::text = ANY (ARRAY['Customer'::character varying, 'User'::character varying]::text[])", name: "order_messages_sender_type_check"
+    t.check_constraint "sender_type::text = ANY (ARRAY['Customer'::character varying::text, 'User'::character varying::text])", name: "order_messages_sender_type_check"
   end
 
   create_table "orders", force: :cascade do |t|
@@ -510,6 +525,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_22_150000) do
   add_foreign_key "carts", "customers"
   add_foreign_key "categories", "categories", column: "parent_id"
   add_foreign_key "customer_sessions", "customers"
+  add_foreign_key "funnel_events", "products"
+  add_foreign_key "funnel_events", "sellers"
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "product_variants"
   add_foreign_key "order_items", "products"
