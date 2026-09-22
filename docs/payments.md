@@ -254,6 +254,16 @@ Este estado vive no banco de produção e muda por fora do repositório: depois 
 
 Na Fase 23, pagamentos passaram a suportar split entre vendedor e plataforma. `Payments::Authorize` usa o access token OAuth do vendedor e envia `application_fee` no PIX. A comissão é 15% do subtotal dos produtos após descontos, sem frete; a tarifa do Mercado Pago é registrada separadamente e suportada pelo vendedor. Reembolsos são operados apenas pelo admin da plataforma, usam chave de idempotência, preservam cada tentativa em `PaymentRefund` e revertem a comissão proporcionalmente sem erro acumulado de arredondamento. No primeiro lançamento, cada checkout tem um único vendedor/`SellerOrder` e usa o split público 1:1; multi-vendedor depende de habilitação comercial do split 1:N. Não são criados múltiplos PIX para uma compra nem repasses manuais a partir da conta da plataforma.
 
+## Conciliação financeira no Admin
+
+`/admin/financials` possui uma conciliação de leitura do relatório oficial de vendas do marketplace. A atualização é manual: o Admin não chama o provedor ao abrir a página. `Marketplace::MercadoPagoSalesReport` lista os `statements` existentes, baixa o demonstrativo mais recente em CSV e mantém o resultado no Solid Cache por 24 horas. Nenhuma estrutura, agenda ou statement é criado pela EloShop — essas operações alteram recursos no Mercado Pago e continuam sendo configuradas no painel/API do provedor.
+
+O relatório é autenticado com `MERCADO_PAGO_MARKETPLACE_ACCESS_TOKEN`, que deve conter o **Access Token de produção da aplicação Marketplace**. Essa credencial é diferente de `MERCADO_PAGO_MARKETPLACE_CLIENT_SECRET` e dos tokens OAuth dos artesãos. Ela só existe no backend, nunca é escrita em cache, log ou HTML. Sem a variável, a página continua mostrando os valores locais e explica que a fonte oficial ainda não está configurada.
+
+A conciliação cruza `PAYMENT` do relatório com `Payment#external_id` e, como fallback, `EXTERNAL_REFERENCE` com o id do pedido. A tabela mostra venda, artesão, valor, comissão do marketplace, tarifa do Mercado Pago e líquido recebido. Registros sem correspondência local também aparecem, identificados pelo vendedor informado pelo próprio relatório; pagamentos locais ainda ausentes do demonstrativo ficam marcados como “Somente EloShop”.
+
+O Sales Report não contém a data de liberação do dinheiro. Durante a atualização manual, a aplicação consulta `GET /v1/payments/:id` com o token OAuth do respectivo artesão e lê `money_release_date`; no máximo 50 pagamentos são enriquecidos por atualização para limitar latência e chamadas ao provedor. Relatório e datas ficam em cache por 24 horas. A tela distingue explicitamente dados conciliados dos dados locais e não afirma que um valor local já foi confirmado pelo Mercado Pago.
+
 ## Quando a criação da cobrança falha
 
 Se a chamada ao gateway levanta, a tentativa **permanece `processing`** de propósito: a cobrança pode ter nascido do outro lado (um timeout não diz se a requisição chegou), e `Payments::Authorize#prepare_attempt` reusa esse registro para não gerar cobrança dupla — a mesma chave de idempotência vale para a próxima tentativa. `Payment#external_id` é obrigatório para qualquer status que não seja `processing`, então "falhou antes de existir cobrança" não tem outro estado onde caber.

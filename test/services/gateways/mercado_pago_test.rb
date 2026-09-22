@@ -175,6 +175,19 @@ module Gateways
       end
     end
 
+    test "reconciliation details include processor fee and money release date" do
+      stub_request(
+        "status" => "approved",
+        "money_release_date" => "2026-09-25T12:30:00.000-03:00",
+        "fee_details" => [ { "type" => "mercadopago_fee", "amount" => 3.59 } ]
+      ) do
+        details = @gateway.reconciliation_details(external_id: "1")
+
+        assert_equal 359, details[:processor_fee_cents]
+        assert_equal Time.zone.parse("2026-09-25T12:30:00.000-03:00"), details[:money_release_date]
+      end
+    end
+
     test "refund sends amount and idempotency key" do
       payment = payments(:one)
       captured = stub_request("id" => 99, "status" => "approved") do

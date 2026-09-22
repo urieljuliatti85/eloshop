@@ -1,5 +1,10 @@
 source "https://rubygems.org"
 
+# CSV deixa de acompanhar a biblioteca padrão no Ruby 3.4. A conciliação do
+# Mercado Pago depende dele explicitamente, então a dependência também deve
+# ser explícita.
+gem "csv"
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.1.3", ">= 8.1.3.1"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
