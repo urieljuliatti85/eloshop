@@ -1,6 +1,6 @@
 require "test_helper"
 
-class AdminHelperTest < ActionView::TestCase
+class ApplicationHelperTest < ActionView::TestCase
   test "payment_method_label shows PIX regardless of card fields" do
     payment = Payment.new(payment_method: "pix", installments: 1)
 

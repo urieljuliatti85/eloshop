@@ -37,15 +37,6 @@ module AdminHelper
     tag.span(text, class: "admin-badge #{ADMIN_STATUS_TONES.fetch(value, 'admin-badge--neutral')}")
   end
 
-  def payment_method_label(payment)
-    return "PIX" if payment.pix?
-
-    parts = [ "Cartão de crédito" ]
-    parts << "#{payment.installments}×" if payment.installments > 1
-    parts << "#{payment.card_brand.humanize} •••• #{payment.card_last_four}" if payment.card_last_four.present?
-    parts.join(" · ")
-  end
-
   def admin_inventory_item_label(item)
     return item.name unless item.is_a?(ProductVariant)
 

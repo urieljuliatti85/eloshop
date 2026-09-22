@@ -85,4 +85,15 @@ module ApplicationHelper
 
     "Até #{shipping.estimated_days} dias úteis"
   end
+
+  # Compartilhado entre cliente, painel do vendedor e admin — os três mostram
+  # o mesmo Payment, cada um na sua tela de pedido.
+  def payment_method_label(payment)
+    return "PIX" if payment.pix?
+
+    parts = [ "Cartão de crédito" ]
+    parts << "#{payment.installments}×" if payment.installments > 1
+    parts << "#{payment.card_brand.humanize} •••• #{payment.card_last_four}" if payment.card_last_four.present?
+    parts.join(" · ")
+  end
 end
