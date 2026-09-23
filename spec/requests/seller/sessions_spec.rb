@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Seller sessions", type: :request do
-  let(:seller) { Seller.create!(name: "Ateliê da Sessão", status: :approved, approved_at: Time.current) }
+  let(:seller) { Seller.create!(name: "Ateliê da Sessão", owner_full_name: "Proprietário Teste", cpf: "13666686184", status: :approved, approved_at: Time.current) }
   let(:seller_user) { User.create!(email_address: "sessao-vendedor@eloshop.test", password: "password123", role: :seller, seller: seller) }
   let(:admin) { User.create!(email_address: "sessao-admin@eloshop.test", password: "password123") }
 

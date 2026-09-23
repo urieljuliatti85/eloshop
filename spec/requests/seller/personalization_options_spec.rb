@@ -1,8 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Seller personalization options", type: :request do
-  let(:seller) { Seller.create!(name: "Ateliê Personalizações", status: :approved, approved_at: Time.current) }
-  let(:other_seller) { Seller.create!(name: "Outro Ateliê Personalizações", status: :approved, approved_at: Time.current) }
+  let(:seller) { Seller.create!(name: "Ateliê Personalizações", owner_full_name: "Proprietário Teste", cpf: "12666680800", status: :approved, approved_at: Time.current) }
+  let(:other_seller) { Seller.create!(name: "Outro Ateliê Personalizações", owner_full_name: "Proprietário Teste", cpf: "12777792526", status: :approved, approved_at: Time.current) }
   let(:user) { User.create!(email_address: "personalizations-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
   let(:product) { Product.create!(seller: seller, name: "Caneca", sku: "SELLER-PER-001", price_cents: 5_000, stock_quantity: 3) }
   let(:other_product) { Product.create!(seller: other_seller, name: "Quadro", sku: "OTHER-PER-001", price_cents: 7_000, stock_quantity: 2) }

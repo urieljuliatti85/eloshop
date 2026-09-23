@@ -21,6 +21,12 @@ class Seller < ApplicationRecord
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true
   validates :mercado_pago_user_id, uniqueness: true, allow_blank: true
+  validates :owner_full_name, presence: true
+  validates :cpf_hash, uniqueness: { message: "já está cadastrado para outro ateliê" }, allow_nil: true
+
+  before_validation :assign_cpf, if: -> { @cpf.present? }
+  validates :cpf, presence: true, on: :create
+  validate :cpf_must_be_valid, if: -> { @cpf.present? }
 
   # O CEP é guardado só com dígitos: o vendedor digita com traço ou sem, e o
   # cálculo de frete compara com o CEP de destino, que já chega assim.
@@ -173,6 +179,16 @@ class Seller < ApplicationRecord
     decrypt_credential(melhor_envio_refresh_token_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_MELHOR_ENVIO)
   end
 
+  # CPF nunca é lido de volta em texto plano fora do cadastro (write-only na
+  # prática): o dígito é guardado cifrado, e a checagem de duplicidade usa um
+  # hash determinístico à parte, já que o ciphertext (IV aleatório) muda a
+  # cada gravação e não serve para comparação de unicidade.
+  attr_reader :cpf
+
+  def cpf=(value)
+    @cpf = value.to_s.gsub(/\D/, "")
+  end
+
   def to_param
     slug
   end
@@ -189,6 +205,32 @@ class Seller < ApplicationRecord
 
   CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO = "seller-mercado-pago-oauth".freeze
   CREDENTIAL_ENCRYPTION_SALT_MELHOR_ENVIO = "seller-melhor-envio-oauth".freeze
+  CREDENTIAL_ENCRYPTION_SALT_CPF = "seller-owner-cpf".freeze
+
+  def assign_cpf
+    self.cpf_ciphertext = encrypt_credential(cpf, salt: CREDENTIAL_ENCRYPTION_SALT_CPF)
+    self.cpf_hash = Digest::SHA256.hexdigest(cpf)
+  end
+
+  # Módulo 11: valida os dois dígitos verificadores contra os 9 primeiros
+  # dígitos do CPF. Rejeita também sequências de dígito repetido (111...,
+  # 222...), que passam no módulo 11 mas não são CPF válido.
+  def cpf_must_be_valid
+    return errors.add(:cpf, "deve ter 11 dígitos") unless cpf.match?(/\A\d{11}\z/)
+    return errors.add(:cpf, "é inválido") if cpf.chars.uniq.one?
+    errors.add(:cpf, "é inválido") unless valid_cpf_checksum?(cpf)
+  end
+
+  def valid_cpf_checksum?(digits)
+    [ 9, 10 ].all? do |length|
+      base = digits[0...length]
+      weights = (length + 1).downto(2)
+      sum = base.chars.map(&:to_i).zip(weights).sum { |digit, weight| digit * weight }
+      remainder = (sum * 10) % 11
+      remainder = 0 if remainder == 10
+      remainder == digits[length].to_i
+    end
+  end
 
   def credential_encryptor(salt:)
     key = Rails.application.key_generator.generate_key(salt, ActiveSupport::MessageEncryptor.key_len)

@@ -3,14 +3,17 @@ approved:
   slug: eloshop
   status: approved
   approved_at: <%= 1.day.ago %>
+  owner_full_name: Maria da Silva
 
 pending:
   name: Ateliê Pendente
   slug: atelier-pendente
   status: pending
+  owner_full_name: João Pereira
 
 other:
   name: Outro Ateliê
   slug: outro-atelie
   status: approved
   approved_at: <%= 2.days.ago %>
+  owner_full_name: Ana Souza

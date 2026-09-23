@@ -45,7 +45,7 @@ RSpec.describe "Admin orders", type: :request do
 
   describe "POST /admin/orders/:id/refund" do
     it "allows the platform admin to refund an approved payment" do
-      seller = Seller.create!(name: "Ateliê Refund", status: :approved, approved_at: Time.current)
+      seller = Seller.create!(name: "Ateliê Refund", owner_full_name: "Proprietário Teste", cpf: "10444446818", status: :approved, approved_at: Time.current)
       seller_order = order.seller_orders.create!(
         seller: seller,
         status: :confirmed,
@@ -76,7 +76,7 @@ RSpec.describe "Admin orders", type: :request do
   end
 
   describe "POST /admin/orders/:id/cancel" do
-    let(:seller) { Seller.create!(name: "Ateliê Cancel", status: :approved, approved_at: Time.current) }
+    let(:seller) { Seller.create!(name: "Ateliê Cancel", owner_full_name: "Proprietário Teste", cpf: "10555558541", status: :approved, approved_at: Time.current) }
     let(:product) { Product.create!(seller: seller, name: "Produto", sku: "SKU-CANCEL-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active") }
     let(:seller_order) do
       order.seller_orders.create!(

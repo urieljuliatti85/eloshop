@@ -187,7 +187,7 @@ RSpec.describe "api/v1/products", type: :request do
       response "200", "produtos ativos encontrados" do
         schema LIST_SCHEMA
 
-        let!(:other_seller) { Seller.create!(name: "Outro ateliê rswag filtro", status: :approved, approved_at: Time.current) }
+        let!(:other_seller) { Seller.create!(name: "Outro ateliê rswag filtro", owner_full_name: "Proprietário Teste", cpf: "11000005348", status: :approved, approved_at: Time.current) }
         let!(:mine) { Product.create!(seller: approved_seller, name: "Peça do ateliê A", sku: "RSWAG-SELLERF-001", price_cents: 8990, stock_quantity: 3, status: :active) }
         let!(:theirs) { Product.create!(seller: other_seller, name: "Peça do ateliê B", sku: "RSWAG-SELLERF-002", price_cents: 8990, stock_quantity: 3, status: :active) }
         let(:seller) { approved_seller.slug }

@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Seller commercial terms", type: :request do
-  let(:seller) { Seller.create!(name: "Ateliê Termos", status: :approved, approved_at: Time.current) }
+  let(:seller) { Seller.create!(name: "Ateliê Termos", owner_full_name: "Proprietário Teste", cpf: "13777797855", status: :approved, approved_at: Time.current) }
   let(:user) { User.create!(email_address: "termos@example.com", password: "password123", role: :seller, seller: seller) }
 
   it "shows the current terms publicly" do

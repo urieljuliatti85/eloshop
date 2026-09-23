@@ -14,7 +14,7 @@ RSpec.describe "Admin sellers", type: :request do
   end
 
   let(:admin) { User.create!(email_address: "admin-#{SecureRandom.hex(4)}@example.com", password: "password123") }
-  let(:seller) { Seller.create!(name: "Ateliê Pendente #{SecureRandom.hex(4)}") }
+  let(:seller) { Seller.create!(name: "Ateliê Pendente #{SecureRandom.hex(4)}", owner_full_name: "Proprietário Teste", cpf: "10666670200") }
   let(:seller_user) { User.create!(email_address: "seller-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
 
   it "lets platform admins approve a seller" do
@@ -134,7 +134,7 @@ RSpec.describe "Admin sellers", type: :request do
 
   it "filters sellers by commercial terms status" do
     sign_in_as(admin)
-    accepted_seller = Seller.create!(name: "Ateliê Aceito #{SecureRandom.hex(4)}")
+    accepted_seller = Seller.create!(name: "Ateliê Aceito #{SecureRandom.hex(4)}", owner_full_name: "Proprietário Teste", cpf: "10777781980")
     accepted_user = User.create!(email_address: "seller-accepted-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: accepted_seller)
     SellerTermsAcceptance.create!(
       user: accepted_user,
@@ -160,7 +160,7 @@ RSpec.describe "Admin sellers", type: :request do
 
   it "combines marketplace status and pending terms filters" do
     sign_in_as(admin)
-    pending_terms_seller = Seller.create!(name: "Ateliê sem termos #{SecureRandom.hex(4)}", status: :approved)
+    pending_terms_seller = Seller.create!(name: "Ateliê sem termos #{SecureRandom.hex(4)}", owner_full_name: "Proprietário Teste", cpf: "10888893604", status: :approved)
     User.create!(email_address: "seller-terms-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: pending_terms_seller)
 
     get admin_sellers_path(status: "approved", terms: "pending_terms")

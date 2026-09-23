@@ -32,7 +32,8 @@ class NotifyOrderMessageJobTest < ActiveJob::TestCase
   end
 
   test "does not fail when the seller has no user" do
-    seller = Seller.create!(name: "Ateliê sem acesso #{SecureRandom.hex(4)}", status: :approved, approved_at: Time.current)
+    seller = Seller.create!(name: "Ateliê sem acesso #{SecureRandom.hex(4)}", owner_full_name: "Dono Sem Acesso",
+      cpf: "35720194606", status: :approved, approved_at: Time.current)
     @seller_order.update!(seller: seller)
     message = @seller_order.order_messages.create!(sender: customers(:one), body: "Olá?")
 

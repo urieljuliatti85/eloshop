@@ -43,7 +43,7 @@ RSpec.describe "api/v1/sellers", type: :request do
       response "200", "ateliês encontrados" do
         schema SELLER_LIST_SCHEMA
 
-        let!(:pending_seller) { Seller.create!(name: "Ateliê pendente spec", status: :pending) }
+        let!(:pending_seller) { Seller.create!(name: "Ateliê pendente spec", owner_full_name: "Proprietário Teste", cpf: "11111117071", status: :pending) }
         let!(:pending_product) { Product.create!(seller: pending_seller, name: "Peça pendente spec", sku: "RSWAG-PENDING-001", price_cents: 5000, stock_quantity: 2, status: :active) }
 
         run_test! do |response|
@@ -57,7 +57,7 @@ RSpec.describe "api/v1/sellers", type: :request do
         schema SELLER_LIST_SCHEMA
 
         # Aprovado, mas sem nada publicado: a vitrine dele seria um beco.
-        let!(:empty_seller) { Seller.create!(name: "Ateliê vazio spec", status: :approved, approved_at: Time.current) }
+        let!(:empty_seller) { Seller.create!(name: "Ateliê vazio spec", owner_full_name: "Proprietário Teste", cpf: "11222228742", status: :approved, approved_at: Time.current) }
         let!(:draft_product) { Product.create!(seller: empty_seller, name: "Rascunho spec", sku: "RSWAG-EMPTY-001", price_cents: 5000, stock_quantity: 2, status: :draft) }
 
         run_test! do |response|
@@ -100,7 +100,7 @@ RSpec.describe "api/v1/sellers", type: :request do
       response "404", "ateliê não encontrado ou não aprovado" do
         schema type: :object, properties: { error: { type: :string } }, required: %w[error]
 
-        let!(:suspended_seller) { Seller.create!(name: "Ateliê suspenso spec", status: :suspended) }
+        let!(:suspended_seller) { Seller.create!(name: "Ateliê suspenso spec", owner_full_name: "Proprietário Teste", cpf: "11333340400", status: :suspended) }
         let(:slug) { suspended_seller.slug }
 
         run_test!

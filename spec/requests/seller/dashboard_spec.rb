@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Seller dashboard", type: :request do
-  let(:seller) { Seller.create!(name: "Ateliê Horizonte", status: :approved, approved_at: Time.current) }
+  let(:seller) { Seller.create!(name: "Ateliê Horizonte", owner_full_name: "Proprietário Teste", cpf: "11777787262", status: :approved, approved_at: Time.current) }
   let(:user) { User.create!(email_address: "horizonte@example.com", password: "password123", role: :seller, seller: seller) }
   let(:customer) { Customer.create!(name: "Cliente do Ateliê", email: "cliente-horizonte@example.com", password: "password123") }
   let(:oauth) { instance_double(Marketplace::MercadoPagoOauth, configured?: false, sandbox?: false) }
@@ -17,7 +17,7 @@ RSpec.describe "Seller dashboard", type: :request do
   it "shows the seller operation without exposing another seller data" do
     sign_in_as(user)
     own_product = Product.create!(seller: seller, name: "Cesto Horizonte", sku: "HORIZONTE-1", price_cents: 8_000, stock_quantity: 2, status: :active)
-    other_seller = Seller.create!(name: "Outro Ateliê #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
+    other_seller = Seller.create!(name: "Outro Ateliê #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "11888898933", status: :approved, approved_at: Time.current)
     Product.create!(seller: other_seller, name: "Produto Alheio", sku: "ALHEIO-1", price_cents: 3_000, stock_quantity: 2, status: :active)
     seller_order = create_seller_order(own_product)
 

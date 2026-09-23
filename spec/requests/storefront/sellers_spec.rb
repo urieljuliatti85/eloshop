@@ -22,7 +22,7 @@ RSpec.describe "Storefront sellers", type: :request do
     # Uma vitrine vazia na listagem é um beco — mesmo critério do filtro do
     # catálogo e do sitemap.
     it "omits an approved atelier with nothing published" do
-      empty = Seller.create!(name: "Ateliê vazio #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
+      empty = Seller.create!(name: "Ateliê vazio #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "50000000051", status: :approved, approved_at: Time.current)
       create_product(seller: approved_seller, name: "Peça de outro")
 
       get sellers_path
@@ -31,7 +31,7 @@ RSpec.describe "Storefront sellers", type: :request do
     end
 
     it "omits an atelier that is not approved" do
-      pending_seller = Seller.create!(name: "Pendente listagem #{SecureRandom.hex(3)}", status: :pending)
+      pending_seller = Seller.create!(name: "Pendente listagem #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "50222223375", status: :pending)
       create_product(seller: pending_seller, name: "Peça de pendente")
 
       get sellers_path
@@ -102,7 +102,7 @@ RSpec.describe "Storefront sellers", type: :request do
     end
 
     it "points the panel link at the seller panel for an artisan" do
-      seller = Seller.create!(name: "Ateliê painel #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
+      seller = Seller.create!(name: "Ateliê painel #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "50444446699", status: :approved, approved_at: Time.current)
       artisan = User.create!(email_address: "artesao-painel@eloshop.test", password: "password123", role: :seller, seller: seller)
       sign_in_as(artisan)
 
@@ -126,7 +126,7 @@ RSpec.describe "Storefront sellers", type: :request do
     end
 
     it "announces the signed-in artisan session with the atelier name" do
-      seller = Seller.create!(name: "Ateliê identidade", status: :approved, approved_at: Time.current)
+      seller = Seller.create!(name: "Ateliê identidade", owner_full_name: "Proprietário Teste", cpf: "50666669902", status: :approved, approved_at: Time.current)
       artisan = User.create!(email_address: "artesao-identidade@eloshop.test", password: "password123", role: :seller, seller: seller)
       sign_in_as(artisan)
 
@@ -146,7 +146,7 @@ RSpec.describe "Storefront sellers", type: :request do
 
     # Só quem já tem ateliê deixa de ser convidado/ver o login.
     it "drops the invitation and the login link once an artisan is signed in" do
-      seller = Seller.create!(name: "Ateliê logado #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
+      seller = Seller.create!(name: "Ateliê logado #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "50888893213", status: :approved, approved_at: Time.current)
       user = User.create!(email_address: "artesao-header@eloshop.test", password: "password123", role: :seller, seller: seller)
       sign_in_as(user)
 
@@ -177,7 +177,7 @@ RSpec.describe "Storefront sellers", type: :request do
     end
 
     it "omits products from another atelier" do
-      other = Seller.create!(name: "Ateliê vizinho #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
+      other = Seller.create!(name: "Ateliê vizinho #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "51111116547", status: :approved, approved_at: Time.current)
       alheio = create_product(seller: other, name: "Peça de outro ateliê")
 
       get seller_path(approved_seller.slug)
@@ -188,7 +188,7 @@ RSpec.describe "Storefront sellers", type: :request do
     # A vitrine só existe para artesão aprovado — a mesma condição que
     # `publicly_visible` exige dos produtos.
     it "returns 404 for an atelier that is not approved" do
-      pending_seller = Seller.create!(name: "Ateliê pendente #{SecureRandom.hex(3)}", status: :pending)
+      pending_seller = Seller.create!(name: "Ateliê pendente #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "51333339860", status: :pending)
 
       get seller_path(pending_seller.slug)
 

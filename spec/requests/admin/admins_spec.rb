@@ -29,7 +29,7 @@ RSpec.describe "Admin admins", type: :request do
 
     # O vendedor tem painel próprio e não administra a plataforma.
     it "does not list sellers" do
-      seller = Seller.create!(name: "Ateliê #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
+      seller = Seller.create!(name: "Ateliê #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "10000000019", status: :approved, approved_at: Time.current)
       seller_user = User.create!(email_address: "vendedor-lista@eloshop.test", password: "password123", role: :seller, seller: seller)
       sign_in_as(user)
 

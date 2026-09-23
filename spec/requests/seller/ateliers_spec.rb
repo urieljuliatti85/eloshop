@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe "Seller atelier", type: :request do
-  let(:seller) { Seller.create!(name: "Ateliê do Vendedor", status: :approved, approved_at: Time.current) }
+  let(:seller) { Seller.create!(name: "Ateliê do Vendedor", owner_full_name: "Proprietário Teste", cpf: "11555563805", status: :approved, approved_at: Time.current) }
   let(:user) { User.create!(email_address: "dono@eloshop.test", password: "password123", role: :seller, seller: seller) }
 
   describe "GET /painel/atelie" do
@@ -34,7 +34,7 @@ RSpec.describe "Seller atelier", type: :request do
     # A área do painel deriva o escopo da sessão: o vendedor nunca vê o
     # ateliê de outro, nem trocando qualquer coisa na URL.
     it "never shows another seller's data" do
-      other = Seller.create!(name: "Ateliê Alheio", status: :approved, approved_at: Time.current)
+      other = Seller.create!(name: "Ateliê Alheio", owner_full_name: "Proprietário Teste", cpf: "11666675539", status: :approved, approved_at: Time.current)
       sign_in_as(user)
 
       get seller_atelier_path

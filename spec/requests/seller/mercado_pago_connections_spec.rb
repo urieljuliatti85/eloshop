@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Seller Mercado Pago connection", type: :request do
-  let(:seller) { Seller.create!(name: "Ateliê OAuth") }
+  let(:seller) { Seller.create!(name: "Ateliê OAuth", owner_full_name: "Proprietário Teste", cpf: "12222234069") }
   let(:user) { User.create!(email_address: "oauth-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
   let(:oauth) { instance_double(Marketplace::MercadoPagoOauth, configured?: true, sandbox?: false) }
 
@@ -78,7 +78,7 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
   end
 
   it "does not allow the same Mercado Pago account on two sellers" do
-    other_seller = Seller.create!(name: "Outro Ateliê OAuth")
+    other_seller = Seller.create!(name: "Outro Ateliê OAuth", owner_full_name: "Proprietário Teste", cpf: "12333345730")
     credentials = Marketplace::MercadoPagoOauth::Credentials.new(
       user_id: "mp-duplicated",
       access_token: "other-access",

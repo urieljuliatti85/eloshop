@@ -40,6 +40,8 @@ module AuthenticationHelpers
     @approved_seller ||= begin
       seller = Seller.create!(
         name: "Ateliê Spec #{SecureRandom.hex(4)}",
+        owner_full_name: "Proprietário Spec",
+        cpf: generate_valid_cpf,
         status: :approved,
         approved_at: Time.current
       )
@@ -62,5 +64,22 @@ module AuthenticationHelpers
       seller: user.seller,
       request: ActionDispatch::TestRequest.create
     )
+  end
+
+  # Gera um CPF com dígitos verificadores válidos (módulo 11) para satisfazer
+  # `Seller#cpf_must_be_valid` em specs que não testam CPF diretamente.
+  def generate_valid_cpf
+    base = Array.new(9) { rand(10) }
+    base = base.map.with_index { |digit, i| i.zero? ? rand(1..9) : digit } # evita sequência 000000000
+    d1 = check_digit(base)
+    d2 = check_digit(base + [ d1 ])
+    (base + [ d1, d2 ]).join
+  end
+
+  def check_digit(digits)
+    weights = (digits.length + 1).downto(2)
+    sum = digits.zip(weights).sum { |digit, weight| digit * weight }
+    remainder = (sum * 10) % 11
+    remainder == 10 ? 0 : remainder
   end
 end

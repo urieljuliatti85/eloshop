@@ -2,7 +2,7 @@ require "test_helper"
 
 class SellerTest < ActiveSupport::TestCase
   test "assigns a slug and starts pending" do
-    seller = Seller.create!(name: "Ateliê da Lua")
+    seller = Seller.create!(name: "Ateliê da Lua", owner_full_name: "Ana Lua", cpf: "11144477735")
 
     assert_equal "atelie-da-lua", seller.slug
     assert_predicate seller, :pending?
@@ -117,6 +117,46 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.melhor_envio_access_token
   end
 
+  test "requires the owner's full name and CPF" do
+    seller = Seller.new(name: "Sem dono")
+
+    assert_not seller.valid?
+    assert_includes seller.errors[:owner_full_name], "can't be blank"
+    assert_includes seller.errors[:cpf], "can't be blank"
+  end
+
+  test "rejects a CPF with an invalid checksum" do
+    seller = Seller.new(name: "Ateliê", owner_full_name: "Ana Lua", cpf: "11144477736")
+
+    assert_not seller.valid?
+    assert_includes seller.errors[:cpf], "é inválido"
+  end
+
+  test "rejects a CPF with all repeated digits" do
+    seller = Seller.new(name: "Ateliê", owner_full_name: "Ana Lua", cpf: "11111111111")
+
+    assert_not seller.valid?
+    assert_includes seller.errors[:cpf], "é inválido"
+  end
+
+  test "accepts a CPF formatted with punctuation" do
+    seller = Seller.new(name: "Ateliê", owner_full_name: "Ana Lua", cpf: "111.444.777-35")
+
+    assert seller.valid?
+    assert_equal "11144477735", seller.cpf
+  end
+
+  test "stores the CPF encrypted and rejects a duplicate across sellers" do
+    first = Seller.create!(name: "Primeiro Ateliê", owner_full_name: "Ana Lua", cpf: "111.444.777-35")
+
+    assert_not_includes first.cpf_ciphertext, "11144477735"
+
+    duplicate = Seller.new(name: "Segundo Ateliê", owner_full_name: "Outro Dono", cpf: "111.444.777-35")
+
+    assert_not duplicate.valid?
+    assert_includes duplicate.errors[:cpf_hash], "já está cadastrado para outro ateliê"
+  end
+
   test "Mercado Pago and Melhor Envio credentials are encrypted independently" do
     seller = sellers(:pending)
     seller.connect_mercado_pago!(mercado_pago_credentials)
@@ -161,7 +201,7 @@ class SellerTest < ActiveSupport::TestCase
   # Endereço de origem: opcional enquanto o frete real não está ligado, mas
   # quem começa a preencher precisa terminar — meio endereço não despacha.
   test "is valid without an origin address" do
-    assert Seller.new(name: "Sem endereço").valid?
+    assert Seller.new(name: "Sem endereço", owner_full_name: "Ana Lua", cpf: "24681357928").valid?
   end
 
   test "requires the whole origin address once one field is filled" do
@@ -173,7 +213,8 @@ class SellerTest < ActiveSupport::TestCase
   end
 
   test "accepts a complete origin address" do
-    seller = Seller.new(name: "Completo", origin_zip_code: "88010-000", origin_street: "Rua A",
+    seller = Seller.new(name: "Completo", owner_full_name: "Ana Lua", cpf: "19283746546",
+      origin_zip_code: "88010-000", origin_street: "Rua A",
       origin_number: "10", origin_neighborhood: "Centro", origin_city: "Florianópolis", origin_state: "SC")
 
     assert seller.valid?
@@ -198,7 +239,7 @@ class SellerTest < ActiveSupport::TestCase
   # teste chegou a ser aprovada em produção. Quem distingue é a tag
   # `test_user` de /users/me.
   test "refuses approval for a Mercado Pago test account" do
-    seller = Seller.create!(name: "Ateliê de teste")
+    seller = Seller.create!(name: "Ateliê de teste", owner_full_name: "Ana Lua", cpf: "52998224725")
     seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: true, test_account: true))
 
     assert seller.mercado_pago_connected?
@@ -214,7 +255,7 @@ class SellerTest < ActiveSupport::TestCase
   # Sem certeza sobre a conta, a aprovação não passa: aprovar no escuro é o
   # risco que a salvaguarda existe para evitar.
   test "refuses approval when the account type is unknown" do
-    seller = Seller.create!(name: "Ateliê indefinido")
+    seller = Seller.create!(name: "Ateliê indefinido", owner_full_name: "Ana Lua", cpf: "39053344705")
     seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: true, test_account: nil))
 
     assert_nil seller.mercado_pago_test_account
@@ -230,7 +271,7 @@ class SellerTest < ActiveSupport::TestCase
   # checkout para exercitar. As recusas continuam valendo fora do sandbox, que
   # é onde a salvaguarda protege dinheiro real.
   test "approves a Mercado Pago test account while the app runs in sandbox mode" do
-    seller = Seller.create!(name: "Ateliê de teste em sandbox")
+    seller = Seller.create!(name: "Ateliê de teste em sandbox", owner_full_name: "Ana Lua", cpf: "16899535009")
     seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: false, test_account: true))
 
     assert_not seller.mercado_pago_real_account?
@@ -246,7 +287,7 @@ class SellerTest < ActiveSupport::TestCase
   # A configuração ausente não afrouxa nada: fora do sandbox a recusa é a
   # mesma de antes, e sem o KYC confirmado nem o sandbox aprova.
   test "sandbox mode does not waive the KYC confirmation" do
-    seller = Seller.create!(name: "Ateliê sem KYC")
+    seller = Seller.create!(name: "Ateliê sem KYC", owner_full_name: "Ana Lua", cpf: "12345678909")
     seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: false, test_account: true))
 
     with_sandbox("true") do
@@ -262,7 +303,7 @@ class SellerTest < ActiveSupport::TestCase
   end
 
   test "approves a real account with KYC confirmed" do
-    seller = Seller.create!(name: "Ateliê real")
+    seller = Seller.create!(name: "Ateliê real", owner_full_name: "Ana Lua", cpf: "98765432100")
     seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: true, test_account: false))
 
     seller.approve!(kyc_level_6_confirmed: true)
@@ -271,7 +312,7 @@ class SellerTest < ActiveSupport::TestCase
   end
 
   test "disconnecting clears the account type" do
-    seller = Seller.create!(name: "Ateliê desconecta")
+    seller = Seller.create!(name: "Ateliê desconecta", owner_full_name: "Ana Lua", cpf: "13579246828")
     seller.connect_mercado_pago!(mercado_pago_credentials(test_account: false))
     seller.disconnect_mercado_pago!
 

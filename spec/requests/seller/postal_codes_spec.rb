@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Seller postal code lookup", type: :request do
-  let(:seller) { Seller.create!(name: "Ateliê", status: :approved, approved_at: Time.current) }
+  let(:seller) { Seller.create!(name: "Ateliê", owner_full_name: "Proprietário Teste", cpf: "12888904276", status: :approved, approved_at: Time.current) }
   let(:user) { User.create!(email_address: "seller-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
   let(:address) { PostalCodeLookup::Address.new(street: "Rua das Flores", neighborhood: "Centro", city: "Florianópolis", state: "SC") }
 

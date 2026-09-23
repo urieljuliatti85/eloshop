@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Seller getting started", type: :request do
-  let(:seller) { Seller.create!(name: "Ateliê Começo") }
+  let(:seller) { Seller.create!(name: "Ateliê Começo", owner_full_name: "Proprietário Teste", cpf: "12000010601") }
   let(:user) { User.create!(email_address: "comeco@example.com", password: "password123", role: :seller, seller: seller) }
   let(:oauth) { instance_double(Marketplace::MercadoPagoOauth, configured?: true, sandbox?: false) }
 
