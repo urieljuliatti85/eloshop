@@ -157,6 +157,49 @@ class SellerTest < ActiveSupport::TestCase
     assert_includes duplicate.errors[:cpf_hash], "já está cadastrado para outro ateliê"
   end
 
+  test "masks the CPF for display, showing only the last two digits" do
+    seller = Seller.create!(name: "Ateliê", owner_full_name: "Ana Lua", cpf: "111.444.777-35")
+
+    assert_equal "***.***.***-35", seller.masked_cpf
+  end
+
+  test "masked CPF is nil when none was ever stored" do
+    seller = Seller.create!(name: "Ateliê", owner_full_name: "Ana Lua", cpf: "39053344705")
+    seller.update_columns(cpf_ciphertext: nil, cpf_hash: nil)
+
+    assert_nil seller.masked_cpf
+  end
+
+  # Formatação completa, reservada para telas administrativas — em qualquer
+  # outro lugar (incluindo o próprio painel do vendedor) o dado exibido deve
+  # ser `masked_cpf`.
+  test "returns the complete formatted CPF for admin screens" do
+    seller = Seller.create!(name: "Ateliê", owner_full_name: "Ana Lua", cpf: "111.444.777-35")
+
+    assert_equal "111.444.777-35", seller.cpf_for_admin
+  end
+
+  test "complete CPF for admin is nil when none was ever stored" do
+    seller = Seller.create!(name: "Ateliê", owner_full_name: "Ana Lua", cpf: "39053344705")
+    seller.update_columns(cpf_ciphertext: nil, cpf_hash: nil)
+
+    assert_nil seller.cpf_for_admin
+  end
+
+  # owner_full_name/cpf só são exigidos na criação: vendedores cadastrados
+  # antes deste campo existir não têm o dado, e operações centrais do painel
+  # (aprovação, conexão de gateway) não podem ficar bloqueadas até eles
+  # preencherem — ver comentário em Seller#owner_full_name.
+  test "core seller operations keep working for a legacy seller without owner data" do
+    legacy_seller = Seller.create!(name: "Ateliê Legado", owner_full_name: "Temporário", cpf: "16899535009")
+    legacy_seller.update_columns(owner_full_name: nil, cpf_ciphertext: nil, cpf_hash: nil)
+
+    legacy_seller.connect_mercado_pago!(mercado_pago_credentials)
+    legacy_seller.approve!(kyc_level_6_confirmed: true)
+
+    assert_predicate legacy_seller.reload, :approved?
+  end
+
   test "Mercado Pago and Melhor Envio credentials are encrypted independently" do
     seller = sellers(:pending)
     seller.connect_mercado_pago!(mercado_pago_credentials)

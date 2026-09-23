@@ -20,11 +20,12 @@ module SellerPortal
 
     private
 
-    # Nome e endereço de origem. `slug` já está nas URLs públicas dos produtos,
-    # e trocá-lo quebraria links compartilhados; `status` é decisão da
-    # plataforma.
+    # Nome, dados do proprietário e endereço de origem. `slug` já está nas
+    # URLs públicas dos produtos, e trocá-lo quebraria links compartilhados;
+    # `status` é decisão da plataforma. CPF em branco não apaga o já
+    # cadastrado: `Seller#cpf=` só atribui quando o valor vem presente.
     def atelier_params
-      params.expect(seller: [ :name, *Seller::ORIGIN_ADDRESS_FIELDS ])
+      params.expect(seller: [ :name, :owner_full_name, :cpf, *Seller::ORIGIN_ADDRESS_FIELDS ])
     end
   end
 end

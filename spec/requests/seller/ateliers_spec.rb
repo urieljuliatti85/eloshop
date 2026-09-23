@@ -116,5 +116,45 @@ RSpec.describe "Seller atelier", type: :request do
       expect(seller.slug).to eq(original_slug)
       expect(seller).to be_approved
     end
+
+    # Vendedores cadastrados antes deste campo existir não têm CPF/nome do
+    # proprietário — a validação só é obrigatória na criação (ver
+    # Seller#owner_full_name/cpf), e o painel é onde eles completam o dado.
+    it "lets a seller without owner data fill it in later" do
+      legacy_seller = Seller.create!(name: "Ateliê Legado", owner_full_name: "Temporário", cpf: "384.756.192-82", status: :approved, approved_at: Time.current)
+      # Simula um cadastro anterior a este campo existir: `update_columns`
+      # ignora validação de propósito, para reproduzir o estado real de um
+      # `Seller` gravado antes de owner_full_name/cpf existirem.
+      legacy_seller.update_columns(owner_full_name: nil, cpf_ciphertext: nil, cpf_hash: nil)
+      legacy_user = User.create!(email_address: "legado@eloshop.test", password: "password123", role: :seller, seller: legacy_seller)
+      sign_in_as(legacy_user)
+
+      patch seller_atelier_path, params: { seller: {
+        name: legacy_seller.name, owner_full_name: "Dono Retroativo", cpf: "715.928.463-19"
+      } }
+
+      legacy_seller.reload
+      expect(legacy_seller.owner_full_name).to eq("Dono Retroativo")
+      expect(legacy_seller.masked_cpf).to eq("***.***.***-19")
+    end
+
+    it "keeps the previously stored CPF when the field is left blank" do
+      sign_in_as(user)
+      original_masked_cpf = seller.masked_cpf
+
+      patch seller_atelier_path, params: { seller: { name: seller.name, cpf: "" } }
+
+      expect(seller.reload.masked_cpf).to eq(original_masked_cpf)
+    end
+
+    it "rejects an invalid CPF without touching the previously stored one" do
+      sign_in_as(user)
+      original_masked_cpf = seller.masked_cpf
+
+      patch seller_atelier_path, params: { seller: { name: seller.name, cpf: "111.111.111-11" } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(seller.reload.masked_cpf).to eq(original_masked_cpf)
+    end
   end
 end

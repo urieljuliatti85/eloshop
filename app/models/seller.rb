@@ -21,7 +21,11 @@ class Seller < ApplicationRecord
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true
   validates :mercado_pago_user_id, uniqueness: true, allow_blank: true
-  validates :owner_full_name, presence: true
+  # Só exigido na criação: vendedores cadastrados antes deste campo existir
+  # não têm o dado, e bloquear todo update (approve!, connect_mercado_pago!
+  # etc.) até eles preencherem derrubaria o painel para quem já opera.
+  # Preenchimento fica disponível em "Dados do Ateliê", mas não é obrigatório.
+  validates :owner_full_name, presence: true, on: :create
   validates :cpf_hash, uniqueness: { message: "já está cadastrado para outro ateliê" }, allow_nil: true
 
   before_validation :assign_cpf, if: -> { @cpf.present? }
@@ -189,6 +193,27 @@ class Seller < ApplicationRecord
     @cpf = value.to_s.gsub(/\D/, "")
   end
 
+  # Exibição apenas: "***.***.***-35". O CPF completo nunca volta para a
+  # tela — só os dois últimos dígitos, suficientes para o vendedor reconhecer
+  # o próprio cadastro sem reexpor o documento inteiro.
+  def masked_cpf
+    digits = decrypted_cpf
+    return nil if digits.blank?
+
+    "***.***.***-#{digits.last(2)}"
+  end
+
+  # CPF completo formatado, só para telas administrativas (o admin da
+  # plataforma precisa do documento íntegro para fins de aprovação/KYC).
+  # Em qualquer outro lugar — inclusive o próprio painel do vendedor — use
+  # `masked_cpf`.
+  def cpf_for_admin
+    digits = decrypted_cpf
+    return nil if digits.blank?
+
+    "#{digits[0..2]}.#{digits[3..5]}.#{digits[6..8]}-#{digits[9..10]}"
+  end
+
   def to_param
     slug
   end
@@ -230,6 +255,10 @@ class Seller < ApplicationRecord
       remainder = 0 if remainder == 10
       remainder == digits[length].to_i
     end
+  end
+
+  def decrypted_cpf
+    decrypt_credential(cpf_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_CPF)
   end
 
   def credential_encryptor(salt:)
