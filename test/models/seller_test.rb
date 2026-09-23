@@ -22,6 +22,26 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.approved_at
   end
 
+  # Sem isto, o token OAuth continuaria válido após a suspensão, e um pedido
+  # com pagamento pendente criado antes dela ainda conseguiria ser autorizado
+  # — nem `Payments::Authorize` nem o gateway checam `approved?`/`suspended?`,
+  # só a presença do token (ver Seller#suspend!).
+  test "suspension disconnects Mercado Pago instead of just changing status" do
+    seller = sellers(:pending)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.approve!(kyc_level_6_confirmed: true)
+    assert_predicate seller, :mercado_pago_connected?
+
+    seller.suspend!
+
+    assert_predicate seller, :suspended?
+    assert_not_predicate seller, :mercado_pago_connected?
+    assert_nil seller.mercado_pago_user_id
+    assert_nil seller.mercado_pago_access_token_ciphertext
+    assert_nil seller.mercado_pago_refresh_token_ciphertext
+    assert_nil seller.mercado_pago_public_key
+  end
+
   test "approval requires a connected account and explicit KYC confirmation" do
     seller = sellers(:pending)
 

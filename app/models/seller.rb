@@ -67,8 +67,26 @@ class Seller < ApplicationRecord
     mercado_pago_real_account? || Marketplace::MercadoPagoOauth.sandbox?
   end
 
+  # Suspender também desconecta o Mercado Pago: caso contrário o token OAuth
+  # continua válido e um pedido com pagamento pendente antes da suspensão
+  # ainda conseguiria ser autorizado e repassar dinheiro ao vendedor suspenso
+  # (nem `Payments::Authorize` nem o gateway checam `approved?`/`suspended?`,
+  # só a presença do token). Pedidos já pagos antes da suspensão não são
+  # mexidos aqui — reembolso, se necessário, é decisão manual do admin através
+  # do fluxo de reembolso já existente.
   def suspend!
-    update!(status: :suspended, approved_at: nil)
+    update!(
+      status: :suspended,
+      approved_at: nil,
+      mercado_pago_user_id: nil,
+      mercado_pago_access_token_ciphertext: nil,
+      mercado_pago_refresh_token_ciphertext: nil,
+      mercado_pago_token_expires_at: nil,
+      mercado_pago_connected_at: nil,
+      mercado_pago_live_mode: false,
+      mercado_pago_test_account: nil,
+      mercado_pago_public_key: nil
+    )
   end
 
   # Basta um campo preenchido para o endereço passar a ser cobrado inteiro.
