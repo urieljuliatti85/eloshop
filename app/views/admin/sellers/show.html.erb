@@ -19,6 +19,12 @@
     </section>
 
     <section class="admin-card p-6">
+      <p class="admin-section-label">Dados do proprietário</p>
+      <p class="mt-2 text-sm text-slate-500">Nome: <%= @seller.owner_full_name.presence || "—" %></p>
+      <p class="mt-1 text-sm text-slate-500">CPF: <%= @seller.cpf_for_admin || "—" %></p>
+    </section>
+
+    <section class="admin-card p-6">
       <p class="admin-section-label">Termos Comerciais do Marketplace</p>
       <% acceptance = @seller.latest_terms_acceptance %>
       <% if acceptance %>

@@ -25,6 +25,32 @@
         </dd>
       </div>
 
+      <%# Dados do proprietário: opcionais para quem cadastrou antes deste
+          campo existir, mas o CPF nunca volta em texto pleno — só os dois
+          últimos dígitos, o suficiente para o vendedor reconhecer o próprio
+          cadastro sem reexpor o documento inteiro (ver Seller#masked_cpf). %>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">Nome do proprietário</dt>
+        <dd class="mt-1 text-lg font-bold text-stone-950">
+          <% if current_seller.owner_full_name.present? %>
+            <%= current_seller.owner_full_name %>
+          <% else %>
+            <span class="text-base font-normal text-stone-500">Ainda não informado.</span>
+          <% end %>
+        </dd>
+      </div>
+
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">CPF</dt>
+        <dd class="mt-1 text-lg font-bold text-stone-950">
+          <% if current_seller.masked_cpf.present? %>
+            <%= current_seller.masked_cpf %>
+          <% else %>
+            <span class="text-base font-normal text-stone-500">Ainda não informado.</span>
+          <% end %>
+        </dd>
+      </div>
+
       <%# Sem endereço o frete real não tem origem — o aviso é para o vendedor
           saber o que falta antes de a plataforma ligar o cálculo. %>
       <div class="sm:col-span-2">

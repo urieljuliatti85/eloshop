@@ -96,6 +96,37 @@ RSpec.describe "Admin sellers", type: :request do
     expect(response.body).not_to include(seller_atelier_url)
   end
 
+  it "shows the owner's full name and complete CPF on the seller detail page" do
+    sign_in_as(admin)
+
+    get admin_seller_path(seller)
+
+    expect(response.body).to include("Proprietário Teste")
+    expect(response.body).to include(seller.cpf_for_admin)
+    expect(response.body).to include("106.666.702-00")
+  end
+
+  it "shows a dash on the detail page when the owner data was never filled in" do
+    sign_in_as(admin)
+    seller.update_columns(owner_full_name: nil, cpf_ciphertext: nil, cpf_hash: nil)
+
+    get admin_seller_path(seller)
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Dados do proprietário")
+  end
+
+  it "shows the owner's full name and complete CPF in the seller list" do
+    sign_in_as(admin)
+    seller # ensure the seller record exists before the page renders
+
+    get admin_sellers_path
+
+    expect(response.body).to include("Proprietário Teste")
+    expect(response.body).to include(seller.cpf_for_admin)
+    expect(response.body).to include("106.666.702-00")
+  end
+
   it "shows the current commercial terms acceptance for the seller" do
     sign_in_as(admin)
     acceptance = SellerTermsAcceptance.create!(

@@ -23,6 +23,32 @@
       <p class="mt-1 text-xs text-stone-500">É o nome que aparece nas suas peças e na sua vitrine.</p>
     </div>
 
+    <%# Dados do proprietário: opcionais para quem já opera sem eles (ver
+        Seller#owner_full_name/cpf, validados só na criação). O CPF nunca é
+        reexibido em texto pleno — o campo fica em branco mesmo quando já
+        existe um cadastrado, e só é gravado se o vendedor digitar algo novo
+        (ver Seller#cpf=). %>
+    <fieldset class="border-t border-stone-200 pt-6">
+      <legend class="sr-only">Dados do proprietário</legend>
+      <p class="text-sm font-semibold text-stone-700">Dados do proprietário</p>
+      <p class="mt-1 mb-4 text-xs text-stone-500">Não aparecem na loja. Usados para identificar quem responde pelo ateliê.</p>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <%= form.label :owner_full_name, "Nome completo", class: "mb-1 block text-sm font-semibold text-stone-700" %>
+          <%= form.text_field :owner_full_name, class: "min-h-11 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %>
+        </div>
+
+        <div>
+          <%= form.label :cpf, "CPF", class: "mb-1 block text-sm font-semibold text-stone-700" %>
+          <%= form.text_field :cpf, value: nil, inputmode: "numeric", placeholder: current_seller.masked_cpf || "000.000.000-00", class: "min-h-11 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %>
+          <% if current_seller.masked_cpf.present? %>
+            <p class="mt-1 text-xs text-stone-500">Deixe em branco para manter o CPF já cadastrado.</p>
+          <% end %>
+        </div>
+      </div>
+    </fieldset>
+
     <%# Endereço de onde a peça é despachada — não é o endereço de cobrança
         nem aparece na loja. Continua opcional enquanto a entrega fixa e o
         fallback não precisam de origem; quem preencher precisa completar,

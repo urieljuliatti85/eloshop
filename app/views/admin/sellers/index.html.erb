@@ -50,7 +50,7 @@
 
   <div class="admin-card overflow-hidden">
     <table class="admin-table">
-      <thead><tr><th>Ateliê</th><th>Contato</th><th>Status</th><th>Termos</th><th>Produtos</th><th></th></tr></thead>
+      <thead><tr><th>Ateliê</th><th>Proprietário</th><th>Contato</th><th>Status</th><th>Termos</th><th>Produtos</th><th></th></tr></thead>
       <tbody>
         <% @sellers.each do |seller| %>
           <% acceptance = seller.latest_terms_acceptance %>
@@ -58,6 +58,14 @@
           <% terms_status = seller.terms_accepted? ? "active" : "pending" %>
           <tr>
             <td class="font-semibold"><%= seller.name %></td>
+            <td>
+              <% if seller.owner_full_name.present? %>
+                <%= seller.owner_full_name %><br>
+                <span class="text-xs text-slate-500"><%= seller.cpf_for_admin || "CPF não informado" %></span>
+              <% else %>
+                <span class="text-slate-400">Não informado</span>
+              <% end %>
+            </td>
             <td><%= seller.users.first&.email_address || "—" %></td>
             <td><%= admin_status_badge(seller.status) %></td>
             <td><%= admin_status_badge(terms_status, label: terms_label) %></td>
