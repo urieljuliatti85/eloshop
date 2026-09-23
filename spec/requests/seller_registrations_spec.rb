@@ -4,7 +4,7 @@ RSpec.describe "Seller registrations", type: :request do
   it "creates a pending seller account and signs it in" do
     expect do
       post seller_registration_path, params: {
-        seller: { name: "Ateliê da Serra" },
+        seller: { name: "Ateliê da Serra", owner_full_name: "Maria Serra", cpf: "60000000060" },
         user: { email_address: "serra@example.com", password: "password123", password_confirmation: "password123" },
         terms_accepted: "1"
       }
@@ -22,7 +22,7 @@ RSpec.describe "Seller registrations", type: :request do
 
     expect do
       post seller_registration_path, params: {
-        seller: { name: "Ateliê Inválido" },
+        seller: { name: "Ateliê Inválido", owner_full_name: "Dono Inválido", cpf: "70000000078" },
         user: { email_address: "invalido@example.com", password: "short", password_confirmation: "different" }
       }
     end.not_to change(Seller, :count)
@@ -37,7 +37,7 @@ RSpec.describe "Seller registrations", type: :request do
 
     expect do
       post seller_registration_path, params: {
-        seller: { name: "Ateliê Existente" },
+        seller: { name: "Ateliê Existente", owner_full_name: "Dono Existente", cpf: "80000000086" },
         user: { email_address: "existing@example.com", password: "password123", password_confirmation: "password123" }
       }
     end.not_to change(Seller, :count)

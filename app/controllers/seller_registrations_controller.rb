@@ -32,7 +32,7 @@ class SellerRegistrationsController < ApplicationController
   private
 
   def seller_params
-    params.expect(seller: [ :name ])
+    params.expect(seller: [ :name, :owner_full_name, :cpf ])
   end
 
   def user_params

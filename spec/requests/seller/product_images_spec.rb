@@ -1,8 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Seller product images", type: :request do
-  let(:seller) { Seller.create!(name: "Ateliê Imagens", status: :approved, approved_at: Time.current) }
-  let(:other_seller) { Seller.create!(name: "Outro Ateliê Imagens", status: :approved, approved_at: Time.current) }
+  let(:seller) { Seller.create!(name: "Ateliê Imagens", owner_full_name: "Proprietário Teste", cpf: "13000015930", status: :approved, approved_at: Time.current) }
+  let(:other_seller) { Seller.create!(name: "Outro Ateliê Imagens", owner_full_name: "Proprietário Teste", cpf: "13111127664", status: :approved, approved_at: Time.current) }
   let(:user) { User.create!(email_address: "images-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
   let(:product) { Product.create!(seller: seller, name: "Vaso", sku: "SELLER-IMG-001", price_cents: 5_000, stock_quantity: 3) }
   let(:other_product) { Product.create!(seller: other_seller, name: "Prato", sku: "OTHER-IMG-001", price_cents: 4_000, stock_quantity: 2) }

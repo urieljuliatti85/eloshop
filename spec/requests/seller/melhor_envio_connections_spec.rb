@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Seller Melhor Envio connection", type: :request do
-  let(:seller) { Seller.create!(name: "Ateliê Frete") }
+  let(:seller) { Seller.create!(name: "Ateliê Frete", owner_full_name: "Proprietário Teste", cpf: "12111122335") }
   let(:user) { User.create!(email_address: "frete-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
   let(:oauth) { instance_double(Marketplace::MelhorEnvioOauth, configured?: true, sandbox?: false) }
 

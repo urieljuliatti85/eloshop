@@ -28,7 +28,8 @@ class NotifySellerOfOrderJobTest < ActiveJob::TestCase
   # exemplo). Isso não é erro: não há para onde enviar, e repetir o job não
   # faria aparecer um destinatário.
   test "não envia nem levanta erro quando o ateliê não tem usuário" do
-    seller = Seller.create!(name: "Ateliê sem usuário #{SecureRandom.hex(4)}", status: :approved, approved_at: Time.current)
+    seller = Seller.create!(name: "Ateliê sem usuário #{SecureRandom.hex(4)}", owner_full_name: "Dono Sem Usuário",
+      cpf: "64283917591", status: :approved, approved_at: Time.current)
     seller_order = build_seller_order(seller: seller)
 
     assert_empty seller.users

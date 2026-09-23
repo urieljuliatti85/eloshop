@@ -20,7 +20,7 @@ RSpec.describe "Storefront products", type: :request do
     end
 
     it "does not list active products from a seller awaiting approval" do
-      pending_seller = Seller.create!(name: "Ateliê em análise")
+      pending_seller = Seller.create!(name: "Ateliê em análise", owner_full_name: "Proprietário Teste", cpf: "13888909503")
       product = Product.create!(seller: pending_seller, name: "Peça pendente", sku: "STORE-PENDING-001", price_cents: 8_990, stock_quantity: 1, currency: "BRL", status: :active)
 
       get products_path
@@ -56,7 +56,7 @@ RSpec.describe "Storefront products", type: :request do
     end
 
     it "filters the catalog by atelier" do
-      other = Seller.create!(name: "Ateliê do filtro #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
+      other = Seller.create!(name: "Ateliê do filtro #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "14000021257", status: :approved, approved_at: Time.current)
       mine = Product.create!(seller: approved_seller, name: "Peça do meu ateliê", sku: "FIL-A", price_cents: 5_000, stock_quantity: 2, currency: "BRL", status: :active)
       theirs = Product.create!(seller: other, name: "Peça do outro ateliê", sku: "FIL-B", price_cents: 5_000, stock_quantity: 2, currency: "BRL", status: :active)
 
@@ -67,7 +67,7 @@ RSpec.describe "Storefront products", type: :request do
     end
 
     it "offers only ateliers that have something for sale in the filter" do
-      empty = Seller.create!(name: "Ateliê sem peça #{SecureRandom.hex(3)}", status: :approved, approved_at: Time.current)
+      empty = Seller.create!(name: "Ateliê sem peça #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "14111132928", status: :approved, approved_at: Time.current)
       Product.create!(seller: approved_seller, name: "Peça à venda", sku: "FIL-C", price_cents: 5_000, stock_quantity: 2, currency: "BRL", status: :active)
 
       get products_path

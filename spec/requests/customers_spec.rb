@@ -41,7 +41,7 @@ RSpec.describe "Customers", type: :request do
     end
 
     it "returns a newly registered customer to checkout" do
-      seller = Seller.create!(name: "Cadastro Checkout", status: :approved, approved_at: Time.current)
+      seller = Seller.create!(name: "Cadastro Checkout", owner_full_name: "Proprietário Teste", cpf: "11444452134", status: :approved, approved_at: Time.current)
       product = Product.create!(seller: seller, name: "Produto cadastro", sku: "RETURN-SIGNUP", price_cents: 1000, stock_quantity: 1, status: :active)
       post cart_items_path, params: { product_id: product.id, quantity: 1 }
       get new_order_path

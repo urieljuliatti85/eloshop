@@ -1,8 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Seller orders", type: :request do
-  let(:seller) { Seller.create!(name: "Ateliê Pedidos", status: :approved, approved_at: Time.current) }
-  let(:other_seller) { Seller.create!(name: "Outro Ateliê Pedidos", status: :approved, approved_at: Time.current) }
+  let(:seller) { Seller.create!(name: "Ateliê Pedidos", owner_full_name: "Proprietário Teste", cpf: "12444457463", status: :approved, approved_at: Time.current) }
+  let(:other_seller) { Seller.create!(name: "Outro Ateliê Pedidos", owner_full_name: "Proprietário Teste", cpf: "12555569197", status: :approved, approved_at: Time.current) }
   let(:user) { User.create!(email_address: "orders-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
   let(:customer) { Customer.create!(name: "Cliente", email: "customer-#{SecureRandom.hex(4)}@example.com", password: "password123") }
   let(:own_product) { Product.create!(seller: seller, name: "Peça própria", sku: "ORDER-OWN-001", price_cents: 5_000, stock_quantity: 2) }

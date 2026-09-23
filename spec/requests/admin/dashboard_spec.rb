@@ -20,11 +20,11 @@ RSpec.describe "Admin dashboard", type: :request do
       variant_product = Product.create!(seller: approved_seller, name: "Camiseta com variações", sku: "DASH-VAR-001", price_cents: 5_000, stock_quantity: 0, currency: "BRL", status: :active)
       low_stock_variant = variant_product.product_variants.create!(sku: "DASH-VAR-P", price_cents: 5_000, stock_quantity: 2, size: "P")
       sold_out_variant = variant_product.product_variants.create!(sku: "DASH-VAR-G", price_cents: 5_000, stock_quantity: 0, size: "G")
-      risk_seller = Seller.create!(name: "Ateliê em risco #{SecureRandom.hex(4)}", status: :approved)
+      risk_seller = Seller.create!(name: "Ateliê em risco #{SecureRandom.hex(4)}", owner_full_name: "Proprietário Teste", cpf: "10111111790", status: :approved)
       User.create!(email_address: "risk-seller-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: risk_seller)
-      seller_terms_unaccepted = Seller.create!(name: "Ateliê sem termos #{SecureRandom.hex(4)}")
+      seller_terms_unaccepted = Seller.create!(name: "Ateliê sem termos #{SecureRandom.hex(4)}", owner_full_name: "Proprietário Teste", cpf: "10222223413")
       User.create!(email_address: "pending-terms-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller_terms_unaccepted)
-      suspended_seller = Seller.create!(name: "Ateliê suspenso #{SecureRandom.hex(4)}", status: :suspended)
+      suspended_seller = Seller.create!(name: "Ateliê suspenso #{SecureRandom.hex(4)}", owner_full_name: "Proprietário Teste", cpf: "10333335147", status: :suspended)
       User.create!(email_address: "suspended-seller-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: suspended_seller)
       order = Order.create!(
         customer: customer, status: "pending", subtotal_cents: 1_000, shipping_cents: 500, total_cents: 1_500,

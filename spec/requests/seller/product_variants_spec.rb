@@ -1,8 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Seller product variants", type: :request do
-  let(:seller) { Seller.create!(name: "Ateliê Variantes", status: :approved, approved_at: Time.current) }
-  let(:other_seller) { Seller.create!(name: "Outro Ateliê Variantes", status: :approved, approved_at: Time.current) }
+  let(:seller) { Seller.create!(name: "Ateliê Variantes", owner_full_name: "Proprietário Teste", cpf: "13222239398", status: :approved, approved_at: Time.current) }
+  let(:other_seller) { Seller.create!(name: "Outro Ateliê Variantes", owner_full_name: "Proprietário Teste", cpf: "13333351056", status: :approved, approved_at: Time.current) }
   let(:user) { User.create!(email_address: "variants-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
   let(:product) { Product.create!(seller: seller, name: "Camiseta", sku: "SELLER-VAR-001", price_cents: 8_000, stock_quantity: 3) }
   let(:other_product) { Product.create!(seller: other_seller, name: "Bolsa", sku: "OTHER-VAR-001", price_cents: 9_000, stock_quantity: 2) }
