@@ -13,13 +13,15 @@ class NotifyCustomerOfDeliveryJobTest < ActiveJob::TestCase
     order.seller_order
   end
 
-  test "envia para o e-mail do cliente" do
+  test "envia para o e-mail do cliente com link para o pedido" do
     seller_order = build_seller_order(seller: sellers(:approved))
 
     assert_emails 1 do
       NotifyCustomerOfDeliveryJob.perform_now(seller_order)
     end
 
-    assert_includes ActionMailer::Base.deliveries.last.to, seller_order.order.customer.email
+    email = ActionMailer::Base.deliveries.last
+    assert_includes email.to, seller_order.order.customer.email
+    assert_match "/orders/#{seller_order.order_id}", email.body.to_s
   end
 end
