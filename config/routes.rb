@@ -170,6 +170,8 @@ Rails.application.routes.draw do
 
   get "como-funciona", to: "how_it_works#show", as: :how_it_works
 
+  get "politica-de-privacidade", to: "privacy_policy#show", as: :privacy_policy
+
   resources :customers, only: %i[new create]
   resource :customer_session, only: %i[new create destroy]
 
