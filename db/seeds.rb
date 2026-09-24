@@ -46,6 +46,8 @@ seed_seller = Seller.find_or_create_by!(slug: "eloshop") do |seller|
   seller.name = "EloShop"
   seller.status = "approved"
   seller.approved_at = Time.current
+  seller.owner_full_name = "Maria da Silva"
+  seller.cpf = "60000000060"
 end
 
 # Usuário do ateliê: entra no painel do vendedor já administrando o catálogo
