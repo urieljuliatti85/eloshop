@@ -13,12 +13,15 @@
   <% if params[:q].present? %><p class="text-sm text-ink-muted">Resultados para “<%= params[:q] %>” · <%= link_to "Limpar busca", seller_products_path, class: "font-semibold text-brand-600 underline underline-offset-4" %></p><% end %>
 
   <%= form_with url: bulk_discontinue_seller_products_path, method: :patch, data: { turbo_confirm: "Descontinuar os produtos selecionados? Essa ação não pode ser desfeita.", controller: "bulk-select" } do %>
-    <div class="mb-3 flex items-center justify-between">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
       <label class="flex items-center gap-2 text-sm font-semibold text-ink-muted">
         <input type="checkbox" data-bulk-select-target="selectAll" data-action="bulk-select#toggleAll" class="size-4 rounded border-brand-200">
         Selecionar todos
       </label>
-      <button type="submit" class="inline-flex min-h-11 items-center rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">Descontinuar selecionados</button>
+      <div class="flex flex-wrap gap-2">
+        <button type="submit" formaction="<%= bulk_unpublish_seller_products_path %>" data-turbo-confirm="Esconder os produtos selecionados da vitrine?" class="inline-flex min-h-11 items-center rounded-full border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-semibold text-stone-700">Esconder selecionados</button>
+        <button type="submit" class="inline-flex min-h-11 items-center rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">Descontinuar selecionados</button>
+      </div>
     </div>
 
     <%# Lista em cartões no celular e tabela a partir de sm: cinco colunas em

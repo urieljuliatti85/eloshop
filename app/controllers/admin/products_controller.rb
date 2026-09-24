@@ -82,6 +82,20 @@ module Admin
       redirect_to admin_products_path, notice: bulk_discontinue_notice(discontinued_count, products.size)
     end
 
+    def bulk_unpublish
+      products = Product.where(id: params[:product_ids])
+      unpublished_count = 0
+
+      products.find_each do |product|
+        product.unpublish!
+        unpublished_count += 1
+      rescue Product::InvalidStatusTransition
+        next
+      end
+
+      redirect_to admin_products_path, notice: bulk_unpublish_notice(unpublished_count, products.size)
+    end
+
     private
 
     def bulk_discontinue_notice(discontinued_count, selected_count)
@@ -91,6 +105,15 @@ module Admin
       return "#{discontinued_count} produto(s) descontinuado(s)." if skipped_count.zero?
 
       "#{discontinued_count} produto(s) descontinuado(s). #{skipped_count} não puderam ser alterados (já descontinuados ou status incompatível)."
+    end
+
+    def bulk_unpublish_notice(unpublished_count, selected_count)
+      return "Nenhum produto selecionado." if selected_count.zero?
+
+      skipped_count = selected_count - unpublished_count
+      return "#{unpublished_count} produto(s) escondido(s)." if skipped_count.zero?
+
+      "#{unpublished_count} produto(s) escondido(s). #{skipped_count} não puderam ser alterados (já estavam fora de active)."
     end
 
     # O seletor de categoria renderiza o breadcrumb de cada opção; sem a árvore
