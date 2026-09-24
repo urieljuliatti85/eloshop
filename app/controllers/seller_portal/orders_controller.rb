@@ -29,6 +29,13 @@ module SellerPortal
 
       shipment.mark_delivered!
       NotifyCustomerOfDeliveryJob.perform_later(shipment.seller_order)
+      Notification.create!(
+        recipient: shipment.order.customer,
+        kind: :order_delivered,
+        title: "Pedido entregue",
+        body: "O vendedor confirmou a entrega do seu pedido ##{shipment.order.id}.",
+        url: order_path(shipment.order)
+      )
 
       message = shipment.local_pickup? ? "Retirada confirmada." : "Entrega confirmada."
       redirect_to seller_order_path(shipment.order), notice: message

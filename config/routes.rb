@@ -199,6 +199,10 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :notifications, only: %i[index] do
+    member { patch :mark_as_read }
+  end
+
   resource :wishlist, only: %i[show]
   resources :wishlist_items, only: %i[create destroy] do
     member { post :move_to_cart }

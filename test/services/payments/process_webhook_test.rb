@@ -27,6 +27,10 @@ module Payments
       assert payment.reload.paid?
       assert order.reload.confirmed?
       assert order.seller_order.confirmed?
+
+      notification = order.customer.notifications.order_confirmed.last
+      assert notification.present?
+      assert_equal Rails.application.routes.url_helpers.order_path(order), notification.url
     end
 
     test "records the processor fee returned by the gateway" do

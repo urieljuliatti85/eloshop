@@ -136,6 +136,21 @@
         <%= link_to "Quero comprar", new_customer_session_path, class: "hidden rounded-full px-4 py-2 font-medium text-ink transition hover:bg-white hover:shadow-sm md:inline-block" %>
       <% end %>
 
+      <% if respond_to?(:customer_authenticated?) && customer_authenticated? && Current.customer %>
+        <%= link_to notifications_path, class: "relative flex h-11 w-11 items-center justify-center text-ink transition hover:text-brand-600 md:h-9 md:w-9 md:rounded-full md:hover:bg-white md:hover:shadow-sm", aria: { label: "Notificações" } do %>
+          <svg class="h-6 w-6 md:h-5 md:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M6 8a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 12 6 8Z" stroke-linejoin="round" />
+            <path d="M9.5 16a2.5 2.5 0 0 0 5 0" stroke-linecap="round" />
+          </svg>
+          <% unread_count = Current.customer.notifications.unread.count %>
+          <% if unread_count.positive? %>
+            <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-semibold text-white">
+              <%= unread_count %>
+            </span>
+          <% end %>
+        <% end %>
+      <% end %>
+
       <%= link_to cart_path, class: "relative flex h-11 min-w-11 items-center justify-center gap-1.5 font-medium text-ink transition hover:text-brand-600 md:h-auto md:min-w-0 md:rounded-full md:px-4 md:py-2 md:hover:bg-white md:hover:shadow-sm", aria: { label: "Carrinho" } do %>
         <span class="hidden md:inline">Carrinho</span>
         <svg class="h-6 w-6 md:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
@@ -249,6 +264,10 @@
           <% end %>
         <% end %>
         <%= link_to "Pedidos", orders_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
+        <% unread_count = Current.customer.notifications.unread.count %>
+        <%= link_to notifications_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" do %>
+          Notificações<%= " (#{unread_count})" if unread_count.positive? %>
+        <% end %>
         <%= link_to "Endereços", addresses_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
         <%= link_to "Favoritos", wishlist_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
         <%= button_to "Sair", customer_session_path, method: :delete, class: "w-full cursor-pointer rounded-full bg-ink px-5 py-3 text-base font-semibold text-white" %>

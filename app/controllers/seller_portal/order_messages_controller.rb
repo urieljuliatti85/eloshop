@@ -22,6 +22,13 @@ module SellerPortal
 
       if @message.save
         NotifyOrderMessageJob.perform_later(@message)
+        Notification.create!(
+          recipient: @order.customer,
+          kind: :new_message,
+          title: "Nova mensagem do vendedor",
+          body: "Você recebeu uma nova mensagem sobre o pedido ##{@order.id}.",
+          url: order_path(@order)
+        )
         redirect_to seller_order_messages_path(@order), notice: "Mensagem enviada ao cliente."
       else
         @messages = @seller_order.order_messages.includes(:sender).chronological

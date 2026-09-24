@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_24_163114) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_24_212409) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -163,6 +163,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_163114) do
     t.string "username"
     t.string "verification_code"
     t.index ["account_type"], name: "index_mercado_pago_test_accounts_on_account_type"
+  end
+
+  create_table "notifications", force: :cascade do |t|
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.string "kind", null: false
+    t.datetime "read_at"
+    t.bigint "recipient_id", null: false
+    t.string "recipient_type", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "url"
+    t.index ["recipient_type", "recipient_id", "read_at"], name: "idx_on_recipient_type_recipient_id_read_at_50191a301d"
   end
 
   create_table "order_items", force: :cascade do |t|
