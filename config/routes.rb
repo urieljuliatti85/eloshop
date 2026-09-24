@@ -137,6 +137,10 @@ Rails.application.routes.draw do
     get "mensagens", to: "order_messages#index", as: :messages
     get "orders/:order_id/messages", to: "order_messages#show", as: :order_messages
     post "orders/:order_id/messages", to: "order_messages#create"
+
+    resources :notifications, only: %i[index] do
+      member { patch :mark_as_read }
+    end
   end
 
   # `format: :json` fixo: a API v1 só tem views `.jbuilder`, então não há um

@@ -44,6 +44,9 @@ RSpec.describe "Admin reviews", type: :request do
 
       expect(response).to redirect_to(admin_reviews_path)
       expect(review.reload).to be_approved
+
+      notification = product.seller.notifications.new_review.last
+      expect(notification).to be_present
     end
   end
 

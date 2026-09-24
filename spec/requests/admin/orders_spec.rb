@@ -90,6 +90,10 @@ RSpec.describe "Admin orders", type: :request do
       expect(payment.reload.refunded_amount_cents).to eq(500)
       expect(payment.application_fee_refunded_cents).to eq(50)
       expect(seller_order.reload.refunded_amount_cents).to eq(500)
+
+      notification = seller.notifications.order_refunded.last
+      expect(notification).to be_present
+      expect(notification.title).to eq("Reembolso parcial")
     end
 
     it "does not allow an unauthenticated refund" do
@@ -122,6 +126,9 @@ RSpec.describe "Admin orders", type: :request do
       expect(response).to redirect_to(admin_order_path(order))
       expect(order.reload.cancelled?).to be(true)
       expect(product.reload.stock_quantity).to eq(6)
+
+      notification = seller.notifications.order_cancelled.last
+      expect(notification).to be_present
     end
 
     it "refuses to cancel an order with an authorized payment" do

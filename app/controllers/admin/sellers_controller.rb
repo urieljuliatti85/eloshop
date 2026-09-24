@@ -39,6 +39,13 @@ module Admin
 
     def suspend
       @seller.suspend!
+      Notification.create!(
+        recipient: @seller,
+        kind: :seller_suspended,
+        title: "Conta suspensa",
+        body: "Sua conta foi suspensa pela EloShop e a conexão com o Mercado Pago foi desfeita.",
+        url: seller_root_path
+      )
       redirect_to admin_seller_path(@seller), notice: "Artesão suspenso e conta Mercado Pago desconectada."
     end
 

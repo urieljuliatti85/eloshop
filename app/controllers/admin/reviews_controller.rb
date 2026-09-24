@@ -9,6 +9,13 @@ module Admin
 
     def approve
       @review.approve!
+      Notification.create!(
+        recipient: @review.product.seller,
+        kind: :new_review,
+        title: "Nova avaliação",
+        body: "Seu produto \"#{@review.product.name}\" recebeu uma nova avaliação.",
+        url: seller_product_path(@review.product)
+      )
       redirect_to admin_reviews_path, notice: "Avaliação aprovada."
     end
 

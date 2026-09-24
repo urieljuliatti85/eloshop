@@ -30,6 +30,54 @@
 
         <div class="ml-auto flex shrink-0 items-center gap-3 sm:gap-5">
           <%= link_to "Ver loja", products_path, class: "hidden min-h-11 items-center text-xs font-semibold text-stone-600 hover:text-brand-600 sm:inline-flex" %>
+
+          <% recent_notifications = current_seller.notifications.chronological.limit(5)
+             unread_count = current_seller.notifications.unread.count %>
+          <div class="relative" data-controller="account-menu"
+               data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
+            <button type="button"
+                    class="relative grid size-9 cursor-pointer place-items-center rounded-full text-stone-600 transition hover:bg-brand-50 hover:text-brand-600"
+                    aria-expanded="false" aria-haspopup="true"
+                    aria-label="Notificações"
+                    data-account-menu-target="button"
+                    data-action="account-menu#toggle">
+              <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M6 8a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 12 6 8Z" stroke-linejoin="round" />
+                <path d="M9.5 16a2.5 2.5 0 0 0 5 0" stroke-linecap="round" />
+              </svg>
+              <% if unread_count.positive? %>
+                <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-semibold text-white">
+                  <%= unread_count %>
+                </span>
+              <% end %>
+            </button>
+
+            <div class="absolute right-0 top-full z-20 mt-3 w-80 overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-lg"
+                 data-account-menu-target="panel" hidden>
+              <p class="border-b border-brand-100 px-4 py-3 text-sm font-semibold text-stone-900">Notificações</p>
+
+              <% if recent_notifications.any? %>
+                <ul class="max-h-96 overflow-y-auto">
+                  <% recent_notifications.each do |notification| %>
+                    <li>
+                      <%= button_to mark_as_read_seller_notification_path(notification), method: :patch,
+                            class: "block w-full px-4 py-3 text-left transition hover:bg-brand-50 #{'bg-brand-50' unless notification.read?}" do %>
+                        <p class="text-sm font-semibold text-stone-900"><%= notification.title %></p>
+                        <p class="mt-0.5 truncate text-xs text-stone-500"><%= notification.body %></p>
+                      <% end %>
+                    </li>
+                  <% end %>
+                </ul>
+              <% else %>
+                <p class="px-4 py-6 text-center text-sm text-stone-500">Você ainda não tem notificações.</p>
+              <% end %>
+
+              <div class="border-t border-brand-100">
+                <%= link_to "Ver todas", seller_notifications_path, class: "block px-4 py-2.5 text-center text-sm font-medium text-brand-600 hover:bg-brand-50" %>
+              </div>
+            </div>
+          </div>
+
           <div class="hidden h-7 w-px bg-brand-100 sm:block"></div>
           <div class="text-right">
             <p class="max-w-36 truncate text-sm font-bold text-stone-900"><%= current_seller.name %></p>
