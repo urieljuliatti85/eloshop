@@ -207,4 +207,32 @@ RSpec.describe "Admin products", type: :request do
       expect(response.body).to include("1 produto(s) descontinuado(s). 1 não puderam ser alterados")
     end
   end
+
+  describe "PATCH /admin/products/bulk_unpublish" do
+    it "unpublishes every selected product across sellers" do
+      sign_in_as(user)
+      product_a = Product.create!(seller: approved_seller, name: "Vaso A", sku: "BULKU-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "active")
+      product_b = Product.create!(seller: approved_seller, name: "Vaso B", sku: "BULKU-002", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "active")
+
+      patch bulk_unpublish_admin_products_path, params: { product_ids: [ product_a.id, product_b.id ] }
+
+      expect(response).to redirect_to(admin_products_path)
+      expect(product_a.reload).to be_draft
+      expect(product_b.reload).to be_draft
+    end
+
+    it "skips products with an invalid transition and reports how many were skipped" do
+      sign_in_as(user)
+      active_product = Product.create!(seller: approved_seller, name: "Vaso ativo", sku: "BULKU-003", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "active")
+      discontinued_product = Product.create!(seller: approved_seller, name: "Vaso fora de linha", sku: "BULKU-004", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "discontinued")
+
+      patch bulk_unpublish_admin_products_path, params: { product_ids: [ active_product.id, discontinued_product.id ] }
+
+      expect(active_product.reload).to be_draft
+      expect(discontinued_product.reload).to be_discontinued
+
+      follow_redirect!
+      expect(response.body).to include("1 produto(s) escondido(s). 1 não puderam ser alterados")
+    end
+  end
 end

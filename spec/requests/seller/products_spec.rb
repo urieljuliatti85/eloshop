@@ -198,4 +198,36 @@ RSpec.describe "Seller products", type: :request do
 
     expect(other_product.reload).to be_active
   end
+
+  it "unpublishes the selected owned products in bulk" do
+    own_product.update!(status: :active)
+    other_active = Product.create!(seller: seller, name: "Caneca própria", sku: "OWN-005", price_cents: 3_000, stock_quantity: 2, status: :active)
+
+    patch bulk_unpublish_seller_products_path, params: { product_ids: [ own_product.id, other_active.id ] }
+
+    expect(own_product.reload).to be_draft
+    expect(other_active.reload).to be_draft
+    expect(response).to redirect_to(seller_products_path)
+  end
+
+  it "skips products that cannot be unpublished and reports how many were skipped" do
+    own_product.update!(status: :active)
+    discontinued_product = Product.create!(seller: seller, name: "Fora de linha", sku: "OWN-006", price_cents: 3_000, stock_quantity: 2, status: :discontinued)
+
+    patch bulk_unpublish_seller_products_path, params: { product_ids: [ own_product.id, discontinued_product.id ] }
+
+    expect(own_product.reload).to be_draft
+    expect(discontinued_product.reload).to be_discontinued
+
+    follow_redirect!
+    expect(response.body).to include("1 produto(s) escondido(s). 1 não puderam ser alterados")
+  end
+
+  it "does not let a seller unpublish another seller's product by id" do
+    other_product.update!(status: :active)
+
+    patch bulk_unpublish_seller_products_path, params: { product_ids: [ other_product.id ] }
+
+    expect(other_product.reload).to be_active
+  end
 end

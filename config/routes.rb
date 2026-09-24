@@ -35,6 +35,7 @@ Rails.application.routes.draw do
       end
       collection do
         patch :bulk_discontinue
+        patch :bulk_unpublish
       end
 
       resources :product_variants, path: "variantes", except: %i[index show]
@@ -118,6 +119,7 @@ Rails.application.routes.draw do
       end
       collection do
         patch :bulk_discontinue
+        patch :bulk_unpublish
       end
 
       resources :product_variants, path: "variantes", except: %i[index show]

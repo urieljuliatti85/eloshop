@@ -10,12 +10,15 @@
 
   <% if @products.any? %>
     <%= form_with url: bulk_discontinue_admin_products_path, method: :patch, data: { turbo_confirm: "Descontinuar os produtos selecionados? Essa ação não pode ser desfeita.", controller: "bulk-select" } do %>
-      <div class="mb-3 flex items-center justify-between">
+      <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
         <label class="flex items-center gap-2 text-sm font-semibold text-slate-600">
           <input type="checkbox" data-bulk-select-target="selectAll" data-action="bulk-select#toggleAll" class="size-4 rounded border-slate-300">
           Selecionar todos
         </label>
-        <button type="submit" class="admin-button border border-red-200 bg-red-50 text-red-700">Descontinuar selecionados</button>
+        <div class="flex flex-wrap gap-2">
+          <button type="submit" formaction="<%= bulk_unpublish_admin_products_path %>" data-turbo-confirm="Esconder os produtos selecionados da vitrine?" class="admin-button border border-slate-200 bg-slate-50 text-slate-700">Esconder selecionados</button>
+          <button type="submit" class="admin-button border border-red-200 bg-red-50 text-red-700">Descontinuar selecionados</button>
+        </div>
       </div>
 
       <div class="admin-table-wrap">
