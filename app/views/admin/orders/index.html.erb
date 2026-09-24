@@ -21,6 +21,8 @@
           <tr>
             <th>Pedido</th>
             <th>Cliente</th>
+            <th>Ateliê</th>
+            <th>E-mail do Ateliê</th>
             <th>Status</th>
             <th>Pagamento</th>
             <th>Total</th>
@@ -31,6 +33,7 @@
         <tbody>
           <% @orders.each do |order| %>
             <% payment = order.payments.max_by(&:created_at) %>
+            <% seller = order.seller_orders.first&.seller %>
             <tr>
               <td class="font-semibold text-slate-950">#<%= order.id %></td>
               <td>
@@ -42,6 +45,8 @@
                   </span>
                 </div>
               </td>
+              <td><%= seller ? link_to(seller.name, admin_seller_path(seller), class: "admin-link") : "—" %></td>
+              <td class="text-slate-500"><%= seller&.users&.first&.email_address || "—" %></td>
               <td><%= admin_status_badge(order.status) %></td>
               <td><%= payment ? admin_status_badge(payment.status) : admin_status_badge("pending", label: "Não iniciado") %></td>
               <td class="font-semibold text-slate-950"><%= format_price(order.total_cents) %></td>

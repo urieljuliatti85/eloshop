@@ -31,6 +31,31 @@ RSpec.describe "Admin orders", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    it "shows a dash for the atelier columns when the order has no seller_order yet" do
+      order
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_orders_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("—")
+    end
+
+    it "shows the atelier name and its owner's email for orders with a seller_order" do
+      seller = Seller.create!(name: "Ateliê Listagem", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf, status: :approved, approved_at: Time.current)
+      seller_user = User.create!(email_address: "atelie-listagem@example.com", password: "password123", role: :seller, seller: seller)
+      order.seller_orders.create!(
+        seller: seller, status: :pending, subtotal_cents: 1000, shipping_cents: 500,
+        total_cents: 1500, platform_fee_cents: 150, seller_amount_cents: 1350
+      )
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_orders_path
+
+      expect(response.body).to include(seller.name)
+      expect(response.body).to include(seller_user.email_address)
+    end
   end
 
   describe "GET /admin/orders/:id" do

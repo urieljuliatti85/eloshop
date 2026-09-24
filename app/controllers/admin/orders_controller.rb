@@ -1,7 +1,7 @@
 module Admin
   class OrdersController < BaseController
     def index
-      @orders = Order.includes(:customer, :payments).order(created_at: :desc)
+      @orders = Order.includes(:customer, :payments, seller_orders: { seller: :users }).order(created_at: :desc)
       @order_counts = Order.group(:status).count
     end
 
