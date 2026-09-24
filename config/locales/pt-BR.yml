@@ -69,6 +69,8 @@ pt-BR:
       pending: "Aguardando pagamento"
       confirmed: "Confirmado"
       cancelled: "Cancelado"
+      partially_refunded: "Reembolso parcial"
+      refunded: "Reembolsado"
   sellers:
     statuses:
       pending: "Em análise"

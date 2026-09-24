@@ -42,6 +42,7 @@ class OrdersController < StorefrontController
 
   def show
     @order = Current.customer.orders.find(params[:id])
+    @seller_order = @order.seller_order
   end
 
   def cancel
