@@ -38,7 +38,7 @@ module Admin
 
     def suspend
       @seller.suspend!
-      redirect_to admin_seller_path(@seller), notice: "Artesão suspenso."
+      redirect_to admin_seller_path(@seller), notice: "Artesão suspenso e conta Mercado Pago desconectada."
     end
 
     private
