@@ -295,6 +295,34 @@ module Gateways
       end
     end
 
+    # Pedido do suporte do Mercado Pago (2026-09-24, resposta ao chamado
+    # sobre o 500 opaco): correlacionar a falha pelo X-Request-Id e o corpo
+    # exato enviado. token/card_token e e-mail completo nunca aparecem no
+    # log (§43) — só a confirmação de presença do token e o e-mail mascarado.
+    test "logs the request id and a masked version of the sent body on a credit card failure" do
+      capture_rails_events("payment.mercado_pago_gateway_http_error") do |events|
+        stub_error_response(
+          code: "500",
+          body: { "error" => nil, "message" => nil, "cause" => [] }.to_json,
+          content_type: "application/json",
+          request_id: "req-support-12345"
+        ) do
+          assert_raises(MercadoPago::RequestFailed) do
+            @gateway.authorize(order: @order, idempotency_key: "attempt-card-1", application_fee_cents: 1_349,
+              payment_method: "credit_card", card_token: "card-brick-token", installments: 3)
+          end
+        end
+
+        payload = events.last[:payload]
+        assert_equal "req-support-12345", payload[:request_id]
+        sent_body = payload[:sent_body]
+        assert_equal true, sent_body["card_credential_present"]
+        assert_equal 3, sent_body["installments"]
+        assert_not_includes sent_body.inspect, "card-brick-token"
+        assert_match(/\A.\*\*\*@/, sent_body["payer_hint"])
+      end
+    end
+
     # Mesma lacuna que o Melhor Envio tinha até o PR #84: corpo não-JSON caía
     # num `rescue` que devolvia nil, e nenhum evento era emitido. Um 500 opaco
     # de /v1/payments não distingue "o Mercado Pago recusou" de "a requisição
@@ -342,13 +370,14 @@ module Gateways
 
     # Responde com um erro HTTP em vez do payload de sucesso do stub_request,
     # para exercitar o caminho de log da falha.
-    def stub_error_response(code:, body:, content_type: nil, server: nil)
+    def stub_error_response(code:, body:, content_type: nil, server: nil, request_id: nil)
       fake_http = Object.new
 
       fake_http.define_singleton_method(:request) do |_req|
         Net::HTTPResponse.send(:response_class, code).new("1.1", code, "Error").tap do |response|
           response["content-type"] = content_type if content_type
           response["server"] = server if server
+          response["x-request-id"] = request_id if request_id
           response.define_singleton_method(:body) { body }
         end
       end
