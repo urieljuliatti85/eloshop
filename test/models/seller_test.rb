@@ -42,6 +42,32 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.mercado_pago_public_key
   end
 
+  # Diferente de suspend!, esconder não é moderação: o vendedor continua
+  # approved e conectado ao Mercado Pago, só não aparece publicamente.
+  test "hiding does not change status nor disconnect Mercado Pago" do
+    seller = sellers(:pending)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.approve!(kyc_level_6_confirmed: true)
+
+    seller.hide!
+
+    assert_predicate seller, :hidden?
+    assert_predicate seller, :approved?
+    assert_predicate seller, :mercado_pago_connected?
+  end
+
+  test "unhiding reverses hide! without touching approval" do
+    seller = sellers(:pending)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.approve!(kyc_level_6_confirmed: true)
+    seller.hide!
+
+    seller.unhide!
+
+    assert_not_predicate seller, :hidden?
+    assert_predicate seller, :approved?
+  end
+
   test "approval requires a connected account and explicit KYC confirmation" do
     seller = sellers(:pending)
 

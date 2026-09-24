@@ -17,6 +17,11 @@ class Seller < ApplicationRecord
   has_many :seller_orders, dependent: :restrict_with_error
   has_many :seller_reports, dependent: :destroy
 
+  # Composto com Seller.approved onde a visibilidade pública é decidida
+  # (Product.publicly_visible, Product#available_for_purchase?) — esconder
+  # não muda o status do vendedor, é um filtro à parte.
+  scope :visible, -> { where(hidden_at: nil) }
+
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 
   validates :name, presence: true
@@ -88,6 +93,23 @@ class Seller < ApplicationRecord
       mercado_pago_test_account: nil,
       mercado_pago_public_key: nil
     )
+  end
+
+  # Diferente de suspend!, esconder não é moderação nem penalidade — é uma
+  # pausa reversível que o admin decide (ex.: vendedor pediu para não
+  # aparecer temporariamente). Por isso não mexe em status nem desconecta o
+  # Mercado Pago: o vendedor continua approved e pode ser reexibido a
+  # qualquer momento sem passar por reconexão ou novo KYC.
+  def hide!
+    update!(hidden_at: Time.current)
+  end
+
+  def unhide!
+    update!(hidden_at: nil)
+  end
+
+  def hidden?
+    hidden_at.present?
   end
 
   # Basta um campo preenchido para o endereço passar a ser cobrado inteiro.

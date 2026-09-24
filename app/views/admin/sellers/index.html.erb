@@ -50,7 +50,7 @@
 
   <div class="admin-card overflow-hidden">
     <table class="admin-table">
-      <thead><tr><th>Ateliê</th><th>Proprietário</th><th>Contato</th><th>Status</th><th>Termos</th><th>Produtos</th><th></th></tr></thead>
+      <thead><tr><th>Ateliê</th><th>Proprietário</th><th>Contato</th><th>Status</th><th>Vitrine</th><th>Termos</th><th>Produtos</th><th></th></tr></thead>
       <tbody>
         <% @sellers.each do |seller| %>
           <% acceptance = seller.latest_terms_acceptance %>
@@ -68,6 +68,7 @@
             </td>
             <td><%= seller.users.first&.email_address || "—" %></td>
             <td><%= admin_status_badge(seller.status) %></td>
+            <td><%= admin_status_badge(seller.hidden? ? "hidden" : "visible", label: seller.hidden? ? "Escondida" : "Exibida") %></td>
             <td><%= admin_status_badge(terms_status, label: terms_label) %></td>
             <td><%= seller.products.size %></td>
             <td class="text-right"><%= link_to "Detalhes", admin_seller_path(seller), class: "admin-link" %></td>
