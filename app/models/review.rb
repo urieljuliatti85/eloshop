@@ -11,6 +11,7 @@ class Review < ApplicationRecord
   validates :rating, presence: true, inclusion: { in: 1..5 }
   validates :comment, presence: true
   validates :customer_id, uniqueness: { scope: :product_id, message: "já avaliou este produto" }
+  validates :seller_reply, presence: true, if: :seller_replied_at?
 
   before_validation :set_verified_purchase, on: :create
 
@@ -24,6 +25,19 @@ class Review < ApplicationRecord
 
   def reject!
     update!(status: "rejected")
+  end
+
+  def replied?
+    seller_reply.present?
+  end
+
+  # Só a review já aprovada é pública, então só ela pode receber resposta —
+  # responder uma pendente/rejeitada exporia comentário e resposta juntos
+  # antes de qualquer moderação.
+  def reply!(text)
+    raise ArgumentError, "só é possível responder uma avaliação aprovada" unless approved?
+
+    update!(seller_reply: text, seller_replied_at: Time.current)
   end
 
   private

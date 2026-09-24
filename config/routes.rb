@@ -141,6 +141,10 @@ Rails.application.routes.draw do
     resources :notifications, only: %i[index] do
       member { patch :mark_as_read }
     end
+
+    resources :reviews, only: %i[index] do
+      member { patch :reply }
+    end
   end
 
   # `format: :json` fixo: a API v1 só tem views `.jbuilder`, então não há um

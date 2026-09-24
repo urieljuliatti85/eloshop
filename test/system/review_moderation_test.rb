@@ -32,6 +32,37 @@ class ReviewModerationTest < ApplicationSystemTestCase
     assert_text "★ 5.0"
   end
 
+  test "a seller replies to an approved review and the reply becomes public" do
+    seller = sellers(:approved)
+    product = products(:one)
+    product.update!(seller: seller)
+    customer = customers(:one)
+    review = customer.reviews.create!(product: product, rating: 5, comment: "Chegou rápido e muito bem embalado")
+    review.approve!
+    seller_user = User.create!(
+      email_address: "seller-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller
+    )
+    SellerTermsAcceptance.record!(user: seller_user, seller: seller, request: ActionDispatch::TestRequest.create)
+
+    visit seller_login_path
+    fill_in "E-mail", with: seller_user.email_address
+    fill_in "Senha", with: "password123"
+    click_button "Entrar"
+    assert_text "Crie, publique e acompanhe cada venda"
+
+    visit seller_reviews_path
+    assert_text "Chegou rápido e muito bem embalado"
+    fill_in "Responder", with: "Que bom que gostou!"
+    click_button "Publicar resposta"
+
+    assert_text "Resposta publicada"
+    assert_text "Que bom que gostou!"
+
+    visit product_path(product.seller, product.slug)
+    assert_text "RESPOSTA DO ATELIÊ"
+    assert_text "Que bom que gostou!"
+  end
+
   private
 
   def sign_in_as_customer(customer)

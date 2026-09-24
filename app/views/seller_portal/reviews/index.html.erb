@@ -1,0 +1,39 @@
+<% content_for :title, "Avaliações | Painel do artesão" %>
+
+<div class="mx-auto max-w-3xl">
+  <h1 class="text-2xl font-bold text-stone-900">Avaliações</h1>
+
+  <% if @reviews.any? %>
+    <ul class="mt-8 space-y-6">
+      <% @reviews.each do |review| %>
+        <li class="rounded-2xl border border-brand-100 bg-white px-6 py-5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-semibold text-stone-900">★ <%= review.rating %>/5</span>
+            <% if review.verified_purchase? %>
+              <span class="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">Compra verificada</span>
+            <% end %>
+          </div>
+          <p class="mt-2 text-sm font-semibold text-stone-700"><%= review.product.name %></p>
+          <p class="mt-1 text-stone-700"><%= review.comment %></p>
+          <p class="mt-2 text-xs text-stone-500"><%= review.customer.name %> · <%= l(review.created_at, format: :short) %></p>
+
+          <% if review.replied? %>
+            <div class="mt-4 rounded-xl bg-brand-50 px-4 py-3">
+              <p class="text-xs font-semibold uppercase tracking-wide text-brand-700">Sua resposta</p>
+              <p class="mt-1 text-sm text-stone-700"><%= review.seller_reply %></p>
+            </div>
+          <% else %>
+            <%= form_with model: review, url: reply_seller_review_path(review), method: :patch, class: "mt-4 flex flex-col gap-2" do |form| %>
+              <%= form.label :seller_reply, "Responder", class: "text-sm font-medium text-stone-700" %>
+              <%= form.text_area :seller_reply, rows: 3, required: true,
+                    class: "w-full rounded-xl border border-brand-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none" %>
+              <%= form.submit "Publicar resposta", class: "w-fit cursor-pointer rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-600" %>
+            <% end %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="mt-8 text-stone-500">Você ainda não recebeu avaliações.</p>
+  <% end %>
+</div>

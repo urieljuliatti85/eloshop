@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_24_212409) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_24_222615) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -391,6 +391,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_212409) do
     t.bigint "customer_id", null: false
     t.bigint "product_id", null: false
     t.integer "rating", null: false
+    t.datetime "seller_replied_at"
+    t.text "seller_reply"
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
     t.boolean "verified_purchase", default: false, null: false
