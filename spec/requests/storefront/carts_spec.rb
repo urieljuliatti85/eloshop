@@ -35,6 +35,19 @@ RSpec.describe "Carts", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).not_to include(product.name)
     end
+
+    # Mesma lacuna do teste acima, mas para o vendedor: um item adicionado
+    # antes da suspensão do ateliê ficava no carrinho até o checkout recusar.
+    it "omits a product from a seller suspended after it was added" do
+      post cart_items_path, params: { product_id: product.id, quantity: 1 }
+      product.seller.suspend!
+
+      get cart_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(product.name)
+      expect(response.body).to include("ateliê foi suspenso")
+    end
   end
 
   describe "POST /cart/apply_coupon" do

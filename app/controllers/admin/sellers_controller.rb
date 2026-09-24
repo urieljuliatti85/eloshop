@@ -27,6 +27,7 @@ module Admin
 
     def show
       @products = @seller.products.order(created_at: :desc)
+      @pending_seller_reports_count = @seller.seller_reports.where(status: %w[pending reviewing]).count
     end
 
     def approve

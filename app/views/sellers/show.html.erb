@@ -62,5 +62,37 @@
         </p>
       <% end %>
     </section>
+
+    <%# Denúncia: fica discreta no rodapé — não é uma ação que se quer em
+        destaque, mas precisa existir e ser fácil de achar para quem procura.
+        Exige cliente autenticado (ver SellerReportsController), então quem
+        não está logado é levado ao login e volta para cá depois. %>
+    <section class="border-t border-sand-200 pt-8">
+      <details class="group">
+        <summary class="cursor-pointer text-sm font-medium text-ink-muted underline underline-offset-4 hover:text-ink [&::-webkit-details-marker]:hidden">
+          Denunciar este ateliê
+        </summary>
+
+        <div class="mt-4 max-w-lg rounded-2xl border border-red-100 bg-red-50/50 p-6">
+          <p class="text-sm font-semibold text-red-900">Esta loja está realizando atividades fraudulentas e não é confiável</p>
+          <p class="mt-1 text-sm text-red-800/80">Sua denúncia é analisada pela equipe da EloShop e não é visível publicamente.</p>
+
+          <%= form_with url: seller_seller_reports_path(@seller.slug), class: "mt-5 space-y-4" do |form| %>
+            <div>
+              <%= form.label :reason, "Motivo", class: "block text-sm font-semibold text-ink" %>
+              <%= form.select :reason,
+                    options_for_select(SellerReport::REASON_LABELS.map { |value, label| [ label, value ] }),
+                    { include_blank: "Selecione um motivo" },
+                    { name: "seller_report[reason]", required: true, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none" } %>
+            </div>
+            <div>
+              <%= form.label :details, "Detalhes (opcional)", class: "block text-sm font-semibold text-ink" %>
+              <%= form.text_area :details, name: "seller_report[details]", rows: 4, maxlength: 2000, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none" %>
+            </div>
+            <%= form.submit "Enviar denúncia", class: "cursor-pointer rounded-full bg-red-600 px-6 py-3 text-sm font-bold text-white hover:bg-red-700" %>
+          <% end %>
+        </div>
+      </details>
+    </section>
   </div>
 </div>

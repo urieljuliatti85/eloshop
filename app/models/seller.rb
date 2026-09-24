@@ -15,6 +15,7 @@ class Seller < ApplicationRecord
   has_many :seller_terms_acceptances, dependent: :restrict_with_error
   has_many :products, dependent: :restrict_with_error
   has_many :seller_orders, dependent: :restrict_with_error
+  has_many :seller_reports, dependent: :destroy
 
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 

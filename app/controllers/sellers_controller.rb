@@ -3,9 +3,10 @@ class SellersController < StorefrontController
 
   # A vitrine pública só existe para artesão aprovado: `Seller.approved` é a
   # mesma condição que `Product.publicly_visible` exige, então um ateliê
-  # pendente ou suspenso responde 404 em vez de expor uma página vazia.
-  # Só ateliês com peça publicada: uma vitrine vazia na listagem é um beco,
-  # o mesmo critério do filtro do catálogo e do sitemap.
+  # pendente ou suspenso não aparece na listagem (ver `show` para a página
+  # dedicada de um ateliê suspenso). Só ateliês com peça publicada: uma
+  # vitrine vazia na listagem é um beco, o mesmo critério do filtro do
+  # catálogo e do sitemap.
   def index
     @sellers = Seller.approved
       .where(id: Product.publicly_visible.select(:seller_id))
@@ -18,8 +19,20 @@ class SellersController < StorefrontController
     @covers = cover_by_seller
   end
 
+  # `pending` continua 404 puro e simples: esse ateliê nunca teve vitrine
+  # pública, então não há nada a diferenciar de uma URL inexistente. Um
+  # ateliê `suspended`, ao contrário, já existiu publicamente — a página
+  # dedicada evita que o link vire ambíguo entre "nunca existiu" e "foi
+  # retirado pela plataforma".
   def show
-    @seller = Seller.approved.find_by!(slug: params[:slug])
+    @seller = Seller.find_by!(slug: params[:slug])
+    raise ActiveRecord::RecordNotFound if @seller.pending?
+
+    if @seller.suspended?
+      render :suspended, status: :not_found
+      return
+    end
+
     @products = @seller.products.publicly_visible
       .order(created_at: :desc)
       # preload, e não includes: a capa arrasta as tabelas do Active Storage

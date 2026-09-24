@@ -195,6 +195,21 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    # Diferente de `pending` (que nunca teve vitrine pública), um ateliê
+    # suspenso já existiu publicamente — a resposta continua 404 (não é uma
+    # vitrine ativa), mas com uma página dedicada em vez do 404 genérico do
+    # site, para não confundir "nunca existiu" com "foi retirado".
+    it "shows a dedicated unavailable page for a suspended atelier, still responding 404" do
+      suspended_seller = Seller.create!(name: "Ateliê suspenso #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "51444433113", status: :approved, approved_at: Time.current)
+      suspended_seller.suspend!
+
+      get seller_path(suspended_seller.slug)
+
+      expect(response).to have_http_status(:not_found)
+      expect(response.body).to include("temporariamente indisponível")
+      expect(response.body).not_to include(suspended_seller.name)
+    end
+
     it "renders an approved atelier with no published products" do
       get seller_path(approved_seller.slug)
 

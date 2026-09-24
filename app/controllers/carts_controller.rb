@@ -8,6 +8,7 @@ class CartsController < StorefrontController
   def show
     @cart = Current.cart
     drop_discontinued_items
+    drop_suspended_seller_items
   end
 
   def apply_coupon
@@ -42,6 +43,24 @@ class CartsController < StorefrontController
       "Um item do seu carrinho não está mais à venda e foi removido."
     else
       "Alguns itens do seu carrinho não estão mais à venda e foram removidos."
+    end
+  end
+
+  # Mesma lacuna do método acima, mas para o vendedor em vez do produto: um
+  # item adicionado antes da suspensão do ateliê ficava no carrinho até o
+  # checkout recusar (`Checkout::CreateOrder` já revalida `available_for_purchase?`
+  # na criação do pedido, mas nada removia o item antes disso). O carrinho é
+  # mono-vendedor (`same_seller_as_cart`), então essa remoção nunca compete
+  # com a de cima por mensagem — na pior das hipóteses ambas removem itens do
+  # mesmo pedido em formação, e a última mensagem prevalece.
+  def drop_suspended_seller_items
+    removed = @cart.cart_items.joins(product: :seller).merge(Seller.suspended).destroy_all
+    return if removed.empty?
+
+    flash.now[:alert] = if removed.one?
+      "Um item do seu carrinho não está mais à venda porque o ateliê foi suspenso e foi removido."
+    else
+      "Alguns itens do seu carrinho não estão mais à venda porque o ateliê foi suspenso e foram removidos."
     end
   end
 end
