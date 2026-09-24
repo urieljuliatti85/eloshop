@@ -202,6 +202,25 @@ RSpec.describe "Orders", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
+    # Mesmo componente de linha do tempo do painel do vendedor
+    # (ApplicationHelper#seller_order_timeline_steps) — o cliente acompanha o
+    # próprio pedido com as mesmas 4 etapas.
+    it "shows the fulfillment timeline for the order's seller order" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      post orders_path, params: { address_id: address.id }
+      order = Order.last
+
+      get order_path(order)
+
+      expect(response.body).to include("Da confirmação à entrega")
+      expect(response.body).to include("Pedido recebido")
+      expect(response.body).to include("Em preparação")
+      expect(response.body).to include("Enviado")
+      expect(response.body).to include("Entregue")
+    end
+
     it "does not show another customer's order" do
       sign_in_customer
       add_to_cart

@@ -63,7 +63,7 @@ class FullPurchaseFlowTest < ActionDispatch::IntegrationTest
     # Cliente vê o pedido confirmado
     get order_path(order)
     assert_response :success
-    assert_select "p", text: /Status: confirmed/
+    assert_select "span", text: "Confirmado"
   end
 
   private
