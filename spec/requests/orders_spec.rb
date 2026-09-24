@@ -285,6 +285,71 @@ RSpec.describe "Orders", type: :request do
     end
   end
 
+  describe "PATCH /orders/:id/deliver" do
+    # Deliberadamente não muda o status oficial (Shipment#status): é um
+    # sinal do cliente, não o fechamento da entrega — ver
+    # Shipment#report_delivered_by_customer!.
+    it "lets the customer report receipt of a shipped order without changing the official status, and notifies the seller" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      post orders_path, params: { address_id: address.id }
+      order = Order.last
+      order.confirm!
+      shipment = create_shipment_for(order)
+      shipment.mark_shipped!
+
+      expect { patch deliver_order_path(order) }.to have_enqueued_job(NotifySellerOfDeliveryJob).with(order.seller_order)
+
+      expect(response).to redirect_to(order_path(order))
+      expect(shipment.reload).to be_shipped
+      expect(shipment.customer_reported_delivered_at).to be_present
+    end
+
+    it "does not accept the report for an order whose shipment has not been marked as shipped yet" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      post orders_path, params: { address_id: address.id }
+      order = Order.last
+      shipment = create_shipment_for(order)
+
+      patch deliver_order_path(order)
+
+      expect(response).to redirect_to(order_path(order))
+      expect(shipment.reload.customer_reported_delivered_at).to be_nil
+    end
+
+    it "does not allow reporting another customer's order" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      post orders_path, params: { address_id: address.id }
+      order = Order.last
+      order.confirm!
+      shipment = create_shipment_for(order)
+      shipment.mark_shipped!
+
+      other_customer = Customer.create!(name: "Outro confirmação", email: "other-deliver@example.com", password: "password123")
+      delete customer_session_path
+      post customer_session_path, params: { email: other_customer.email, password: "password123" }
+
+      patch deliver_order_path(order)
+
+      expect(response).to have_http_status(:not_found)
+      expect(shipment.reload.customer_reported_delivered_at).to be_nil
+    end
+  end
+
+  def create_shipment_for(order, service: "Entrega padrão")
+    order.seller_order.create_shipment!(
+      carrier: "Entrega EloShop",
+      service: service,
+      shipping_cents: order.shipping_cents,
+      estimated_days: 5
+    )
+  end
+
   def create_order_for(order_customer, idempotency_key:)
     Order.create!(
       customer: order_customer,

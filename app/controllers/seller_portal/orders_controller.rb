@@ -27,6 +27,7 @@ module SellerPortal
       raise ActiveRecord::RecordNotFound unless shipment
 
       shipment.mark_delivered!
+      NotifyCustomerOfDeliveryJob.perform_later(shipment.seller_order)
 
       message = shipment.local_pickup? ? "Retirada confirmada." : "Entrega confirmada."
       redirect_to seller_order_path(shipment.order), notice: message

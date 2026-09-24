@@ -33,6 +33,18 @@ class Shipment < ApplicationRecord
     transition_to!("delivered", delivered_at: Time.current)
   end
 
+  # Sinal do cliente de que o pedido chegou — deliberadamente separado do
+  # status oficial (`delivered`), que só o vendedor fecha. Sem prova de
+  # entrega (foto, assinatura, rastreio validado), um clique do comprador
+  # não é autoridade suficiente para fechar a entrega de forma irreversível
+  # nem, no futuro, para liberar repasse — decisão de negócio revisitada em
+  # 2026-09-24 depois de considerar o risco de clique precoce/indevido.
+  def report_delivered_by_customer!
+    raise InvalidStatusTransition, "o envio precisa estar marcado como enviado" unless shipped?
+
+    update!(customer_reported_delivered_at: Time.current)
+  end
+
   private
 
   def transition_to!(new_status, timestamp)

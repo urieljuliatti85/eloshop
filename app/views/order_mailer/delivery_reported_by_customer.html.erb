@@ -1,0 +1,11 @@
+<p>Olá, <%= @seller.name %>!</p>
+
+<p>
+  O cliente <%= @order.customer.name %> avisou que recebeu o pedido
+  <strong>#<%= @order.id %></strong>
+  <%= @seller_order.shipment&.local_pickup? ? "(retirada)" : "(entrega)" %>.
+</p>
+
+<p>Este é só um aviso do cliente — a entrega continua pendente da sua confirmação no painel para ser marcada como concluída.</p>
+
+<p>Os detalhes completos estão no seu painel.</p>

@@ -54,6 +54,20 @@ class OrdersController < StorefrontController
     redirect_to order_path(order), alert: e.message
   end
 
+  def deliver
+    order = Current.customer.orders.find(params[:id])
+    shipment = order.seller_order.shipment
+    raise ActiveRecord::RecordNotFound unless shipment
+
+    shipment.report_delivered_by_customer!
+    NotifySellerOfDeliveryJob.perform_later(order.seller_order)
+
+    message = shipment.local_pickup? ? "Retirada confirmada." : "Recebimento confirmado."
+    redirect_to order_path(order), notice: message
+  rescue Shipment::InvalidStatusTransition => e
+    redirect_to order_path(params[:id]), alert: e.message
+  end
+
   private
 
   def ensure_cart_not_empty

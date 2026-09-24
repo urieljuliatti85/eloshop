@@ -91,13 +91,13 @@ RSpec.describe "Seller orders", type: :request do
   end
 
   describe "PATCH /painel/orders/:id/deliver" do
-    it "marks a shipped order as delivered" do
+    it "marks a shipped order as delivered and notifies the customer" do
       order = create_order_for(own_product)
       order.confirm!
       shipment = create_shipment_for(order)
       shipment.mark_shipped!
 
-      patch deliver_seller_order_path(order)
+      expect { patch deliver_seller_order_path(order) }.to have_enqueued_job(NotifyCustomerOfDeliveryJob).with(order.seller_order)
 
       expect(response).to redirect_to(seller_order_path(order))
       expect(shipment.reload).to be_delivered
