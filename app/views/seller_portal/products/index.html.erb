@@ -11,21 +11,37 @@
 <div class="space-y-6">
   <header class="flex flex-wrap items-end justify-between gap-4"><div><p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Catálogo</p><h1 class="mt-2 text-3xl font-black tracking-tight">Produtos</h1></div><%= link_to "Novo produto", new_seller_product_path, class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white" %></header>
   <% if params[:q].present? %><p class="text-sm text-ink-muted">Resultados para “<%= params[:q] %>” · <%= link_to "Limpar busca", seller_products_path, class: "font-semibold text-brand-600 underline underline-offset-4" %></p><% end %>
-  <%# Lista em cartões no celular e tabela a partir de sm: cinco colunas em
-      390px não cabem, e com overflow-hidden a coluna de ação ficava fora de
-      alcance — o link "Detalhes" era inclicável no celular. %>
-  <div class="grid gap-3 sm:hidden">
-    <% @products.each do |product| %>
-      <%= link_to seller_product_path(product), class: "block rounded-2xl border border-brand-100 bg-white p-4 shadow-sm" do %>
-        <p class="font-semibold text-stone-950"><%= product.name %></p>
-        <p class="mt-1 text-xs text-ink-muted">SKU <%= product.sku %></p>
-        <p class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-          <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold <%= product_status_classes[product.status] %>"><%= t(product.status, scope: "products.statuses") %></span>
-          <span><%= product.stock_quantity %> em estoque</span>
-        </p>
-      <% end %>
-    <% end %>
-  </div>
 
-  <div class="hidden overflow-x-auto rounded-2xl border border-brand-100 bg-white shadow-sm sm:block"><table class="w-full text-left text-sm"><thead class="bg-brand-50/60 text-ink-muted"><tr><th class="p-4">Produto</th><th class="p-4">SKU</th><th class="p-4">Status</th><th class="p-4">Estoque</th><th class="p-4"></th></tr></thead><tbody class="divide-y divide-brand-100"><% @products.each do |product| %><tr><td class="p-4 font-semibold"><%= product.name %></td><td class="p-4"><%= product.sku %></td><td class="p-4"><span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold <%= product_status_classes[product.status] %>"><%= t(product.status, scope: "products.statuses") %></span></td><td class="p-4"><%= product.stock_quantity %></td><td class="p-4 text-right"><%= link_to "Detalhes", seller_product_path(product), class: "inline-flex min-h-11 items-center font-semibold text-brand-600" %></td></tr><% end %></tbody></table></div>
+  <%= form_with url: bulk_discontinue_seller_products_path, method: :patch, data: { turbo_confirm: "Descontinuar os produtos selecionados? Essa ação não pode ser desfeita.", controller: "bulk-select" } do %>
+    <div class="mb-3 flex items-center justify-between">
+      <label class="flex items-center gap-2 text-sm font-semibold text-ink-muted">
+        <input type="checkbox" data-bulk-select-target="selectAll" data-action="bulk-select#toggleAll" class="size-4 rounded border-brand-200">
+        Selecionar todos
+      </label>
+      <button type="submit" class="inline-flex min-h-11 items-center rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">Descontinuar selecionados</button>
+    </div>
+
+    <%# Lista em cartões no celular e tabela a partir de sm: cinco colunas em
+        390px não cabem, e com overflow-hidden a coluna de ação ficava fora de
+        alcance — o link "Detalhes" era inclicável no celular. %>
+    <div class="grid gap-3 sm:hidden">
+      <% @products.each do |product| %>
+        <div class="rounded-2xl border border-brand-100 bg-white p-4 shadow-sm">
+          <div class="flex items-start gap-3">
+            <input type="checkbox" name="product_ids[]" value="<%= product.id %>" data-bulk-select-target="row" class="mt-1 size-4 shrink-0 rounded border-brand-200">
+            <%= link_to seller_product_path(product), class: "block min-w-0 flex-1" do %>
+              <p class="font-semibold text-stone-950"><%= product.name %></p>
+              <p class="mt-1 text-xs text-ink-muted">SKU <%= product.sku %></p>
+              <p class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold <%= product_status_classes[product.status] %>"><%= t(product.status, scope: "products.statuses") %></span>
+                <span><%= product.stock_quantity %> em estoque</span>
+              </p>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="hidden overflow-x-auto rounded-2xl border border-brand-100 bg-white shadow-sm sm:block"><table class="w-full text-left text-sm"><thead class="bg-brand-50/60 text-ink-muted"><tr><th class="w-10 p-4"></th><th class="p-4">Produto</th><th class="p-4">SKU</th><th class="p-4">Status</th><th class="p-4">Estoque</th><th class="p-4"></th></tr></thead><tbody class="divide-y divide-brand-100"><% @products.each do |product| %><tr><td class="p-4"><input type="checkbox" name="product_ids[]" value="<%= product.id %>" data-bulk-select-target="row" class="size-4 rounded border-brand-200"></td><td class="p-4 font-semibold"><%= product.name %></td><td class="p-4"><%= product.sku %></td><td class="p-4"><span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold <%= product_status_classes[product.status] %>"><%= t(product.status, scope: "products.statuses") %></span></td><td class="p-4"><%= product.stock_quantity %></td><td class="p-4 text-right"><%= link_to "Detalhes", seller_product_path(product), class: "inline-flex min-h-11 items-center font-semibold text-brand-600" %></td></tr><% end %></tbody></table></div>
+  <% end %>
 </div>

@@ -9,38 +9,49 @@
   </header>
 
   <% if @products.any? %>
-    <div class="admin-table-wrap">
-      <table>
-        <thead><tr><th>Produto</th><th>Artesão</th><th>SKU</th><th>Preço</th><th>Estoque</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>
-        <tbody>
-          <% @products.each do |product| %>
-            <tr>
-              <td>
-                <div class="flex items-center gap-3">
-                  <span class="grid size-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#f5f1e8] text-sm font-bold text-slate-400">
-                    <% if product.main_image.attached? %>
-                      <%= image_tag product.main_image, class: "h-full w-full object-cover", alt: "" %>
-                    <% else %>
-                      <%= product.name.first.upcase %>
-                    <% end %>
-                  </span>
-                  <span class="min-w-0">
-                    <span class="block max-w-72 truncate font-semibold text-slate-900"><%= product.name %></span>
-                    <span class="block text-xs text-slate-500"><%= product.category&.breadcrumb_name || "Sem categoria" %></span>
-                  </span>
-                </div>
-              </td>
-              <td><%= link_to product.seller.name, admin_seller_path(product.seller), class: "admin-link" %></td>
-              <td class="font-mono text-xs"><%= product.sku %></td>
-              <td class="font-semibold text-slate-900"><%= format_price(product.price_cents) %></td>
-              <td><span class="font-semibold <%= product.stock_quantity <= Product::LOW_STOCK_THRESHOLD ? 'text-amber-700' : 'text-slate-800' %>"><%= product.stock_quantity %></span></td>
-              <td><%= admin_status_badge(product.status) %></td>
-              <td class="text-right"><%= link_to "Detalhes", admin_product_path(product), class: "admin-button admin-button--secondary" %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
+    <%= form_with url: bulk_discontinue_admin_products_path, method: :patch, data: { turbo_confirm: "Descontinuar os produtos selecionados? Essa ação não pode ser desfeita.", controller: "bulk-select" } do %>
+      <div class="mb-3 flex items-center justify-between">
+        <label class="flex items-center gap-2 text-sm font-semibold text-slate-600">
+          <input type="checkbox" data-bulk-select-target="selectAll" data-action="bulk-select#toggleAll" class="size-4 rounded border-slate-300">
+          Selecionar todos
+        </label>
+        <button type="submit" class="admin-button border border-red-200 bg-red-50 text-red-700">Descontinuar selecionados</button>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table>
+          <thead><tr><th class="w-10"></th><th>Produto</th><th>Artesão</th><th>SKU</th><th>Preço</th><th>Estoque</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>
+          <tbody>
+            <% @products.each do |product| %>
+              <tr>
+                <td><input type="checkbox" name="product_ids[]" value="<%= product.id %>" data-bulk-select-target="row" class="size-4 rounded border-slate-300"></td>
+                <td>
+                  <div class="flex items-center gap-3">
+                    <span class="grid size-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#f5f1e8] text-sm font-bold text-slate-400">
+                      <% if product.main_image.attached? %>
+                        <%= image_tag product.main_image, class: "h-full w-full object-cover", alt: "" %>
+                      <% else %>
+                        <%= product.name.first.upcase %>
+                      <% end %>
+                    </span>
+                    <span class="min-w-0">
+                      <span class="block max-w-72 truncate font-semibold text-slate-900"><%= product.name %></span>
+                      <span class="block text-xs text-slate-500"><%= product.category&.breadcrumb_name || "Sem categoria" %></span>
+                    </span>
+                  </div>
+                </td>
+                <td><%= link_to product.seller.name, admin_seller_path(product.seller), class: "admin-link" %></td>
+                <td class="font-mono text-xs"><%= product.sku %></td>
+                <td class="font-semibold text-slate-900"><%= format_price(product.price_cents) %></td>
+                <td><span class="font-semibold <%= product.stock_quantity <= Product::LOW_STOCK_THRESHOLD ? 'text-amber-700' : 'text-slate-800' %>"><%= product.stock_quantity %></span></td>
+                <td><%= admin_status_badge(product.status) %></td>
+                <td class="text-right"><%= link_to "Detalhes", admin_product_path(product), class: "admin-button admin-button--secondary" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
   <% else %>
     <div class="admin-empty-state">
       <p>Nenhum produto cadastrado.</p>
