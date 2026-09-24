@@ -87,6 +87,10 @@ RSpec.describe "Seller orders", type: :request do
       expect(shipment.carrier).to eq("Correios")
       expect(shipment.service).to eq("SEDEX")
       expect(shipment.tracking_code).to eq("AA123456789BR")
+
+      notification = customer.notifications.order_shipped.last
+      expect(notification).to be_present
+      expect(notification.url).to eq(order_path(order))
     end
 
     it "does not advance an unpaid order" do

@@ -1,7 +1,12 @@
 class Notification < ApplicationRecord
   belongs_to :recipient, polymorphic: true
 
-  enum :kind, { order_confirmed: "order_confirmed", order_delivered: "order_delivered", new_message: "new_message" }
+  enum :kind, {
+    order_confirmed: "order_confirmed",
+    order_shipped: "order_shipped",
+    order_delivered: "order_delivered",
+    new_message: "new_message"
+  }
 
   validates :kind, :title, :body, presence: true
 
