@@ -15,6 +15,7 @@ module SellerPortal
       raise ActiveRecord::RecordNotFound unless shipment
 
       shipment.mark_shipped!(**shipment_details)
+      NotifyCustomerOfShipmentJob.perform_later(shipment.seller_order)
 
       message = shipment.local_pickup? ? "Pedido marcado como pronto para retirada." : "Pedido marcado como enviado."
       redirect_to seller_order_path(shipment.order), notice: message

@@ -73,11 +73,13 @@ RSpec.describe "Seller orders", type: :request do
       order.confirm!
       shipment = create_shipment_for(order)
 
-      patch ship_seller_order_path(order), params: {
-        carrier: "Correios",
-        service: "SEDEX",
-        tracking_code: "AA123456789BR"
-      }
+      expect do
+        patch ship_seller_order_path(order), params: {
+          carrier: "Correios",
+          service: "SEDEX",
+          tracking_code: "AA123456789BR"
+        }
+      end.to have_enqueued_job(NotifyCustomerOfShipmentJob)
 
       expect(response).to redirect_to(seller_order_path(order))
       expect(shipment.reload).to be_shipped
