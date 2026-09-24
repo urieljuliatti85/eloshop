@@ -279,7 +279,7 @@ module Gateways
       response = http.request(request)
 
       unless response.is_a?(Net::HTTPSuccess)
-        log_error_response(response, request.path)
+        log_error_response(response, request)
         # Sem o corpo da resposta na mensagem: ele pode ecoar dados do
         # pagamento, e esta exceção vai para o log. Só o código de erro entra,
         # porque é ele que diz o que houve — "respondeu 500" sozinho custou uma
@@ -299,7 +299,8 @@ module Gateways
     # o Mercado Pago devolve quando o método pedido não está habilitado na conta
     # — ficava invisível. Loga só error/message/cause, nunca o payload completo,
     # que pode ecoar dados do pagamento (§43).
-    def log_error_response(response, path)
+    def log_error_response(response, request)
+      path = request.path
       body = JSON.parse(response.body.to_s)
       # `error`/`message`/`cause` cobriram o incidente de 2026-09-08
       # (`user_allowed_only_in_test`), mas um 500 de #48 (2026-09-24) veio com
@@ -315,10 +316,46 @@ module Gateways
         error: body["error"],
         message: body["message"],
         cause: body["cause"],
-        body_excerpt: (body_excerpt(response) if body["error"].blank? && body["message"].blank? && body["cause"].blank?)
+        body_excerpt: (body_excerpt(response) if body["error"].blank? && body["message"].blank? && body["cause"].blank?),
+        request_id: response["x-request-id"],
+        sent_body: masked_sent_body(request)
       )
     rescue StandardError
-      log_non_json_error_response(response, path)
+      log_non_json_error_response(response, request.path)
+    end
+
+    # Pedido pontual do suporte do Mercado Pago (2026-09-24, resposta ao
+    # chamado sobre o 500 opaco em /v1/payments): correlacionar a falha com o
+    # X-Request-Id e o corpo exato enviado. Nunca loga `token`/`card_token`
+    # (mesmo sendo de uso único, não o número do cartão em si) nem o e-mail
+    # completo do pagador — só os campos que o suporte pediu para
+    # diagnosticar, já mascarados aqui (§43).
+    #
+    # As chaves do hash evitam de propósito qualquer nome que
+    # `Rails.application.config.filter_parameters` reconheça (`token`,
+    # `email` — ver config/initializers/filter_parameter_logging.rb):
+    # `Rails.event.notify` filtra por nome de chave em qualquer profundidade
+    # e substituiria até um valor já mascarado por `[FILTERED]`, escondendo
+    # exatamente o dado que esta investigação precisa expor.
+    def masked_sent_body(request)
+      body = JSON.parse(request.body.to_s)
+      {
+        "card_credential_present" => body["token"].present?,
+        "payer_hint" => mask_email(body.dig("payer", "email")),
+        "installments" => body["installments"],
+        "transaction_amount" => body["transaction_amount"],
+        "application_fee" => body["application_fee"],
+        "external_reference" => body["external_reference"]
+      }.compact
+    rescue StandardError
+      nil
+    end
+
+    def mask_email(value)
+      return nil if value.blank?
+
+      local, domain = value.to_s.split("@", 2)
+      "#{local.to_s.first}***@#{domain}"
     end
 
     # Mesma lacuna que o Melhor Envio tinha até o PR #84: quando o corpo não é
