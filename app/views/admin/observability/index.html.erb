@@ -1,0 +1,74 @@
+<div class="space-y-8">
+  <header class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="admin-section-label mb-2">Infraestrutura</p>
+      <h1>Observabilidade</h1>
+      <p class="mt-2 text-sm text-slate-500">Métricas da Railway em tempo quase real — CPU, memória e latência HTTP.</p>
+    </div>
+    <%= link_to "Abrir na Railway", "https://railway.com/", class: "admin-button admin-button--secondary", target: "_blank", rel: "noopener" %>
+  </header>
+
+  <% if @railway_configuration_issues.present? %>
+    <section class="admin-card p-5 sm:p-6" aria-labelledby="railway-configuration-title">
+      <span class="admin-badge admin-badge--warning">Configuração pendente</span>
+      <h2 id="railway-configuration-title" class="mt-4">Conecte um token da Railway</h2>
+      <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+        Crie um Project token escopado ao ambiente de produção e configure as variáveis abaixo na Railway.
+      </p>
+      <ul class="mt-5 space-y-2 text-sm text-slate-700">
+        <% @railway_configuration_issues.each do |variable| %>
+          <li><code class="rounded bg-slate-100 px-2 py-1 font-mono text-xs"><%= variable %></code></li>
+        <% end %>
+      </ul>
+      <p class="mt-5 text-xs leading-5 text-slate-500">O token permanece somente nas variáveis privadas do servidor e nunca é exibido nesta página.</p>
+    </section>
+  <% elsif @railway_error.present? %>
+    <section class="admin-card p-5 sm:p-6" aria-labelledby="railway-error-title">
+      <span class="admin-badge admin-badge--danger">Consulta indisponível</span>
+      <h2 id="railway-error-title" class="mt-4">Não foi possível atualizar os dados</h2>
+      <p class="mt-2 text-sm text-slate-600"><%= @railway_error %></p>
+    </section>
+  <% else %>
+    <section class="grid gap-4 sm:grid-cols-2" aria-label="Uso atual de recursos">
+      <article class="admin-stat-card">
+        <p class="admin-section-label relative z-10">CPU</p>
+        <p class="admin-stat-value relative z-10"><%= number_to_percentage(@railway_snapshot.cpu_usage.to_f * 100, precision: 1) %></p>
+        <p class="relative z-10 mt-3 text-sm text-slate-500">Uso atual do serviço web</p>
+      </article>
+      <article class="admin-stat-card">
+        <p class="admin-section-label relative z-10">Memória</p>
+        <p class="admin-stat-value relative z-10"><%= number_with_precision(@railway_snapshot.memory_usage_gb, precision: 2) %> GB</p>
+        <p class="relative z-10 mt-3 text-sm text-slate-500">Uso atual do serviço web</p>
+      </article>
+    </section>
+
+    <section class="admin-card overflow-hidden" aria-labelledby="railway-latency-title">
+      <div class="admin-card-header">
+        <div>
+          <p class="admin-section-label">Última hora</p>
+          <h2 id="railway-latency-title" class="mt-1">Latência e erros HTTP</h2>
+        </div>
+        <p class="text-xs text-slate-500">Atualizado em <%= l(@railway_snapshot.fetched_at, format: :short) %></p>
+      </div>
+      <div class="grid gap-4 p-5 sm:grid-cols-4 sm:p-6">
+        <div>
+          <p class="admin-section-label">p50</p>
+          <p class="mt-1 text-2xl font-black text-slate-900"><%= @railway_snapshot.p50_ms %> ms</p>
+        </div>
+        <div>
+          <p class="admin-section-label">p95</p>
+          <p class="mt-1 text-2xl font-black text-slate-900"><%= @railway_snapshot.p95_ms %> ms</p>
+        </div>
+        <div>
+          <p class="admin-section-label">p99</p>
+          <p class="mt-1 text-2xl font-black text-slate-900"><%= @railway_snapshot.p99_ms %> ms</p>
+        </div>
+        <div>
+          <p class="admin-section-label">Taxa de erro</p>
+          <p class="mt-1 text-2xl font-black text-slate-900"><%= number_to_percentage(@railway_snapshot.error_rate.to_f * 100, precision: 2) %></p>
+        </div>
+      </div>
+      <p class="border-t border-slate-100 px-5 py-3 text-xs text-slate-500 sm:px-6"><%= number_with_delimiter(@railway_snapshot.total_requests) %> requisições na última hora</p>
+    </section>
+  <% end %>
+</div>

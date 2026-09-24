@@ -62,6 +62,8 @@ module AdminHelper
       [ tag.rect(x: "3", y: "5", width: "18", height: "14", rx: "2"), tag.path(d: "M3 10h18M16 15h2") ]
     when :analytics
       [ tag.path(d: "M4 20V10M10 20V4M16 20v-7M22 20H2") ]
+    when :observability
+      [ tag.path(d: "M3 12h4l3 8 4-16 3 8h4") ]
     when :customers
       [ tag.path(d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"), tag.circle(cx: "9", cy: "7", r: "4"), tag.path(d: "M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75") ]
     when :categories
