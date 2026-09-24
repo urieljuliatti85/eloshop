@@ -11,6 +11,7 @@ class CustomersController < StorefrontController
     @customer = Customer.new(customer_params)
 
     if @customer.save
+      SendWelcomeCustomerJob.perform_later(@customer)
       start_new_customer_session_for(@customer)
       associate_cart_with_customer(@customer)
       redirect_to after_customer_authentication_url, notice: "Conta criada com sucesso."
