@@ -221,6 +221,31 @@ RSpec.describe "Orders", type: :request do
       expect(response.body).to include("Entregue")
     end
 
+    it "shows shipment details after the seller marks the order as shipped" do
+      order = create_order_for(customer, idempotency_key: "shipped-order")
+      platform_fee = SellerOrder.platform_fee_cents_for(subtotal_cents: order.subtotal_cents, discount_cents: order.discount_cents)
+      order.seller_orders.create!(
+        seller: approved_seller,
+        subtotal_cents: order.subtotal_cents,
+        discount_cents: order.discount_cents,
+        shipping_cents: order.shipping_cents,
+        total_cents: order.total_cents,
+        platform_fee_cents: platform_fee,
+        seller_amount_cents: order.total_cents - platform_fee
+      )
+      order.confirm!
+      shipment = create_shipment_for(order)
+      shipment.mark_shipped!(carrier: "Correios", service: "SEDEX", tracking_code: "AA123456789BR")
+      sign_in_customer
+
+      get order_path(order)
+
+      expect(response.body).to include("Detalhes do Envio")
+      expect(response.body).to include("Correios")
+      expect(response.body).to include("SEDEX")
+      expect(response.body).to include("AA123456789BR")
+    end
+
     it "does not show another customer's order" do
       sign_in_customer
       add_to_cart

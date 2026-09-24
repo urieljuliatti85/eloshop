@@ -25,8 +25,14 @@ class Shipment < ApplicationRecord
     service == Shipping::Quote::LOCAL_PICKUP_SERVICE
   end
 
-  def mark_shipped!
-    transition_to!("shipped", shipped_at: Time.current)
+  def mark_shipped!(carrier: nil, service: nil, tracking_code: nil)
+    transition_to!(
+      "shipped",
+      shipped_at: Time.current,
+      carrier: carrier.presence || self.carrier,
+      service: service.presence || self.service,
+      tracking_code: tracking_code.presence
+    )
   end
 
   def mark_delivered!

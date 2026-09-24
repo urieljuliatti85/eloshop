@@ -41,6 +41,7 @@ RSpec.describe "Seller orders", type: :request do
     expect(response.body).to include("Pedido recebido")
     expect(response.body).to include("Em preparação")
     expect(response.body).to include("Marcar como enviado")
+    expect(response.body).to include("Fale com o cliente")
   end
 
   it "uses pickup wording for an order collected at the atelier" do
@@ -56,16 +57,34 @@ RSpec.describe "Seller orders", type: :request do
   end
 
   describe "PATCH /painel/orders/:id/ship" do
-    it "marks the seller's confirmed order as shipped" do
+    it "shows shipment details before marking the seller's confirmed order as shipped" do
+      order = create_order_for(own_product)
+      order.confirm!
+      create_shipment_for(order)
+
+      get seller_order_path(order)
+
+      expect(response.body).to include("Detalhes do Envio")
+      expect(response.body).to include("Código de rastreamento (opcional)")
+    end
+
+    it "marks the seller's confirmed order as shipped with the submitted details" do
       order = create_order_for(own_product)
       order.confirm!
       shipment = create_shipment_for(order)
 
-      patch ship_seller_order_path(order)
+      patch ship_seller_order_path(order), params: {
+        carrier: "Correios",
+        service: "SEDEX",
+        tracking_code: "AA123456789BR"
+      }
 
       expect(response).to redirect_to(seller_order_path(order))
       expect(shipment.reload).to be_shipped
       expect(shipment.shipped_at).to be_present
+      expect(shipment.carrier).to eq("Correios")
+      expect(shipment.service).to eq("SEDEX")
+      expect(shipment.tracking_code).to eq("AA123456789BR")
     end
 
     it "does not advance an unpaid order" do

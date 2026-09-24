@@ -115,7 +115,7 @@ module Checkout
       return nil if @cart.coupon.blank?
 
       coupon = @cart.coupon
-      coupon.lock!
+      coupon.reload(lock: true)
 
       raise Failed, "O cupom #{coupon.code} não é mais válido." unless coupon.valid_for?(subtotal_cents)
 
