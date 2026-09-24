@@ -5,14 +5,16 @@ class CustomersControllerTest < ActionDispatch::IntegrationTest
     get products_path # garante que um carrinho de sessão já exista via cookie
 
     assert_difference("Customer.count", 1) do
-      post customers_path, params: {
-        customer: {
-          name: "Nova Cliente",
-          email: "nova@example.com",
-          password: "password123",
-          password_confirmation: "password123"
+      assert_enqueued_with(job: SendWelcomeCustomerJob) do
+        post customers_path, params: {
+          customer: {
+            name: "Nova Cliente",
+            email: "nova@example.com",
+            password: "password123",
+            password_confirmation: "password123"
+          }
         }
-      }
+      end
     end
 
     customer = Customer.find_by(email: "nova@example.com")

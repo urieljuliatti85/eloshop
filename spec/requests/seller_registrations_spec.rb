@@ -9,6 +9,7 @@ RSpec.describe "Seller registrations", type: :request do
         terms_accepted: "1"
       }
     end.to change(Seller, :count).by(1).and change(User.seller, :count).by(1)
+      .and have_enqueued_job(SendWelcomeSellerJob)
 
     seller = Seller.find_by!(slug: "atelie-da-serra")
     expect(seller).to be_pending

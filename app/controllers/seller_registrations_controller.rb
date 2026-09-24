@@ -18,6 +18,7 @@ class SellerRegistrationsController < ApplicationController
         @user.save!
         SellerTermsAcceptance.record!(user: @user, seller: @seller, request: request)
       end
+      SendWelcomeSellerJob.perform_later(@seller, @user.email_address)
       start_new_session_for(@user)
       redirect_to seller_root_path, notice: "Cadastro recebido. A publicação será liberada após a aprovação da plataforma."
     else
