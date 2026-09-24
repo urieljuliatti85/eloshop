@@ -210,6 +210,31 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(response.body).not_to include(suspended_seller.name)
     end
 
+    # Esconder não é moderação, então a mensagem é deliberadamente diferente
+    # da de suspensão — mas o efeito na resposta HTTP é o mesmo: 404 com
+    # página dedicada, para não confundir "nunca existiu" com "não está
+    # disponível agora".
+    it "shows a dedicated unavailable page for a hidden atelier, still responding 404" do
+      hidden_seller = Seller.create!(name: "Ateliê escondido #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf, status: :approved, approved_at: Time.current)
+      hidden_seller.hide!
+
+      get seller_path(hidden_seller.slug)
+
+      expect(response).to have_http_status(:not_found)
+      expect(response.body).to include("não está disponível no momento")
+      expect(response.body).not_to include(hidden_seller.name)
+    end
+
+    it "excludes a hidden atelier from the listing" do
+      hidden_seller = Seller.create!(name: "Ateliê listado escondido #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf, status: :approved, approved_at: Time.current)
+      Product.create!(seller: hidden_seller, name: "Peça", sku: "HID-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active")
+      hidden_seller.hide!
+
+      get sellers_path
+
+      expect(response.body).not_to include(hidden_seller.name)
+    end
+
     it "renders an approved atelier with no published products" do
       get seller_path(approved_seller.slug)
 

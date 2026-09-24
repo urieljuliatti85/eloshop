@@ -395,6 +395,31 @@ class ProductTest < ActiveSupport::TestCase
     assert product.available_for_purchase?
   end
 
+  # Esconder o ateliê é um efeito derivado, igual à categoria desligada acima:
+  # afeta available_for_purchase? sem tocar no status do produto nem no
+  # status (approved/suspended) do vendedor.
+  test "available_for_purchase? is false when the seller is hidden" do
+    seller = sellers(:approved)
+    seller.hide!
+    product = Product.create!(seller: seller, name: "Vaso escondido", sku: "HID-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active")
+
+    assert_not product.available_for_purchase?
+    assert product.active?, "o status do produto não pode ser alterado por esconder o vendedor"
+    assert seller.approved?, "esconder não deve mudar o status de aprovação do vendedor"
+  end
+
+  test "available_for_purchase? is true again once the seller is unhidden" do
+    seller = sellers(:approved)
+    seller.hide!
+    product = Product.create!(seller: seller, name: "Vaso escondido", sku: "HID-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active")
+
+    seller.unhide!
+
+    assert product.available_for_purchase?
+  end
+
   test "publicly_visible excludes products under a disabled category subtree" do
     casa = Category.create!(name: "Casa escopo", active: false)
     decoracao = casa.children.create!(name: "Decoração escopo")

@@ -9,6 +9,7 @@ class CartsController < StorefrontController
     @cart = Current.cart
     drop_discontinued_items
     drop_suspended_seller_items
+    drop_hidden_seller_items
   end
 
   def apply_coupon
@@ -61,6 +62,21 @@ class CartsController < StorefrontController
       "Um item do seu carrinho não está mais à venda porque o ateliê foi suspenso e foi removido."
     else
       "Alguns itens do seu carrinho não estão mais à venda porque o ateliê foi suspenso e foram removidos."
+    end
+  end
+
+  # Mesmo padrão de drop_suspended_seller_items, para um ateliê escondido em
+  # vez de suspenso. Mensagem neutra, sem "suspenso": esconder não é
+  # penalidade, e o cliente não precisa saber a distinção — só que o item não
+  # está mais disponível.
+  def drop_hidden_seller_items
+    removed = @cart.cart_items.joins(product: :seller).merge(Seller.where.not(hidden_at: nil)).destroy_all
+    return if removed.empty?
+
+    flash.now[:alert] = if removed.one?
+      "Um item do seu carrinho não está mais à venda e foi removido."
+    else
+      "Alguns itens do seu carrinho não estão mais à venda e foram removidos."
     end
   end
 end

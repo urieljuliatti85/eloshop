@@ -139,6 +139,7 @@ class Product < ApplicationRecord
   # variante escolhida, então aqui só reflete se existe alguma opção comprável.
   def available_for_purchase?
     return false unless seller&.approved?
+    return false if seller.hidden?
     return false unless active?
     return false if category && !category.visible?
     return product_variants.any?(&:available_for_purchase?) if has_variants?
@@ -226,7 +227,7 @@ class Product < ApplicationRecord
     active.availability_type_standard.without_variants.where(stock_quantity: 1..LOW_STOCK_THRESHOLD)
   }
 
-  scope :publicly_visible, -> { active.joins(:seller).merge(Seller.approved).in_visible_category }
+  scope :publicly_visible, -> { active.joins(:seller).merge(Seller.approved).merge(Seller.visible).in_visible_category }
 
   # Categoria desabilitada tira do ar os produtos dela e da subárvore abaixo
   # (Category#visible?). Produto sem categoria nunca é escondido por isso:

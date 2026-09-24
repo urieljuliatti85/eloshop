@@ -15,6 +15,8 @@ Rails.application.routes.draw do
       member do
         patch :approve
         patch :suspend
+        patch :hide
+        patch :unhide
       end
     end
 

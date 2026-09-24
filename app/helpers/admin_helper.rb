@@ -7,7 +7,7 @@ module AdminHelper
     "inactive" => "Inativo", "draft" => "Rascunho", "sold_out" => "Esgotado",
     "discontinued" => "Descontinuado", "approved" => "Aprovado", "rejected" => "Rejeitada",
     "suspended" => "Suspenso", "reviewing" => "Em análise", "resolved" => "Resolvida",
-    "dismissed" => "Arquivada"
+    "dismissed" => "Arquivada", "hidden" => "Escondida", "visible" => "Exibida"
   }.freeze
 
   ADMIN_STATUS_TONES = {
@@ -21,7 +21,8 @@ module AdminHelper
     "sold_out" => "admin-badge--danger", "discontinued" => "admin-badge--danger",
     "rejected" => "admin-badge--danger", "suspended" => "admin-badge--danger",
     "inactive" => "admin-badge--neutral", "reviewing" => "admin-badge--info",
-    "resolved" => "admin-badge--success", "dismissed" => "admin-badge--neutral"
+    "resolved" => "admin-badge--success", "dismissed" => "admin-badge--neutral",
+    "hidden" => "admin-badge--warning", "visible" => "admin-badge--success"
   }.freeze
 
   def admin_nav_link(label, path, icon:, controllers:)

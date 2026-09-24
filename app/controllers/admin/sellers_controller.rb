@@ -1,6 +1,6 @@
 module Admin
   class SellersController < BaseController
-    before_action :set_seller, only: %i[show approve suspend]
+    before_action :set_seller, only: %i[show approve suspend hide unhide]
 
     def index
       all_sellers = Seller.includes(:users, :seller_terms_acceptances).order(created_at: :desc).to_a
@@ -40,6 +40,16 @@ module Admin
     def suspend
       @seller.suspend!
       redirect_to admin_seller_path(@seller), notice: "Artesão suspenso e conta Mercado Pago desconectada."
+    end
+
+    def hide
+      @seller.hide!
+      redirect_to admin_seller_path(@seller), notice: "Ateliê escondido da vitrine pública."
+    end
+
+    def unhide
+      @seller.unhide!
+      redirect_to admin_seller_path(@seller), notice: "Ateliê visível na vitrine pública novamente."
     end
 
     private

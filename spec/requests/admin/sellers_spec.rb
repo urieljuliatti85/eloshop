@@ -227,6 +227,30 @@ RSpec.describe "Admin sellers", type: :request do
     expect(response).to redirect_to(new_session_path)
   end
 
+  it "lets platform admins hide an approved seller from the storefront" do
+    sign_in_as(admin)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.approve!(kyc_level_6_confirmed: true)
+
+    patch hide_admin_seller_path(seller)
+
+    expect(response).to redirect_to(admin_seller_path(seller))
+    expect(seller.reload).to be_hidden
+    expect(seller).to be_approved
+  end
+
+  it "lets platform admins unhide a seller" do
+    sign_in_as(admin)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.approve!(kyc_level_6_confirmed: true)
+    seller.hide!
+
+    patch unhide_admin_seller_path(seller)
+
+    expect(response).to redirect_to(admin_seller_path(seller))
+    expect(seller.reload).not_to be_hidden
+  end
+
   def mercado_pago_credentials(test_account: false, live_mode: true)
     Marketplace::MercadoPagoOauth::Credentials.new(
       user_id: "admin-spec-seller",

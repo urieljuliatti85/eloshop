@@ -23,13 +23,20 @@ class SellersController < StorefrontController
   # pública, então não há nada a diferenciar de uma URL inexistente. Um
   # ateliê `suspended`, ao contrário, já existiu publicamente — a página
   # dedicada evita que o link vire ambíguo entre "nunca existiu" e "foi
-  # retirado pela plataforma".
+  # retirado pela plataforma". `hidden_at` é o mesmo raciocínio para uma
+  # pausa reversível decidida pelo admin, sem ligação com moderação: mensagem
+  # própria, para não sugerir penalidade onde não há uma.
   def show
     @seller = Seller.find_by!(slug: params[:slug])
     raise ActiveRecord::RecordNotFound if @seller.pending?
 
     if @seller.suspended?
       render :suspended, status: :not_found
+      return
+    end
+
+    if @seller.hidden?
+      render :hidden, status: :not_found
       return
     end
 

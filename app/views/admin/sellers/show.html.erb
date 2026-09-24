@@ -6,9 +6,16 @@
       <h1><%= @seller.name %></h1>
       <p class="mt-2 text-sm text-slate-500"><%= @seller.users.first&.email_address %></p>
     </div>
-    <% if @seller.approved? %>
-      <%= button_to "Suspender", suspend_admin_seller_path(@seller), method: :patch, class: "admin-button admin-button--danger" %>
-    <% end %>
+    <div class="flex flex-wrap items-center gap-2">
+      <% if @seller.hidden? %>
+        <%= button_to "Mostrar na vitrine", unhide_admin_seller_path(@seller), method: :patch, class: "admin-button admin-button--secondary" %>
+      <% else %>
+        <%= button_to "Esconder da vitrine", hide_admin_seller_path(@seller), method: :patch, class: "admin-button admin-button--secondary" %>
+      <% end %>
+      <% if @seller.approved? %>
+        <%= button_to "Suspender", suspend_admin_seller_path(@seller), method: :patch, class: "admin-button admin-button--danger" %>
+      <% end %>
+    </div>
   </header>
 
   <div class="grid gap-6 lg:grid-cols-2">
@@ -16,6 +23,14 @@
       <p class="admin-section-label">Status da plataforma</p>
       <div class="mt-2"><%= admin_status_badge(@seller.status) %></div>
       <p class="mt-4 text-sm text-slate-500">Aprovado em: <%= @seller.approved_at ? l(@seller.approved_at, format: :short) : "—" %></p>
+      <p class="mt-1 text-sm text-slate-500">
+        Vitrine:
+        <% if @seller.hidden? %>
+          <span class="font-semibold text-amber-700">Escondida desde <%= l(@seller.hidden_at, format: :short) %></span>
+        <% else %>
+          <span class="font-semibold text-emerald-700">Visível</span>
+        <% end %>
+      </p>
     </section>
 
     <section class="admin-card p-6">
