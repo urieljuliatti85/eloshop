@@ -167,6 +167,12 @@ RSpec.describe "Seller products", type: :request do
     expect(own_product.height_cm).to eq(10)
   end
 
+  it "updates the product's free shipping toggle" do
+    patch seller_product_path(own_product), params: { product: { free_shipping: "1" } }
+
+    expect(own_product.reload.free_shipping).to be(true)
+  end
+
   it "discontinues the selected owned products in bulk" do
     own_product.update!(status: :active)
     other_active = Product.create!(seller: seller, name: "Caneca própria", sku: "OWN-003", price_cents: 3_000, stock_quantity: 2, status: :active)

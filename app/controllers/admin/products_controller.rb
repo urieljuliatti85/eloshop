@@ -131,7 +131,7 @@ module Admin
         :name, :description, :price, :currency, :sku, :stock_quantity, :main_image,
         :availability_type, :production_time_min_days, :production_time_max_days, :category_id, :seller_id,
         :weight_grams, :length_cm, :width_cm, :height_cm,
-        :fixed_shipping, :fixed_shipping_estimated_days, :local_pickup_enabled,
+        :fixed_shipping, :fixed_shipping_estimated_days, :local_pickup_enabled, :free_shipping,
         :tag_names, :material_names, :technique_names, images: []
       ]).except(:tag_names, :material_names, :technique_names, :images)
     end

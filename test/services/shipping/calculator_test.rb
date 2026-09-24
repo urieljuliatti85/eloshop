@@ -104,6 +104,48 @@ module Shipping
       assert_equal 8, quote.estimated_days
     end
 
+    # free_shipping não depende de fixed_shipping estar configurado — sem
+    # isso, um produto só com o toggle marcado cairia no fallback da tabela
+    # interna, cobrando o cliente apesar da promessa do vendedor.
+    test "zeroes the shipping cost for a product marked as free_shipping, even without a fixed price configured" do
+      product = products(:one)
+      product.update!(free_shipping: true, weight_grams: 1200)
+
+      quote = Calculator.new(cart: cart_with(product), address: addresses(:one)).quotes.sole
+
+      assert_equal "Ateliê", quote.carrier
+      assert_equal 0, quote.shipping_cents
+    end
+
+    test "only the free_shipping item is zeroed in a mixed cart" do
+      free = products(:one)
+      paid = products(:three)
+      free.update!(free_shipping: true)
+      paid.update!(stock_quantity: 1, fixed_shipping_cents: 1500, fixed_shipping_estimated_days: 5)
+      cart = Cart.create!(session_token: SecureRandom.hex(10))
+      cart.cart_items.create!(product: free, quantity: 1)
+      cart.cart_items.create!(product: paid, quantity: 1)
+
+      quote = Calculator.new(cart: cart, address: addresses(:one)).quotes.sole
+
+      assert_equal 1500, quote.shipping_cents
+    end
+
+    # Frete grátis é uma promessa do vendedor ao cliente, não uma estimativa
+    # de custo — vence mesmo quando o Melhor Envio devolve cotação real.
+    test "free_shipping wins over a real carrier quote from the connected provider" do
+      cart = connected_seller_cart
+      cart.cart_items.first.product.update!(free_shipping: true)
+      provider = stub_provider([
+        Quote.new(carrier: "Correios", service: "PAC", shipping_cents: 2000, estimated_days: 8)
+      ])
+
+      quote = Calculator.new(cart: cart, address: addresses(:one), provider: provider).quotes.sole
+
+      assert_equal "Ateliê", quote.carrier
+      assert_equal 0, quote.shipping_cents
+    end
+
     test "adds per-product shipping by quantity and keeps the longest delivery time" do
       first = products(:one)
       second = products(:three)

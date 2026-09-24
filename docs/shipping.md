@@ -124,6 +124,18 @@ como opção independente em todos esses casos. O endereço do cliente ainda é
 obrigatório no MVP, inclusive para retirada, porque o checkout e o pedido
 preservam o mesmo snapshot de endereço.
 
+**Frete grátis por produto** (`Product#free_shipping`, decisão de negócio
+2026-09-24): toggle por produto, independente de `fixed_shipping` estar
+configurado — um item marcado contribui `0` centavos à soma do frete do
+pedido, mesmo sem valor fixo definido. É uma **promessa do vendedor ao
+cliente**, então vence mesmo havendo cotação real do Melhor Envio disponível
+(ao contrário do frete fixo, que só entra na ausência de cotação remota). O
+custo é **absorvido pelo vendedor**: como a comissão da plataforma já incide
+sobre `subtotal - discount` sem frete (CLAUDE.md §34), zerar o frete apenas
+reduz `seller_amount_cents` — nenhuma lógica extra de comissão foi
+necessária. Não resolve a segunda pergunta pendente abaixo (quem absorve a
+diferença de um frete real acima do estimado): essa continua em aberto.
+
 **O cliente escolhe por identificador, nunca por preço.** O formulário envia
 `shipping_quote_id` (derivado de transportadora + serviço), e
 `Checkout::CreateOrder` recota no servidor e reencontra a opção — uma opção que
@@ -135,10 +147,10 @@ Envio — falta credencial. Os testes stubam HTTP e cobrem o contrato do adapter
 (o que envia, o que devolve, o que descarta), não a API real. Mesma situação
 registrada para o Mercado Pago.
 
-`TODO — DECISION REQUIRED`: seguem pendentes, e travam apenas as Etapas 2 e 3
-(etiqueta e rastreio), **se existe frete grátis** — a partir de qual valor e
-por conta de quem — e **quem absorve a diferença** quando o frete real sai mais
-caro que o cobrado no checkout.
+`TODO — DECISION REQUIRED`: segue pendente, e trava apenas as Etapas 2 e 3
+(etiqueta e rastreio), **quem absorve a diferença** quando o frete real sai mais
+caro que o cobrado no checkout. Frete grátis por produto (a partir de qual
+valor e por conta de quem) já foi decidido — ver acima.
 
 ## Embalagem
 

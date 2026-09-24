@@ -30,10 +30,20 @@ module Shipping
     # Todas as opções ofertadas, já reduzidas ao que o cliente escolhe: a
     # mais barata e a mais rápida (ADR 005 — mostrar todas sobrecarrega). São
     # a mesma opção quando o serviço mais barato também é o mais rápido.
+    #
+    # Frete grátis é uma promessa do vendedor ao cliente, não uma estimativa
+    # de custo — por isso vence mesmo quando há cotação real do Melhor
+    # Envio disponível, ao contrário do frete fixo (que só entra na ausência
+    # de cotação remota).
     def quotes
       validate!
 
-      delivery_quotes = remote_quotes.presence || [ product_shipping_quote || fallback_quote ]
+      delivery_quotes = if any_product_free_shipping?
+        [ product_shipping_quote ]
+      else
+        remote_quotes.presence || [ product_shipping_quote || fallback_quote ]
+      end
+
       all_products_allow_pickup? ? delivery_quotes + [ local_pickup_quote ] : delivery_quotes
     end
 
@@ -101,8 +111,15 @@ module Shipping
     # Produtos legados sem configuração continuam usando a parcela estimada
     # da tabela interna. Se nenhum produto configurou nada, `fallback_quote`
     # preserva exatamente o cálculo anterior para o carrinho inteiro.
+    #
+    # `free_shipping` também dispara este caminho por conta própria: um
+    # produto marcado como frete grátis, mesmo sem `fixed_shipping`
+    # configurado, precisa zerar sua parcela em vez de cair no fallback (que
+    # ignoraria o toggle e cobraria a tabela interna). O custo é absorvido
+    # pelo vendedor — não entra na base da comissão da plataforma, que já
+    # exclui frete (CLAUDE.md §34).
     def product_shipping_quote
-      return unless cart_items.any? { |item| item.product.fixed_shipping_configured? }
+      return unless cart_items.any? { |item| item.product.fixed_shipping_configured? || item.product.free_shipping? }
 
       Quote.new(
         carrier: "Ateliê",
@@ -114,6 +131,7 @@ module Shipping
 
     def shipping_cents_for(item)
       product = item.product
+      return 0 if product.free_shipping?
       return product.fixed_shipping_cents * item.quantity if product.fixed_shipping_configured?
 
       BASE_CENTS + (((product.weight_grams.to_i * item.quantity) / 1000.0).ceil * PER_KILOGRAM_CENTS)
@@ -121,6 +139,10 @@ module Shipping
 
     def estimated_days_for_item(item)
       item.product.fixed_shipping_estimated_days || estimated_days_for(destination_zip_code)
+    end
+
+    def any_product_free_shipping?
+      cart_items.any? { |item| item.product.free_shipping? }
     end
 
     def all_products_allow_pickup?
