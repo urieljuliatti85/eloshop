@@ -20,6 +20,13 @@ module Admin
         amount_cents: amount_cents,
         idempotency_key: params.require(:idempotency_key)
       ).call
+      Notification.create!(
+        recipient: order.seller_order.seller,
+        kind: :order_refunded,
+        title: order.refunded? ? "Reembolso total" : "Reembolso parcial",
+        body: "O pedido ##{order.id} recebeu um reembolso#{" total" if order.refunded?}.",
+        url: seller_order_path(order)
+      )
 
       redirect_to admin_order_path(order), notice: "Reembolso solicitado com sucesso."
     rescue Payments::Refund::InvalidRefund, ActiveRecord::RecordNotFound => e
@@ -29,6 +36,13 @@ module Admin
     def cancel
       order = Order.find(params[:id])
       Orders::Cancel.new.call(order)
+      Notification.create!(
+        recipient: order.seller_order.seller,
+        kind: :order_cancelled,
+        title: "Pedido cancelado",
+        body: "O pedido ##{order.id} foi cancelado.",
+        url: seller_order_path(order)
+      )
 
       redirect_to admin_order_path(order), notice: "Pedido cancelado e estoque devolvido."
     rescue Orders::Cancel::InvalidCancellation => e

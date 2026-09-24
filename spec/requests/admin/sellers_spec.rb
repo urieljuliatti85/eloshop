@@ -239,6 +239,19 @@ RSpec.describe "Admin sellers", type: :request do
     expect(seller).to be_approved
   end
 
+  it "notifies the seller when the platform suspends the account" do
+    sign_in_as(admin)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.approve!(kyc_level_6_confirmed: true)
+
+    patch suspend_admin_seller_path(seller)
+
+    expect(response).to redirect_to(admin_seller_path(seller))
+    expect(seller.reload).to be_suspended
+    notification = seller.notifications.seller_suspended.last
+    expect(notification).to be_present
+  end
+
   it "lets platform admins unhide a seller" do
     sign_in_as(admin)
     seller.connect_mercado_pago!(mercado_pago_credentials)

@@ -5,7 +5,11 @@ class Notification < ApplicationRecord
     order_confirmed: "order_confirmed",
     order_shipped: "order_shipped",
     order_delivered: "order_delivered",
-    new_message: "new_message"
+    new_message: "new_message",
+    order_refunded: "order_refunded",
+    order_cancelled: "order_cancelled",
+    seller_suspended: "seller_suspended",
+    new_review: "new_review"
   }
 
   validates :kind, :title, :body, presence: true

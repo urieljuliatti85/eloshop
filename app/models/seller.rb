@@ -16,6 +16,7 @@ class Seller < ApplicationRecord
   has_many :products, dependent: :restrict_with_error
   has_many :seller_orders, dependent: :restrict_with_error
   has_many :seller_reports, dependent: :destroy
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   # Composto com Seller.approved onde a visibilidade pública é decidida
   # (Product.publicly_visible, Product#available_for_purchase?) — esconder
