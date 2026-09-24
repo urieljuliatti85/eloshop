@@ -301,13 +301,21 @@ module Gateways
     # que pode ecoar dados do pagamento (§43).
     def log_error_response(response, path)
       body = JSON.parse(response.body.to_s)
+      # `error`/`message`/`cause` cobriram o incidente de 2026-09-08
+      # (`user_allowed_only_in_test`), mas um 500 de #48 (2026-09-24) veio com
+      # os três vazios — o corpo real do Mercado Pago não usa sempre essas
+      # chaves. Sem um excerto do corpo bruto, esse tipo de resposta fica tão
+      # opaco quanto um corpo não-JSON. Mesmo tratamento de sanitização do
+      # `body_excerpt` do caminho não-JSON, então nunca ecoa payload de
+      # pagamento (§43).
       Rails.event.notify(
         "payment.mercado_pago_gateway_http_error",
         path: path,
         http_status: response.code,
         error: body["error"],
         message: body["message"],
-        cause: body["cause"]
+        cause: body["cause"],
+        body_excerpt: (body_excerpt(response) if body["error"].blank? && body["message"].blank? && body["cause"].blank?)
       )
     rescue StandardError
       log_non_json_error_response(response, path)

@@ -270,6 +270,28 @@ module Gateways
         payload = events.last[:payload]
         assert_equal "400", payload[:http_status]
         assert_equal "user_allowed_only_in_test", payload[:error]
+        assert_nil payload[:body_excerpt]
+      end
+    end
+
+    # Pedido #48 (2026-09-24): um 500 de /v1/payments chegou com
+    # error/message/cause vazios — o Mercado Pago nem sempre usa essas
+    # chaves. Sem um excerto do corpo, essa resposta ficava tão opaca quanto
+    # um corpo não-JSON.
+    test "logs a body excerpt when the JSON error body has no error/message/cause" do
+      capture_rails_events("payment.mercado_pago_gateway_http_error") do |events|
+        stub_error_response(
+          code: "500",
+          body: { "status" => 500, "internal_error" => true }.to_json,
+          content_type: "application/json"
+        ) do
+          assert_raises(MercadoPago::RequestFailed) { @gateway.payment_status(external_id: "1") }
+        end
+
+        payload = events.last[:payload]
+        assert_equal "500", payload[:http_status]
+        assert_nil payload[:error]
+        assert_includes payload[:body_excerpt], "internal_error"
       end
     end
 
