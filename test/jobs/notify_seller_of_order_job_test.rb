@@ -13,7 +13,7 @@ class NotifySellerOfOrderJobTest < ActiveJob::TestCase
     order.seller_order
   end
 
-  test "envia para o usuário do ateliê" do
+  test "envia para o usuário do ateliê com link para o pedido no painel" do
     seller_order = build_seller_order(seller: sellers(:approved))
     recipient = sellers(:approved).users.order(:created_at).first.email_address
 
@@ -21,7 +21,9 @@ class NotifySellerOfOrderJobTest < ActiveJob::TestCase
       NotifySellerOfOrderJob.perform_now(seller_order)
     end
 
-    assert_includes ActionMailer::Base.deliveries.last.to, recipient
+    email = ActionMailer::Base.deliveries.last
+    assert_includes email.to, recipient
+    assert_match "/painel/orders/#{seller_order.order_id}", email.body.to_s
   end
 
   # Um ateliê aprovado pode não ter usuário vinculado (criado pelo admin, por
