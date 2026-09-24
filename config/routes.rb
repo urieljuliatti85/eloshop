@@ -187,7 +187,10 @@ Rails.application.routes.draw do
   get "addresses/postal-codes", to: "postal_codes#index", as: :address_postal_codes
   resources :addresses, only: %i[index new create edit update destroy]
   resources :orders, only: %i[index new create show] do
-    member { post :cancel }
+    member do
+      post :cancel
+      patch :deliver
+    end
     resources :messages, only: %i[index create], controller: "order_messages"
     resource :payment, only: %i[new create] do
       get :status

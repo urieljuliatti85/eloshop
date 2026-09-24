@@ -24,4 +24,30 @@ class OrderMailer < ApplicationMailer
       subject: "Nova venda: pedido ##{@order.id} — EloShop"
     )
   end
+
+  # Avisa o artesão de que o comprador confirmou o recebimento do pedido,
+  # pelo lado do cliente (não pelo painel do vendedor).
+  def delivery_confirmed_by_customer(seller_order, recipient)
+    @seller_order = seller_order
+    @order = seller_order.order
+    @seller = seller_order.seller
+
+    mail(
+      to: recipient,
+      subject: "Pedido ##{@order.id} confirmado como entregue pelo cliente — EloShop"
+    )
+  end
+
+  # Avisa o cliente de que o vendedor confirmou a entrega pelo painel —
+  # aviso inverso de delivery_confirmed_by_customer.
+  def delivery_confirmed_by_seller(seller_order)
+    @seller_order = seller_order
+    @order = seller_order.order
+    @seller = seller_order.seller
+
+    mail(
+      to: @order.customer.email,
+      subject: "Pedido ##{@order.id} marcado como entregue — EloShop"
+    )
+  end
 end

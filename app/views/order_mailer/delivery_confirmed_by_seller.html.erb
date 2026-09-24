@@ -1,0 +1,11 @@
+<p>Olá, <%= @order.customer.name %>!</p>
+
+<p>
+  O ateliê <%= @seller.name %> confirmou
+  <%= @seller_order.shipment&.local_pickup? ? "a retirada" : "a entrega" %>
+  do pedido <strong>#<%= @order.id %></strong>.
+</p>
+
+<p>Se você ainda não recebeu o pedido, fale com o ateliê antes de qualquer outra providência.</p>
+
+<p>Os detalhes completos estão em "Meus pedidos" na EloShop.</p>
