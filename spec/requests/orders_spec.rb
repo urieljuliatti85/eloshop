@@ -286,7 +286,10 @@ RSpec.describe "Orders", type: :request do
   end
 
   describe "PATCH /orders/:id/deliver" do
-    it "lets the customer confirm receipt of a shipped order and notifies the seller" do
+    # Deliberadamente não muda o status oficial (Shipment#status): é um
+    # sinal do cliente, não o fechamento da entrega — ver
+    # Shipment#report_delivered_by_customer!.
+    it "lets the customer report receipt of a shipped order without changing the official status, and notifies the seller" do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
@@ -299,11 +302,11 @@ RSpec.describe "Orders", type: :request do
       expect { patch deliver_order_path(order) }.to have_enqueued_job(NotifySellerOfDeliveryJob).with(order.seller_order)
 
       expect(response).to redirect_to(order_path(order))
-      expect(shipment.reload).to be_delivered
-      expect(shipment.delivered_at).to be_present
+      expect(shipment.reload).to be_shipped
+      expect(shipment.customer_reported_delivered_at).to be_present
     end
 
-    it "does not advance an order whose shipment has not been marked as shipped yet" do
+    it "does not accept the report for an order whose shipment has not been marked as shipped yet" do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
@@ -314,10 +317,10 @@ RSpec.describe "Orders", type: :request do
       patch deliver_order_path(order)
 
       expect(response).to redirect_to(order_path(order))
-      expect(shipment.reload).to be_pending
+      expect(shipment.reload.customer_reported_delivered_at).to be_nil
     end
 
-    it "does not allow confirming another customer's order" do
+    it "does not allow reporting another customer's order" do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
@@ -334,7 +337,7 @@ RSpec.describe "Orders", type: :request do
       patch deliver_order_path(order)
 
       expect(response).to have_http_status(:not_found)
-      expect(shipment.reload).not_to be_delivered
+      expect(shipment.reload.customer_reported_delivered_at).to be_nil
     end
   end
 

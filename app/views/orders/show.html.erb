@@ -62,11 +62,15 @@
             form: { data: { turbo_confirm: "Cancelar este pedido?" } } %>
     <% end %>
 
-    <% if @seller_order.shipment&.shipped? %>
+    <% if @seller_order.shipment&.shipped? && @seller_order.shipment.customer_reported_delivered_at.blank? %>
       <%= button_to(@seller_order.shipment.local_pickup? ? "Confirmar retirada" : "Confirmar recebimento",
             deliver_order_path(@order), method: :patch,
             class: "inline-block w-fit rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600",
-            form: { data: { turbo_confirm: @seller_order.shipment.local_pickup? ? "Confirma que você retirou o pedido?" : "Confirma que você recebeu o pedido?" } }) %>
+            form: { data: { turbo_confirm: @seller_order.shipment.local_pickup? ? "Avisar o ateliê que você retirou o pedido?" : "Avisar o ateliê que você recebeu o pedido?" } }) %>
+    <% elsif @seller_order.shipment&.shipped? %>
+      <p class="inline-flex items-center rounded-full bg-emerald-50 px-6 py-3 text-sm font-semibold text-emerald-800">
+        Você avisou o ateliê que recebeu em <%= l(@seller_order.shipment.customer_reported_delivered_at, format: :short) %>.
+      </p>
     <% end %>
 
     <% if @seller_order.accepts_messages? %>

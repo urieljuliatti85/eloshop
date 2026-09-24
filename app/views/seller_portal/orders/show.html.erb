@@ -66,6 +66,11 @@
             class: "mt-5 inline-flex min-h-11 cursor-pointer items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white hover:bg-brand-600",
             form: { data: { turbo_confirm: shipment.local_pickup? ? "O pedido já está pronto para o cliente retirar?" : "O pedido já foi enviado ao cliente?" } }) %>
     <% elsif shipment&.shipped? %>
+      <% if shipment.customer_reported_delivered_at.present? %>
+        <p class="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          O cliente avisou que recebeu em <%= l(shipment.customer_reported_delivered_at, format: :short) %>. Confirme abaixo para fechar a entrega.
+        </p>
+      <% end %>
       <%= button_to(shipment.local_pickup? ? "Confirmar retirada" : "Confirmar entrega",
             deliver_seller_order_path(@order), method: :patch,
             class: "mt-5 inline-flex min-h-11 cursor-pointer items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white hover:bg-brand-600",

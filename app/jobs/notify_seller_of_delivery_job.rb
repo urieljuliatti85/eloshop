@@ -1,6 +1,6 @@
-# Avisa o artesão de que o comprador confirmou o recebimento — mesma
-# transição que o próprio vendedor já pode disparar (Shipment#mark_delivered!),
-# só que iniciada do lado do cliente.
+# Avisa o artesão de que o comprador reportou o recebimento — sinal do
+# cliente, não fechamento oficial da entrega (ver
+# Shipment#report_delivered_by_customer!).
 class NotifySellerOfDeliveryJob < ApplicationJob
   queue_as :default
 
@@ -13,7 +13,7 @@ class NotifySellerOfDeliveryJob < ApplicationJob
     # o pedido continua visível no painel; um retry não criaria o e-mail.
     return if recipient.blank?
 
-    OrderMailer.delivery_confirmed_by_customer(seller_order, recipient).deliver_now
+    OrderMailer.delivery_reported_by_customer(seller_order, recipient).deliver_now
   end
 
   private

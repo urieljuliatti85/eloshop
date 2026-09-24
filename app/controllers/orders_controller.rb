@@ -59,10 +59,10 @@ class OrdersController < StorefrontController
     shipment = order.seller_order.shipment
     raise ActiveRecord::RecordNotFound unless shipment
 
-    shipment.mark_delivered!
+    shipment.report_delivered_by_customer!
     NotifySellerOfDeliveryJob.perform_later(order.seller_order)
 
-    message = shipment.local_pickup? ? "Retirada confirmada." : "Entrega confirmada."
+    message = shipment.local_pickup? ? "Retirada confirmada." : "Recebimento confirmado."
     redirect_to order_path(order), notice: message
   rescue Shipment::InvalidStatusTransition => e
     redirect_to order_path(params[:id]), alert: e.message
