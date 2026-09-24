@@ -75,4 +75,29 @@ class ReviewTest < ActiveSupport::TestCase
 
     assert_not review.verified_purchase?
   end
+
+  test "reply! sets the seller reply on an approved review" do
+    review = customers(:one).reviews.create!(product: products(:one), rating: 5, comment: "Ótimo")
+    review.approve!
+
+    review.reply!("Obrigado pela avaliação!")
+
+    assert review.replied?
+    assert_equal "Obrigado pela avaliação!", review.seller_reply
+    assert review.seller_replied_at.present?
+  end
+
+  test "reply! refuses a review that is not approved" do
+    review = customers(:one).reviews.create!(product: products(:one), rating: 5, comment: "Ótimo")
+
+    assert_raises(ArgumentError) { review.reply!("Obrigado!") }
+    assert_not review.replied?
+  end
+
+  test "reply! requires a non-blank text" do
+    review = customers(:one).reviews.create!(product: products(:one), rating: 5, comment: "Ótimo")
+    review.approve!
+
+    assert_raises(ActiveRecord::RecordInvalid) { review.reply!("") }
+  end
 end
