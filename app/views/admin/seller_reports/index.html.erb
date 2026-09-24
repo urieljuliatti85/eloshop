@@ -1,0 +1,53 @@
+<div class="space-y-8">
+  <header>
+    <p class="admin-section-label mb-2">Comunidade</p>
+    <h1>Denúncias de ateliê</h1>
+    <p class="mt-2 text-sm text-slate-500">Analise denúncias de clientes e suspenda vendedores quando necessário.</p>
+  </header>
+
+  <% if params[:seller_id].present? && (filtered_seller = Seller.find_by(id: params[:seller_id])) %>
+    <div class="flex items-center gap-3 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+      <span>Filtrando por <strong><%= filtered_seller.name %></strong></span>
+      <%= link_to "Limpar filtro", admin_seller_reports_path(status: params[:status]), class: "admin-link" %>
+    </div>
+  <% end %>
+
+  <nav class="flex flex-wrap gap-2" aria-label="Filtrar denúncias">
+    <% [["Todas", nil], ["Pendentes", "pending"], ["Em análise", "reviewing"], ["Resolvidas", "resolved"], ["Arquivadas", "dismissed"]].each do |label, status| %>
+      <% active = params[:status].presence == status %>
+      <%= link_to label, admin_seller_reports_path(status: status, seller_id: params[:seller_id]), class: "admin-button #{active ? 'admin-button--primary' : 'admin-button--secondary'}", aria: { current: ("page" if active) } %>
+    <% end %>
+  </nav>
+
+  <% if @seller_reports.any? %>
+    <div class="admin-table-wrap">
+      <table>
+        <thead><tr><th>Ateliê</th><th>Cliente</th><th>Motivo</th><th>Detalhes</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>
+        <tbody>
+          <% @seller_reports.each do |seller_report| %>
+            <tr>
+              <td class="font-semibold text-slate-900"><%= link_to seller_report.seller.name, admin_seller_path(seller_report.seller), class: "admin-link" %></td>
+              <td><%= seller_report.customer.name %></td>
+              <td><%= seller_report.reason_label %></td>
+              <td class="max-w-sm text-slate-600"><%= truncate(seller_report.details.presence || "—", length: 100) %></td>
+              <td><%= admin_status_badge(seller_report.status) %></td>
+              <td>
+                <div class="flex justify-end gap-2">
+                  <% if seller_report.pending? %>
+                    <%= button_to "Marcar em análise", review_admin_seller_report_path(seller_report), method: :patch, class: "admin-button admin-button--secondary" %>
+                  <% end %>
+                  <% if seller_report.pending? || seller_report.reviewing? %>
+                    <%= button_to "Resolver", resolve_admin_seller_report_path(seller_report), method: :patch, class: "admin-button admin-button--secondary" %>
+                    <%= button_to "Arquivar", dismiss_admin_seller_report_path(seller_report), method: :patch, class: "admin-button admin-button--danger" %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="admin-empty-state">Nenhuma denúncia encontrada.</div>
+  <% end %>
+</div>

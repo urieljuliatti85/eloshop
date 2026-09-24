@@ -44,6 +44,14 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :seller_reports, only: %i[index] do
+      member do
+        patch :review
+        patch :resolve
+        patch :dismiss
+      end
+    end
+
     resources :categories, except: %i[show]
 
     resources :coupons, except: %i[show]
@@ -61,7 +69,9 @@ Rails.application.routes.draw do
   resources :products, only: :index, path: "produtos"
   # A vitrine pública do ateliê ocupa o mesmo prefixo que já identificava o
   # vendedor na URL do produto.
-  resources :sellers, only: %i[index show], param: :slug, path: "artesaos"
+  resources :sellers, only: %i[index show], param: :slug, path: "artesaos" do
+    resources :seller_reports, only: :create, path: "denuncias"
+  end
   scope "artesaos/:seller_slug" do
     resources :products, only: :show, param: :slug, path: "produtos" do
       resources :reviews, only: :create

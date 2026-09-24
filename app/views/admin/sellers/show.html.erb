@@ -43,6 +43,16 @@
     </section>
 
     <section class="admin-card p-6">
+      <p class="admin-section-label">Denúncias</p>
+      <% if @pending_seller_reports_count.positive? %>
+        <p class="mt-2 font-semibold text-red-700"><%= pluralize(@pending_seller_reports_count, "denúncia pendente", plural: "denúncias pendentes") %></p>
+      <% else %>
+        <p class="mt-2 font-semibold text-emerald-700">Nenhuma denúncia pendente</p>
+      <% end %>
+      <%= link_to "Ver denúncias deste ateliê", admin_seller_reports_path(seller_id: @seller.id), class: "admin-link mt-2 inline-block text-sm" %>
+    </section>
+
+    <section class="admin-card p-6">
       <p class="admin-section-label">Mercado Pago</p>
       <% if @seller.mercado_pago_connected? %>
         <p class="mt-2 font-semibold text-emerald-700">Conta conectada</p>

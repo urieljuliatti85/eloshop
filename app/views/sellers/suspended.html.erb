@@ -1,0 +1,28 @@
+<% content_for :title, "Ateliê indisponível | EloShop" %>
+<% content_for :description, "Este ateliê está temporariamente indisponível na EloShop." %>
+
+<div class="w-full">
+  <nav class="text-sm text-ink-muted" aria-label="Você está em">
+    <%= link_to "Início", root_path, class: "hover:text-brand-600" %>
+    <span class="mx-2">/</span>
+    <%= link_to "Loja", products_path, class: "hover:text-brand-600" %>
+    <span class="mx-2">/</span>
+    <span class="text-ink">Ateliê indisponível</span>
+  </nav>
+
+  <div class="mt-8">
+    <%# Mesma linguagem visual da página normal do ateliê (hero terracota),
+        mas sem nome nem catálogo: só o aviso de indisponibilidade — o slug
+        continua existindo (por isso não é um 404 genérico do site), mas o
+        ateliê foi retirado da vitrine pela plataforma. %>
+    <section class="relative isolate overflow-hidden rounded-[2rem] bg-[#7a2410] p-10 text-center text-white shadow-sm sm:p-16">
+      <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_75%_25%,#fbbeb6_0,transparent_27%),radial-gradient(circle_at_75%_72%,#f6604c_0,transparent_28%),linear-gradient(135deg,#7a2410,#df240c)]"></div>
+      <p class="text-xs font-bold uppercase tracking-[0.22em] text-[#fde1dd]">Ateliê na EloShop</p>
+      <h1 class="mt-4 text-3xl font-black leading-tight sm:text-4xl">Este ateliê está temporariamente indisponível</h1>
+      <p class="mx-auto mt-5 max-w-lg text-sm leading-6 text-white/80 sm:text-base">
+        A vitrine deste artesão foi retirada do ar pela EloShop. Explore outros ateliês enquanto isso.
+      </p>
+      <%= link_to "Ver todos os ateliês", sellers_path, class: "mt-8 inline-block rounded-full bg-white px-8 py-3 text-sm font-bold text-[#7a2410] hover:bg-white/90" %>
+    </section>
+  </div>
+</div>
