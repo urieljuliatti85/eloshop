@@ -108,6 +108,23 @@ RSpec.describe "Admin products", type: :request do
       expect(response).to redirect_to(admin_product_path(product))
       expect(product.reload.name).to eq("Vaso artesanal azul (edição limitada)")
     end
+
+    # Mesmo box já existente no painel do vendedor (app/views/seller_portal/products/_form.html.erb) —
+    # o admin não tinha esses campos liberados em product_params.
+    it "updates the product's fixed shipping and local pickup" do
+      sign_in_as(user)
+      product = Product.create!(seller: approved_seller, name: "Vaso frete", sku: "PATCH-002", price_cents: 8_990, stock_quantity: 3, currency: "BRL")
+
+      patch admin_product_path(product), params: { product: {
+        fixed_shipping: "20,00", fixed_shipping_estimated_days: 8, local_pickup_enabled: "1"
+      } }
+
+      expect(response).to redirect_to(admin_product_path(product))
+      product.reload
+      expect(product.fixed_shipping_cents).to eq(2000)
+      expect(product.fixed_shipping_estimated_days).to eq(8)
+      expect(product.local_pickup_enabled).to be(true)
+    end
   end
 
   describe "GET /admin/products/:id" do

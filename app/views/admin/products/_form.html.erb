@@ -104,6 +104,31 @@
     <% end %>
   </div>
 
+  <fieldset class="rounded-xl border border-slate-200 p-4">
+    <legend class="px-1 text-sm font-semibold text-slate-700">Frete deste produto</legend>
+    <p class="text-sm text-gray-600">O valor é aplicado a cada unidade. Deixe valor e prazo vazios para usar o cálculo estimado da EloShop.</p>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <%= form.label :fixed_shipping, "Valor fixo por unidade (R$)" %>
+        <%= form.text_field :fixed_shipping, value: price_field_value(form.object.fixed_shipping_cents),
+              inputmode: "decimal", placeholder: "20,00", data: { controller: "price-input", action: "input->price-input#format" }, class: "w-full" %>
+      </div>
+      <div>
+        <%= form.label :fixed_shipping_estimated_days, "Prazo máximo (dias úteis)" %>
+        <%= form.number_field :fixed_shipping_estimated_days, min: 1, step: 1, placeholder: "8", class: "w-full" %>
+      </div>
+    </div>
+
+    <label class="mt-3 flex cursor-pointer items-start gap-3">
+      <%= form.check_box :local_pickup_enabled, class: "mt-1" %>
+      <span>
+        <span class="block font-semibold">Permitir retirada gratuita deste produto</span>
+        <span class="block text-sm text-gray-600">A retirada aparece no checkout somente quando todos os produtos do carrinho permitirem.</span>
+      </span>
+    </label>
+  </fieldset>
+
   <div>
     <%= form.label :main_image, "Imagem principal" %>
     <%= form.file_field :main_image, accept: "image/png,image/jpeg,image/webp" %>
