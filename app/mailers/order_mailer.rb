@@ -40,6 +40,21 @@ class OrderMailer < ApplicationMailer
     )
   end
 
+  # Avisa o cliente de que o vendedor despachou o pedido (Shipment#mark_shipped!).
+  # Não é o mesmo aviso de entrega: aqui o pedido só saiu do ateliê, ainda em
+  # trânsito — delivery_confirmed_by_seller é quem fecha oficialmente.
+  def shipped(seller_order)
+    @seller_order = seller_order
+    @order = seller_order.order
+    @seller = seller_order.seller
+    @shipment = seller_order.shipment
+
+    mail(
+      to: @order.customer.email,
+      subject: "Pedido ##{@order.id} #{@shipment.local_pickup? ? "pronto para retirada" : "enviado"} — EloShop"
+    )
+  end
+
   # Avisa o cliente de que o vendedor confirmou a entrega pelo painel — este
   # sim é o fechamento oficial, aviso inverso de delivery_reported_by_customer.
   def delivery_confirmed_by_seller(seller_order)

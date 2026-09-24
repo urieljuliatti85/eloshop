@@ -1,0 +1,20 @@
+<p>Olá, <%= @order.customer.name %>!</p>
+
+<% if @shipment.local_pickup? %>
+  <p>Seu pedido <strong>#<%= @order.id %></strong> está pronto para retirada no ateliê <strong><%= @seller.name %></strong>.</p>
+<% else %>
+  <p>Seu pedido <strong>#<%= @order.id %></strong> foi enviado pelo ateliê <strong><%= @seller.name %></strong> e está a caminho.</p>
+
+  <% if @shipment.tracking_code.present? %>
+    <p>
+      Transportadora: <%= @shipment.carrier %><br>
+      Código de rastreio: <strong><%= @shipment.tracking_code %></strong>
+    </p>
+  <% end %>
+<% end %>
+
+<p>
+  <a href="<%= order_url(@order) %>" style="display: inline-block; background-color: #c2410c; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+    Acompanhar meu pedido
+  </a>
+</p>
