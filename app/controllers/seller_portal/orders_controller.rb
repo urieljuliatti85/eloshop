@@ -14,7 +14,7 @@ module SellerPortal
       shipment = current_seller.seller_orders.find_by!(order_id: params[:id]).shipment
       raise ActiveRecord::RecordNotFound unless shipment
 
-      shipment.mark_shipped!
+      shipment.mark_shipped!(**shipment_details)
 
       message = shipment.local_pickup? ? "Pedido marcado como pronto para retirada." : "Pedido marcado como enviado."
       redirect_to seller_order_path(shipment.order), notice: message
@@ -48,6 +48,10 @@ module SellerPortal
 
     def seller_order_scope
       current_seller.seller_orders.includes(:shipment, order: :customer, order_items: :product)
+    end
+
+    def shipment_details
+      params.permit(:carrier, :service, :tracking_code).to_h.symbolize_keys
     end
   end
 end

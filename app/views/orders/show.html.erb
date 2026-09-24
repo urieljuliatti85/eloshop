@@ -21,14 +21,15 @@
     </p>
   <% end %>
 
+  <% shipment = @seller_order.shipment %>
   <section class="mt-6 rounded-2xl border border-brand-100 bg-white p-5 shadow-sm sm:p-6">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Linha do tempo</p>
         <h2 class="mt-1 text-xl font-bold text-ink">Da confirmação à entrega</h2>
       </div>
-      <% if @seller_order.shipment %>
-        <p class="text-sm text-ink-muted"><%= @seller_order.seller.name %> · <%= @seller_order.shipment.carrier %> · <%= @seller_order.shipment.service %></p>
+      <% if shipment %>
+        <p class="text-sm text-ink-muted"><%= @seller_order.seller.name %> · <%= shipment.carrier %> · <%= shipment.service %></p>
       <% end %>
     </div>
 
@@ -50,6 +51,28 @@
       <% end %>
     </ol>
   </section>
+
+  <% if shipment&.shipped? && !shipment.local_pickup? %>
+    <section class="mt-6 rounded-2xl border border-brand-100 bg-white p-5 shadow-sm sm:p-6">
+      <p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Detalhes do Envio</p>
+      <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+        <div>
+          <dt class="text-ink-muted">Transportadora</dt>
+          <dd class="font-semibold text-ink"><%= shipment.carrier %></dd>
+        </div>
+        <div>
+          <dt class="text-ink-muted">Modalidade</dt>
+          <dd class="font-semibold text-ink"><%= shipment.service %></dd>
+        </div>
+        <% if shipment.tracking_code.present? %>
+          <div class="sm:col-span-2">
+            <dt class="text-ink-muted">Código de rastreamento</dt>
+            <dd class="font-semibold text-ink"><%= shipment.tracking_code %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </section>
+  <% end %>
 
   <div class="mb-8 mt-6 flex flex-wrap gap-3">
     <% if @order.pending? %>

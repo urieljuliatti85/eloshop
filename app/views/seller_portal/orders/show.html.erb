@@ -61,10 +61,39 @@
     <% elsif @seller_order.cancelled? || @seller_order.refunded? %>
       <p class="mt-5 rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-700">Este pedido não pode mais avançar na entrega.</p>
     <% elsif shipment&.pending? %>
-      <%= button_to(shipment.local_pickup? ? "Marcar como pronto para retirada" : "Marcar como enviado",
-            ship_seller_order_path(@order), method: :patch,
-            class: "mt-5 inline-flex min-h-11 cursor-pointer items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white hover:bg-brand-600",
-            form: { data: { turbo_confirm: shipment.local_pickup? ? "O pedido já está pronto para o cliente retirar?" : "O pedido já foi enviado ao cliente?" } }) %>
+      <% if shipment.local_pickup? %>
+        <%= button_to "Marcar como pronto para retirada",
+              ship_seller_order_path(@order), method: :patch,
+              class: "mt-5 inline-flex min-h-11 cursor-pointer items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white hover:bg-brand-600",
+              form: { data: { turbo_confirm: "O pedido já está pronto para o cliente retirar?" } } %>
+      <% else %>
+        <%= form_with url: ship_seller_order_path(@order), method: :patch, class: "mt-5 rounded-2xl border border-brand-100 bg-brand-50/50 p-4 sm:p-5" do |form| %>
+          <h3 class="text-lg font-bold">Detalhes do Envio</h3>
+          <p class="mt-1 text-sm text-ink-muted">Informe como o pedido foi enviado. O código de rastreamento é opcional.</p>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <%= form.label :carrier, "Transportadora", class: "block text-sm font-semibold text-ink" %>
+              <%= form.text_field :carrier, value: shipment.carrier, required: true, autocomplete: "organization",
+                    class: "mt-1 block min-h-11 w-full rounded-xl border-brand-200 bg-white px-3 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500",
+                    placeholder: "Ex.: Correios" %>
+            </div>
+            <div>
+              <%= form.label :service, "Modalidade", class: "block text-sm font-semibold text-ink" %>
+              <%= form.text_field :service, value: shipment.service, required: true, autocomplete: "off",
+                    class: "mt-1 block min-h-11 w-full rounded-xl border-brand-200 bg-white px-3 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500",
+                    placeholder: "Ex.: SEDEX ou PAC" %>
+            </div>
+          </div>
+          <div class="mt-4">
+            <%= form.label :tracking_code, "Código de rastreamento (opcional)", class: "block text-sm font-semibold text-ink" %>
+            <%= form.text_field :tracking_code, value: shipment.tracking_code, autocomplete: "off",
+                  class: "mt-1 block min-h-11 w-full rounded-xl border-brand-200 bg-white px-3 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500",
+                  placeholder: "Ex.: AA123456789BR" %>
+          </div>
+          <%= form.submit "Marcar como enviado",
+                class: "mt-5 inline-flex min-h-11 cursor-pointer items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white hover:bg-brand-600" %>
+        <% end %>
+      <% end %>
     <% elsif shipment&.shipped? %>
       <% if shipment.customer_reported_delivered_at.present? %>
         <p class="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
@@ -75,6 +104,10 @@
             deliver_seller_order_path(@order), method: :patch,
             class: "mt-5 inline-flex min-h-11 cursor-pointer items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white hover:bg-brand-600",
             form: { data: { turbo_confirm: shipment.local_pickup? ? "Confirma que o cliente retirou o pedido?" : "Confirma que o pedido foi entregue?" } }) %>
+    <% end %>
+    <% if @seller_order.accepts_messages? %>
+      <%= link_to "Fale com o cliente", seller_order_messages_path(@order),
+            class: "mt-5 inline-flex min-h-11 items-center rounded-full border border-brand-200 px-6 py-3 text-sm font-bold text-brand-700 hover:bg-brand-50" %>
     <% end %>
   </section>
 
