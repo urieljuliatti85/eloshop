@@ -1,6 +1,7 @@
 <p>Olá, <%= @order.customer.name %>!</p>
 
-<p>Recebemos a confirmação do seu pagamento. Seu pedido <strong>#<%= @order.id %></strong> está confirmado e o ateliê já foi avisado.</p>
+<p><strong>Pagamento efetuado com sucesso.</strong><br>
+Seu pedido <strong>#<%= @order.id %></strong> está em preparação e o ateliê já foi avisado.</p>
 
 <h3>O que você comprou</h3>
 <ul>
@@ -34,3 +35,9 @@
 </p>
 
 <p>Peça feita à mão por <strong><%= @seller.name %></strong>. Assim que for despachada, avisamos você.</p>
+
+<p>
+  <a href="<%= order_url(@order) %>" style="display: inline-block; background-color: #c2410c; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+    Acompanhar meu pedido
+  </a>
+</p>
