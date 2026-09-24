@@ -127,6 +127,14 @@
         <span class="block text-sm text-gray-600">A retirada aparece no checkout somente quando todos os produtos do carrinho permitirem.</span>
       </span>
     </label>
+
+    <label class="mt-3 flex cursor-pointer items-start gap-3">
+      <%= form.check_box :free_shipping, class: "mt-1" %>
+      <span>
+        <span class="block font-semibold">Frete grátis para este produto</span>
+        <span class="block text-sm text-gray-600">A entrega deste produto sai sem custo para o cliente. O valor do frete é descontado do repasse do vendedor, não da comissão da EloShop.</span>
+      </span>
+    </label>
   </fieldset>
 
   <div>

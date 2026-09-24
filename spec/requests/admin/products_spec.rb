@@ -125,6 +125,16 @@ RSpec.describe "Admin products", type: :request do
       expect(product.fixed_shipping_estimated_days).to eq(8)
       expect(product.local_pickup_enabled).to be(true)
     end
+
+    it "updates the product's free shipping toggle" do
+      sign_in_as(user)
+      product = Product.create!(seller: approved_seller, name: "Vaso frete grátis", sku: "PATCH-003", price_cents: 8_990, stock_quantity: 3, currency: "BRL")
+
+      patch admin_product_path(product), params: { product: { free_shipping: "1" } }
+
+      expect(response).to redirect_to(admin_product_path(product))
+      expect(product.reload.free_shipping).to be(true)
+    end
   end
 
   describe "GET /admin/products/:id" do

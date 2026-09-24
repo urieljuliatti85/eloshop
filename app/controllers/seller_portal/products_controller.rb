@@ -129,7 +129,7 @@ module SellerPortal
         :name, :description, :price, :currency, :sku, :stock_quantity, :main_image,
         :availability_type, :production_time_min_days, :production_time_max_days, :category_id,
         :weight_grams, :length_cm, :width_cm, :height_cm,
-        :fixed_shipping, :fixed_shipping_estimated_days, :local_pickup_enabled, images: []
+        :fixed_shipping, :fixed_shipping_estimated_days, :local_pickup_enabled, :free_shipping, images: []
       ]).except(:images)
     end
   end
