@@ -166,4 +166,36 @@ RSpec.describe "Seller products", type: :request do
     expect(own_product.width_cm).to eq(10)
     expect(own_product.height_cm).to eq(10)
   end
+
+  it "discontinues the selected owned products in bulk" do
+    own_product.update!(status: :active)
+    other_active = Product.create!(seller: seller, name: "Caneca própria", sku: "OWN-003", price_cents: 3_000, stock_quantity: 2, status: :active)
+
+    patch bulk_discontinue_seller_products_path, params: { product_ids: [ own_product.id, other_active.id ] }
+
+    expect(own_product.reload).to be_discontinued
+    expect(other_active.reload).to be_discontinued
+    expect(response).to redirect_to(seller_products_path)
+  end
+
+  it "skips products that cannot transition to discontinued and reports how many were skipped" do
+    own_product.update!(status: :active)
+    draft_product = Product.create!(seller: seller, name: "Rascunho", sku: "OWN-004", price_cents: 3_000, stock_quantity: 2)
+
+    patch bulk_discontinue_seller_products_path, params: { product_ids: [ own_product.id, draft_product.id ] }
+
+    expect(own_product.reload).to be_discontinued
+    expect(draft_product.reload).to be_draft
+
+    follow_redirect!
+    expect(response.body).to include("1 produto(s) descontinuado(s). 1 não puderam ser alterados")
+  end
+
+  it "does not let a seller discontinue another seller's product by id" do
+    other_product.update!(status: :active)
+
+    patch bulk_discontinue_seller_products_path, params: { product_ids: [ other_product.id ] }
+
+    expect(other_product.reload).to be_active
+  end
 end
