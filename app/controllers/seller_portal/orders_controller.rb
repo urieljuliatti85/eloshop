@@ -16,6 +16,13 @@ module SellerPortal
 
       shipment.mark_shipped!(**shipment_details)
       NotifyCustomerOfShipmentJob.perform_later(shipment.seller_order)
+      Notification.create!(
+        recipient: shipment.order.customer,
+        kind: :order_shipped,
+        title: shipment.local_pickup? ? "Pedido pronto para retirada" : "Pedido enviado",
+        body: shipment.local_pickup? ? "Seu pedido ##{shipment.order.id} está pronto para retirada." : "Seu pedido ##{shipment.order.id} foi enviado.",
+        url: order_path(shipment.order)
+      )
 
       message = shipment.local_pickup? ? "Pedido marcado como pronto para retirada." : "Pedido marcado como enviado."
       redirect_to seller_order_path(shipment.order), notice: message
