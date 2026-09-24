@@ -14,7 +14,14 @@ class Observability::RailwayMetricsReportTest < ActiveSupport::TestCase
         { "measurement" => "CPU_USAGE", "values" => [ { "ts" => 1, "value" => 0.05 }, { "ts" => 2, "value" => 0.12 } ] },
         { "measurement" => "MEMORY_USAGE_GB", "values" => [ { "ts" => 1, "value" => 0.14 }, { "ts" => 2, "value" => 0.19 } ] }
       ]),
-      graphql_response("httpMetrics" => { "p50" => 45, "p95" => 320, "p99" => 610, "errorRate" => 0.0, "totalRequests" => 120 })
+      graphql_response("httpDurationMetrics" => { "samples" => [
+        { "p50" => 20, "p90" => 100, "p95" => 200, "p99" => 300, "ts" => 1 },
+        { "p50" => 45, "p90" => 250, "p95" => 320, "p99" => 610, "ts" => 2 }
+      ] }),
+      graphql_response("httpMetricsGroupedByStatus" => [
+        { "statusCode" => 200, "samples" => [ { "value" => 118 } ] },
+        { "statusCode" => 500, "samples" => [ { "value" => 2 } ] }
+      ])
     ]
     report = configured_report(responses)
 
@@ -26,7 +33,7 @@ class Observability::RailwayMetricsReportTest < ActiveSupport::TestCase
     assert_equal 45, snapshot.p50_ms
     assert_equal 320, snapshot.p95_ms
     assert_equal 610, snapshot.p99_ms
-    assert_equal 0.0, snapshot.error_rate
+    assert_in_delta 0.0166, snapshot.error_rate, 0.001
     assert_equal 120, snapshot.total_requests
     assert_equal snapshot, cached_snapshot
   end
@@ -46,7 +53,9 @@ class Observability::RailwayMetricsReportTest < ActiveSupport::TestCase
     fake_http.define_singleton_method(:request) do |req|
       captured ||= req
       response = Net::HTTPOK.new("1.1", "200", "OK")
-      response.define_singleton_method(:body) { { data: { metrics: [] } }.to_json }
+      response.define_singleton_method(:body) do
+        { data: { metrics: [], httpDurationMetrics: { samples: [] }, httpMetricsGroupedByStatus: [] } }.to_json
+      end
       response
     end
 
