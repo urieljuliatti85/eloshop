@@ -17,3 +17,7 @@ production:
     class: CancelExpiredOrdersJob
     queue: default
     schedule: every 15 minutes
+  check_railway_metrics:
+    class: CheckRailwayMetricsJob
+    queue: default
+    schedule: every 10 minutes
