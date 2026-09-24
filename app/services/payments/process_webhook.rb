@@ -87,6 +87,13 @@ module Payments
       seller = order.seller_orders.first&.seller
       Analytics::Funnel.track("order_confirmed", seller: seller, amount_cents: order.total_cents)
       SendOrderConfirmationJob.perform_later(order)
+      Notification.create!(
+        recipient: order.customer,
+        kind: :order_confirmed,
+        title: "Pagamento confirmado",
+        body: "Seu pedido ##{order.id} foi confirmado.",
+        url: Rails.application.routes.url_helpers.order_path(order)
+      )
       order.seller_orders.each { |seller_order| NotifySellerOfOrderJob.perform_later(seller_order) }
       RecordOrderAnalyticsJob.perform_later(order)
     end

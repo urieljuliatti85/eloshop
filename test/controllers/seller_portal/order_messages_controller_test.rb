@@ -29,6 +29,10 @@ module SellerPortal
       message = OrderMessage.order(:created_at).last
       assert_equal users(:seller), message.sender
       assert_redirected_to seller_order_messages_path(@order)
+
+      notification = @order.customer.notifications.new_message.last
+      assert notification.present?
+      assert_equal order_path(@order), notification.url
     end
 
     test "seller cannot access another seller's conversation" do

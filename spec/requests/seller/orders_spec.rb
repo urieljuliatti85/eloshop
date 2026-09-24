@@ -123,6 +123,10 @@ RSpec.describe "Seller orders", type: :request do
       expect(response).to redirect_to(seller_order_path(order))
       expect(shipment.reload).to be_delivered
       expect(shipment.delivered_at).to be_present
+
+      notification = customer.notifications.order_delivered.last
+      expect(notification).to be_present
+      expect(notification.url).to eq(order_path(order))
     end
   end
 
