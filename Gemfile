@@ -99,6 +99,12 @@ group :development do
   # Alerta N+1 e eager loading desnecessário durante a navegação local
   # [https://github.com/flyerhzm/bullet] — só development, nunca em CI/produção.
   gem "bullet"
+
+  # Badge de performance por request (tempo de SQL, render, GC) durante a
+  # navegação local [https://github.com/MiniProfiler/rack-mini-profiler] — só
+  # development, nunca em CI/produção. Complementa o bullet: mede onde o
+  # tempo vai, além de N+1 (CLAUDE.md §51 pede medir antes de otimizar).
+  gem "rack-mini-profiler"
 end
 
 group :test do
