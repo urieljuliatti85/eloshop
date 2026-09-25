@@ -14,20 +14,51 @@
     <% end %>
   </section>
 
+  <%= form_with url: admin_orders_path, method: :get, class: "admin-card flex flex-wrap items-end gap-3 p-4" do %>
+    <div>
+      <%= label_tag :order_id, "Pedido", class: "sr-only" %>
+      <%= text_field_tag :order_id, params[:order_id], placeholder: "Nº do pedido", class: "w-full" %>
+    </div>
+    <div>
+      <%= label_tag :customer, "Cliente", class: "sr-only" %>
+      <%= text_field_tag :customer, params[:customer], placeholder: "Nome ou e-mail do cliente", class: "w-full" %>
+    </div>
+    <div>
+      <%= label_tag :seller_id, "Ateliê", class: "sr-only" %>
+      <%= select_tag :seller_id, options_from_collection_for_select(@sellers, :id, :name, params[:seller_id]), include_blank: "Todos os ateliês", class: "w-full" %>
+    </div>
+    <div>
+      <%= label_tag :payment_status, "Pagamento", class: "sr-only" %>
+      <%= select_tag :payment_status,
+            options_for_select(
+              [["Todos os pagamentos", nil], ["Não iniciado", "not_started"]] + Payment.statuses.keys.map { |status| [AdminHelper::ADMIN_STATUS_LABELS.fetch(status, status.humanize), status] },
+              params[:payment_status]
+            ), class: "w-full" %>
+    </div>
+    <div>
+      <%= label_tag :date, "Data", class: "sr-only" %>
+      <%= text_field_tag :date, params[:date], placeholder: "dd/mm/aaaa", class: "w-full" %>
+    </div>
+    <div class="flex gap-2">
+      <%= submit_tag "Filtrar", class: "admin-button admin-button--primary" %>
+      <%= link_to "Limpar", admin_orders_path, class: "admin-button admin-button--secondary" %>
+    </div>
+  <% end %>
+
   <% if @orders.any? %>
     <div class="admin-table-wrap">
       <table>
         <thead>
           <tr>
-            <th>Pedido</th>
-            <th>Cliente</th>
+            <th><%= admin_sort_header "Pedido", "id" %></th>
+            <th><%= admin_sort_header "Cliente", "customer" %></th>
             <th>Ateliê</th>
             <th>E-mail do Ateliê</th>
-            <th>Status</th>
+            <th><%= admin_sort_header "Status", "status" %></th>
             <th>Pagamento</th>
             <th>Entrega</th>
-            <th>Total</th>
-            <th>Data</th>
+            <th><%= admin_sort_header "Total", "total" %></th>
+            <th><%= admin_sort_header "Data", "date" %></th>
             <th><span class="sr-only">Ações</span></th>
           </tr>
         </thead>
@@ -69,6 +100,11 @@
       </table>
     </div>
     <%= render "admin/shared/pagination", pagination: @pagination %>
+  <% elsif params[:order_id].present? || params[:customer].present? || params[:seller_id].present? || params[:payment_status].present? || params[:date].present? %>
+    <div class="admin-empty-state">
+      <p>Nenhum pedido encontrado para os filtros aplicados.</p>
+      <%= link_to "Limpar filtros", admin_orders_path, class: "admin-button admin-button--secondary mt-4" %>
+    </div>
   <% else %>
     <div class="admin-empty-state">Nenhum pedido foi criado ainda.</div>
   <% end %>
