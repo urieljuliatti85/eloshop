@@ -56,6 +56,22 @@ RSpec.describe "Admin orders", type: :request do
       expect(response.body).to include(seller.name)
       expect(response.body).to include(seller_user.email_address)
     end
+
+    it "shows the shipment status for orders that have a shipment" do
+      seller = Seller.create!(name: "Ateliê Entrega Listagem", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf, status: :approved, approved_at: Time.current)
+      seller_order = order.seller_orders.create!(
+        seller: seller, status: :confirmed, subtotal_cents: 1000, shipping_cents: 500,
+        total_cents: 1500, platform_fee_cents: 150, seller_amount_cents: 1350
+      )
+      order.update!(status: :confirmed)
+      seller_order.create_shipment!(carrier: "Correios", service: "PAC", shipping_cents: 500, estimated_days: 5)
+      seller_order.shipment.mark_shipped!
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_orders_path
+
+      expect(response.body).to include("Enviado")
+    end
   end
 
   describe "GET /admin/orders/:id" do
@@ -82,6 +98,22 @@ RSpec.describe "Admin orders", type: :request do
       expect(response.body).to include("Falha ao autorizar pagamento")
       expect(response.body).to include("Net::ReadTimeout")
       expect(response.body).to include("gateway timeout")
+    end
+
+    it "shows the shipment status badge when a shipment exists" do
+      seller = Seller.create!(name: "Ateliê Entrega Show", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf, status: :approved, approved_at: Time.current)
+      seller_order = order.seller_orders.create!(
+        seller: seller, status: :confirmed, subtotal_cents: 1000, shipping_cents: 500,
+        total_cents: 1500, platform_fee_cents: 150, seller_amount_cents: 1350
+      )
+      order.update!(status: :confirmed)
+      seller_order.create_shipment!(carrier: "Correios", service: "PAC", shipping_cents: 500, estimated_days: 5)
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_order_path(order)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Pendente")
     end
   end
 

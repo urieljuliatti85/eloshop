@@ -25,6 +25,7 @@
             <th>E-mail do Ateliê</th>
             <th>Status</th>
             <th>Pagamento</th>
+            <th>Entrega</th>
             <th>Total</th>
             <th>Data</th>
             <th><span class="sr-only">Ações</span></th>
@@ -49,6 +50,7 @@
               <td class="text-slate-500"><%= seller&.users&.first&.email_address || "—" %></td>
               <td><%= admin_status_badge(order.status) %></td>
               <td><%= payment ? admin_status_badge(payment.status) : admin_status_badge("pending", label: "Não iniciado") %></td>
+              <td><%= order.shipment ? admin_status_badge(order.shipment.status) : "—" %></td>
               <td class="font-semibold text-slate-950"><%= format_price(order.total_cents) %></td>
               <td class="whitespace-nowrap text-slate-500"><%= l(order.created_at.to_date, format: :short) %></td>
               <td class="text-right">
