@@ -1544,6 +1544,17 @@ Nenhum destes foi implementado — não há sintoma de lentidão hoje. Ficam reg
 
 Descartados nesta mesma investigação, sem necessidade de revisitar: `Analytics::FunnelReport#snapshot` (mesma razão de staleness inaceitável já aplicada ao dashboard), frete via Melhor Envio (já está atrás do cache existente de `Shipping::Calculator`), e `product_counts` do admin de categorias (query única barata, só admin, já memoizada por request).
 
+**REFERÊNCIA — auditoria de background jobs (Solid Queue) por categoria de tarefa (levantada em 2026-09-25).**
+Nenhuma mudança de código; mapeamento do que já roda assíncrono vs. o que roda dentro do request, para orientar decisões futuras sem precisar reinvestigar do zero.
+
+- **E-mails — 100% em background.** Todo `*Mailer` roda dentro de um job (`SendOrderConfirmationJob`, `NotifySellerOfOrderJob`, `NotifyCustomerOfShipmentJob`, `NotifyCustomerOfDeliveryJob`, `NotifySellerOfDeliveryJob`, `SendWelcomeCustomerJob`, `SendWelcomeSellerJob`, `NotifyOrderMessageJob`), mais dois `deliver_later` direto no controller (redefinição de senha, contato). Nenhum e-mail síncrono.
+- **Processamento de imagens — não usa job.** Active Storage gera variantes sob demanda (lazy, na primeira requisição da URL), sem job de pré-processamento. É o padrão do Rails 8.1 com vips; só vira problema real se o primeiro acesso a uma imagem grande travar visivelmente uma página — não observado até aqui.
+- **Relatórios pesados — não usa job.** `Analytics::FunnelReport#snapshot`, `Analytics::GoogleAnalyticsReport#snapshot`, `Observability::RailwayMetricsReport#snapshot` e `Marketplace::MercadoPagoSalesReport` rodam dentro do request do controller admin. Três têm `Rails.cache.fetch` (TTL), mas em cache miss a chamada externa (Google/Railway/Mercado Pago) ainda bloqueia a requisição em tempo real — o caso mais discutível da lista, mitigado pelo TTL e pelo baixo tráfego do admin.
+- **Webhooks — não usa job para o processamento, e está correto assim.** `PaymentWebhooksController#create` chama `Payments::ProcessWebhook` diretamente, síncrono — mas o processamento em si é só escrita em banco (sem chamada de rede), e os efeitos colaterais (e-mail, notificação) já são corretamente enfileirados como jobs separados, fora da transação (ver comentário em `Payments::ProcessWebhook`).
+- **Chamadas a APIs de terceiros — não usa job, e está correto assim.** Autorização de pagamento (Mercado Pago, via `Payments::Authorize`), busca de CEP (ViaCEP, via `PostalCodeLookup`) e cotação de frete (Melhor Envio, via `Shipping::Calculator`) rodam síncronas porque a UX exige resposta imediata — o cliente precisa saber na hora se o pagamento foi autorizado, se o CEP resolveu, e o preço do frete antes de finalizar a compra.
+
+**Achado à parte — `ReconcilePaymentsJob` parece órfão.** O job existe em `app/jobs/reconcile_payments_job.rb`, mas não está em `config/recurring.yml` nem é chamado em nenhum outro lugar do código. Vale confirmar se o agendamento foi esquecido ou se o job foi descontinuado sem remoção.
+
 Última atualização:
 
 `2026-09-25` (mantida — item de documentação, sem mudança de fase)
