@@ -10,8 +10,20 @@
 # Carrega sempre a árvore completa de propósito: um `breadcrumb_name` sobre
 # um recorte da árvore devolveria um caminho truncado, sem erro nenhum.
 class Category::Tree
+  CACHE_KEY = "category_tree"
+
+  # Chamado (via Category#invalidate_tree_cache, after_commit) sempre que uma
+  # categoria muda — o TTL sozinho deixaria uma categoria recém-criada sumir
+  # da própria tela do admin que acabou de criá-la, até expirar. `:name` e
+  # `:slug` são as únicas ordens usadas hoje (ver Category::Tree.load).
+  def self.invalidate_cache
+    Rails.cache.delete("#{CACHE_KEY}/name")
+    Rails.cache.delete("#{CACHE_KEY}/slug")
+  end
+
   def self.load(order: :name)
-    new(Category.order(order).to_a)
+    records = Rails.cache.fetch("#{CACHE_KEY}/#{order}", expires_in: 15.minutes) { Category.order(order).to_a }
+    new(records)
   end
 
   attr_reader :categories

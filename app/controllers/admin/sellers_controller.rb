@@ -3,8 +3,8 @@ module Admin
     before_action :set_seller, only: %i[show approve suspend hide unhide]
 
     def index
-      @sellers_in_risk = Seller.approved.where.not(id: accepted_current_terms_seller_ids).count
-      @terms_pending_sellers_count = Seller.where.not(id: accepted_current_terms_seller_ids).count
+      @sellers_in_risk = Seller.approved.where.not(id: Seller.accepted_current_terms_ids).count
+      @terms_pending_sellers_count = Seller.where.not(id: Seller.accepted_current_terms_ids).count
       @suspended_sellers_count = Seller.suspended.count
 
       sellers = Seller.includes(:users, :seller_terms_acceptances).order(created_at: :desc)
@@ -12,9 +12,9 @@ module Admin
 
       case params[:terms].presence
       when "accepted"
-        sellers = sellers.where(id: accepted_current_terms_seller_ids)
+        sellers = sellers.where(id: Seller.accepted_current_terms_ids)
       when "pending_terms"
-        sellers = sellers.where.not(id: accepted_current_terms_seller_ids)
+        sellers = sellers.where.not(id: Seller.accepted_current_terms_ids)
       end
 
       @sellers = paginate(sellers)
@@ -58,13 +58,6 @@ module Admin
 
     def set_seller
       @seller = Seller.find_by!(slug: params[:id])
-    end
-
-    # Ids de vendedores com uma aceitação registrada para a versão vigente
-    # dos termos (`Seller#terms_accepted?` faz a mesma pergunta por vendedor,
-    # um a um — aqui em uma query só, para paginar/contar sem N+1).
-    def accepted_current_terms_seller_ids
-      SellerTermsAcceptance.where(terms_version: SellerTerms.version).select(:seller_id)
     end
   end
 end

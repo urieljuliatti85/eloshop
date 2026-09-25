@@ -18,6 +18,14 @@ class Seller < ApplicationRecord
   has_many :seller_reports, dependent: :destroy
   has_many :notifications, as: :recipient, dependent: :destroy
 
+  # Ids de vendedores com uma aceitação registrada para a versão vigente dos
+  # termos (`terms_accepted?` faz a mesma pergunta por vendedor, um a um —
+  # aqui em uma query só, para filtrar/contar sem N+1). Usado pelo admin
+  # (listagem e dashboard de artesãos).
+  def self.accepted_current_terms_ids
+    SellerTermsAcceptance.where(terms_version: SellerTerms.version).select(:seller_id)
+  end
+
   # Composto com Seller.approved onde a visibilidade pública é decidida
   # (Product.publicly_visible, Product#available_for_purchase?) — esconder
   # não muda o status do vendedor, é um filtro à parte.

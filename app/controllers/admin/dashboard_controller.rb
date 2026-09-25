@@ -17,20 +17,29 @@ module Admin
       @pending_reviews = Review.pending.includes(:product, :customer).order(created_at: :desc).limit(RECENT_LIMIT)
       @pending_reviews_count = Review.pending.count
 
-      @seller_overview = Seller.includes(:users, :seller_terms_acceptances).to_a
-      @sellers_in_risk = @seller_overview.count { |seller| seller.approved? && !seller.terms_accepted? }
-      @seller_terms_pending_count = @seller_overview.count { |seller| !seller.terms_accepted? }
-      @suspended_sellers_count = @seller_overview.count(&:suspended?)
-
-      @platform_fee_cents = SellerOrder.joins(:order)
-        .where(orders: { status: %w[confirmed partially_refunded refunded] })
-        .sum("platform_fee_cents - platform_fee_refunded_cents")
+      load_seller_and_revenue_overview
 
       @funnel_snapshot = ::Analytics::FunnelReport.new.snapshot
       load_google_analytics
     end
 
     private
+
+    # SQL em vez de `Seller.all.to_a` + contagem em Ruby (evita carregar a
+    # base inteira de vendedores em memória a cada visita ao dashboard — o
+    # mesmo padrão já corrigido em Admin::SellersController#index). Não
+    # cacheado de propósito: é uma tela operacional, e o admin espera ver o
+    # reflexo imediato de aprovar/suspender um vendedor ou confirmar um
+    # pedido — um teste chegou a pegar o próprio redirect do login
+    # congelando um total "zero" no cache antes de qualquer pedido existir.
+    def load_seller_and_revenue_overview
+      @sellers_in_risk = Seller.approved.where.not(id: Seller.accepted_current_terms_ids).count
+      @seller_terms_pending_count = Seller.where.not(id: Seller.accepted_current_terms_ids).count
+      @suspended_sellers_count = Seller.suspended.count
+      @platform_fee_cents = SellerOrder.joins(:order)
+        .where(orders: { status: %w[confirmed partially_refunded refunded] })
+        .sum("platform_fee_cents - platform_fee_refunded_cents")
+    end
 
     def load_google_analytics
       report = ::Analytics::GoogleAnalyticsReport.new
