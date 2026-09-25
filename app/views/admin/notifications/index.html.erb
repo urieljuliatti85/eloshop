@@ -1,0 +1,29 @@
+<% content_for :title, "Notificações | Admin" %>
+
+<div class="mx-auto max-w-2xl">
+  <h1 class="text-2xl font-bold text-slate-900">Notificações</h1>
+
+  <% if @notifications.any? %>
+    <ul class="mt-8 space-y-3">
+      <% @notifications.each do |notification| %>
+        <li>
+          <%= button_to mark_as_read_admin_notification_path(notification), method: :patch,
+                class: "w-full rounded-2xl border px-5 py-4 text-left transition #{notification.read? ? 'border-slate-100 bg-white' : 'border-slate-300 bg-slate-50'}" do %>
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="font-semibold text-slate-900"><%= notification.title %></p>
+                <p class="mt-1 text-sm text-slate-600"><%= notification.body %></p>
+              </div>
+              <% unless notification.read? %>
+                <span class="mt-1 inline-block h-2 w-2 shrink-0 rounded-full bg-slate-500" aria-hidden="true"></span>
+              <% end %>
+            </div>
+            <p class="mt-2 text-xs text-slate-500"><%= l(notification.created_at, format: :short) %></p>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="mt-8 text-slate-500">Você ainda não tem notificações.</p>
+  <% end %>
+</div>

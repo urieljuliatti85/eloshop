@@ -3,6 +3,7 @@ class User < ApplicationRecord
   has_many :sessions, dependent: :destroy
   has_many :seller_terms_acceptances, dependent: :restrict_with_error
   has_many :order_messages, as: :sender, dependent: :restrict_with_error
+  has_many :notifications, as: :recipient, dependent: :destroy
   belongs_to :seller, optional: true
 
   enum :role, { admin: "admin", seller: "seller" }, default: "admin"

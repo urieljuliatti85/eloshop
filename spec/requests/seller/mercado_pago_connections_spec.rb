@@ -3,6 +3,7 @@ require "rails_helper"
 RSpec.describe "Seller Mercado Pago connection", type: :request do
   let(:seller) { Seller.create!(name: "Ateliê OAuth", owner_full_name: "Proprietário Teste", cpf: "12222234069") }
   let(:user) { User.create!(email_address: "oauth-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
+  let(:admin) { User.create!(email_address: "oauth-admin-#{SecureRandom.hex(4)}@example.com", password: "password123") }
   let(:oauth) { instance_double(Marketplace::MercadoPagoOauth, configured?: true, sandbox?: false) }
 
   before do
@@ -64,6 +65,52 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("Conta conectada em")
     expect(response.body).to include("Ambiente: produção")
+  end
+
+  it "notifies platform admins when a seller connects a live_mode account" do
+    admin
+    state = start_authorization
+    credentials = Marketplace::MercadoPagoOauth::Credentials.new(
+      user_id: "mp-live", access_token: "access-token-secret", refresh_token: "refresh-token-secret",
+      expires_at: 180.days.from_now, live_mode: true, test_account: false, public_key: "TEST-public-key"
+    )
+    allow(oauth).to receive(:exchange).with(code: "valid-code", code_verifier: an_instance_of(String)).and_return(credentials)
+
+    get seller_mercado_pago_callback_path, params: { code: "valid-code", state: state }
+
+    notification = admin.notifications.seller_pending_approval.last
+    expect(notification).to be_present
+    expect(notification.body).to include(seller.name)
+  end
+
+  it "does not notify admins when a seller connects a sandbox (non-live) account" do
+    admin
+    state = start_authorization
+    credentials = Marketplace::MercadoPagoOauth::Credentials.new(
+      user_id: "mp-sandbox", access_token: "access-token-secret", refresh_token: "refresh-token-secret",
+      expires_at: 180.days.from_now, live_mode: false, test_account: true, public_key: "TEST-public-key"
+    )
+    allow(oauth).to receive(:exchange).with(code: "valid-code", code_verifier: an_instance_of(String)).and_return(credentials)
+
+    get seller_mercado_pago_callback_path, params: { code: "valid-code", state: state }
+
+    expect(admin.notifications.seller_pending_approval).to be_empty
+  end
+
+  it "does not notify admins when an already approved seller reconnects a live_mode account" do
+    admin
+    connect_seller
+    seller.update!(status: :approved, approved_at: Time.current)
+    state = start_authorization
+    credentials = Marketplace::MercadoPagoOauth::Credentials.new(
+      user_id: "mp-456", access_token: "access-token-secret", refresh_token: "refresh-token-secret",
+      expires_at: 180.days.from_now, live_mode: true, test_account: false, public_key: "TEST-public-key"
+    )
+    allow(oauth).to receive(:exchange).with(code: "valid-code", code_verifier: an_instance_of(String)).and_return(credentials)
+
+    get seller_mercado_pago_callback_path, params: { code: "valid-code", state: state }
+
+    expect(admin.notifications.seller_pending_approval).to be_empty
   end
 
   it "rejects a callback with an invalid state without exchanging the code" do
