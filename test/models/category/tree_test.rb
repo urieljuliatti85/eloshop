@@ -44,6 +44,51 @@ class Category::TreeTest < ActiveSupport::TestCase
     assert_equal "Casa sozinha", Category::Tree.load.breadcrumb_name(casa)
   end
 
+  test "load caches the records and does not query the database on a second call" do
+    Category.create!(name: "Casa cache")
+    Category::Tree.load
+
+    assert_no_queries { Category::Tree.load }
+  end
+
+  test "creating a category invalidates the cache" do
+    Category::Tree.load
+
+    created = Category.create!(name: "Casa nova invalidação")
+
+    assert_includes Category::Tree.load.categories.map(&:id), created.id
+  end
+
+  test "updating a category invalidates the cache" do
+    casa = Category.create!(name: "Casa antes")
+    Category::Tree.load
+
+    casa.update!(name: "Casa depois")
+
+    assert_includes Category::Tree.load.categories.map(&:name), "Casa depois"
+  end
+
+  test "destroying a category invalidates the cache" do
+    casa = Category.create!(name: "Casa para destruir")
+    Category::Tree.load
+
+    casa.destroy!
+
+    assert_not_includes Category::Tree.load.categories.map(&:id), casa.id
+  end
+
+  test "load caches :name and :slug orders independently" do
+    Category.create!(name: "Zebra", slug: "aaa-slug")
+    Category::Tree.load(order: :name)
+    Category::Tree.load(order: :slug)
+
+    by_name = Category::Tree.load(order: :name).categories.map(&:name)
+    by_slug = Category::Tree.load(order: :slug).categories.map(&:slug)
+
+    assert_equal by_name.sort, by_name
+    assert_equal by_slug.sort, by_slug
+  end
+
   private
 
   def assert_no_queries(&block)

@@ -10,6 +10,8 @@ class Category < ApplicationRecord
 
   validate :parent_is_not_self_or_descendant
 
+  after_commit :invalidate_tree_cache
+
   def to_param
     slug
   end
@@ -52,6 +54,10 @@ class Category < ApplicationRecord
   end
 
   private
+
+  def invalidate_tree_cache
+    Tree.invalidate_cache
+  end
 
   def assign_slug
     self.slug = name.parameterize

@@ -9,6 +9,23 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.approved_at
   end
 
+  test "accepted_current_terms_ids matches terms_accepted? for every seller" do
+    accepted_seller = sellers(:approved)
+    accepted_user = User.create!(email_address: "terms-ok-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: accepted_seller)
+    SellerTermsAcceptance.create!(
+      user: accepted_user, seller: accepted_seller, terms_version: SellerTerms.version, terms_text: SellerTerms.text,
+      terms_digest: Digest::SHA256.hexdigest(SellerTerms.text), accepted_at: Time.current, ip_address: "127.0.0.1"
+    )
+    pending_seller = sellers(:pending)
+
+    ids = Seller.accepted_current_terms_ids.map(&:seller_id)
+
+    assert_includes ids, accepted_seller.id
+    assert_not_includes ids, pending_seller.id
+    assert accepted_seller.terms_accepted?
+    assert_not pending_seller.terms_accepted?
+  end
+
   test "approval and suspension preserve explicit status" do
     seller = sellers(:pending)
     seller.connect_mercado_pago!(mercado_pago_credentials)
