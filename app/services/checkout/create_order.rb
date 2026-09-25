@@ -28,6 +28,12 @@ module Checkout
           amount_cents: order.total_cents,
           item_count: order.order_items.size
         )
+        OrderEvent.create!(
+          order: order,
+          kind: :order_created,
+          status: order.status,
+          metadata: { amount_cents: order.total_cents, item_count: order.order_items.size }
+        )
       end
     rescue ActiveRecord::RecordNotUnique
       Order.find_by!(idempotency_key: @idempotency_key)

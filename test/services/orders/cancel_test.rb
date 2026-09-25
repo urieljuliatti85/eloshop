@@ -34,6 +34,16 @@ module Orders
       assert_equal 5, product.reload.stock_quantity
     end
 
+    test "records an order_cancelled event" do
+      order, = build_order
+
+      Cancel.new.call(order)
+
+      event = order.order_events.order_cancelled.last
+      assert event.present?
+      assert_equal "cancelled", event.status
+    end
+
     test "cancels a confirmed order" do
       order, = build_order
       order.confirm!

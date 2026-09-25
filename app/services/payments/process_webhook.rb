@@ -44,6 +44,12 @@ module Payments
         gateway: payment.gateway,
         status: payment.status
       )
+      OrderEvent.create!(
+        order: payment.order,
+        kind: :webhook_applied,
+        status: payment.status,
+        metadata: { payment_id: payment.id, gateway: payment.gateway, webhook_status: @status }
+      )
 
       payment
     rescue ActiveRecord::RecordNotUnique
@@ -95,6 +101,7 @@ module Payments
     def notify_confirmation(order)
       seller = order.seller_orders.first&.seller
       Analytics::Funnel.track("order_confirmed", seller: seller, amount_cents: order.total_cents)
+      OrderEvent.create!(order: order, kind: :order_confirmed, status: order.status)
       SendOrderConfirmationJob.perform_later(order)
       Notification.create!(
         recipient: order.customer,

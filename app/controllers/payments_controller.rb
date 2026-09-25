@@ -61,6 +61,13 @@ class PaymentsController < StorefrontController
     # "Tentar novamente" é `Payment#stalled?`, passados os 2 minutos de
     # `PROCESSING_STALE_AFTER`.
     Rails.event.notify("payment.authorize_failed", error_class: e.class.name, error_message: e.message)
+    OrderEvent.create!(
+      order: @order,
+      kind: :payment_authorize_failed,
+      status: "failed",
+      error_class: e.class.name,
+      error_message: e.message
+    )
     redirect_to order_path(@order), alert: "O pedido foi salvo, mas o pagamento está temporariamente indisponível. Tente novamente em alguns instantes."
   end
 

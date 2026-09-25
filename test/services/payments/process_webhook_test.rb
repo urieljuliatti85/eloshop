@@ -31,6 +31,9 @@ module Payments
       notification = order.customer.notifications.order_confirmed.last
       assert notification.present?
       assert_equal Rails.application.routes.url_helpers.order_path(order), notification.url
+
+      assert order.order_events.webhook_applied.exists?
+      assert order.order_events.order_confirmed.exists?
     end
 
     test "records the processor fee returned by the gateway" do

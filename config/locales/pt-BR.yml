@@ -89,6 +89,15 @@ pt-BR:
       cancelled: "Cancelado"
       partially_refunded: "Reembolso parcial"
       refunded: "Reembolsado"
+  order_events:
+    kinds:
+      order_created: "Pedido criado"
+      payment_attempt_created: "Tentativa de pagamento iniciada"
+      payment_authorize_failed: "Falha ao autorizar pagamento"
+      webhook_applied: "Webhook do gateway aplicado"
+      order_confirmed: "Pedido confirmado"
+      order_cancelled: "Pedido cancelado"
+      refund_processed: "Reembolso processado"
   shipments:
     fulfillment_states:
       awaiting_payment: "Aguardando pagamento"

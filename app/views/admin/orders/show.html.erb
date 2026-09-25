@@ -85,6 +85,34 @@
           </div>
         <% end %>
       </section>
+
+      <section class="admin-card p-5 sm:p-6">
+        <p class="admin-section-label">Acompanhamento técnico</p>
+        <h2 class="mt-1">Linha do tempo</h2>
+
+        <% if @order_events.any? %>
+          <ol class="mt-4 space-y-4">
+            <% @order_events.each do |event| %>
+              <li class="flex gap-4 border-l-2 <%= event.failure? ? 'border-rose-300' : 'border-slate-200' %> pl-4">
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="font-semibold text-slate-900"><%= t(event.kind, scope: "order_events.kinds") %></p>
+                    <% if event.status.present? %><%= admin_status_badge(event.status) %><% end %>
+                  </div>
+                  <p class="mt-0.5 text-xs text-slate-500"><%= l(event.created_at, format: :short) %></p>
+                  <% if event.failure? %>
+                    <p class="mt-2 rounded-lg bg-rose-50 p-2 text-sm text-rose-800">
+                      <span class="font-semibold"><%= event.error_class %>:</span> <%= event.error_message %>
+                    </p>
+                  <% end %>
+                </div>
+              </li>
+            <% end %>
+          </ol>
+        <% else %>
+          <p class="mt-4 text-sm text-slate-500">Nenhum evento registrado ainda.</p>
+        <% end %>
+      </section>
     </div>
 
     <aside class="admin-card overflow-hidden xl:sticky xl:top-28">

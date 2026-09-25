@@ -66,6 +66,23 @@ RSpec.describe "Admin orders", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    it "shows the technical timeline with errors when present" do
+      OrderEvent.create!(order: order, kind: :order_created, status: "pending")
+      OrderEvent.create!(
+        order: order, kind: :payment_authorize_failed, status: "failed",
+        error_class: "Net::ReadTimeout", error_message: "gateway timeout"
+      )
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_order_path(order)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Pedido criado")
+      expect(response.body).to include("Falha ao autorizar pagamento")
+      expect(response.body).to include("Net::ReadTimeout")
+      expect(response.body).to include("gateway timeout")
+    end
   end
 
   describe "POST /admin/orders/:id/refund" do

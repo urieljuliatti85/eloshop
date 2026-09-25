@@ -35,6 +35,10 @@ module Payments
       assert payment.refunded?
       assert seller_order.reload.refunded?
       assert payment.order.reload.refunded?
+
+      events = payment.order.order_events.refund_processed
+      assert_equal 2, events.count
+      assert_equal "refunded", events.last.status
     end
 
     test "reuses an approved refund with the same idempotency key" do

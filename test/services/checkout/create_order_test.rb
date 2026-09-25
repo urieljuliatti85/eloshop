@@ -7,6 +7,17 @@ module Checkout
       @address = addresses(:one)
     end
 
+    test "records an order_created event" do
+      product = build_product
+      cart = build_cart_with_item(product, quantity: 1)
+
+      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+
+      event = order.order_events.order_created.last
+      assert event.present?
+      assert_equal "pending", event.status
+    end
+
     def build_cart_with_item(product, quantity:, variant: nil, personalizations: [])
       cart = Cart.create!(session_token: SecureRandom.hex(10))
       cart.cart_items.create!(product: product, product_variant: variant, quantity: quantity, personalizations: personalizations)

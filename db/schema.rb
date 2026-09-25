@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_24_222615) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_25_164536) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -176,6 +176,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_222615) do
     t.datetime "updated_at", null: false
     t.string "url"
     t.index ["recipient_type", "recipient_id", "read_at"], name: "idx_on_recipient_type_recipient_id_read_at_50191a301d"
+  end
+
+  create_table "order_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "error_class"
+    t.text "error_message"
+    t.string "kind", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.bigint "order_id", null: false
+    t.string "status"
+    t.datetime "updated_at", null: false
+    t.index ["order_id", "created_at"], name: "index_order_events_on_order_id_and_created_at"
+    t.index ["order_id"], name: "index_order_events_on_order_id"
   end
 
   create_table "order_items", force: :cascade do |t|
@@ -578,6 +591,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_24_222615) do
   add_foreign_key "customer_sessions", "customers"
   add_foreign_key "funnel_events", "products"
   add_foreign_key "funnel_events", "sellers"
+  add_foreign_key "order_events", "orders", on_delete: :cascade
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "product_variants"
   add_foreign_key "order_items", "products"
