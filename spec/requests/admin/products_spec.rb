@@ -41,6 +41,100 @@ RSpec.describe "Admin products", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Página 2 de 2")
     end
+
+    it "filters by product name or SKU" do
+      sign_in_as(user)
+      matching = Product.create!(seller: approved_seller, name: "Vaso azul filtrado", sku: "FILTRO-001", price_cents: 1_000, stock_quantity: 1, status: "active")
+      other = Product.create!(seller: approved_seller, name: "Caneca", sku: "OUTRO-002", price_cents: 1_000, stock_quantity: 1, status: "active")
+
+      get admin_products_path(query: "filtrado")
+      expect(response.body).to include(matching.name)
+      expect(response.body).not_to include(other.name)
+
+      get admin_products_path(query: "OUTRO-002")
+      expect(response.body).to include(other.name)
+      expect(response.body).not_to include(matching.name)
+    end
+
+    it "filters by seller" do
+      sign_in_as(user)
+      other_seller = Seller.create!(name: "Outro ateliê filtro", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf, status: :approved, approved_at: Time.current)
+      matching = Product.create!(seller: approved_seller, name: "Produto do ateliê filtrado", sku: "SELLER-001", price_cents: 1_000, stock_quantity: 1, status: "active")
+      other = Product.create!(seller: other_seller, name: "Produto de outro ateliê", sku: "SELLER-002", price_cents: 1_000, stock_quantity: 1, status: "active")
+
+      get admin_products_path(seller_id: approved_seller.id)
+
+      expect(response.body).to include(matching.name)
+      expect(response.body).not_to include(other.name)
+    end
+
+    it "filters by status" do
+      sign_in_as(user)
+      active = Product.create!(seller: approved_seller, name: "Produto ativo filtro", sku: "STATUS-001", price_cents: 1_000, stock_quantity: 1, status: "active")
+      draft = Product.create!(seller: approved_seller, name: "Produto rascunho filtro", sku: "STATUS-002", price_cents: 1_000, stock_quantity: 1, status: "draft")
+
+      get admin_products_path(status: "draft")
+
+      expect(response.body).to include(draft.name)
+      expect(response.body).not_to include(active.name)
+    end
+
+    it "filters by price range" do
+      sign_in_as(user)
+      cheap = Product.create!(seller: approved_seller, name: "Produto barato filtro", sku: "PRICE-001", price_cents: 15_000, stock_quantity: 1, status: "active")
+      expensive = Product.create!(seller: approved_seller, name: "Produto caro filtro", sku: "PRICE-002", price_cents: 50_000, stock_quantity: 1, status: "active")
+
+      get admin_products_path(price_min: "100,00", price_max: "200,00")
+
+      expect(response.body).to include(cheap.name)
+      expect(response.body).not_to include(expensive.name)
+    end
+
+    it "filters by stock range" do
+      sign_in_as(user)
+      low_stock = Product.create!(seller: approved_seller, name: "Produto pouco estoque filtro", sku: "STOCK-001", price_cents: 1_000, stock_quantity: 2, status: "active")
+      high_stock = Product.create!(seller: approved_seller, name: "Produto muito estoque filtro", sku: "STOCK-002", price_cents: 1_000, stock_quantity: 100, status: "active")
+
+      get admin_products_path(stock_min: "0", stock_max: "10")
+
+      expect(response.body).to include(low_stock.name)
+      expect(response.body).not_to include(high_stock.name)
+    end
+
+    it "sorts by price ascending and descending" do
+      sign_in_as(user)
+      cheap = Product.create!(seller: approved_seller, name: "Produto ordenação barato", sku: "SORT-001", price_cents: 1_000, stock_quantity: 1, status: "active")
+      expensive = Product.create!(seller: approved_seller, name: "Produto ordenação caro", sku: "SORT-002", price_cents: 90_000, stock_quantity: 1, status: "active")
+
+      get admin_products_path(sort: "price", direction: "asc")
+      expect(response.body.index(cheap.name)).to be < response.body.index(expensive.name)
+
+      get admin_products_path(sort: "price", direction: "desc")
+      expect(response.body.index(expensive.name)).to be < response.body.index(cheap.name)
+    end
+
+    it "sorts by seller name" do
+      sign_in_as(user)
+      seller_a = Seller.create!(name: "Ateliê AAA Ordenação", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf, status: :approved, approved_at: Time.current)
+      seller_z = Seller.create!(name: "Ateliê ZZZ Ordenação", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf, status: :approved, approved_at: Time.current)
+      product_a = Product.create!(seller: seller_a, name: "Produto do AAA", sku: "SORT-SELLER-001", price_cents: 1_000, stock_quantity: 1, status: "active")
+      product_z = Product.create!(seller: seller_z, name: "Produto do ZZZ", sku: "SORT-SELLER-002", price_cents: 1_000, stock_quantity: 1, status: "active")
+
+      get admin_products_path(sort: "seller", direction: "asc")
+
+      expect(response.body.index(product_a.name)).to be < response.body.index(product_z.name)
+    end
+
+    it "combines multiple filters" do
+      sign_in_as(user)
+      matching = Product.create!(seller: approved_seller, name: "Produto combinado filtro", sku: "COMBO-001", price_cents: 5_000, stock_quantity: 5, status: "active")
+      wrong_status = Product.create!(seller: approved_seller, name: "Produto combinado errado", sku: "COMBO-002", price_cents: 5_000, stock_quantity: 5, status: "draft")
+
+      get admin_products_path(seller_id: approved_seller.id, status: "active", price_min: "40,00", price_max: "60,00")
+
+      expect(response.body).to include(matching.name)
+      expect(response.body).not_to include(wrong_status.name)
+    end
   end
 
   # O seletor de categoria renderiza o breadcrumb de cada opção; sem a árvore

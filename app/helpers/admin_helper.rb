@@ -42,6 +42,22 @@ module AdminHelper
     tag.span(text, class: "admin-badge #{ADMIN_STATUS_TONES.fetch(value, 'admin-badge--neutral')}")
   end
 
+  # Cabeçalho de coluna clicável para ordenar uma listagem paginada. `key` é
+  # o valor de `params[:sort]` que o controller espera; clicar alterna
+  # asc/desc quando já é a coluna ativa, e usa `desc` como ponto de partida
+  # ao trocar de coluna (mais recente/maior primeiro é o padrão mais útil).
+  def admin_sort_header(label, key)
+    active = params[:sort] == key
+    current_direction = active ? params[:direction].presence || "desc" : nil
+    next_direction = current_direction == "asc" ? "desc" : "asc"
+    arrow = active ? (current_direction == "asc" ? "▲" : "▼") : nil
+
+    link_to url_for(request.query_parameters.merge(sort: key, direction: next_direction, page: nil)),
+      class: "inline-flex items-center gap-1 #{'font-semibold text-slate-900' if active}" do
+      safe_join([ label, (tag.span(arrow, class: "text-xs", "aria-hidden": "true") if arrow) ].compact)
+    end
+  end
+
   def admin_inventory_item_label(item)
     return item.name unless item.is_a?(ProductVariant)
 

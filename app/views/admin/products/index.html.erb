@@ -8,6 +8,46 @@
     <%= link_to "Novo produto", new_admin_product_path, class: "admin-button admin-button--brand" %>
   </header>
 
+  <%= form_with url: admin_products_path, method: :get, class: "admin-card flex flex-col gap-3 p-4" do %>
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <%= label_tag :query, "Produto ou SKU", class: "sr-only" %>
+        <%= text_field_tag :query, params[:query], placeholder: "Buscar por produto ou SKU", class: "w-full" %>
+      </div>
+      <div>
+        <%= label_tag :seller_id, "Artesão", class: "sr-only" %>
+        <%= select_tag :seller_id, options_from_collection_for_select(@sellers, :id, :name, params[:seller_id]), include_blank: "Todos os artesãos", class: "w-full" %>
+      </div>
+      <div class="flex gap-2">
+        <%= label_tag :price_min, "Preço de", class: "sr-only" %>
+        <%= text_field_tag :price_min, params[:price_min], placeholder: "Preço de", inputmode: "decimal", class: "w-full" %>
+        <%= label_tag :price_max, "Preço até", class: "sr-only" %>
+        <%= text_field_tag :price_max, params[:price_max], placeholder: "Preço até", inputmode: "decimal", class: "w-full" %>
+      </div>
+      <div class="flex gap-2">
+        <%= label_tag :stock_min, "Estoque de", class: "sr-only" %>
+        <%= number_field_tag :stock_min, params[:stock_min], placeholder: "Estoque de", min: 0, class: "w-full" %>
+        <%= label_tag :stock_max, "Estoque até", class: "sr-only" %>
+        <%= number_field_tag :stock_max, params[:stock_max], placeholder: "Estoque até", min: 0, class: "w-full" %>
+      </div>
+    </div>
+    <%= hidden_field_tag :status, params[:status] if params[:status].present? %>
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex flex-wrap gap-2">
+        <%= submit_tag "Filtrar", class: "admin-button admin-button--primary" %>
+        <%= link_to "Limpar", admin_products_path, class: "admin-button admin-button--secondary" %>
+      </div>
+
+      <nav class="flex flex-wrap gap-2" aria-label="Filtrar produtos por status">
+        <% [["Todos", nil], ["Rascunho", "draft"], ["Ativo", "active"], ["Esgotado", "sold_out"], ["Descontinuado", "discontinued"]].each do |label, status| %>
+          <% active = params[:status].presence == status %>
+          <%= link_to label, admin_products_path(request.query_parameters.merge(status: status).compact_blank),
+                class: "admin-button #{active ? 'admin-button--primary' : 'admin-button--secondary'}", aria: { current: ("page" if active) } %>
+        <% end %>
+      </nav>
+    </div>
+  <% end %>
+
   <% if @products.any? %>
     <%= form_with url: bulk_discontinue_admin_products_path, method: :patch, data: { turbo_confirm: "Descontinuar os produtos selecionados? Essa ação não pode ser desfeita.", controller: "bulk-select" } do %>
       <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -23,7 +63,18 @@
 
       <div class="admin-table-wrap">
         <table>
-          <thead><tr><th class="w-10"></th><th>Produto</th><th>Artesão</th><th>SKU</th><th>Preço</th><th>Estoque</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>
+          <thead>
+            <tr>
+              <th class="w-10"></th>
+              <th><%= admin_sort_header "Produto", "name" %></th>
+              <th><%= admin_sort_header "Artesão", "seller" %></th>
+              <th><%= admin_sort_header "SKU", "sku" %></th>
+              <th><%= admin_sort_header "Preço", "price" %></th>
+              <th><%= admin_sort_header "Estoque", "stock" %></th>
+              <th><%= admin_sort_header "Status", "status" %></th>
+              <th><span class="sr-only">Ações</span></th>
+            </tr>
+          </thead>
           <tbody>
             <% @products.each do |product| %>
               <tr>
@@ -56,6 +107,11 @@
       </div>
     <% end %>
     <%= render "admin/shared/pagination", pagination: @pagination %>
+  <% elsif params[:query].present? || params[:seller_id].present? || params[:status].present? || params[:price_min].present? || params[:price_max].present? || params[:stock_min].present? || params[:stock_max].present? %>
+    <div class="admin-empty-state">
+      <p>Nenhum produto encontrado para os filtros aplicados.</p>
+      <%= link_to "Limpar filtros", admin_products_path, class: "admin-button admin-button--secondary mt-4" %>
+    </div>
   <% else %>
     <div class="admin-empty-state">
       <p>Nenhum produto cadastrado.</p>
