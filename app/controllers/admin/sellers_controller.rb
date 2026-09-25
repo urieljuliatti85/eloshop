@@ -3,26 +3,21 @@ module Admin
     before_action :set_seller, only: %i[show approve suspend hide unhide]
 
     def index
-      all_sellers = Seller.includes(:users, :seller_terms_acceptances).order(created_at: :desc).to_a
+      @sellers_in_risk = Seller.approved.where.not(id: accepted_current_terms_seller_ids).count
+      @terms_pending_sellers_count = Seller.where.not(id: accepted_current_terms_seller_ids).count
+      @suspended_sellers_count = Seller.suspended.count
 
-      @sellers_in_risk = all_sellers.count { |seller| seller.approved? && !seller.terms_accepted? }
-      @terms_pending_sellers_count = all_sellers.count { |seller| !seller.terms_accepted? }
-      @suspended_sellers_count = all_sellers.count(&:suspended?)
-
-      @sellers = all_sellers
-
-      if params[:status].present? && %w[pending approved suspended].include?(params[:status])
-        @sellers = @sellers.select { |seller| seller.status == params[:status] }
-      end
+      sellers = Seller.includes(:users, :seller_terms_acceptances).order(created_at: :desc)
+      sellers = sellers.where(status: params[:status]) if params[:status].present? && %w[pending approved suspended].include?(params[:status])
 
       case params[:terms].presence
       when "accepted"
-        @sellers = @sellers.select { |seller| seller.terms_accepted? }
+        sellers = sellers.where(id: accepted_current_terms_seller_ids)
       when "pending_terms"
-        @sellers = @sellers.select { |seller| !seller.terms_accepted? }
-      else
-        @sellers
+        sellers = sellers.where.not(id: accepted_current_terms_seller_ids)
       end
+
+      @sellers = paginate(sellers)
     end
 
     def show
@@ -63,6 +58,13 @@ module Admin
 
     def set_seller
       @seller = Seller.find_by!(slug: params[:id])
+    end
+
+    # Ids de vendedores com uma aceitação registrada para a versão vigente
+    # dos termos (`Seller#terms_accepted?` faz a mesma pergunta por vendedor,
+    # um a um — aqui em uma query só, para paginar/contar sem N+1).
+    def accepted_current_terms_seller_ids
+      SellerTermsAcceptance.where(terms_version: SellerTerms.version).select(:seller_id)
     end
   end
 end

@@ -68,6 +68,7 @@
         </tbody>
       </table>
     </div>
+    <%= render "admin/shared/pagination", pagination: @pagination %>
   <% else %>
     <div class="admin-empty-state">Nenhum pedido foi criado ainda.</div>
   <% end %>

@@ -4,7 +4,7 @@ module Admin
     before_action :set_category_tree, only: %i[index new create edit update]
 
     def index
-      @categories = @category_tree.categories
+      @categories = paginate_array(@category_tree.categories)
     end
 
     def new

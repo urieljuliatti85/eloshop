@@ -55,6 +55,7 @@
         </table>
       </div>
     <% end %>
+    <%= render "admin/shared/pagination", pagination: @pagination %>
   <% else %>
     <div class="admin-empty-state">
       <p>Nenhum produto cadastrado.</p>

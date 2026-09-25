@@ -20,6 +20,16 @@ RSpec.describe "Admin categories", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    it "paginates categories, 25 per page" do
+      30.times { |i| Category.create!(name: "Categoria #{i}") }
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_categories_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Página 1 de 2")
+    end
   end
 
   # A listagem e o seletor de categoria pai renderizam o breadcrumb de cada

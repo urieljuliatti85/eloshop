@@ -219,6 +219,16 @@ RSpec.describe "Admin sellers", type: :request do
     expect(response.body).to include(pending_terms_seller.name)
   end
 
+  it "paginates sellers, 25 per page" do
+    sign_in_as(admin)
+    30.times { |i| Seller.create!(name: "Ateliê Paginação #{i} #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf) }
+
+    get admin_sellers_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Página 1 de 2")
+  end
+
   it "keeps the platform panel unavailable to sellers" do
     sign_in_as(seller_user)
 

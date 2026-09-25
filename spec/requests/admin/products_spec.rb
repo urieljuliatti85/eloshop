@@ -25,6 +25,21 @@ RSpec.describe "Admin products", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    it "paginates products, 25 per page" do
+      sign_in_as(user)
+      30.times { |i| Product.create!(seller: approved_seller, name: "Produto #{i}", sku: "PAG-#{i}-#{SecureRandom.hex(2)}", price_cents: 1_000, stock_quantity: 1, status: "active") }
+
+      get admin_products_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Página 1 de 2")
+
+      get admin_products_path(page: 2)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Página 2 de 2")
+    end
   end
 
   # O seletor de categoria renderiza o breadcrumb de cada opção; sem a árvore

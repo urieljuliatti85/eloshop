@@ -1,8 +1,9 @@
 module Admin
   class CustomersController < BaseController
     def index
-      @customers = Customer.includes(:orders).order(created_at: :desc)
-      @customers = @customers.where("name ILIKE :term OR email ILIKE :term", term: "%#{params[:query]}%") if params[:query].present?
+      customers = Customer.includes(:orders).order(created_at: :desc)
+      customers = customers.where("name ILIKE :term OR email ILIKE :term", term: "%#{params[:query]}%") if params[:query].present?
+      @customers = paginate(customers)
     end
 
     def show

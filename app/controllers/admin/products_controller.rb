@@ -6,7 +6,7 @@ module Admin
     before_action :set_category_tree, only: %i[new create edit update]
 
     def index
-      @products = Product.includes(:seller, :category, :main_image_attachment).order(created_at: :desc)
+      @products = paginate(Product.includes(:seller, :category, :main_image_attachment).order(created_at: :desc))
     end
 
     def show

@@ -1,0 +1,16 @@
+<% if pagination.total_pages > 1 %>
+  <nav class="flex items-center justify-between gap-4 px-1 py-2" aria-label="Paginação">
+    <p class="text-sm text-slate-500">
+      Página <%= pagination.current_page %> de <%= pagination.total_pages %>
+      <span class="text-slate-400">(<%= pluralize(pagination.total_count, "item", plural: "itens") %>)</span>
+    </p>
+    <div class="flex gap-2">
+      <%= link_to "Anterior", url_for(request.query_parameters.merge(page: pagination.current_page - 1)),
+            class: "admin-button admin-button--secondary #{'pointer-events-none opacity-40' if pagination.first_page?}",
+            aria: (pagination.first_page? ? { disabled: "true" } : {}) %>
+      <%= link_to "Próxima", url_for(request.query_parameters.merge(page: pagination.current_page + 1)),
+            class: "admin-button admin-button--secondary #{'pointer-events-none opacity-40' if pagination.last_page?}",
+            aria: (pagination.last_page? ? { disabled: "true" } : {}) %>
+    </div>
+  </nav>
+<% end %>
