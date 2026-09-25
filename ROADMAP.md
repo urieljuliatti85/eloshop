@@ -1517,6 +1517,14 @@ ACOMPANHAMENTO DE ENTREGA DO ARTESÃO implementado em 2026-09-22. `/painel/order
 
 GOOGLE ANALYTICS NO ADMIN implementado em 2026-09-22. O dashboard administrativo ganhou o resumo de usuários ativos, sessões e visualizações dos últimos 30 dias, e a nova aba `/admin/analytics` acrescenta evolução diária e páginas mais acessadas usando a Google Analytics Data API oficial, em cache por 15 minutos. A coleta na vitrine é consentida e deliberadamente limitada a páginas públicas: envia apenas caminhos virtuais sem slug, ID ou query string; carrinho, checkout, pedidos, conta, Admin e painel do artesão não carregam o Google. As três variáveis são preservadas pela IaC sem valores no repositório; ausência ou falha externa gera estado orientativo sem derrubar o Admin.
 
+PAGINAÇÃO NO ADMIN implementada em 2026-09-25. As 7 listagens principais (Produtos, Artesãos, Pedidos, Clientes, Administradores, Categorias, Avaliações) usam `LIMIT`/`OFFSET` nativo via o concern `Paginatable` (sem gem), 15 itens por página, com numeração de páginas clicável (janela de ±2 ao redor da atual, com "…" quando há salto). `Sellers#index` teve o filtro de termos comerciais reescrito de Ruby (`terms_accepted?` por vendedor, um a um) para subquery SQL, permitindo paginar corretamente no banco. `Categories#index` é exceção deliberada: a árvore inteira segue carregada para o cálculo de breadcrumb/ocultação, e a paginação recorta a lista já pronta em memória.
+
+**DÉBITO TÉCNICO — contadores de `Admin::SellersController#index` recalculados a cada request, sem cache.**
+Descrição: `@sellers_in_risk` e `@terms_pending_sellers_count` rodam duas subqueries (`SellerTermsAcceptance.where(...).count`) completas a cada carregamento da tela `/admin/artesaos`, independentemente da paginação da listagem principal — que já limita a 15 registros por página. Não é N+1; é uma varredura da tabela inteira de aceitações de termos.
+Motivo: identificado numa investigação exploratória de performance (2026-09-25) pedida pelo usuário, sem medição de tráfego real — nenhum sintoma de lentidão foi reportado ou observado em produção.
+Impacto: hoje, nenhum perceptível (poucos vendedores/aceitações). Cresce linearmente com o número de `Seller`/`SellerTermsAcceptance` — se a base de vendedores crescer muito, pode se tornar a query mais pesada da tela.
+Prioridade: baixa. Seguindo §51 (reproduzir, medir, identificar, implementar, medir de novo), não deve ser otimizado sem medição real mostrando que é, de fato, um gargalo.
+
 Última atualização:
 
-`2026-09-22`
+`2026-09-25`
