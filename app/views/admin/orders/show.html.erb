@@ -69,8 +69,13 @@
       </section>
 
       <section class="admin-card p-5 sm:p-6">
-        <p class="admin-section-label">Entrega</p>
-        <h2 class="mt-1">Endereço do pedido</h2>
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="admin-section-label">Entrega</p>
+            <h2 class="mt-1">Endereço do pedido</h2>
+          </div>
+          <% if @order.shipment %><%= admin_status_badge(@order.shipment.status) %><% end %>
+        </div>
         <address class="mt-4 not-italic text-sm leading-6 text-slate-600">
           <p class="font-semibold text-slate-900"><%= @order.customer.name %></p>
           <p><%= [address["street"], address["number"]].compact_blank.join(", ") %></p>
