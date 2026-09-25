@@ -5,8 +5,26 @@ module Admin
     before_action :set_product, only: %i[show edit update publish unpublish discontinue]
     before_action :set_category_tree, only: %i[new create edit update]
 
+    SORTABLE_COLUMNS = {
+      "name" => "products.name",
+      "seller" => "sellers.name",
+      "sku" => "products.sku",
+      "price" => "products.price_cents",
+      "stock" => "products.stock_quantity",
+      "status" => "products.status"
+    }.freeze
+
     def index
-      @products = paginate(Product.includes(:seller, :category, :main_image_attachment).order(created_at: :desc))
+      # `joins(:seller)` só para permitir ordenar/filtrar por `sellers.name` —
+      # `category`/`main_image_attachment` vão por `preload` (não entram no
+      # ORDER BY) para não repetir o LEFT JOIN inflando o custo estimado do
+      # plano, como já aconteceu no catálogo público (CLAUDE.md, Fase 17).
+      products = Product.joins(:seller).preload(:seller, :category, :main_image_attachment)
+      products = apply_filters(products)
+      products = products.order(sort_clause)
+
+      @sellers = Seller.order(:name)
+      @products = paginate(products)
     end
 
     def show
@@ -97,6 +115,47 @@ module Admin
     end
 
     private
+
+    def sort_clause
+      column = SORTABLE_COLUMNS.fetch(params[:sort], "products.created_at")
+      direction = params[:direction] == "asc" ? "asc" : "desc"
+      "#{column} #{direction}, products.id #{direction}"
+    end
+
+    def apply_filters(products)
+      products = products.where("products.name ILIKE :term OR products.sku ILIKE :term", term: "%#{params[:query]}%") if params[:query].present?
+      products = products.where(seller_id: params[:seller_id]) if params[:seller_id].present?
+      products = products.where(status: params[:status]) if params[:status].present? && Product.statuses.key?(params[:status])
+      products = products.where(price_cents: price_range) if price_range
+      products = products.where(stock_quantity: stock_range) if stock_range
+      products
+    end
+
+    # `nil` quando nenhum dos dois limites foi informado — filtro não se
+    # aplica. `..` sem limite de um lado deixa o outro em aberto.
+    def price_range
+      min = reais_to_cents(params[:price_min])
+      max = reais_to_cents(params[:price_max])
+      return nil if min.nil? && max.nil?
+
+      (min || 0)..(max || Float::INFINITY)
+    end
+
+    def stock_range
+      min = Integer(params[:stock_min], exception: false)
+      max = Integer(params[:stock_max], exception: false)
+      return nil if min.nil? && max.nil?
+
+      (min || 0)..(max || Float::INFINITY)
+    end
+
+    def reais_to_cents(value)
+      return nil if value.blank?
+
+      (BigDecimal(value.to_s.tr(",", ".")) * 100).round.to_i
+    rescue ArgumentError
+      nil
+    end
 
     def bulk_discontinue_notice(discontinued_count, selected_count)
       return "Nenhum produto selecionado." if selected_count.zero?
