@@ -93,6 +93,12 @@ module Payments
           platform_fee_refunded_cents: new_fee_refunded
         )
         fully_refunded ? @payment.order.mark_refunded! : @payment.order.mark_partially_refunded!
+        OrderEvent.create!(
+          order: @payment.order,
+          kind: :refund_processed,
+          status: @payment.order.status,
+          metadata: { refund_id: refund.id, amount_cents: refund.amount_cents, fully_refunded: fully_refunded }
+        )
 
         refund
       end

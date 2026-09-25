@@ -8,6 +8,7 @@ module Admin
     def show
       @order = Order.includes(:customer, :coupon, :payments, seller_orders: %i[seller shipment],
         order_items: { product: :main_image_attachment }).find(params[:id])
+      @order_events = @order.order_events.chronological
     end
 
     def refund

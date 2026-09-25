@@ -66,6 +66,10 @@ module Payments
       assert_equal order.total_cents, payment.amount_cents
       assert_equal order.seller_order.platform_fee_cents, payment.application_fee_cents
       assert payment.pending?
+
+      event = order.order_events.payment_attempt_created.last
+      assert event.present?
+      assert_equal payment.status, event.status
     end
 
     test "reuses an existing pending payment instead of creating a new one" do

@@ -67,6 +67,10 @@ RSpec.describe "Payments", type: :request do
       follow_redirect!
       expect(response.body).to include("pagamento está temporariamente indisponível")
       expect(order.reload).to be_pending
+
+      event = order.order_events.payment_authorize_failed.last
+      expect(event).to be_present
+      expect(event.error_class).to eq("Net::ReadTimeout")
     end
   end
 

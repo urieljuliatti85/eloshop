@@ -22,6 +22,7 @@ module Orders
 
         restore_stock!(order)
         order.cancel!
+        OrderEvent.create!(order: order, kind: :order_cancelled, status: order.status)
       end
     end
 

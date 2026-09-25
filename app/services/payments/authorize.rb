@@ -52,6 +52,12 @@ module Payments
         amount_cents: payment.amount_cents,
         expires_at: payment.expires_at&.iso8601
       )
+      OrderEvent.create!(
+        order: @order,
+        kind: :payment_attempt_created,
+        status: payment.status,
+        metadata: { payment_id: payment.id, gateway: payment.gateway, payment_method: payment.payment_method, amount_cents: payment.amount_cents }
+      )
 
       # Cartão aprova/recusa na própria resposta do authorize, sem esperar
       # webhook — diferente do PIX, que sempre nasce "pending". Reaproveita
