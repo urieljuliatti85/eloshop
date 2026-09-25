@@ -50,6 +50,27 @@ module Payments
       assert order.reload.pending?
     end
 
+    test "declined event notifies platform admins" do
+      admin = User.create!(email_address: "#{SecureRandom.hex(4)}@example.com", password: "password", password_confirmation: "password")
+      order, payment = build_order_with_payment
+
+      ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: payment.external_id, status: "declined").call
+
+      notification = admin.notifications.payment_declined.last
+      assert notification.present?
+      assert_includes notification.body, order.id.to_s
+    end
+
+    test "a second declined event for an already failed payment does not notify admins again" do
+      admin = User.create!(email_address: "#{SecureRandom.hex(4)}@example.com", password: "password", password_confirmation: "password")
+      _order, payment = build_order_with_payment
+      ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: payment.external_id, status: "declined").call
+
+      assert_no_difference -> { admin.notifications.payment_declined.count } do
+        ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: payment.external_id, status: "declined").call
+      end
+    end
+
     test "the same event_id processed twice has no additional effect" do
       _order, payment = build_order_with_payment
       event_id = SecureRandom.hex(10)

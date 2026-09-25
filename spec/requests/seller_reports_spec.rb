@@ -4,6 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Seller reports", type: :request do
   let(:customer) { Customer.create!(name: "Cliente denúncia", email: "denuncia@example.com", password: "password123") }
+  let(:admin) { User.create!(email_address: "admin-denuncia@example.com", password: "password", password_confirmation: "password") }
 
   describe "POST /artesaos/:seller_slug/denuncias" do
     it "redirects unauthenticated visitors to customer login" do
@@ -24,6 +25,17 @@ RSpec.describe "Seller reports", type: :request do
       expect(report.customer).to eq(customer)
       expect(report.seller).to eq(approved_seller)
       expect(response).to redirect_to(seller_path(approved_seller.slug))
+    end
+
+    it "notifies platform admins when a report is created" do
+      admin
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+
+      post seller_seller_reports_path(approved_seller.slug), params: { seller_report: { reason: "fraud" } }
+
+      notification = admin.notifications.seller_report_received.last
+      expect(notification).to be_present
+      expect(notification.body).to include(approved_seller.name)
     end
 
     it "rejects a reason outside the allowed list" do

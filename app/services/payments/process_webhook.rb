@@ -72,7 +72,16 @@ module Payments
       when "declined"
         return false if payment.paid? || payment.partially_refunded? || payment.refunded?
 
+        already_failed = payment.failed?
         payment.update!(status: "failed")
+        unless already_failed
+          Notification.notify_admins!(
+            kind: :payment_declined,
+            title: "Pagamento recusado",
+            body: "O pagamento do pedido ##{payment.order_id} foi recusado pelo gateway.",
+            url: Rails.application.routes.url_helpers.admin_order_path(payment.order)
+          )
+        end
         false
       else
         false

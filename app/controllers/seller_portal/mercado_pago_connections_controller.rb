@@ -28,6 +28,14 @@ module SellerPortal
       end
 
       current_seller.connect_mercado_pago!(oauth.exchange(code: params[:code], code_verifier: code_verifier))
+      if current_seller.mercado_pago_live_mode? && !current_seller.approved?
+        Notification.notify_admins!(
+          kind: :seller_pending_approval,
+          title: "Vendedor aguardando aprovação",
+          body: "\"#{current_seller.name}\" conectou uma conta Mercado Pago de produção e aguarda aprovação.",
+          url: admin_seller_path(current_seller)
+        )
+      end
       redirect_to seller_atelier_path, notice: "Conta Mercado Pago conectada. A plataforma agora pode concluir a aprovação."
     rescue Marketplace::MercadoPagoOauth::ConfigurationError,
       Marketplace::MercadoPagoOauth::RequestFailed => e

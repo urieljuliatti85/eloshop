@@ -71,6 +71,10 @@ Rails.application.routes.draw do
         post :cancel
       end
     end
+
+    resources :notifications, only: %i[index] do
+      member { patch :mark_as_read }
+    end
   end
 
   resources :products, only: :index, path: "produtos"

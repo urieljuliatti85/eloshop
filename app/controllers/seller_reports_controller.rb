@@ -11,6 +11,12 @@ class SellerReportsController < StorefrontController
     @seller_report.customer = Current.customer
 
     if @seller_report.save
+      Notification.notify_admins!(
+        kind: :seller_report_received,
+        title: "Nova denúncia",
+        body: "O ateliê \"#{@seller.name}\" recebeu uma denúncia.",
+        url: Rails.application.routes.url_helpers.admin_seller_reports_path
+      )
       redirect_to seller_path(@seller.slug), notice: "Denúncia enviada. Nossa equipe vai analisar o ateliê."
     else
       redirect_to seller_path(@seller.slug), alert: @seller_report.errors.full_messages.to_sentence
