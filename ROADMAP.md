@@ -1525,6 +1525,17 @@ Motivo: identificado numa investigação exploratória de performance (2026-09-2
 Impacto: hoje, nenhum perceptível (poucos vendedores/aceitações). Cresce linearmente com o número de `Seller`/`SellerTermsAcceptance` — se a base de vendedores crescer muito, pode se tornar a query mais pesada da tela.
 Prioridade: baixa. Seguindo §51 (reproduzir, medir, identificar, implementar, medir de novo), não deve ser otimizado sem medição real mostrando que é, de fato, um gargalo.
 
+CACHING NO ADMIN implementado em 2026-09-25. `Category::Tree.load` cacheia os registros crus via Solid Cache (TTL 15 min, chave separada por `order: :name`/`:slug`), com invalidação explícita em `after_commit` de `Category` — TTL sozinho deixaria uma categoria recém-criada sumir da própria tela do admin que acabou de criá-la. `Admin::DashboardController#index` teve os contadores de vendedor reescritos de `Seller.all.to_a` + contagem em Ruby para SQL (`Seller.accepted_current_terms_ids`, extraído para o model e compartilhado com `Admin::SellersController`) — **sem cache**: um teste revelou que o próprio redirect do login já visita `/admin` e congelaria um total "zero" antes de qualquer pedido existir, o que é inaceitável numa tela operacional.
+
+**NOTA — fragment caching (`<% cache %>`) avaliado e descartado por ora (2026-09-25).**
+Investigação pedida pelo usuário sobre onde aplicar fragment caching nas views do storefront. Conclusão: tecnicamente viável (Solid Cache é um `ActiveSupport::Cache::Store` padrão), mas cada fragmento cacheado é uma linha no Postgres — não memória como Memcached — então compete com o banco da própria aplicação sob alto tráfego.
+
+O único fragmento genuinamente livre de armadilhas é `app/views/layouts/_footer.html.erb` (100% estático, sem sessão/produto/categoria) — pequeno demais para justificar a complexidade. Todo o resto do catálogo/PDP está contaminado por estado por-cliente dentro do mesmo fragmento que seria cacheado por produto:
+- `app/views/products/_product_card.html.erb` embute o botão de wishlist (depende de `customer_authenticated?`/`wishlist_item_id_for`, por-cliente) e o formulário "Adicionar ao carrinho" com `authenticity_token` — cachear o card vazaria o coração de favorito de um cliente para os demais visitantes do mesmo produto, e serviria o mesmo CSRF token indefinidamente.
+- `app/views/products/show.html.erb` (PDP) tem o mesmo problema, mais a avaliação do cliente atual embutida na página, e reusa `_product_card` nos relacionados (propaga o mesmo vazamento).
+
+Para fragment caching valer a pena no catálogo/PDP, seria preciso primeiro separar o que é por-produto do que é por-cliente (ex.: extrair wishlist/carrinho para um Turbo Frame à parte, sem cache) — refatoração de estrutura de view, não a simples adição de um bloco `cache do...end`. Sem essa separação e sem medição mostrando gargalo real (§51), não vale o esforço agora.
+
 Última atualização:
 
-`2026-09-25`
+`2026-09-25` (mantida — item de documentação, sem mudança de fase)
