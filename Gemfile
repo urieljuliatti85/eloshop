@@ -95,6 +95,10 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+
+  # Alerta N+1 e eager loading desnecessário durante a navegação local
+  # [https://github.com/flyerhzm/bullet] — só development, nunca em CI/produção.
+  gem "bullet"
 end
 
 group :test do
