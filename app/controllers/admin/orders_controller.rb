@@ -1,8 +1,26 @@
 module Admin
   class OrdersController < BaseController
+    SORTABLE_COLUMNS = {
+      "id" => "orders.id",
+      "customer" => "customers.name",
+      "status" => "orders.status",
+      "total" => "orders.total_cents",
+      "date" => "orders.created_at"
+    }.freeze
+
     def index
       @order_counts = Order.group(:status).count
-      @orders = paginate(Order.includes(:customer, :payments, seller_orders: [ { seller: :users }, :shipment ]).order(created_at: :desc))
+
+      # `joins(:customer)` só para permitir ordenar/filtrar por
+      # `customers.name` — `payments`/`seller_orders` continuam em `preload`
+      # para não repetir o LEFT JOIN e inflar o custo estimado do plano
+      # (CLAUDE.md, Fase 17).
+      orders = Order.joins(:customer).preload(:customer, :payments, seller_orders: [ { seller: :users }, :shipment ])
+      orders = apply_filters(orders)
+      orders = orders.order(sort_clause)
+
+      @sellers = Seller.order(:name)
+      @orders = paginate(orders)
     end
 
     def show
@@ -51,6 +69,42 @@ module Admin
     end
 
     private
+
+    def apply_filters(orders)
+      orders = orders.where(id: params[:order_id]) if params[:order_id].present?
+      orders = orders.where("customers.name ILIKE :term OR customers.email ILIKE :term", term: "%#{params[:customer]}%") if params[:customer].present?
+      orders = orders.where(created_at: filter_date.all_day) if filter_date
+      orders = orders.where(id: SellerOrder.where(seller_id: params[:seller_id]).select(:order_id)) if params[:seller_id].present?
+      orders = apply_payment_filter(orders)
+      orders
+    end
+
+    # Filtra por subquery de ids (em vez de `joins(:payments).distinct`) para
+    # não colidir com `ORDER BY customers.name`: Postgres exige que colunas
+    # de `ORDER BY` apareçam no SELECT quando há `SELECT DISTINCT`, e aqui a
+    # ordenação pode vir de uma tabela fora do JOIN de pagamento.
+    def apply_payment_filter(orders)
+      status = params[:payment_status]
+      return orders if status.blank?
+
+      if status == "not_started"
+        orders.where.missing(:payments)
+      else
+        orders.where(id: Payment.where(status: status).select(:order_id))
+      end
+    end
+
+    def filter_date
+      Date.strptime(params[:date], "%d/%m/%Y")
+    rescue ArgumentError, TypeError
+      nil
+    end
+
+    def sort_clause
+      column = SORTABLE_COLUMNS.fetch(params[:sort], "orders.created_at")
+      direction = params[:direction] == "asc" ? "asc" : "desc"
+      "#{column} #{direction}, orders.id #{direction}"
+    end
 
     def refund_amount_cents(payment)
       value = params[:amount].to_s.strip

@@ -49,6 +49,131 @@ RSpec.describe "Admin orders", type: :request do
       expect(response.body).to include("Página 1 de 2")
     end
 
+    it "sorts by total ascending and descending" do
+      cheap = Order.create!(
+        customer: customer, status: "pending", subtotal_cents: 500, shipping_cents: 0, total_cents: 500,
+        shipping_address_snapshot: { street: "Rua Teste", number: "1" }, idempotency_key: SecureRandom.uuid
+      )
+      expensive = Order.create!(
+        customer: customer, status: "pending", subtotal_cents: 90_000, shipping_cents: 0, total_cents: 90_000,
+        shipping_address_snapshot: { street: "Rua Teste", number: "2" }, idempotency_key: SecureRandom.uuid
+      )
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_orders_path(sort: "total", direction: "asc")
+      expect(response.body.index("##{cheap.id}")).to be < response.body.index("##{expensive.id}")
+
+      get admin_orders_path(sort: "total", direction: "desc")
+      expect(response.body.index("##{expensive.id}")).to be < response.body.index("##{cheap.id}")
+    end
+
+    it "sorts by customer name" do
+      customer_a = Customer.create!(name: "Ana Ordenação", email: "ana-order-sort@example.com", password: "password123")
+      customer_z = Customer.create!(name: "Zeca Ordenação", email: "zeca-order-sort@example.com", password: "password123")
+      order_a = Order.create!(
+        customer: customer_a, status: "pending", subtotal_cents: 1000, shipping_cents: 0, total_cents: 1000,
+        shipping_address_snapshot: { street: "Rua Teste", number: "1" }, idempotency_key: SecureRandom.uuid
+      )
+      order_z = Order.create!(
+        customer: customer_z, status: "pending", subtotal_cents: 1000, shipping_cents: 0, total_cents: 1000,
+        shipping_address_snapshot: { street: "Rua Teste", number: "2" }, idempotency_key: SecureRandom.uuid
+      )
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_orders_path(sort: "customer", direction: "asc")
+
+      expect(response.body.index("##{order_a.id}")).to be < response.body.index("##{order_z.id}")
+    end
+
+    it "filters by order id" do
+      other_order = Order.create!(
+        customer: customer, status: "pending", subtotal_cents: 1000, shipping_cents: 0, total_cents: 1000,
+        shipping_address_snapshot: { street: "Rua Teste", number: "2" }, idempotency_key: SecureRandom.uuid
+      )
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_orders_path(order_id: order.id)
+
+      expect(response.body).to include("##{order.id}")
+      expect(response.body).not_to include("##{other_order.id}")
+    end
+
+    it "filters by customer name or email" do
+      other_customer = Customer.create!(name: "Outro Cliente Filtro", email: "outro-filtro@example.com", password: "password123")
+      order
+      other_order = Order.create!(
+        customer: other_customer, status: "pending", subtotal_cents: 1000, shipping_cents: 0, total_cents: 1000,
+        shipping_address_snapshot: { street: "Rua Teste", number: "2" }, idempotency_key: SecureRandom.uuid
+      )
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_orders_path(customer: customer.name)
+
+      expect(response.body).to include("##{order.id}")
+      expect(response.body).not_to include("##{other_order.id}")
+    end
+
+    it "filters by seller" do
+      seller = Seller.create!(name: "Ateliê Filtro Pedido", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf, status: :approved, approved_at: Time.current)
+      other_seller = Seller.create!(name: "Outro Ateliê Filtro Pedido", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf, status: :approved, approved_at: Time.current)
+      order.seller_orders.create!(seller: seller, status: :pending, subtotal_cents: 1000, shipping_cents: 0, total_cents: 1000, platform_fee_cents: 150, seller_amount_cents: 850)
+      other_order = Order.create!(
+        customer: customer, status: "pending", subtotal_cents: 1000, shipping_cents: 0, total_cents: 1000,
+        shipping_address_snapshot: { street: "Rua Teste", number: "2" }, idempotency_key: SecureRandom.uuid
+      )
+      other_order.seller_orders.create!(seller: other_seller, status: :pending, subtotal_cents: 1000, shipping_cents: 0, total_cents: 1000, platform_fee_cents: 150, seller_amount_cents: 850)
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_orders_path(seller_id: seller.id)
+
+      expect(response.body).to include("##{order.id}")
+      expect(response.body).not_to include("##{other_order.id}")
+    end
+
+    it "filters by payment status" do
+      paid_order = order
+      paid_order.payments.create!(gateway: "fake", status: "paid", amount_cents: 1500, application_fee_cents: 0, idempotency_key: SecureRandom.uuid, external_id: "ext-#{SecureRandom.hex(4)}")
+      not_started_order = Order.create!(
+        customer: customer, status: "pending", subtotal_cents: 1000, shipping_cents: 0, total_cents: 1000,
+        shipping_address_snapshot: { street: "Rua Teste", number: "2" }, idempotency_key: SecureRandom.uuid
+      )
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_orders_path(payment_status: "paid")
+      expect(response.body).to include("##{paid_order.id}")
+      expect(response.body).not_to include("##{not_started_order.id}")
+
+      get admin_orders_path(payment_status: "not_started")
+      expect(response.body).to include("##{not_started_order.id}")
+      expect(response.body).not_to include("##{paid_order.id}")
+    end
+
+    it "filters by date" do
+      travel_to Time.zone.local(2026, 3, 10, 12, 0, 0) do
+        order
+      end
+      other_order = Order.create!(
+        customer: customer, status: "pending", subtotal_cents: 1000, shipping_cents: 0, total_cents: 1000,
+        shipping_address_snapshot: { street: "Rua Teste", number: "2" }, idempotency_key: SecureRandom.uuid, created_at: Time.zone.local(2026, 3, 20, 12, 0, 0)
+      )
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_orders_path(date: "10/03/2026")
+
+      expect(response.body).to include("##{order.id}")
+      expect(response.body).not_to include("##{other_order.id}")
+    end
+
+    it "ignores an invalid date filter instead of raising" do
+      order
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_orders_path(date: "not-a-date")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("##{order.id}")
+    end
+
     it "shows a dash for the atelier columns when the order has no seller_order yet" do
       order
       post session_path, params: { email_address: user.email_address, password: "password" }
