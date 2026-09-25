@@ -27,9 +27,10 @@ RSpec.describe "Admin admins", type: :request do
       expect(response.body).to include(colleague.email_address)
     end
 
-    it "paginates admins, 25 per page" do
-      30.times { other_admin }
+    it "paginates admins" do
+      per_page = Paginatable::DEFAULT_PER_PAGE
       sign_in_as(user)
+      (per_page * 2 - User.admin.count).times { other_admin }
 
       get admin_admins_path
 

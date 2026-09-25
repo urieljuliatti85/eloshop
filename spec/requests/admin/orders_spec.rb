@@ -32,8 +32,9 @@ RSpec.describe "Admin orders", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "paginates orders, 25 per page" do
-      30.times do |i|
+    it "paginates orders" do
+      per_page = Paginatable::DEFAULT_PER_PAGE
+      (per_page * 2 - Order.count).times do |i|
         Order.create!(
           customer: customer, status: "pending", subtotal_cents: 1000, shipping_cents: 500, total_cents: 1500,
           shipping_address_snapshot: { street: "Rua Teste", number: "123", city: "São Paulo", state: "SP", zip: "01000-000" },

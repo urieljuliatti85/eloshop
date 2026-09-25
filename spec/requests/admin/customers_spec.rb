@@ -33,8 +33,9 @@ RSpec.describe "Admin customers", type: :request do
       expect(response.body).not_to include(other.name)
     end
 
-    it "paginates customers, 25 per page" do
-      30.times { |i| Customer.create!(name: "Cliente #{i}", email: "cliente-pag-#{i}@example.com", password: "password123") }
+    it "paginates customers" do
+      per_page = Paginatable::DEFAULT_PER_PAGE
+      (per_page * 2 - Customer.count).times { |i| Customer.create!(name: "Cliente #{i}", email: "cliente-pag-#{i}@example.com", password: "password123") }
       post session_path, params: { email_address: user.email_address, password: "password" }
 
       get admin_customers_path

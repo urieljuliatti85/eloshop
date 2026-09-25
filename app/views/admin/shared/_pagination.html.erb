@@ -4,10 +4,25 @@
       Página <%= pagination.current_page %> de <%= pagination.total_pages %>
       <span class="text-slate-400">(<%= pluralize(pagination.total_count, "item", plural: "itens") %>)</span>
     </p>
-    <div class="flex gap-2">
+    <div class="flex items-center gap-2">
       <%= link_to "Anterior", url_for(request.query_parameters.merge(page: pagination.current_page - 1)),
             class: "admin-button admin-button--secondary #{'pointer-events-none opacity-40' if pagination.first_page?}",
             aria: (pagination.first_page? ? { disabled: "true" } : {}) %>
+
+      <% if pagination.total_pages > 1 %>
+        <div class="flex items-center gap-1">
+          <% pagination.page_window.each do |page| %>
+            <% if page.nil? %>
+              <span class="px-1 text-sm text-slate-400" aria-hidden="true">…</span>
+            <% elsif page == pagination.current_page %>
+              <span class="admin-button admin-button--primary pointer-events-none min-w-10 px-0" aria-current="page"><%= page %></span>
+            <% else %>
+              <%= link_to page, url_for(request.query_parameters.merge(page: page)), class: "admin-button admin-button--secondary min-w-10 px-0" %>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+
       <%= link_to "Próxima", url_for(request.query_parameters.merge(page: pagination.current_page + 1)),
             class: "admin-button admin-button--secondary #{'pointer-events-none opacity-40' if pagination.last_page?}",
             aria: (pagination.last_page? ? { disabled: "true" } : {}) %>

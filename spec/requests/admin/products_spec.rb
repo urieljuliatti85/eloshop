@@ -26,9 +26,10 @@ RSpec.describe "Admin products", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "paginates products, 25 per page" do
+    it "paginates products" do
       sign_in_as(user)
-      30.times { |i| Product.create!(seller: approved_seller, name: "Produto #{i}", sku: "PAG-#{i}-#{SecureRandom.hex(2)}", price_cents: 1_000, stock_quantity: 1, status: "active") }
+      per_page = Paginatable::DEFAULT_PER_PAGE
+      (per_page * 2 - Product.count).times { |i| Product.create!(seller: approved_seller, name: "Produto #{i}", sku: "PAG-#{i}-#{SecureRandom.hex(2)}", price_cents: 1_000, stock_quantity: 1, status: "active") }
 
       get admin_products_path
 
