@@ -1536,6 +1536,14 @@ O único fragmento genuinamente livre de armadilhas é `app/views/layouts/_foote
 
 Para fragment caching valer a pena no catálogo/PDP, seria preciso primeiro separar o que é por-produto do que é por-cliente (ex.: extrair wishlist/carrinho para um Turbo Frame à parte, sem cache) — refatoração de estrutura de view, não a simples adição de um bloco `cache do...end`. Sem essa separação e sem medição mostrando gargalo real (§51), não vale o esforço agora.
 
+**REFERÊNCIA — candidatos a low-level caching ainda não implementados (levantados em 2026-09-25).**
+Nenhum destes foi implementado — não há sintoma de lentidão hoje. Ficam registrados para quando o sistema estiver instável (pico de tráfego, degradação de latência, ou dependência externa lenta/fora do ar) e alguém precisar de um atalho rápido e já avaliado, em vez de investigar do zero sob pressão. Antes de agir sobre qualquer um, seguir §51 (reproduzir, medir, identificar, implementar, medir de novo) — o levantamento é ponto de partida, não substitui a medição.
+
+1. **`PostalCodeLookup#call`** (`app/services/postal_code_lookup.rb`) — chamada de rede real ao ViaCEP a cada CEP digitado no checkout/cadastro de endereço (`postal_codes_controller.rb` na loja e no painel do vendedor). O resultado é compartilhado entre todos os clientes (o mesmo CEP sempre resolve para a mesma rua/bairro/cidade) e praticamente nunca muda — é o mais próximo de "cacheável para sempre" que existe no projeto. Se o checkout ficar lento por causa do ViaCEP fora do ar ou degradado, este é o primeiro lugar a olhar: `Rails.cache.fetch("postal_code/#{cep}", expires_in: algumas semanas)`.
+2. **`Material.order(:name)` / `Technique.order(:name)`** (`app/controllers/products_controller.rb:30-31`) — recarregados do banco a cada visita ao `/produtos` (a rota de maior tráfego do site) só para popular os dropdowns de filtro. Mesmo perfil do `Category::Tree` já cacheado: tabela pequena, muda raramente, sem variação por visitante. Mesma estratégia se aplicaria: TTL curto + invalidação via `after_commit` em `Material`/`Technique`.
+
+Descartados nesta mesma investigação, sem necessidade de revisitar: `Analytics::FunnelReport#snapshot` (mesma razão de staleness inaceitável já aplicada ao dashboard), frete via Melhor Envio (já está atrás do cache existente de `Shipping::Calculator`), e `product_counts` do admin de categorias (query única barata, só admin, já memoizada por request).
+
 Última atualização:
 
 `2026-09-25` (mantida — item de documentação, sem mudança de fase)
