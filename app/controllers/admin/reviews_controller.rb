@@ -3,8 +3,9 @@ module Admin
     before_action :set_review, only: %i[approve reject]
 
     def index
-      @reviews = Review.includes(:product, :customer).order(created_at: :desc)
-      @reviews = @reviews.where(status: params[:status]) if params[:status].present?
+      reviews = Review.includes(:product, :customer).order(created_at: :desc)
+      reviews = reviews.where(status: params[:status]) if params[:status].present?
+      @reviews = paginate(reviews)
     end
 
     def approve

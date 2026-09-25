@@ -23,6 +23,19 @@ RSpec.describe "Admin reviews", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
+    it "paginates reviews, 25 per page" do
+      30.times do |i|
+        other_product = Product.create!(seller: approved_seller, name: "Produto avaliado #{i}", sku: "REV-PAG-#{i}-#{SecureRandom.hex(2)}", price_cents: 1_000, stock_quantity: 1, status: "active")
+        customer.reviews.create!(product: other_product, rating: 5, comment: "Ótimo #{i}")
+      end
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_reviews_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Página 1 de 2")
+    end
+
     it "filters reviews by status" do
       post session_path, params: { email_address: user.email_address, password: "password" }
       other_product = Product.create!(seller: approved_seller, name: "Cesto review admin", sku: "REV-ADMIN-002", price_cents: 5_990, stock_quantity: 3, currency: "BRL", status: :active)

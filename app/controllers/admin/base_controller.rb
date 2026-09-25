@@ -1,5 +1,7 @@
 module Admin
   class BaseController < ApplicationController
+    include Paginatable
+
     layout "admin"
 
     before_action :require_admin!

@@ -32,6 +32,16 @@ RSpec.describe "Admin customers", type: :request do
       expect(response.body).to include(customer.name)
       expect(response.body).not_to include(other.name)
     end
+
+    it "paginates customers, 25 per page" do
+      30.times { |i| Customer.create!(name: "Cliente #{i}", email: "cliente-pag-#{i}@example.com", password: "password123") }
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_customers_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Página 1 de 2")
+    end
   end
 
   describe "GET /admin/customers/:id" do

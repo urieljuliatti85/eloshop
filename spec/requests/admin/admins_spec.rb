@@ -27,6 +27,16 @@ RSpec.describe "Admin admins", type: :request do
       expect(response.body).to include(colleague.email_address)
     end
 
+    it "paginates admins, 25 per page" do
+      30.times { other_admin }
+      sign_in_as(user)
+
+      get admin_admins_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Página 1 de 2")
+    end
+
     # O vendedor tem painel próprio e não administra a plataforma.
     it "does not list sellers" do
       seller = Seller.create!(name: "Ateliê #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "10000000019", status: :approved, approved_at: Time.current)

@@ -3,7 +3,7 @@ module Admin
   # há verificação extra aqui.
   class AdminsController < BaseController
     def index
-      @admins = User.admin.order(:email_address)
+      @admins = paginate(User.admin.order(:email_address))
     end
 
     def new

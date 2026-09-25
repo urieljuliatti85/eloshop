@@ -40,6 +40,7 @@
         </tbody>
       </table>
     </div>
+    <%= render "admin/shared/pagination", pagination: @pagination %>
   <% else %>
     <div class="admin-empty-state">Nenhuma avaliação encontrada.</div>
   <% end %>
