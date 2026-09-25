@@ -21,8 +21,9 @@ RSpec.describe "Admin categories", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "paginates categories, 25 per page" do
-      30.times { |i| Category.create!(name: "Categoria #{i}") }
+    it "paginates categories" do
+      per_page = Paginatable::DEFAULT_PER_PAGE
+      (per_page * 2 - Category.count).times { |i| Category.create!(name: "Categoria #{i}") }
       post session_path, params: { email_address: user.email_address, password: "password" }
 
       get admin_categories_path

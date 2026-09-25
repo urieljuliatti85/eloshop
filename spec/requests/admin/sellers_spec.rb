@@ -219,9 +219,10 @@ RSpec.describe "Admin sellers", type: :request do
     expect(response.body).to include(pending_terms_seller.name)
   end
 
-  it "paginates sellers, 25 per page" do
+  it "paginates sellers" do
     sign_in_as(admin)
-    30.times { |i| Seller.create!(name: "Ateliê Paginação #{i} #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf) }
+    per_page = Paginatable::DEFAULT_PER_PAGE
+    (per_page * 2 - Seller.count).times { |i| Seller.create!(name: "Ateliê Paginação #{i} #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: generate_valid_cpf) }
 
     get admin_sellers_path
 

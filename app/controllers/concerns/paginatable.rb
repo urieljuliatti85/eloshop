@@ -5,11 +5,26 @@
 module Paginatable
   extend ActiveSupport::Concern
 
-  DEFAULT_PER_PAGE = 25
+  DEFAULT_PER_PAGE = 15
 
   Pagination = Struct.new(:current_page, :total_pages, :total_count, :per_page) do
     def first_page? = current_page <= 1
     def last_page? = current_page >= total_pages
+
+    # Números de página a exibir, com nil marcando uma lacuna ("…"): sempre a
+    # primeira, a última, e uma janela em torno da página atual — para não
+    # listar centenas de páginas quando o total_count é grande.
+    def page_window(radius: 2)
+      window = ([ 1, total_pages ] + ((current_page - radius)..(current_page + radius)).to_a)
+        .select { |page| page.between?(1, total_pages) }
+        .uniq
+        .sort
+
+      window.each_with_object([]) do |page, result|
+        result << nil if result.any? && page - result.last.to_i > 1
+        result << page
+      end
+    end
   end
 
   private
