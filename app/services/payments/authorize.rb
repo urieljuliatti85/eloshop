@@ -3,12 +3,15 @@ module Payments
   # da chamada externa para que um timeout possa reutilizar a mesma chave de
   # idempotência sem criar outra cobrança no gateway.
   class Authorize
-    def initialize(order:, gateway: Gateways.build, payment_method: "pix", card_token: nil, installments: 1)
+    def initialize(order:, gateway: Gateways.build, payment_method: "pix", card_token: nil, installments: 1,
+                   payment_method_id: nil, issuer_id: nil)
       @order = order
       @gateway = gateway
       @payment_method = payment_method
       @card_token = card_token
       @installments = installments
+      @payment_method_id = payment_method_id
+      @issuer_id = issuer_id
     end
 
     def call
@@ -21,7 +24,9 @@ module Payments
         application_fee_cents: payment.application_fee_cents,
         payment_method: @payment_method,
         card_token: @card_token,
-        installments: @installments
+        installments: @installments,
+        payment_method_id: @payment_method_id,
+        issuer_id: @issuer_id
       )
 
       payment.update!(

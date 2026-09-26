@@ -15,7 +15,8 @@ module Gateways
       "fake"
     end
 
-    def authorize(order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1)
+    def authorize(order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1,
+                  payment_method_id: nil, issuer_id: nil)
       if payment_method == "credit_card"
         # Sem tela de simulação própria para cartão: o token decide o
         # desfecho, para exercitar aprovação e recusa síncronas em teste sem

@@ -42,7 +42,9 @@ class PaymentsController < StorefrontController
       gateway: Gateways.build,
       payment_method: payment_method,
       card_token: params[:card_token],
-      installments: installments
+      installments: installments,
+      payment_method_id: params[:payment_method_id],
+      issuer_id: params[:issuer_id]
     ).call
 
     redirect_to new_order_payment_path(@order)

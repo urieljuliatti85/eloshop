@@ -66,7 +66,9 @@ export default class extends Controller {
       body: JSON.stringify({
         payment_method: "credit_card",
         card_token: cardFormData.token,
-        installments: cardFormData.installments
+        installments: cardFormData.installments,
+        payment_method_id: cardFormData.payment_method_id,
+        issuer_id: cardFormData.issuer_id
       })
     })
 
