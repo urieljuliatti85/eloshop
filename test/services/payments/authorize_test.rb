@@ -13,7 +13,8 @@ module Payments
 
       def name = "mercado_pago"
 
-      def authorize(order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1)
+      def authorize(order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1,
+                    payment_method_id: nil, issuer_id: nil)
         @keys << idempotency_key
         if @fail_once
           @fail_once = false
@@ -34,8 +35,20 @@ module Payments
     class AlwaysFailingGateway
       def name = "mercado_pago"
 
-      def authorize(order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1)
+      def authorize(order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1,
+                    payment_method_id: nil, issuer_id: nil)
         raise Gateways::MercadoPago::RequestFailed, "Mercado Pago respondeu 500 em /v1/payments"
+      end
+    end
+
+    class CapturingGateway
+      attr_reader :received
+
+      def name = "mercado_pago"
+
+      def authorize(**kwargs)
+        @received = kwargs
+        Gateways::Intent.new(external_id: "captured-1", status: "approved", card_last_four: "1111", card_brand: kwargs[:payment_method_id])
       end
     end
 
@@ -70,6 +83,19 @@ module Payments
       event = order.order_events.payment_attempt_created.last
       assert event.present?
       assert_equal payment.status, event.status
+    end
+
+    # payment_method_id é campo mínimo obrigatório do Mercado Pago para
+    # cartão — sem ele o provedor respondia 500 opaco (WCS-51962/WCS-50393).
+    test "forwards payment_method_id and issuer_id to the gateway" do
+      order = build_order
+      gateway = CapturingGateway.new
+
+      Authorize.new(order: order, gateway: gateway, payment_method: "credit_card", card_token: "tok",
+        payment_method_id: "visa", issuer_id: "310").call
+
+      assert_equal "visa", gateway.received[:payment_method_id]
+      assert_equal "310", gateway.received[:issuer_id]
     end
 
     test "reuses an existing pending payment instead of creating a new one" do

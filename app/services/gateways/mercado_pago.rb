@@ -55,10 +55,11 @@ module Gateways
     # depois via webhook). Cartão aprova ou recusa na própria resposta —
     # `token`/`installments` só fazem sentido para cartão; o gateway do
     # Mercado Pago rejeita o payload se forem enviados junto com PIX.
-    def authorize(order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1)
+    def authorize(order:, idempotency_key:, application_fee_cents:, payment_method: "pix", card_token: nil, installments: 1,
+                  payment_method_id: nil, issuer_id: nil)
       if payment_method == "credit_card"
         authorize_credit_card(order: order, idempotency_key: idempotency_key, application_fee_cents: application_fee_cents,
-                               card_token: card_token, installments: installments)
+                               card_token: card_token, installments: installments, payment_method_id: payment_method_id, issuer_id: issuer_id)
       else
         authorize_pix(order: order, idempotency_key: idempotency_key, application_fee_cents: application_fee_cents)
       end
@@ -162,22 +163,33 @@ module Gateways
     # Token gerado pelo Card Payment Brick no navegador — nunca o número do
     # cartão em si. `installments` chega do mesmo Brick, que já calculou as
     # opções de parcela com a taxa do emissor.
-    def authorize_credit_card(order:, idempotency_key:, application_fee_cents:, card_token:, installments:)
+    # `payment_method_id` é campo mínimo obrigatório do POST /v1/payments para
+    # cartão (junto com token/transaction_amount/installments/payer.email) —
+    # sem ele o Mercado Pago responde 500 opaco em vez de rejeitar com uma
+    # mensagem clara (WCS-51962, reincidência do WCS-50393). `issuer_id` é
+    # obrigatório apenas quando o Brick o devolve (cartões com mais de um
+    # emissor possível); omitir o campo quando ausente, nunca enviar nil.
+    def authorize_credit_card(order:, idempotency_key:, application_fee_cents:, card_token:, installments:, payment_method_id:, issuer_id: nil)
       raise ArgumentError, "card_token é obrigatório para cartão de crédito" if card_token.blank?
+      raise ArgumentError, "payment_method_id é obrigatório para cartão de crédito" if payment_method_id.blank?
 
       access_token = access_token_for(order)
 
+      body = {
+        transaction_amount: (order.total_cents / 100.0).round(2),
+        application_fee: (application_fee_cents / 100.0).round(2),
+        token: card_token,
+        installments: installments,
+        payment_method_id: payment_method_id,
+        description: "Pedido #{order.id} — EloShop",
+        external_reference: order.id.to_s,
+        payer: { email: payer_email_for(order) }
+      }
+      body[:issuer_id] = issuer_id if issuer_id.present?
+
       response = post(
         "/v1/payments",
-        body: {
-          transaction_amount: (order.total_cents / 100.0).round(2),
-          application_fee: (application_fee_cents / 100.0).round(2),
-          token: card_token,
-          installments: installments,
-          description: "Pedido #{order.id} — EloShop",
-          external_reference: order.id.to_s,
-          payer: { email: payer_email_for(order) }
-        },
+        body: body,
         headers: { "X-Idempotency-Key" => idempotency_key },
         access_token: access_token
       )

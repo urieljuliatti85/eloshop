@@ -54,21 +54,42 @@ module Gateways
       assert_equal 13.49, body["application_fee"]
     end
 
-    test "authorize sends the card token and installments, not pix fields" do
+    # `payment_method_id`/`issuer_id` são os campos que faltavam no payload
+    # real e causaram o 500 opaco investigado nos tickets WCS-50393/WCS-51962
+    # — ver o comentário em Gateways::MercadoPago#authorize_credit_card.
+    test "authorize sends the card token, installments and payment_method_id, not pix fields" do
       captured = stub_request(
         "id" => 55, "status" => "approved",
         "payment_method_id" => "visa", "card" => { "last_four_digits" => "1111" }
       ) do
         @gateway.authorize(
           order: @order, idempotency_key: "attempt-card", application_fee_cents: 1_349,
-          payment_method: "credit_card", card_token: "card-token-xyz", installments: 3
+          payment_method: "credit_card", card_token: "card-token-xyz", installments: 3,
+          payment_method_id: "visa", issuer_id: "310"
         )
       end
 
       body = JSON.parse(captured.body)
       assert_equal "card-token-xyz", body["token"]
       assert_equal 3, body["installments"]
-      assert_nil body["payment_method_id"]
+      assert_equal "visa", body["payment_method_id"]
+      assert_equal "310", body["issuer_id"]
+    end
+
+    test "authorize omits issuer_id when the Brick does not return one" do
+      captured = stub_request(
+        "id" => 55, "status" => "approved",
+        "payment_method_id" => "visa", "card" => { "last_four_digits" => "1111" }
+      ) do
+        @gateway.authorize(
+          order: @order, idempotency_key: "attempt-card-no-issuer", application_fee_cents: 1_349,
+          payment_method: "credit_card", card_token: "card-token-xyz", installments: 1,
+          payment_method_id: "visa"
+        )
+      end
+
+      body = JSON.parse(captured.body)
+      assert_not body.key?("issuer_id")
     end
 
     test "authorize returns approved status and card details for an approved card payment" do
@@ -78,7 +99,8 @@ module Gateways
       ) do
         intent = @gateway.authorize(
           order: @order, idempotency_key: "attempt-card-ok", application_fee_cents: 1_349,
-          payment_method: "credit_card", card_token: "card-token-xyz", installments: 1
+          payment_method: "credit_card", card_token: "card-token-xyz", installments: 1,
+          payment_method_id: "visa"
         )
 
         assert_equal "55", intent.external_id
@@ -93,7 +115,8 @@ module Gateways
       stub_request("id" => 56, "status" => "rejected") do
         intent = @gateway.authorize(
           order: @order, idempotency_key: "attempt-card-declined", application_fee_cents: 1_349,
-          payment_method: "credit_card", card_token: "card-token-xyz", installments: 1
+          payment_method: "credit_card", card_token: "card-token-xyz", installments: 1,
+          payment_method_id: "visa"
         )
 
         assert_equal "declined", intent.status
@@ -104,7 +127,16 @@ module Gateways
       assert_raises(ArgumentError) do
         @gateway.authorize(
           order: @order, idempotency_key: "attempt-card-missing-token", application_fee_cents: 1_349,
-          payment_method: "credit_card", card_token: nil, installments: 1
+          payment_method: "credit_card", card_token: nil, installments: 1, payment_method_id: "visa"
+        )
+      end
+    end
+
+    test "authorize raises without a payment_method_id for credit card" do
+      assert_raises(ArgumentError) do
+        @gateway.authorize(
+          order: @order, idempotency_key: "attempt-card-missing-payment-method-id", application_fee_cents: 1_349,
+          payment_method: "credit_card", card_token: "card-token-xyz", installments: 1, payment_method_id: nil
         )
       end
     end
@@ -309,7 +341,7 @@ module Gateways
         ) do
           assert_raises(MercadoPago::RequestFailed) do
             @gateway.authorize(order: @order, idempotency_key: "attempt-card-1", application_fee_cents: 1_349,
-              payment_method: "credit_card", card_token: "card-brick-token", installments: 3)
+              payment_method: "credit_card", card_token: "card-brick-token", installments: 3, payment_method_id: "visa")
           end
         end
 
