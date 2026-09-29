@@ -4,6 +4,9 @@ class ApplicationMailer < ActionMailer::Base
   # no template.
   helper ApplicationHelper
 
+  # Repete falhas transitórias de envio no `deliver_later`.
+  self.delivery_job = ApplicationMailDeliveryJob
+
   # no-reply não recebe nada: respostas dos clientes vão para contato@, que o
   # Cloudflare Email Routing encaminha à caixa do negócio.
   default from: "EloShop <no-reply@eloshop.shop>", reply_to: "contato@eloshop.shop"
