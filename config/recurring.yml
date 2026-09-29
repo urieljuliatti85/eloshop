@@ -21,3 +21,9 @@ production:
     class: CheckRailwayMetricsJob
     queue: default
     schedule: every 10 minutes
+  # Cobre o webhook do Mercado Pago que não chegou: consulta o gateway para
+  # pagamentos pending há mais de 10 minutos. Idempotente (usa ProcessWebhook).
+  reconcile_payments:
+    class: ReconcilePaymentsJob
+    queue: default
+    schedule: every 15 minutes
