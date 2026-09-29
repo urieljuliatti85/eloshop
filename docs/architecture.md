@@ -172,7 +172,7 @@ Configuração necessária:
 
 ## Deploy (Fase 20)
 
-**Decisão**: Railway (PaaS), não Kamal — `config/deploy.yml` fica no repositório sem uso, preservado para uma eventual migração futura pra VPS própria, mas o deploy real hoje é via Dockerfile + configuração da Railway. Sem domínio próprio ainda — usa o subdomínio `*.up.railway.app` que a Railway atribui automaticamente.
+**Decisão**: Railway (PaaS), não Kamal — `config/deploy.yml` fica no repositório sem uso, preservado para uma eventual migração futura pra VPS própria, mas o deploy real hoje é via Dockerfile + configuração da Railway. O domínio próprio é `eloshop.shop` (DNS no Cloudflare, domínios customizados `eloshop.shop` e `www` no serviço); o subdomínio `*.up.railway.app` continua ativo.
 
 ### O que a Railway precisa ter configurado
 
@@ -189,6 +189,7 @@ Configuração necessária:
   * `MELHOR_ENVIO_CLIENT_ID`, `MELHOR_ENVIO_CLIENT_SECRET` e `MELHOR_ENVIO_REDIRECT_URI` — aplicação OAuth do Melhor Envio (frete real, ADR 005); sem elas o painel mostra "aguarda a configuração" e o checkout usa a tabela interna de frete
   * `MELHOR_ENVIO_SANDBOX=true` — somente durante a validação com a conta de teste do Melhor Envio (saldo fictício); remover ou definir `false` antes de cotar frete real
   * `GOOGLE_ANALYTICS_MEASUREMENT_ID`, `GOOGLE_ANALYTICS_PROPERTY_ID` e `GOOGLE_ANALYTICS_CREDENTIALS_JSON` — opcionais; habilitam respectivamente a coleta consentida na vitrine e os relatórios agregados do Admin. O JSON da conta de serviço é segredo e nunca deve ser versionado
+  * `RESEND_API_KEY` — chave de API do Resend com permissão de envio restrita ao domínio `eloshop.shop`; ver "E-mail transacional" abaixo
   * `RAILS_ENV=production` (Railway/Dockerfile já cobre isso, mas confirmar)
   * `SENTRY_DSN` — opcional; sem ela, `config/initializers/sentry.rb` não ativa o SDK e a aplicação sobe normalmente. DSN do projeto `eloshop` no Sentry SaaS (eloshop.sentry.io) — até 2026-09-16 apontava para um GlitchTip auto-hospedado; a troca só mudou o valor da variável, o SDK `sentry-ruby`/`sentry-rails` é o mesmo. Só o error tracking do backend está ligado, sem SDK JS nem Session Replay — decisão deliberada para não expor dados de checkout (nome, endereço) capturados em gravação de tela. Ao testar via `railway run`, o comando roda localmente com `RAILS_ENV` do shell (não sobrescrito para `production`), então o initializer não ativa — use `RAILS_ENV=production railway run ...` para reproduzir o guard corretamente. **`railway run` não serve para consultar o banco de produção**: como roda local, o `DATABASE_URL` do serviço aponta para `postgres.railway.internal`, host que só resolve dentro da rede da Railway, e a falha aparece como `ActiveRecord::NoDatabaseError: Database not found: railway` — enganosa, porque parece banco inexistente. Para ler o banco de produção use `railway ssh --service eloshop-web 'bin/rails runner "..."'`, que executa dentro do contêiner (foi o método usado no diagnóstico da PDP e na apuração do estado do Mercado Pago).
 * **Porta**: a Railway atribui `$PORT` dinamicamente; `bin/docker-entrypoint` já repassa isso pro Thruster (`HTTP_PORT`) — nada a configurar manualmente, mas é importante saber que existe essa ponte (ver comentário no arquivo).
@@ -238,6 +239,12 @@ Não há alarme para isso: a configuração não é versionada e nada no reposit
 Pior, `latestDeployment` na API da Railway aponta para o último deploy **bem-sucedido**, ignorando o `SKIPPED` — então consultar só o status devolve `SUCCESS` de um commit anterior e parece confirmar um deploy que não aconteceu. **Confira sempre o `commitHash` junto do status**, nunca o status sozinho; é o mesmo erro de método do §51 (sinal indireto em vez de evidência), aqui na forma de um campo que responde a outra pergunta. Para retomar um commit descartado: `railway redeploy`, ou um commit novo por cima — o rerun não basta.
 
 Isso torna um **teste instável mais caro do que parece**: ele não custa só um CI vermelho, ele descarta silenciosamente o deploy daquele commit. Ver o TODO do `seller_portal_mobile_test.rb` no ROADMAP.
+
+### E-mail transacional
+
+* **Envio**: Resend pela **API HTTPS** (gem oficial `resend`, `delivery_method = :resend`), região São Paulo, domínio `eloshop.shop` verificado. **Não use SMTP**: a Railway desativa a saída SMTP nos planos Free/Trial/Hobby (só o Pro libera), e a conexão a `smtp.resend.com` estoura `Net::OpenTimeout` — descoberto em 2026-09-29 rodando o envio de dentro do contêiner. Remetente `EloShop <no-reply@eloshop.shop>` e `reply_to: contato@eloshop.shop` em `ApplicationMailer`; `ContactMailer` sobrescreve o `reply_to` com o e-mail do visitante. `raise_delivery_errors = true` em produção, porque todo mailer roda dentro de um job: a falha precisa levantar para o Solid Queue tentar de novo e o Sentry registrar.
+* **Recebimento**: `contato@eloshop.shop` não é uma caixa de correio, e sim uma regra do Cloudflare Email Routing que encaminha para um Gmail. `no-reply@` não recebe nada.
+* **DNS (Cloudflare)**: o Email Routing é dono dos 3 MX `route*.mx.cloudflare.net`, do DKIM `cf2024-1._domainkey` e do SPF da raiz (`include:_spf.mx.cloudflare.net`) — registros bloqueados na interface. O Resend usa só o subdomínio `send` (CNAMEs `send` e `rsend`, DKIM `resend._domainkey`), sem tocar na raiz; por isso **não** se deve ativar "Receiving" no Resend (criaria um MX na raiz e derrubaria o `contato@`). DMARC em `_dmarc` com `p=none` e relatórios para `contato@`.
 
 ### Achado corrigido durante a Fase 20
 
