@@ -58,8 +58,10 @@ Rails.application.configure do
   config.active_job.log_arguments = false
   config.solid_queue.connects_to = { database: { writing: :queue } }
 
-  # Todo e-mail roda dentro de um job: falha de envio precisa levantar para o
-  # Solid Queue tentar de novo e o Sentry registrar, em vez de sumir em silêncio.
+  # Todo e-mail roda dentro de um job: falha de envio precisa levantar para o job
+  # falhar às claras (Solid Queue guarda em failed_executions e o Sentry avisa)
+  # em vez de sumir em silêncio. Só erros transitórios são repetidos sozinhos,
+  # ver RetriesTransientDeliveryErrors.
   config.action_mailer.raise_delivery_errors = true
 
   # Host usado pelos links gerados nos templates de e-mail.
