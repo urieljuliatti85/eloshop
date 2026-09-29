@@ -112,3 +112,7 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
+
+# Envio de e-mail pela API HTTPS do Resend: a Railway bloqueia SMTP de saída fora
+# do plano Pro (ver docs/architecture.md, "E-mail transacional").
+gem "resend", "~> 1.17"

@@ -58,21 +58,20 @@ Rails.application.configure do
   config.active_job.log_arguments = false
   config.solid_queue.connects_to = { database: { writing: :queue } }
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  # Todo e-mail roda dentro de um job: falha de envio precisa levantar para o
+  # Solid Queue tentar de novo e o Sentry registrar, em vez de sumir em silêncio.
+  config.action_mailer.raise_delivery_errors = true
 
-  # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
+  # Host usado pelos links gerados nos templates de e-mail.
+  config.action_mailer.default_url_options = { host: "eloshop.shop", protocol: "https" }
 
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  # Resend pela API HTTPS (domínio eloshop.shop verificado). Não é SMTP de
+  # propósito: a Railway bloqueia SMTP de saída fora do plano Pro e a conexão
+  # a smtp.resend.com estoura `Net::OpenTimeout`. A chave só é exigida na hora
+  # do envio, então o `assets:precompile` do Dockerfile carrega este arquivo
+  # sem `RESEND_API_KEY`.
+  Resend.api_key = ENV["RESEND_API_KEY"]
+  config.action_mailer.delivery_method = :resend
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

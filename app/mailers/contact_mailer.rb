@@ -1,5 +1,5 @@
 class ContactMailer < ApplicationMailer
-  DESTINATION_EMAIL = ENV.fetch("CONTACT_EMAIL", "uriel.juliattivalle@gmail.com")
+  DESTINATION_EMAIL = ENV.fetch("CONTACT_EMAIL", "contato@eloshop.shop")
 
   def notify(name:, email:, message:, subject: nil)
     @name = name
