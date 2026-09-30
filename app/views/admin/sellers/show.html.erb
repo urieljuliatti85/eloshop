@@ -28,15 +28,7 @@
             <div>
               <p class="font-semibold text-slate-900"><%= alert.title %></p>
               <p class="text-xs text-slate-500">Detectado em <%= l(alert.detected_at, format: :short) %></p>
-              <% if alert.detail["order_ids"].present? %>
-                <p class="mt-1 text-sm text-slate-600">
-                  Pedidos:
-                  <%= safe_join(alert.detail["order_ids"].map { |id| link_to("##{id}", admin_order_path(id), class: "admin-link") }, ", ") %>
-                </p>
-              <% end %>
-              <% if alert.rule == "unverified_account" %>
-                <p class="mt-1 text-sm text-slate-600">A conta conectada não é uma conta real de produção.</p>
-              <% end %>
+              <%= render "admin/fraud_alerts/detail", alert: alert %>
             </div>
             <%= button_to "Marcar como resolvido", resolve_admin_fraud_alert_path(alert), method: :patch, class: "admin-button admin-button--secondary" %>
           </li>

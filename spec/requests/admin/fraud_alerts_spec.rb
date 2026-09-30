@@ -31,4 +31,62 @@ RSpec.describe "Admin fraud alerts", type: :request do
 
     expect(alert.reload).not_to be_resolved
   end
+
+  describe "GET /admin/fraudes" do
+    let!(:resolved) do
+      FraudAlert.create!(seller: seller, rule: "self_purchase", detail: { "order_ids" => [ 42 ] },
+        detected_at: 2.days.ago, resolved_at: 1.day.ago)
+    end
+
+    it "redirects a visitor to the login" do
+      get admin_fraud_alerts_path
+
+      expect(response).to redirect_to(new_session_path)
+    end
+
+    it "keeps a seller out" do
+      sign_in_as(User.create!(email_address: "vendedor-fraudes@eloshop.test", password: "password123", role: :seller, seller: seller))
+
+      get admin_fraud_alerts_path
+
+      expect(response).to redirect_to(new_session_path)
+    end
+
+    it "lists open alerts by default, with the monitored rules and a nav link" do
+      sign_in_as(admin)
+
+      get admin_fraud_alerts_path
+
+      expect(response.body).to include("Fraudes", "Ateliê Alerta", alert.title, "O que é monitorado", admin_fraud_alerts_path)
+      expect(response.body).not_to include("##{42}")
+    end
+
+    it "shows resolved alerts with their orders when filtered" do
+      sign_in_as(admin)
+
+      get admin_fraud_alerts_path(status: "resolved")
+
+      expect(response.body).to include("#42", "Resolvido em")
+      expect(response.body).not_to include("Marcar como resolvido")
+    end
+
+    it "filters by rule and ignores an unknown rule" do
+      sign_in_as(admin)
+
+      get admin_fraud_alerts_path(status: "all", rule: "self_purchase")
+      expect(response.body).to include("#42")
+
+      get admin_fraud_alerts_path(status: "all", rule: "nao-existe")
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "shows an all-clear message when nothing is open" do
+      alert.resolve!
+      sign_in_as(admin)
+
+      get admin_fraud_alerts_path
+
+      expect(response.body).to include("Nenhum alerta aberto")
+    end
+  end
 end

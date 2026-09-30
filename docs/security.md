@@ -86,7 +86,7 @@ O Google Analytics é opt-in: nenhum recurso externo é carregado antes do aceit
 
 ## Alertas de fraude de vendedor
 
-`SellerFraudScanJob` (a cada hora, `config/recurring.yml`) roda `Fraud::SellerScan` e abre um `FraudAlert` por vendedor e regra. **Só notifica**: nada suspende, reembolsa ou avisa vendedor/cliente — isso segue decisão do admin. O aviso sai uma vez por alerta novo, por e-mail (`FRAUD_ALERT_EMAIL`, com `CONTACT_EMAIL` como fallback) e por Sentry (`warning`, sem PII, fingerprint por regra e vendedor). Os alertas abertos aparecem em `/admin/sellers/:slug`, com "Marcar como resolvido".
+`SellerFraudScanJob` (a cada hora, `config/recurring.yml`) roda `Fraud::SellerScan` e abre um `FraudAlert` por vendedor e regra. **Só notifica**: nada suspende, reembolsa ou avisa vendedor/cliente — isso segue decisão do admin. O aviso sai uma vez por alerta novo, por e-mail (`FRAUD_ALERT_EMAIL`, com `CONTACT_EMAIL` como fallback) e por Sentry (`warning`, sem PII, fingerprint por regra e vendedor). Os alertas abertos aparecem em `/admin/fraudes` (visão geral do marketplace: contadores, regras monitoradas e lista filtrável por situação e regra) e em `/admin/sellers/:slug`, ambos com "Marcar como resolvido".
 
 | Regra | O que sinaliza | Fecha sozinha? |
 | --- | --- | --- |

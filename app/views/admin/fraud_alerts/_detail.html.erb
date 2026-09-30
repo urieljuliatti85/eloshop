@@ -1,0 +1,12 @@
+<% if alert.detail["order_ids"].present? %>
+  <p class="mt-1 text-sm text-slate-600">
+    Pedidos:
+    <%= safe_join(alert.detail["order_ids"].map { |id| link_to("##{id}", admin_order_path(id), class: "admin-link") }, ", ") %>
+  </p>
+<% end %>
+<% if alert.rule == "unverified_account" %>
+  <p class="mt-1 text-sm text-slate-600">
+    Produção: <%= alert.detail["live_mode"] ? "sim" : "não" %> ·
+    Conta de teste: <%= { true => "sim", false => "não" }.fetch(alert.detail["test_account"], "desconhecido") %>
+  </p>
+<% end %>

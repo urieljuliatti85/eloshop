@@ -12,7 +12,7 @@ Rails.application.routes.draw do
     get "financials/export", to: "financials#export", as: :financials_export
     post "financials/reconciliation", to: "financials#refresh_reconciliation", as: :financials_reconciliation
 
-    resources :fraud_alerts, only: [] do
+    resources :fraud_alerts, only: %i[index], path: "fraudes" do
       member { patch :resolve }
     end
 

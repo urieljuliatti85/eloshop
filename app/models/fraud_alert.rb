@@ -8,18 +8,22 @@ class FraudAlert < ApplicationRecord
   RULES = {
     "unverified_account" => {
       title: "Aprovado com conta do Mercado Pago que não é real",
+      explanation: "Vendedor aprovado com o Mercado Pago conectado, mas numa conta de teste ou de origem desconhecida. Uma venda ali não repassaria dinheiro real.",
       auto_resolvable: false
     },
     "self_purchase" => {
       title: "Compra paga com o mesmo e-mail do vendedor",
+      explanation: "Pedido pago em que o cliente usa o mesmo e-mail de um usuário do ateliê. Pode ser autocompra para inflar vendas ou avaliações.",
       auto_resolvable: false
     },
     "unshipped_paid_order" => {
       title: "Pedido pago sem envio dentro do prazo",
+      explanation: "Pedido pago há mais de 7 dias (mais o prazo de produção, se sob encomenda) sem envio marcado. Fecha sozinho quando o envio é marcado.",
       auto_resolvable: true
     },
     "shipped_without_tracking" => {
       title: "Envio marcado sem código de rastreio",
+      explanation: "Envio marcado há mais de 7 dias sem código de rastreio (retirada local fica de fora). Fecha sozinho quando o código é informado.",
       auto_resolvable: true
     }
   }.freeze
@@ -34,6 +38,10 @@ class FraudAlert < ApplicationRecord
 
   def title
     RULES.fetch(rule).fetch(:title)
+  end
+
+  def explanation
+    RULES.fetch(rule).fetch(:explanation)
   end
 
   def auto_resolvable?
