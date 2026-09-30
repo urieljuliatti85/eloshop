@@ -98,6 +98,7 @@
           <% [
             ["Visão geral", seller_root_path],
             ["Primeiros passos", seller_getting_started_path],
+            ["Conta Vendedor no Mercado Pago", seller_mercado_pago_guide_path],
             ["Produtos", seller_products_path],
             ["Pedidos", seller_orders_path],
             ["Mensagens", seller_messages_path],
@@ -108,9 +109,23 @@
             <% active = current_page?(path) || (label == "Mensagens" && controller_name == "order_messages") %>
             <%# min-h-11: no celular estes são os alvos de toque principais do
                 painel, e a altura do texto sozinha ficava abaixo de 40px. %>
-            <%= link_to label, path,
-                  class: "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-4 transition #{active ? 'bg-brand-500 text-white shadow-sm' : 'text-stone-600 hover:bg-brand-50 hover:text-brand-700'}",
-                  aria: (active ? { current: "page" } : {}) %>
+            <%= link_to path,
+                  class: "inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 transition #{active ? 'bg-brand-500 text-white shadow-sm' : 'text-stone-600 hover:bg-brand-50 hover:text-brand-700'}",
+                  aria: (active ? { current: "page" } : {}) do %>
+              <%= label %>
+              <%# Passo obrigatório: sem a conta conectada não há publicação. O
+                  texto carrega o significado (não só a cor) para leitores de tela. %>
+              <% if path == seller_mercado_pago_guide_path %>
+                <% if current_seller.mercado_pago_connected? %>
+                  <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-emerald-800">✓ Conectado</span>
+                <% else %>
+                  <span class="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-white">
+                    <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
+                    Obrigatório
+                  </span>
+                <% end %>
+              <% end %>
+            <% end %>
           <% end %>
         </nav>
         <div class="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white via-white/90 to-transparent shadow-[inset_-12px_0_10px_-10px_rgba(28,25,23,0.15)] lg:hidden" aria-hidden="true"></div>
