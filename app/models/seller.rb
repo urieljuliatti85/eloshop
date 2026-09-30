@@ -149,6 +149,18 @@ class Seller < ApplicationRecord
       mercado_pago_refresh_token_ciphertext.present?
   end
 
+  # `mercado_pago_connected?` só diz que há tokens: serve ao gateway e ao
+  # OAuth, que precisam do token, mas não diz se a conta pode ser aprovada. O
+  # painel usa este estado, que reaproveita `approvable_account?` (a mesma
+  # regra de `approve!` e do botão do admin) para não mostrar "conectado" a
+  # quem o admin não consegue aprovar — conta de teste em produção, ou
+  # conexão anterior à verificação de origem (`test_account` nil).
+  def mercado_pago_account_state
+    return :not_connected unless mercado_pago_connected?
+
+    approvable_account? ? :ready : :not_accepted
+  end
+
   def connect_mercado_pago!(credentials)
     connection_attributes = {
       mercado_pago_user_id: credentials.user_id,

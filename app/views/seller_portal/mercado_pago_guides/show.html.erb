@@ -1,6 +1,6 @@
 <% content_for :title, "Conta Vendedor no Mercado Pago | #{current_seller.name}" %>
 
-<% connected = current_seller.mercado_pago_connected? %>
+<% state = current_seller.mercado_pago_account_state %>
 <%# Os textos abaixo não citam botões do app do Mercado Pago: os nomes das
     telas mudam e não há como validá-los daqui. O que é estável (o tipo de
     conta exigido, os documentos, o prazo) está descrito; o resto aponta para
@@ -8,8 +8,11 @@
 <div class="space-y-8">
   <header class="overflow-hidden rounded-[2rem] bg-[#5c1a0b] px-6 py-8 text-white shadow-sm sm:px-9 sm:py-10">
     <p class="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#fbbeb6]">
-      <% if connected %>
+      <% case state %>
+      <% when :ready %>
         <span aria-hidden="true">✓</span> Conta conectada
+      <% when :not_accepted %>
+        <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-4" %> Conta não aceita
       <% else %>
         <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-4" %> Passo obrigatório
       <% end %>
@@ -17,6 +20,10 @@
     <h1 class="mt-2 max-w-3xl text-3xl font-black tracking-tight sm:text-4xl">Ative seus recebimentos: crie sua Conta Vendedor no Mercado Pago</h1>
     <p class="mt-4 max-w-2xl text-sm leading-6 text-white/75 sm:text-base">Na EloShop você monta seu ateliê, cadastra as peças e cuida dos pedidos. Mas quem recebe o dinheiro é o <strong>Mercado Pago</strong>. Quando um cliente paga, o valor vai direto para a sua conta lá, já descontada a comissão da EloShop. Sem essa conta conectada, seus produtos não podem ser publicados.</p>
   </header>
+
+  <% if state == :not_accepted %>
+    <p class="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900"><strong>A conta conectada não pode ser aprovada.</strong> Você conectou uma conta de teste ou uma conta que não conseguimos confirmar como real. Desconecte-a no painel e conecte a sua Conta Vendedor (ou Conta Negócio) real, seguindo os passos abaixo.</p>
+  <% end %>
 
   <% if @mercado_pago_oauth_sandbox %>
     <p class="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900"><strong>Ambiente de teste:</strong> aqui a conexão é feita com uma conta de teste (TESTUSER) do tipo Vendedor. Ela não permite aprovação nem vendas reais. Em produção, vale o passo a passo abaixo com a sua conta real.</p>
@@ -47,8 +54,10 @@
       <h2 class="text-lg font-bold"><span class="text-brand-600">4.</span> Conecte sua conta à EloShop</h2>
       <p class="mt-2 text-sm leading-6 text-stone-600">Clique em <strong>Conectar Mercado Pago</strong>, entre na sua conta lá e autorize a EloShop a cobrar em seu nome. Você pode desfazer a conexão quando quiser, mas seus produtos saem do ar até reconectar.</p>
       <div class="mt-4">
-        <% if connected %>
+        <% if state == :ready %>
           <p class="inline-flex items-center rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-800">✓ Conta conectada</p>
+        <% elsif state == :not_accepted %>
+          <p class="text-sm leading-6 text-amber-800">Conta conectada, mas não aceita. Desconecte-a em <%= link_to "Dados do Ateliê", seller_atelier_path, class: "font-semibold underline" %> e conecte a conta real.</p>
         <% elsif @mercado_pago_oauth_configured %>
           <%= link_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-600", data: { turbo: false } %>
         <% else %>

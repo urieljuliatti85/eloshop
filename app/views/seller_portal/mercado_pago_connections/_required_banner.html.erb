@@ -1,19 +1,30 @@
-<%# Convite para quem ainda não conectou o Mercado Pago. Some sozinho quando
-    `mercado_pago_connected?` vira verdadeiro; o banner de conexão (_banner)
+<%# Convite para quem ainda não tem uma conta aceita. Some sozinho quando
+    `mercado_pago_account_state` vira :ready; o banner de conexão (_banner)
     continua abaixo com o estado detalhado. %>
-<section class="flex flex-col gap-5 rounded-2xl border-2 border-red-300 bg-red-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between" aria-labelledby="mp-required-title">
+<% not_accepted = current_seller.mercado_pago_account_state == :not_accepted %>
+<section class="flex flex-col gap-5 rounded-2xl border-2 px-6 py-5 sm:flex-row sm:items-center sm:justify-between <%= not_accepted ? 'border-amber-300 bg-amber-50' : 'border-red-300 bg-red-50' %>" aria-labelledby="mp-required-title">
   <div class="flex items-start gap-4">
-    <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "mt-0.5 size-7 shrink-0 text-red-600" %>
+    <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "mt-0.5 size-7 shrink-0 #{not_accepted ? 'text-amber-600' : 'text-red-600'}" %>
     <div>
-      <p class="text-xs font-bold uppercase tracking-[0.16em] text-red-700">Passo obrigatório</p>
-      <h2 id="mp-required-title" class="mt-1 text-xl font-bold text-red-950">Para vender na EloShop você precisa de uma Conta Vendedor no Mercado Pago</h2>
-      <p class="mt-2 max-w-2xl text-sm leading-6 text-red-900">É a conta do Mercado Pago que recebe o pagamento dos seus clientes. Sem ela conectada, seus produtos não podem ser publicados.</p>
+      <% if not_accepted %>
+        <p class="text-xs font-bold uppercase tracking-[0.16em] text-amber-700">Conta não aceita</p>
+        <h2 id="mp-required-title" class="mt-1 text-xl font-bold text-amber-950">A conta conectada não pode ser aprovada</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-amber-900">Você conectou uma conta de teste ou uma conta que não conseguimos confirmar como real. Desconecte e conecte a sua Conta Vendedor (ou Conta Negócio) real no Mercado Pago. Enquanto isso, seus produtos não podem ser publicados.</p>
+      <% else %>
+        <p class="text-xs font-bold uppercase tracking-[0.16em] text-red-700">Passo obrigatório</p>
+        <h2 id="mp-required-title" class="mt-1 text-xl font-bold text-red-950">Para vender na EloShop você precisa de uma Conta Vendedor no Mercado Pago</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-red-900">É a conta do Mercado Pago que recebe o pagamento dos seus clientes. Sem ela conectada, seus produtos não podem ser publicados.</p>
+      <% end %>
     </div>
   </div>
   <div class="flex shrink-0 flex-col gap-3 sm:items-end">
-    <% if @mercado_pago_oauth_configured %>
-      <%= link_to "Já tenho conta: conectar", seller_mercado_pago_connect_path, class: "inline-flex min-h-11 items-center justify-center rounded-full bg-red-700 px-6 py-3 text-sm font-bold text-white hover:bg-red-800", data: { turbo: false } %>
+    <% if not_accepted %>
+      <%= link_to "Ver como corrigir", seller_mercado_pago_guide_path, class: "inline-flex min-h-11 items-center justify-center rounded-full bg-amber-700 px-6 py-3 text-sm font-bold text-white hover:bg-amber-800" %>
+    <% else %>
+      <% if @mercado_pago_oauth_configured %>
+        <%= link_to "Já tenho conta: conectar", seller_mercado_pago_connect_path, class: "inline-flex min-h-11 items-center justify-center rounded-full bg-red-700 px-6 py-3 text-sm font-bold text-white hover:bg-red-800", data: { turbo: false } %>
+      <% end %>
+      <%= link_to "Ainda não tenho: ver passo a passo", seller_mercado_pago_guide_path, class: "inline-flex min-h-11 items-center justify-center rounded-full border border-red-300 bg-white px-6 py-3 text-sm font-bold text-red-800 hover:bg-red-100" %>
     <% end %>
-    <%= link_to "Ainda não tenho: ver passo a passo", seller_mercado_pago_guide_path, class: "inline-flex min-h-11 items-center justify-center rounded-full border border-red-300 bg-white px-6 py-3 text-sm font-bold text-red-800 hover:bg-red-100" %>
   </div>
 </section>

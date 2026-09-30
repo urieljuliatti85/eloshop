@@ -7,12 +7,16 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
 
   before { allow(Marketplace::MercadoPagoOauth).to receive(:new).and_return(oauth) }
 
-  def connect_seller!
+  # `test_account: false` com `live_mode` é o que a aprovação aceita fora do
+  # sandbox; sem isso o vendedor tem tokens, mas não uma conta aceita.
+  def connect_seller!(live_mode: true, test_account: false)
     seller.update!(
       mercado_pago_user_id: "123456",
       mercado_pago_access_token_ciphertext: "x",
       mercado_pago_refresh_token_ciphertext: "y",
-      mercado_pago_connected_at: Time.current
+      mercado_pago_connected_at: Time.current,
+      mercado_pago_live_mode: live_mode,
+      mercado_pago_test_account: test_account
     )
   end
 
@@ -53,6 +57,46 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
 
       expect(response.body).to include("Conta conectada")
       expect(response.body).not_to include(seller_mercado_pago_connect_path)
+    end
+  end
+
+  describe "connected account that cannot be approved" do
+    # O caso de produção: tokens presentes, mas conta de teste ou de origem
+    # desconhecida. Dizer "conectado" aqui deixava a vendedora esperando uma
+    # aprovação que o admin não consegue dar.
+    [ true, nil ].each do |test_account|
+      it "warns instead of showing connected when test_account is #{test_account.inspect}" do
+        connect_seller!(test_account: test_account)
+        sign_in_as(user)
+
+        get seller_root_path
+
+        expect(response.body).to include("Conta não aceita", "não pode ser aprovada")
+        expect(response.body).not_to include("✓ Conectado")
+        expect(response.body).to include("Em análise").or include("em análise")
+        expect(response.body).not_to include("estiver pending")
+      end
+    end
+
+    it "explains how to fix it on the guide page" do
+      connect_seller!(test_account: true)
+      sign_in_as(user)
+
+      get seller_mercado_pago_guide_path
+
+      expect(response.body).to include("A conta conectada não pode ser aprovada", "Conta conectada, mas não aceita")
+      expect(response.body).not_to include("✓ Conta conectada")
+    end
+
+    it "accepts a test account when the app runs in sandbox mode" do
+      allow(oauth).to receive(:sandbox?).and_return(true)
+      connect_seller!(live_mode: false, test_account: true)
+      sign_in_as(user)
+
+      get seller_root_path
+
+      expect(response.body).to include("✓ Conectado")
+      expect(response.body).not_to include("Conta não aceita")
     end
   end
 

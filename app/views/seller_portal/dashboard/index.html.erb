@@ -41,7 +41,7 @@
     </div>
   </section>
 
-  <% unless current_seller.mercado_pago_connected? %>
+  <% unless current_seller.mercado_pago_account_state == :ready %>
     <%= render "seller_portal/mercado_pago_connections/required_banner" %>
   <% end %>
 
@@ -49,7 +49,13 @@
     <section class="rounded-2xl border border-amber-300 bg-amber-50 px-6 py-5">
       <p class="text-xs font-bold uppercase tracking-[0.16em] text-amber-700">Ação necessária</p>
       <h2 class="mt-1 text-xl font-bold text-amber-950">Cadastro em análise</h2>
-      <p class="mt-2 text-sm text-amber-800">A plataforma ainda precisa concluir a validação. Produtos não podem ser publicados enquanto o cadastro estiver <%= current_seller.status %>.</p>
+      <%# Enquanto não há conta aceita, o próximo passo é da vendedora, não da
+          plataforma: o admin nem consegue aprovar (`approve!`). %>
+      <% if current_seller.mercado_pago_account_state == :ready %>
+        <p class="mt-2 text-sm text-amber-800">A plataforma ainda precisa concluir a validação. Produtos não podem ser publicados enquanto o cadastro estiver <%= t(current_seller.status, scope: "sellers.statuses").downcase %>.</p>
+      <% else %>
+        <p class="mt-2 text-sm text-amber-800">Conecte uma Conta Vendedor real do Mercado Pago (aviso acima) para a plataforma poder analisar o cadastro. Produtos não podem ser publicados enquanto o cadastro estiver <%= t(current_seller.status, scope: "sellers.statuses").downcase %>.</p>
+      <% end %>
     </section>
   <% end %>
 

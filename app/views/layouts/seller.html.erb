@@ -116,8 +116,14 @@
               <%# Passo obrigatório: sem a conta conectada não há publicação. O
                   texto carrega o significado (não só a cor) para leitores de tela. %>
               <% if path == seller_mercado_pago_guide_path %>
-                <% if current_seller.mercado_pago_connected? %>
+                <% case current_seller.mercado_pago_account_state %>
+                <% when :ready %>
                   <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-emerald-800">✓ Conectado</span>
+                <% when :not_accepted %>
+                  <span class="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-white">
+                    <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
+                    Conta não aceita
+                  </span>
                 <% else %>
                   <span class="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-white">
                     <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
