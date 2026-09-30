@@ -1,0 +1,87 @@
+<div class="space-y-8">
+  <header>
+    <p class="admin-section-label mb-2">Marketplace</p>
+    <h1>Fraudes</h1>
+    <p class="mt-2 text-sm text-slate-500">
+      Sinais de irregularidade dos vendedores, verificados a cada hora. Os alertas só sinalizam: nada é suspenso,
+      reembolsado ou avisado ao vendedor sem a sua decisão.
+    </p>
+  </header>
+
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div class="admin-card p-5">
+      <p class="admin-section-label">Alertas abertos</p>
+      <p class="mt-2 text-3xl font-semibold <%= @open_count.positive? ? 'text-amber-700' : 'text-emerald-700' %>"><%= @open_count %></p>
+    </div>
+    <div class="admin-card p-5">
+      <p class="admin-section-label">Ateliês com alerta</p>
+      <p class="mt-2 text-3xl font-semibold text-slate-900"><%= @sellers_with_open_alerts %></p>
+    </div>
+    <div class="admin-card p-5">
+      <p class="admin-section-label">Resolvidos em 30 dias</p>
+      <p class="mt-2 text-3xl font-semibold text-slate-900"><%= @resolved_last_30_days %></p>
+    </div>
+  </div>
+
+  <section class="admin-card p-6">
+    <p class="admin-section-label">O que é monitorado</p>
+    <ul class="mt-3 divide-y divide-slate-200">
+      <% FraudAlert::RULES.each do |rule, config| %>
+        <li class="flex flex-wrap items-start justify-between gap-3 py-3">
+          <div class="max-w-2xl">
+            <p class="font-semibold text-slate-900"><%= config[:title] %></p>
+            <p class="text-sm text-slate-600"><%= config[:explanation] %></p>
+          </div>
+          <%= link_to "#{@open_by_rule.fetch(rule, 0)} aberto(s)", admin_fraud_alerts_path(rule: rule, status: "open"), class: "admin-link text-sm" %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+
+  <nav class="flex flex-wrap gap-2" aria-label="Filtrar alertas">
+    <% [["Abertos", "open"], ["Resolvidos", "resolved"], ["Todos", "all"]].each do |label, status| %>
+      <% active = @status == status %>
+      <%= link_to label, admin_fraud_alerts_path(status: status, rule: @rule), class: "admin-button #{active ? 'admin-button--primary' : 'admin-button--secondary'}", aria: { current: ("page" if active) } %>
+    <% end %>
+    <% if @rule %>
+      <%= link_to "Limpar filtro de regra", admin_fraud_alerts_path(status: @status), class: "admin-link self-center text-sm" %>
+    <% end %>
+  </nav>
+
+  <% if @alerts.any? %>
+    <div class="admin-table-wrap">
+      <table>
+        <thead><tr><th>Ateliê</th><th>O que foi encontrado</th><th>Detectado em</th><th>Situação</th><th><span class="sr-only">Ações</span></th></tr></thead>
+        <tbody>
+          <% @alerts.each do |alert| %>
+            <tr>
+              <td class="font-semibold text-slate-900"><%= link_to alert.seller.name, admin_seller_path(alert.seller), class: "admin-link" %></td>
+              <td>
+                <p class="font-semibold text-slate-900"><%= alert.title %></p>
+                <%= render "admin/fraud_alerts/detail", alert: alert %>
+              </td>
+              <td><%= l(alert.detected_at, format: :short) %></td>
+              <td>
+                <% if alert.resolved? %>
+                  <span class="admin-badge admin-badge--neutral">Resolvido em <%= l(alert.resolved_at, format: :short) %></span>
+                <% else %>
+                  <span class="admin-badge admin-badge--warning">Aberto</span>
+                <% end %>
+              </td>
+              <td>
+                <div class="flex justify-end">
+                  <% unless alert.resolved? %>
+                    <%= button_to "Marcar como resolvido", resolve_admin_fraud_alert_path(alert), method: :patch, class: "admin-button admin-button--secondary" %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <%= render "admin/shared/pagination", pagination: @pagination %>
+  <% else %>
+    <div class="admin-empty-state"><%= @status == "open" ? "Nenhum alerta aberto. Tudo em ordem por enquanto." : "Nenhum alerta encontrado." %></div>
+  <% end %>
+</div>
