@@ -371,6 +371,34 @@ class SellerTest < ActiveSupport::TestCase
     end
   end
 
+  # O painel não pode dizer "conectado" a quem o admin não consegue aprovar:
+  # `mercado_pago_connected?` só sabe que há tokens. O estado usa a mesma
+  # regra da aprovação (`approvable_account?`), então os dois não divergem.
+  test "account state separates missing, not accepted and ready connections" do
+    seller = Seller.create!(name: "Ateliê estados", owner_full_name: "Ana Lua", cpf: "52998224725")
+
+    with_sandbox(nil) do
+      assert_equal :not_connected, seller.mercado_pago_account_state
+
+      seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: true, test_account: true))
+      assert seller.mercado_pago_connected?
+      assert_equal :not_accepted, seller.mercado_pago_account_state
+
+      seller.update!(mercado_pago_test_account: nil)
+      assert_equal :not_accepted, seller.mercado_pago_account_state
+
+      seller.update!(mercado_pago_test_account: false)
+      assert_equal :ready, seller.mercado_pago_account_state
+    end
+  end
+
+  test "account state accepts a test account while the app runs in sandbox mode" do
+    seller = Seller.create!(name: "Ateliê estados sandbox", owner_full_name: "Ana Lua", cpf: "39053344705")
+    seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: false, test_account: true))
+
+    with_sandbox("true") { assert_equal :ready, seller.mercado_pago_account_state }
+  end
+
   # Contrapartida das duas recusas acima: em sandbox o ambiente inteiro é de
   # teste, e exigir conta real ali deixa o ateliê de teste inaprovável — logo
   # sem catálogo publicado (`Product.publicly_visible` exige `approved`) e sem
