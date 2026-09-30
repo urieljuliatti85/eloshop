@@ -83,3 +83,16 @@ Sessão de admin (`Session`) e de cliente (`CustomerSession`) expiram por inativ
 Decidido na Fase 18: `config.force_ssl = true` em produção (força HTTPS, ativa HSTS, cookies `secure`) — independente do domínio final, que é decisão da Fase 20 (deploy). `config.assume_ssl` fica para a Fase 20, já que depende de como o proxy SSL escolhido termina TLS. CSP configurada de forma estrita (`config/initializers/content_security_policy.rb`): `default-src 'self'`, importmap e Tailwind locais, com exceções explícitas e por diretiva para Mercado Pago e Google Analytics. O Google Tag Manager só entra em `script-src`/`connect-src`; os endpoints exatos de coleta entram em `img-src`/`connect-src`, sem curinga de subdomínio e sem acesso a `frame-src` ou `style-src`.
 
 O Google Analytics é opt-in: nenhum recurso externo é carregado antes do aceite. O rastreamento existe apenas numa lista fechada de páginas públicas e recebe caminhos virtuais sem identificadores; carrinho, checkout, pedidos, conta, Admin e painel do artesão ficam fora. `GOOGLE_ANALYTICS_CREDENTIALS_JSON` é credencial apenas de servidor, preservada na Railway e ausente do HTML e dos logs. Os testes de integração travam essas fronteiras.
+
+## Alertas de fraude de vendedor
+
+`SellerFraudScanJob` (a cada hora, `config/recurring.yml`) roda `Fraud::SellerScan` e abre um `FraudAlert` por vendedor e regra. **Só notifica**: nada suspende, reembolsa ou avisa vendedor/cliente — isso segue decisão do admin. O aviso sai uma vez por alerta novo, por e-mail (`FRAUD_ALERT_EMAIL`, com `CONTACT_EMAIL` como fallback) e por Sentry (`warning`, sem PII, fingerprint por regra e vendedor). Os alertas abertos aparecem em `/admin/sellers/:slug`, com "Marcar como resolvido".
+
+| Regra | O que sinaliza | Fecha sozinha? |
+| --- | --- | --- |
+| `unverified_account` | vendedor `approved` com Mercado Pago conectado, mas conta que a aprovação não aceitaria hoje (teste ou origem desconhecida). Aprovado **sem** conexão não entra: não recebe dinheiro | não |
+| `self_purchase` | pedido pago com o mesmo e-mail de um usuário do vendedor (sinal fraco, sem falso positivo) | não |
+| `unshipped_paid_order` | pedido pago sem envio após 7 dias corridos (+ prazo de produção máximo, se sob encomenda) | sim, quando o envio é marcado |
+| `shipped_without_tracking` | envio marcado há mais de 7 dias sem rastreio (retirada local fica de fora) | sim, quando o rastreio é informado |
+
+O prazo de 7 dias é decisão de negócio (`Fraud::SellerScan::SHIPPING_GRACE`). Ficam para depois, por dependerem de limiares calibrados com dados reais: pico de vendas de vendedor novo, taxa de reembolso por vendedor e chargeback.

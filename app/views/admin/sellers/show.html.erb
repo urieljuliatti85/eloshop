@@ -18,6 +18,33 @@
     </div>
   </header>
 
+  <% if @fraud_alerts.any? %>
+    <section class="admin-card border-amber-300 p-6">
+      <p class="admin-section-label">Alertas de fraude abertos</p>
+      <p class="mt-1 text-sm text-slate-500">Só sinalizam: nada foi alterado no ateliê. A decisão é sua.</p>
+      <ul class="mt-4 divide-y divide-slate-200">
+        <% @fraud_alerts.each do |alert| %>
+          <li class="flex flex-wrap items-start justify-between gap-3 py-3">
+            <div>
+              <p class="font-semibold text-slate-900"><%= alert.title %></p>
+              <p class="text-xs text-slate-500">Detectado em <%= l(alert.detected_at, format: :short) %></p>
+              <% if alert.detail["order_ids"].present? %>
+                <p class="mt-1 text-sm text-slate-600">
+                  Pedidos:
+                  <%= safe_join(alert.detail["order_ids"].map { |id| link_to("##{id}", admin_order_path(id), class: "admin-link") }, ", ") %>
+                </p>
+              <% end %>
+              <% if alert.rule == "unverified_account" %>
+                <p class="mt-1 text-sm text-slate-600">A conta conectada não é uma conta real de produção.</p>
+              <% end %>
+            </div>
+            <%= button_to "Marcar como resolvido", resolve_admin_fraud_alert_path(alert), method: :patch, class: "admin-button admin-button--secondary" %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
   <div class="grid gap-6 lg:grid-cols-2">
     <section class="admin-card p-6">
       <p class="admin-section-label">Status da plataforma</p>

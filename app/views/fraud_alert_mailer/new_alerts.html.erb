@@ -1,0 +1,11 @@
+<p>O monitoramento encontrou sinais que merecem uma olhada. Nada foi alterado: a decisão é sua.</p>
+
+<% @alerts.each do |alert| %>
+  <p>
+    <strong><%= alert.seller.name %></strong><br>
+    <%= alert.title %><br>
+    <a href="<%= admin_seller_url(alert.seller) %>">Abrir o ateliê no admin</a>
+  </p>
+<% end %>
+
+<p>Cada alerta só é avisado uma vez. Ele aparece na tela do ateliê até ser resolvido.</p>
