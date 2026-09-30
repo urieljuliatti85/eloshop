@@ -120,6 +120,20 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
       expect(response.body.index("Passo obrigatório")).to be < response.body.index("Crie, publique e acompanhe cada venda")
     end
 
+    it "keeps every notice above the hero, in reading order" do
+      sign_in_as(user)
+
+      get seller_root_path
+
+      body = response.body
+      hero = body.index("Crie, publique e acompanhe cada venda")
+      order = [ "Passo obrigatório", "Cadastro em análise", "Recebimentos e verificação" ].map { |text| body.index(text) }
+
+      expect(order).to all(be_present)
+      expect(order).to eq(order.sort)
+      expect(order.last).to be < hero
+    end
+
     it "replaces the warning with a connected label once connected" do
       connect_seller!
       sign_in_as(user)
