@@ -16,6 +16,7 @@ class Seller < ApplicationRecord
   has_many :products, dependent: :restrict_with_error
   has_many :seller_orders, dependent: :restrict_with_error
   has_many :seller_reports, dependent: :destroy
+  has_many :fraud_alerts, dependent: :destroy
   has_many :notifications, as: :recipient, dependent: :destroy
 
   # Ids de vendedores com uma aceitação registrada para a versão vigente dos

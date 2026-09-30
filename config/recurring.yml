@@ -27,3 +27,9 @@ production:
     class: ReconcilePaymentsJob
     queue: default
     schedule: every 15 minutes
+  # Procura sinais de vendedor irregular e avisa o admin por e-mail e Sentry.
+  # Só notifica (Fraud::SellerScan); idempotente por vendedor e regra.
+  seller_fraud_scan:
+    class: SellerFraudScanJob
+    queue: default
+    schedule: every hour at minute 7
