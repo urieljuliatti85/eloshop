@@ -110,6 +110,16 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
       expect(response.body).to include(seller_mercado_pago_guide_path)
     end
 
+    # O hero ocupa a primeira tela: abaixo dele o passo obrigatório passava
+    # despercebido sem rolar a página.
+    it "shows the mandatory banner above the hero" do
+      sign_in_as(user)
+
+      get seller_root_path
+
+      expect(response.body.index("Passo obrigatório")).to be < response.body.index("Crie, publique e acompanhe cada venda")
+    end
+
     it "replaces the warning with a connected label once connected" do
       connect_seller!
       sign_in_as(user)

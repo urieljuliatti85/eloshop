@@ -1,6 +1,12 @@
 <% content_for :title, "Visão geral | #{current_seller.name}" %>
 
 <div class="space-y-8">
+  <%# No topo, acima do hero: o hero ocupa a primeira tela inteira, e um passo
+      obrigatório abaixo dele passava despercebido sem rolar a página. %>
+  <% unless current_seller.mercado_pago_account_state == :ready %>
+    <%= render "seller_portal/mercado_pago_connections/required_banner" %>
+  <% end %>
+
   <section class="grid min-h-[31rem] gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,0.78fr)]">
     <article class="group relative isolate min-h-[25rem] overflow-hidden rounded-[2rem] bg-[#7a2410] text-white shadow-sm lg:min-h-full">
       <% if @featured_product&.main_image&.attached? %>
@@ -40,10 +46,6 @@
       <% end %>
     </div>
   </section>
-
-  <% unless current_seller.mercado_pago_account_state == :ready %>
-    <%= render "seller_portal/mercado_pago_connections/required_banner" %>
-  <% end %>
 
   <% unless current_seller.approved? %>
     <section class="rounded-2xl border border-amber-300 bg-amber-50 px-6 py-5">
