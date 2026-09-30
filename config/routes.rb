@@ -100,6 +100,7 @@ Rails.application.routes.draw do
 
     root to: "dashboard#index"
     get "primeiros-passos", to: "getting_started#show", as: :getting_started
+    get "conta-vendedor-mercado-pago", to: "mercado_pago_guides#show", as: :mercado_pago_guide
     get "termos-comerciais", to: "terms#show", as: :terms
     post "termos-comerciais", to: "terms#accept"
     # Dados do próprio ateliê. Sempre a partir de `current_seller`, nunca de
