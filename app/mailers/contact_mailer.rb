@@ -13,4 +13,13 @@ class ContactMailer < ApplicationMailer
       subject: subject.presence || "Nova mensagem de contato — EloShop"
     )
   end
+
+  # Confirma ao visitante que a mensagem chegou e quando ele terá resposta.
+  # Texto fixo, de propósito: o formulário é aberto e o e-mail do destinatário
+  # é só o que a pessoa digitou, então nada do que ela escreveu (nome, assunto,
+  # mensagem) volta no e-mail. Senão qualquer um usaria a EloShop para mandar
+  # texto de sua escolha a um terceiro.
+  def confirmation(email:)
+    mail(to: email, subject: "Recebemos sua mensagem — EloShop")
+  end
 end
