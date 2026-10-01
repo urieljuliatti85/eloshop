@@ -58,6 +58,38 @@ module Payments
       end
     end
 
+    test "a definitive gateway rejection marks the refund failed and frees the amount for a new attempt" do
+      payment = build_paid_payment
+      rejecting = Object.new
+      rejecting.define_singleton_method(:refund) { |**| raise Gateways::MercadoPago::RequestRejected, "Mercado Pago respondeu 404" }
+
+      assert_raises(Gateways::MercadoPago::RequestRejected) do
+        Refund.new(payment: payment, amount_cents: payment.amount_cents, idempotency_key: "rejected", gateway: rejecting).call
+      end
+
+      assert PaymentRefund.find_by!(idempotency_key: "rejected").failed?
+      assert payment.reload.paid?
+      assert_equal 0, payment.refunded_amount_cents
+
+      retried = Refund.new(payment: payment, amount_cents: payment.amount_cents, idempotency_key: "second-try").call
+      assert retried.approved?
+    end
+
+    test "an ambiguous gateway failure keeps the refund processing and the amount reserved" do
+      payment = build_paid_payment
+      flaky = Object.new
+      flaky.define_singleton_method(:refund) { |**| raise Gateways::MercadoPago::RequestFailed, "Mercado Pago respondeu 500" }
+
+      assert_raises(Gateways::MercadoPago::RequestFailed) do
+        Refund.new(payment: payment, amount_cents: payment.amount_cents, idempotency_key: "ambiguous", gateway: flaky).call
+      end
+
+      assert PaymentRefund.find_by!(idempotency_key: "ambiguous").processing?
+      assert_raises(Refund::InvalidRefund) do
+        Refund.new(payment: payment, amount_cents: payment.amount_cents, idempotency_key: "blocked").call
+      end
+    end
+
     test "reserves a processing refund against concurrent requests" do
       payment = build_paid_payment
       payment.payment_refunds.create!(

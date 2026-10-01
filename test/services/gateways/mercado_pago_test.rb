@@ -306,6 +306,15 @@ module Gateways
       end
     end
 
+    test "a definitive 4xx raises RequestRejected, while 5xx and transient 4xx stay RequestFailed" do
+      { "404" => true, "400" => true, "403" => true, "500" => false, "429" => false, "409" => false, "408" => false }.each do |code, rejected|
+        stub_error_response(code: code, body: { "error" => "x" }.to_json, content_type: "application/json") do
+          erro = assert_raises(MercadoPago::RequestFailed) { @gateway.payment_status(external_id: "1") }
+          assert_equal rejected, erro.is_a?(MercadoPago::RequestRejected), "HTTP #{code}"
+        end
+      end
+    end
+
     # Pedido #48 (2026-09-24): um 500 de /v1/payments chegou com
     # error/message/cause vazios — o Mercado Pago nem sempre usa essas
     # chaves. Sem um excerto do corpo, essa resposta ficava tão opaca quanto
