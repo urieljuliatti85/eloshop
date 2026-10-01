@@ -1,5 +1,6 @@
 class FunnelEvent < ApplicationRecord
-  EVENT_NAMES = %w[
+  # Funil de compra: o que o painel de análises mostra hoje.
+  BUYER_EVENT_NAMES = %w[
     view_catalog
     view_product
     add_to_cart
@@ -8,6 +9,15 @@ class FunnelEvent < ApplicationRecord
     order_confirmed
     payment_failed
   ].freeze
+
+  # Entrada do vendedor: o clique em "Conectar Mercado Pago" e a volta com a
+  # conexão gravada. A diferença entre os dois é a desistência nessa etapa.
+  SELLER_EVENT_NAMES = %w[
+    seller_mp_connect_started
+    seller_mp_connect_completed
+  ].freeze
+
+  EVENT_NAMES = (BUYER_EVENT_NAMES + SELLER_EVENT_NAMES).freeze
 
   belongs_to :product, optional: true
   belongs_to :seller, optional: true
