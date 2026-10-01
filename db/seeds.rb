@@ -179,6 +179,7 @@ cozinha = Category.find_or_create_by!(name: "Cozinha", parent: casa)
 moda = find_or_create_named!(Category, "Moda")
 acessorios = Category.find_or_create_by!(name: "Acessórios", parent: moda)
 presentes = find_or_create_named!(Category, "Presentes")
+load Rails.root.join("db/seeds/categories.rb")
 
 tags = {
   "feito-a-mao" => find_or_create_named!(Tag, "feito-a-mao"),
