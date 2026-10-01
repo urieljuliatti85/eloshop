@@ -64,6 +64,17 @@ RSpec.describe "Storefront home", type: :request do
       expect(response.body).not_to include("Explore por categoria")
     end
 
+    it "sends artisans to the seller explanation from the banner and the footer" do
+      get root_path
+
+      expect(response.body).to include(how_it_works_path(aba: "vende"))
+      html = Nokogiri::HTML(response.body)
+      footer_link = html.css("footer a").find { |a| a.text.strip == "Venda na EloShop" }
+      banner_link = html.css("a").find { |a| a.text.strip == "Veja como funciona" }
+      expect(footer_link["href"]).to eq(how_it_works_path(aba: "vende"))
+      expect(banner_link["href"]).to eq(how_it_works_path(aba: "vende"))
+    end
+
     it "sets its own canonical URL" do
       get root_path
 

@@ -76,7 +76,10 @@
             Você pode optar em vender cada peça em pequenas tiragens ou sob encomenda. Conheça o nosso Ateliê e comece a vender!
           </p>
 
-          <%= link_to "Seja um artesão", new_seller_registration_path, class: "rounded-full bg-white px-8 py-4 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50" %>
+          <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <%= link_to "Seja um artesão", new_seller_registration_path, class: "rounded-full bg-white px-8 py-4 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50" %>
+            <%= link_to "Veja como funciona", how_it_works_path(aba: "vende"), class: "text-sm font-semibold text-white underline underline-offset-4 hover:text-white/80" %>
+          </div>
         </div>
       </li>
     </ul>
