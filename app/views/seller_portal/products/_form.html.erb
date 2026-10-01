@@ -26,7 +26,7 @@
     </label>
   </fieldset>
   <div><%= form.label :category_id, "Categoria", class: "text-sm font-semibold text-stone-700" %><%= form.select :category_id, options_for_select(category_tree.categories.map { |category| [category_tree.breadcrumb_name(category), category.id] }, product.category_id), { include_blank: "Sem categoria" }, class: field_class %></div>
-  <div><%= form.label :main_image, "Imagem principal", class: "text-sm font-semibold text-stone-700" %><%= form.file_field :main_image, accept: "image/png,image/jpeg,image/webp", class: "mt-2 block w-full text-sm" %></div>
+  <div><%= form.label :main_image, "Imagem principal", class: "text-sm font-semibold text-stone-700" %><%= form.file_field :main_image, accept: "image/png,image/jpeg,image/webp", class: "mt-2 block w-full text-sm" %><p class="mt-1 text-xs text-stone-500">Pode enviar a foto direto do celular: ela é reduzida automaticamente e mantém a qualidade para ampliar.</p></div>
   <div><%= form.label :images, "Galeria de imagens", class: "text-sm font-semibold text-stone-700" %><%= form.file_field :images, multiple: true, accept: "image/png,image/jpeg,image/webp", class: "mt-2 block w-full text-sm" %><p class="mt-2 text-sm text-stone-500">PNG, JPEG ou WEBP, até 5 MB por foto e 10 fotos no total.</p></div>
   <%= form.hidden_field :currency, value: product.currency.presence || "BRL" %>
   <%= form.submit "Salvar produto", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-brand-600" %>
