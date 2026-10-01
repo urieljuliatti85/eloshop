@@ -190,6 +190,10 @@ Rails.application.routes.draw do
 
   get "politica-de-privacidade", to: "privacy_policy#show", as: :privacy_policy
 
+  # Descadastro do lembrete de carrinho (link do e-mail, sem login).
+  get "lembretes-de-carrinho/:token", to: "cart_reminders#show", as: :cart_reminder_unsubscribe
+  delete "lembretes-de-carrinho/:token", to: "cart_reminders#destroy"
+
   resources :customers, only: %i[new create]
   resource :customer_session, only: %i[new create destroy]
 

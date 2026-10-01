@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -75,6 +75,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
     t.bigint "coupon_id"
     t.datetime "created_at", null: false
     t.bigint "customer_id"
+    t.datetime "reminder_sent_at"
     t.string "session_token", null: false
     t.datetime "updated_at", null: false
     t.index ["coupon_id"], name: "index_carts_on_coupon_id"
@@ -120,6 +121,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_120000) do
   end
 
   create_table "customers", force: :cascade do |t|
+    t.boolean "cart_reminder_emails", default: true, null: false
     t.datetime "created_at", null: false
     t.string "email", null: false
     t.string "name", null: false

@@ -1,0 +1,12 @@
+Olá, <%= @customer.name %>!
+
+Você deixou estas peças no carrinho da EloShop:
+
+<% @items.each do |item| %>- <%= item.product.name %><% if item.product_variant %> (<%= item.product_variant.to_label %>)<% end %> × <%= item.quantity %> — <%= format_price(item.subtotal_cents) %>
+<% end %>
+Cada peça é feita à mão e as quantidades costumam ser pequenas, então a disponibilidade pode mudar.
+
+Voltar ao meu carrinho: <%= cart_url %>
+
+Você recebe este lembrete porque tem uma conta na EloShop. Enviamos no máximo um por carrinho esquecido.
+Parar de receber lembretes de carrinho: <%= @unsubscribe_url %>

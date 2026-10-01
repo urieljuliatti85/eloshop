@@ -33,3 +33,9 @@ production:
     class: SellerFraudScanJob
     queue: default
     schedule: every hour at minute 7
+  # Um lembrete por carrinho esquecido (24h parado, cliente logado, sem cupom,
+  # com descadastro). Idempotente: Cart#reminder_sent_at marca o envio.
+  send_cart_reminders:
+    class: SendCartRemindersJob
+    queue: default
+    schedule: every hour at minute 37

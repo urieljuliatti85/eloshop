@@ -76,6 +76,8 @@ O checkout é uma operação que pode ser repetida (duplo clique, timeout seguid
 
 ## Marketplace
 
+**Lembrete de carrinho esquecido.** `SendCartRemindersJob` (de hora em hora, `config/recurring.yml`) roda `Carts::SendReminders`: manda **um** e-mail (`CartReminderMailer`) a quem está logado e deixou o carrinho parado há 24 horas, sem cupom. Carrinho anônimo não tem e-mail, então nunca recebe. Não manda se o cliente já fez um pedido depois da última atividade, se recusou os lembretes (`Customer#cart_reminder_emails`), se nenhum item pode mais ser comprado ou se o carrinho está parado há mais de 7 dias. `Cart#reminder_sent_at` garante um envio por período de abandono. Todo e-mail leva link de descadastro (`/lembretes-de-carrinho/:token`, token assinado; GET só confirma e o DELETE desliga) e o cabeçalho `List-Unsubscribe`. A base legal (legítimo interesse, registrada na política de privacidade) e o texto precisam de revisão jurídica.
+
 Desde a Fase 22, o carrinho aceita produtos de um único vendedor. A validação acontece ao adicionar o item e novamente dentro da transação de `Checkout::CreateOrder`, cobrindo carrinhos legados e concorrência. Isso preserva o lançamento com split 1:1 do Mercado Pago.
 
 O `Order` principal agrega `SellerOrder`s para dividir frete/fulfillment, status, cancelamento e repasse por artesão. O primeiro lançamento cria exatamente um `SellerOrder`, no mesmo lock/transação que cria o pedido e baixa o estoque. Checkout multi-vendedor depende de acesso comercial ao split 1:N; não são usados múltiplos PIX nem repasse manual pela plataforma.
