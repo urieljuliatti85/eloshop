@@ -34,7 +34,13 @@ module Payments
         raise
       end
 
-      apply_refund!(refund, intent)
+      applied = apply_refund!(refund, intent)
+      # Fora da transação de propósito, como o fan-out do pagamento: o job só
+      # entra na fila depois do commit. E só quando ESTA chamada foi a que
+      # aprovou o reembolso: repetir a mesma chave (ou uma chamada concorrente)
+      # não avisa o comprador duas vezes.
+      NotifyCustomerOfRefundJob.perform_later(applied) if @approved_now
+      applied
     rescue ActiveRecord::RecordNotUnique
       concurrent = PaymentRefund.find_by!(idempotency_key: @idempotency_key)
       raise InvalidRefund, "chave de idempotência pertence a outro pagamento" if concurrent.payment_id != @payment.id
@@ -109,6 +115,7 @@ module Payments
           metadata: { refund_id: refund.id, amount_cents: refund.amount_cents, fully_refunded: fully_refunded }
         )
 
+        @approved_now = true
         refund
       end
     end
