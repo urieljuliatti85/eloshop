@@ -1,0 +1,10 @@
+Olá, <%= @customer.name %>!
+
+Recebemos um pedido para redefinir a senha da sua conta na EloShop.
+
+Crie uma nova senha neste link:
+<%= edit_customer_password_url(@customer.password_reset_token) %>
+
+Este link expira em <%= distance_of_time_in_words(0, @customer.password_reset_token_expires_in) %>.
+
+Se você não pediu isso, pode ignorar este e-mail: a sua senha continua a mesma.

@@ -192,6 +192,8 @@ Rails.application.routes.draw do
 
   resources :customers, only: %i[new create]
   resource :customer_session, only: %i[new create destroy]
+  # Recuperação de senha do comprador (admin e vendedor usam /passwords).
+  resources :customer_passwords, only: %i[new create edit update], param: :token, path: "recuperar-senha"
 
   # Área do cliente: os destinos da conta sob um prefixo só, para o menu do
   # topo e o painel terem para onde apontar.

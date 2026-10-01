@@ -1,0 +1,22 @@
+<% content_for :title, "Nova senha — EloShop" %>
+
+<div class="mx-auto w-full max-w-md">
+  <h1 class="mb-2 text-2xl font-bold text-ink">Crie uma nova senha</h1>
+  <p class="mb-8 text-sm text-ink-muted">Escolha a senha que você vai usar para entrar na sua conta.</p>
+
+  <%= form_with url: customer_password_path(params[:token]), method: :patch, class: "flex flex-col gap-4" do |form| %>
+    <div>
+      <%= form.label :password, "Nova senha", class: "mb-1 block text-sm font-medium text-ink" %>
+      <%= form.password_field :password, required: true, autocomplete: "new-password", maxlength: 72,
+            class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+    </div>
+
+    <div>
+      <%= form.label :password_confirmation, "Repita a nova senha", class: "mb-1 block text-sm font-medium text-ink" %>
+      <%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", maxlength: 72,
+            class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+    </div>
+
+    <%= form.submit "Salvar nova senha", class: "mt-2 w-fit cursor-pointer rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
+  <% end %>
+</div>
