@@ -100,6 +100,59 @@ RSpec.describe "Seller products", type: :request do
     expect(response).to redirect_to(seller_product_path(own_product))
   end
 
+  describe "photo optimization on upload" do
+    # Ruído puro não comprime: um JPEG de ~9 MB, como uma foto grande de celular.
+    def big_phone_photo
+      image = Vips::Image.gaussnoise(3600, 2700, sigma: 55, mean: 128).cast(:uchar)
+      file = Tempfile.new([ "celular", ".jpg" ])
+      file.binmode
+      image.bandjoin([ image, image ]).write_to_file(file.path, Q: 100)
+      file
+    end
+
+    it "accepts a phone photo above the 5 MB limit and stores a reduced copy" do
+      file = big_phone_photo
+      expect(file.size).to be > Product::MAIN_IMAGE_MAX_BYTES
+
+      expect do
+        post seller_products_path, params: {
+          product: { name: "Peça com foto grande", sku: "BIGPHOTO-001", price: "40,00", currency: "BRL", stock_quantity: 1,
+                     main_image: Rack::Test::UploadedFile.new(file.path, "image/jpeg", original_filename: "IMG_0001.jpg") }
+        }
+      end.to change(seller.products, :count).by(1)
+
+      stored = seller.products.find_by!(sku: "BIGPHOTO-001").main_image.blob
+      expect(stored.byte_size).to be < Product::MAIN_IMAGE_MAX_BYTES
+      expect(stored.filename.to_s).to eq("IMG_0001.jpg")
+      expect(Vips::Image.new_from_buffer(stored.download, "").size.max).to be <= Images::Optimizer::MAX_DIMENSION
+    end
+
+    it "also reduces the gallery photos added later" do
+      file = big_phone_photo
+
+      patch seller_product_path(own_product), params: {
+        product: { images: [ Rack::Test::UploadedFile.new(file.path, "image/jpeg", original_filename: "galeria.jpg") ] }
+      }
+
+      expect(own_product.images.reload.count).to eq(1)
+      expect(own_product.images.first.blob.byte_size).to be < Product::MAIN_IMAGE_MAX_BYTES
+    end
+
+    it "still rejects a file above the raw limit" do
+      file = Tempfile.new([ "enorme", ".jpg" ])
+      file.binmode
+      file.write("0" * (Images::Optimizer::RAW_UPLOAD_MAX_BYTES + 1))
+      file.flush
+
+      expect do
+        post seller_products_path, params: {
+          product: { name: "Peça enorme", sku: "HUGE-001", price: "40,00", currency: "BRL", stock_quantity: 1,
+                     main_image: Rack::Test::UploadedFile.new(file.path, "image/jpeg") }
+        }
+      end.not_to change(seller.products, :count)
+    end
+  end
+
   it "cannot publish while seller approval is pending" do
     seller.update!(status: :pending, approved_at: nil)
 
