@@ -39,7 +39,7 @@ module Gateways
       "rejected" => "declined",
       "cancelled" => "declined",
       "refunded" => "refunded",
-      "charged_back" => "declined"
+      "charged_back" => "charged_back"
     }.freeze
 
     def initialize(access_token: nil,

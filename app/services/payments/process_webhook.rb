@@ -18,6 +18,7 @@ module Payments
 
       payment = nil
       confirmed = false
+      chargeback_alert = nil
       ActiveRecord::Base.transaction do
         payment = Payment.find_by(external_id: @external_id)
         raise OrderNotFound, "pagamento não encontrado para external_id=#{@external_id}" unless payment
@@ -29,12 +30,14 @@ module Payments
         )
 
         confirmed = apply_status!(payment)
+        chargeback_alert = Fraud::RecordChargeback.new(payment).call if @status == "charged_back"
       end
 
       # Fora da transação de propósito: enfileirar dentro dela colocaria o
       # job na fila antes do commit, e o worker poderia lê-lo (banco `queue`
       # separado, ver CLAUDE.md) antes de o pedido existir para ele.
       notify_confirmation(payment.order) if confirmed
+      Fraud::Notifier.call([ chargeback_alert ]) if chargeback_alert
       Analytics::Funnel.track("payment_failed", seller: payment.order.seller_order.seller) if @status == "declined"
 
       Rails.event.notify(
