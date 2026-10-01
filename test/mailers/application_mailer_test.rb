@@ -20,4 +20,13 @@ class ApplicationMailerTest < ActionMailer::TestCase
 
     assert_equal [ "contato@eloshop.shop" ], email.to
   end
+
+  test "confirmação de contato vai para o visitante, com respostas para contato@" do
+    email = ContactMailer.confirmation(email: "maria@example.com")
+
+    assert_equal [ "maria@example.com" ], email.to
+    assert_equal [ "no-reply@eloshop.shop" ], email.from
+    assert_equal [ "contato@eloshop.shop" ], email.reply_to
+    assert_equal "Recebemos sua mensagem — EloShop", email.subject
+  end
 end

@@ -98,3 +98,7 @@ O Google Analytics é opt-in: nenhum recurso externo é carregado antes do aceit
 O prazo de 7 dias é decisão de negócio (`Fraud::SellerScan::SHIPPING_GRACE`). **Chargeback** não vem do scan: chega pelo webhook. `charged_back` do Mercado Pago tem status próprio (antes virava `declined` e era ignorado em pagamento já pago, além de contar um `payment_failed` falso). `Payments::ProcessWebhook` chama `Fraud::RecordChargeback`, que abre o alerta `chargeback` do vendedor (ou acrescenta o pedido ao alerta aberto, sem repetir o aviso) e `Fraud::Notifier` envia o e-mail e o Sentry. **Pagamento, pedido, comissão e repasse não mudam sozinhos**: quem arca com o valor é decisão de negócio. O alerta só fecha manualmente. Depende de o webhook do app MP estar inscrito no tópico de chargebacks.
 
 Ficam para depois, por dependerem de limiares calibrados com dados reais: pico de vendas de vendedor novo e taxa de reembolso por vendedor.
+
+## Confirmação do formulário de contato
+
+O formulário de contato é aberto, e o e-mail do destinatário é só o que a pessoa digitou. Por isso `ContactMailer#confirmation` ("Recebemos sua mensagem", resposta em até 2 dias úteis) tem **texto fixo**: nome, assunto e mensagem digitados nunca voltam no e-mail, para o formulário não servir de canal de spam ou golpe contra terceiros. `ContactsController` manda **no máximo uma confirmação por e-mail por hora** (chave do `Rails.cache` com o hash SHA-256 do endereço, nunca o endereço), além do `rate_limit` de 5 envios por IP em 10 minutos; a mensagem em si chega sempre a `contato@`.
