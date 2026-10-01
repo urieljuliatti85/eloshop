@@ -17,8 +17,17 @@ RSpec.describe "Storefront home", type: :request do
       get root_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Peças com história, feitas à mão")
+      expect(response.body).to include("Encontre peças únicas. Conheça quem as faz.")
       expect(response.body).to include(products_path)
+    end
+
+    it "sets its own title, description and site structured data" do
+      get root_path
+
+      expect(response.body).to include("<title>EloShop | Artesanato feito à mão direto de ateliês independentes</title>")
+      expect(response.body).to include("compre direto do artesão")
+      expect(response.body).to include('"@type":"Organization"')
+      expect(response.body).to include('"@type":"WebSite"')
     end
 
     # O carrossel é progressivo: os dois banners vêm no HTML e continuam
@@ -53,11 +62,9 @@ RSpec.describe "Storefront home", type: :request do
       expect(response.body).not_to include("Explore por categoria")
     end
 
-    it "sets the default title, description and its own canonical URL" do
+    it "sets its own canonical URL" do
       get root_path
 
-      expect(response.body).to include("<title>#{SeoHelper::DEFAULT_TITLE}</title>")
-      expect(response.body).to include(%(<meta name="description" content="#{SeoHelper::DEFAULT_DESCRIPTION}">))
       expect(response.body).to include(%(<link rel="canonical" href="http://www.example.com/">))
     end
 

@@ -34,6 +34,20 @@ module SeoHelper
     [ width, height ]
   end
 
+  # JSON-LD da home: quem é a loja (Organization) e o site (WebSite), para o
+  # Google exibir nome e logo da marca nos resultados.
+  def site_structured_data
+    data = {
+      "@context" => "https://schema.org",
+      "@graph" => [
+        { "@type" => "Organization", "name" => "EloShop", "url" => root_url, "logo" => image_url("logo.png") },
+        { "@type" => "WebSite", "name" => "EloShop", "url" => root_url }
+      ]
+    }
+
+    json_escape(data.to_json).html_safe
+  end
+
   # JSON-LD do produto (schema.org/Product) — json_escape evita que um
   # valor com "</script>" (ex.: nome ou descrição do produto) escape da
   # tag <script> e quebre o HTML ao redor.
