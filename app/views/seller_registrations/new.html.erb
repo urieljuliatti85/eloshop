@@ -3,6 +3,15 @@
   <h1 class="mt-2 text-3xl font-bold text-ink">Cadastre seu ateliê</h1>
   <p class="mt-3 text-ink-muted">Seu cadastro ficará pendente até a validação da plataforma. Você poderá acessar o painel, mas só publicará produtos após a aprovação. <strong>Seu cadastro será aprovado após você ter conectado uma conta Mercado Pago. O botão estará logo na tela inicial!</strong></p>
 
+  <div class="mt-6 rounded-xl border border-brand-100 bg-brand-50/50 p-4 text-sm text-stone-700">
+    <p class="font-semibold text-ink">Antes de começar</p>
+    <ul class="mt-2 list-disc space-y-1 pl-5">
+      <li>Tenha em mãos uma <strong>conta de vendedor do Mercado Pago</strong>, com a identidade já verificada. É nela que você recebe suas vendas.</li>
+      <li>Separe fotos nítidas das suas peças, de preferência com luz natural e fundo neutro.</li>
+      <li>O cadastro leva poucos minutos. Dúvidas? Escreva para <a href="mailto:contato@eloshop.shop" class="font-semibold text-brand-700 underline">contato@eloshop.shop</a>.</li>
+    </ul>
+  </div>
+
   <% errors = @seller.errors.full_messages + @user.errors.full_messages %>
   <% if errors.any? %>
     <div class="mt-6 rounded-xl bg-red-50 p-4 text-sm text-red-700">

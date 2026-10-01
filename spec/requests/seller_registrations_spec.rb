@@ -1,6 +1,14 @@
 require "rails_helper"
 
 RSpec.describe "Seller registrations", type: :request do
+  it "tells the seller what to have ready before signing up" do
+    get new_seller_registration_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Antes de começar")
+    expect(response.body).to include("conta de vendedor do Mercado Pago")
+  end
+
   it "creates a pending seller account and signs it in" do
     expect do
       post seller_registration_path, params: {
