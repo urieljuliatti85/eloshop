@@ -292,6 +292,34 @@ class SellerTest < ActiveSupport::TestCase
 
   # `test_account: false` é o padrão porque a maioria dos casos descreve uma
   # conta real; os testes de conta de teste passam `true` explicitamente.
+  test "onboarding stage follows the seller from signup to the first sale" do
+    seller = sellers(:pending)
+    assert_equal :awaiting_mercado_pago, seller.onboarding_stage
+
+    seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: false, test_account: true))
+    assert_equal :account_not_accepted, seller.onboarding_stage
+
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    assert_equal :awaiting_approval, seller.onboarding_stage
+
+    seller.approve!(kyc_level_6_confirmed: true)
+    assert_equal :awaiting_first_product, seller.onboarding_stage
+
+    seller.suspend!
+    assert_equal :suspended, seller.onboarding_stage
+  end
+
+  test "onboarding stage waits for the first confirmed sale and then reports selling" do
+    seller = sellers(:approved)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.update!(status: :approved, approved_at: Time.current)
+
+    assert_equal :awaiting_first_sale, seller.onboarding_stage
+
+    seller.seller_orders.first.update!(status: :confirmed)
+    assert_equal :selling, seller.onboarding_stage
+  end
+
   def mercado_pago_credentials(live_mode: true, test_account: false, public_key: "TEST-public-key")
     Marketplace::MercadoPagoOauth::Credentials.new(
       user_id: "123456",

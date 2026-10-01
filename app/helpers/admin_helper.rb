@@ -27,6 +27,31 @@ module AdminHelper
     "returned" => "admin-badge--danger"
   }.freeze
 
+  ONBOARDING_STAGE_LABELS = {
+    suspended: "Suspenso",
+    awaiting_mercado_pago: "Falta conectar o Mercado Pago",
+    account_not_accepted: "Conta Mercado Pago não aceita",
+    awaiting_approval: "Aguardando sua aprovação",
+    awaiting_first_product: "Aprovado, sem produto",
+    awaiting_first_sale: "Aguardando a 1ª venda",
+    selling: "Vendendo"
+  }.freeze
+
+  ONBOARDING_STAGE_TONES = {
+    suspended: "admin-badge--danger",
+    awaiting_mercado_pago: "admin-badge--warning",
+    account_not_accepted: "admin-badge--danger",
+    awaiting_approval: "admin-badge--info",
+    awaiting_first_product: "admin-badge--warning",
+    awaiting_first_sale: "admin-badge--neutral",
+    selling: "admin-badge--success"
+  }.freeze
+
+  def seller_onboarding_badge(seller)
+    stage = seller.onboarding_stage
+    tag.span(ONBOARDING_STAGE_LABELS.fetch(stage), class: "admin-badge #{ONBOARDING_STAGE_TONES.fetch(stage)}")
+  end
+
   def admin_nav_link(label, path, icon:, controllers:)
     active = Array(controllers).include?(controller_name)
     classes = [ "admin-nav-link", ("admin-nav-link--active" if active) ].compact.join(" ")

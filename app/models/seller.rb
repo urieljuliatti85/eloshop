@@ -162,6 +162,25 @@ class Seller < ApplicationRecord
     approvable_account? ? :ready : :not_accepted
   end
 
+  # Em que ponto da entrada o vendedor está, para o admin ver de relance quem
+  # travou. Derivada do estado atual, sem coluna própria: não há como ficar
+  # desatualizada em relação à conexão, à aprovação e aos pedidos.
+  ONBOARDING_STAGES = %i[
+    suspended awaiting_mercado_pago account_not_accepted awaiting_approval
+    awaiting_first_product awaiting_first_sale selling
+  ].freeze
+
+  def onboarding_stage
+    return :suspended if suspended?
+    return :awaiting_mercado_pago unless mercado_pago_connected?
+    return :account_not_accepted unless approvable_account?
+    return :awaiting_approval unless approved?
+    return :awaiting_first_product unless products.exists?
+    return :awaiting_first_sale unless seller_orders.where.not(status: %w[pending cancelled]).exists?
+
+    :selling
+  end
+
   def connect_mercado_pago!(credentials)
     connection_attributes = {
       mercado_pago_user_id: credentials.user_id,
