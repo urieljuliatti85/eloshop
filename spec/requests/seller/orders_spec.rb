@@ -56,6 +56,108 @@ RSpec.describe "Seller orders", type: :request do
     expect(response.body).to include("Marcar como pronto para retirada")
   end
 
+  describe "PATCH /painel/orders/:id/start_production" do
+    let(:made_to_order_product) { Product.create!(seller: seller, name: "Peça sob encomenda", sku: "ORDER-MTO-001", price_cents: 5_000, stock_quantity: 2) }
+
+    def confirmed_custom_order
+      create_order_for(made_to_order_product).tap do |order|
+        order.order_items.first.update!(production_time_snapshot: "7 a 10 dias úteis")
+        order.confirm!
+        order.seller_order.update!(status: :confirmed)
+        create_shipment_for(order)
+      end
+    end
+
+    it "records the start of production, tells the buyer and shows it on both order pages" do
+      order = confirmed_custom_order
+
+      get seller_order_path(order)
+      expect(response.body).to include("Iniciei a produção")
+
+      patch start_production_seller_order_path(order)
+
+      expect(response).to redirect_to(seller_order_path(order))
+      seller_order = order.seller_order.reload
+      expect(seller_order.production_started_at).to be_present
+      expect(order.order_events.production_started.count).to eq(1)
+      notification = customer.notifications.production_started.last
+      expect(notification.body).to include("##{order.id}")
+
+      get seller_order_path(order)
+      expect(response.body).to include("Produção iniciada em")
+      expect(response.body).not_to include("Iniciei a produção")
+
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+      get order_path(order)
+      expect(response.body).to include("Produção iniciada em")
+    end
+
+    it "cannot be undone or repeated, and keeps the original timestamp" do
+      order = confirmed_custom_order
+      patch start_production_seller_order_path(order)
+      original = order.seller_order.reload.production_started_at
+
+      expect {
+        patch start_production_seller_order_path(order)
+      }.not_to change { customer.notifications.production_started.count }
+
+      expect(flash[:alert]).to include("não permite")
+      expect(order.seller_order.reload.production_started_at).to eq(original)
+    end
+
+    it "does not apply to a ready-made piece" do
+      order = create_order_for(own_product)
+      order.confirm!
+      order.seller_order.update!(status: :confirmed)
+      create_shipment_for(order)
+
+      get seller_order_path(order)
+      expect(response.body).not_to include("Iniciei a produção")
+
+      patch start_production_seller_order_path(order)
+
+      expect(flash[:alert]).to be_present
+      expect(order.seller_order.reload.production_started_at).to be_nil
+      expect(customer.notifications.production_started).to be_empty
+    end
+
+    it "does not apply before the payment is confirmed" do
+      order = create_order_for(made_to_order_product)
+      order.order_items.first.update!(production_time_snapshot: "7 a 10 dias úteis")
+
+      patch start_production_seller_order_path(order)
+
+      expect(flash[:alert]).to be_present
+      expect(order.seller_order.reload.production_started_at).to be_nil
+    end
+
+    it "does not let a seller start production on another seller's order" do
+      other_product.update!(availability_type: :made_to_order, production_time_min_days: 3, production_time_max_days: 5)
+      other_order = create_order_for(other_product)
+      other_order.order_items.first.update!(production_time_snapshot: "3 a 5 dias úteis")
+      other_order.confirm!
+      other_order.seller_order.update!(status: :confirmed)
+      create_shipment_for(other_order)
+
+      patch start_production_seller_order_path(other_order)
+
+      expect(response).to have_http_status(:not_found)
+      expect(other_order.seller_order.reload.production_started_at).to be_nil
+    end
+
+    it "is filled in by shipping when the seller never marked it, without overwriting a prior mark" do
+      unmarked = confirmed_custom_order
+      patch ship_seller_order_path(unmarked), params: { carrier: "Correios", service: "PAC", tracking_code: "BR123" }
+      expect(unmarked.seller_order.reload.production_started_at).to be_present
+
+      marked = confirmed_custom_order
+      patch start_production_seller_order_path(marked)
+      original = marked.seller_order.reload.production_started_at
+      patch ship_seller_order_path(marked), params: { carrier: "Correios", service: "PAC", tracking_code: "BR456" }
+      expect(marked.seller_order.reload.production_started_at).to eq(original)
+    end
+  end
+
   describe "PATCH /painel/orders/:id/ship" do
     it "shows shipment details before marking the seller's confirmed order as shipped" do
       order = create_order_for(own_product)

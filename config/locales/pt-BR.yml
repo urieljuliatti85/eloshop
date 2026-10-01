@@ -98,6 +98,7 @@ pt-BR:
       order_confirmed: "Pedido confirmado"
       order_cancelled: "Pedido cancelado"
       refund_processed: "Reembolso processado"
+      production_started: "Produção iniciada"
   shipments:
     fulfillment_states:
       awaiting_payment: "Aguardando pagamento"

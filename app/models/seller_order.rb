@@ -42,6 +42,44 @@ class SellerOrder < ApplicationRecord
     total_cents - refunded_amount_cents
   end
 
+  class ProductionNotApplicable < StandardError; end
+
+  # Peça sob encomenda (tem prazo de produção no snapshot) ou personalizada
+  # (tem escolhas do cliente). Peça pronta não tem "início de produção".
+  def custom_work?
+    order_items.any? { |item| item.production_time_snapshot.present? || item.personalizations.any? }
+  end
+
+  # O marco só faz sentido enquanto há o que marcar: pagamento confirmado,
+  # ainda não iniciado, ainda não enviado.
+  def production_start_applicable?
+    confirmed? && production_started_at.nil? && custom_work? && (shipment.nil? || shipment.pending?)
+  end
+
+  def production_started?
+    production_started_at.present?
+  end
+
+  # Irreversível de propósito: o marco serve de prova numa disputa, então o
+  # vendedor não pode desfazê-lo para reabrir ou fechar o direito do comprador.
+  def start_production!
+    with_lock do
+      raise ProductionNotApplicable, "este pedido não permite marcar o início da produção" unless production_start_applicable?
+
+      update!(production_started_at: Time.current)
+    end
+    OrderEvent.create!(order: order, kind: :production_started, status: order.status)
+  end
+
+  # Enviar implica que a produção já aconteceu: preenche o marco se o vendedor
+  # não o marcou, sem sobrescrever uma marcação anterior.
+  def record_production_start_from_shipping!
+    return unless custom_work? && production_started_at.nil?
+
+    update!(production_started_at: Time.current)
+    OrderEvent.create!(order: order, kind: :production_started, status: order.status)
+  end
+
   # A conversa nasce apenas quando a compra existe de fato. Reembolsos não
   # apagam o canal: comprador e artesão ainda podem precisar combinar
   # devolução, retirada ou esclarecer o que aconteceu.

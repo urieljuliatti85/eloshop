@@ -1,6 +1,36 @@
 require "test_helper"
 
 class SellerOrderTest < ActiveSupport::TestCase
+  test "custom work is a made-to-order snapshot or a personalization, never a ready-made piece" do
+    seller_order = seller_orders(:one)
+    seller_order.order_items.update_all(production_time_snapshot: nil, personalizations: [])
+    assert_not seller_order.reload.custom_work?
+
+    seller_order.order_items.first.update!(production_time_snapshot: "7 a 10 dias úteis")
+    assert seller_order.reload.custom_work?
+
+    seller_order.order_items.update_all(production_time_snapshot: nil, personalizations: [ { "label" => "Nome", "value" => "Maria" } ])
+    assert seller_order.reload.custom_work?
+  end
+
+  test "production start needs a confirmed, custom, unshipped order and cannot be repeated" do
+    seller_order = seller_orders(:one)
+    seller_order.order_items.first.update!(production_time_snapshot: "7 a 10 dias úteis")
+
+    seller_order.update!(status: :pending)
+    assert_not seller_order.production_start_applicable?
+    assert_raises(SellerOrder::ProductionNotApplicable) { seller_order.start_production! }
+
+    seller_order.update!(status: :confirmed)
+    assert seller_order.production_start_applicable?
+    seller_order.start_production!
+    assert seller_order.production_started?
+    assert_equal 1, seller_order.order.order_events.production_started.count
+
+    assert_not seller_order.production_start_applicable?
+    assert_raises(SellerOrder::ProductionNotApplicable) { seller_order.start_production! }
+  end
+
   test "calculates fifteen percent after discounts and excludes shipping" do
     fee = SellerOrder.platform_fee_cents_for(subtotal_cents: 10_000, discount_cents: 1_000)
 

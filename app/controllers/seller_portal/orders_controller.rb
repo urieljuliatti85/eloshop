@@ -10,6 +10,22 @@ module SellerPortal
       @order_items = @seller_order.order_items
     end
 
+    def start_production
+      seller_order = current_seller.seller_orders.find_by!(order_id: params[:id])
+      seller_order.start_production!
+      Notification.create!(
+        recipient: seller_order.order.customer,
+        kind: :production_started,
+        title: "Produção iniciada",
+        body: "O ateliê iniciou a produção do seu pedido ##{seller_order.order_id}.",
+        url: order_path(seller_order.order)
+      )
+
+      redirect_to seller_order_path(seller_order.order), notice: "Início da produção registrado. O comprador foi avisado."
+    rescue SellerOrder::ProductionNotApplicable => e
+      redirect_to seller_order_path(params[:id]), alert: e.message
+    end
+
     def ship
       shipment = current_seller.seller_orders.find_by!(order_id: params[:id]).shipment
       raise ActiveRecord::RecordNotFound unless shipment

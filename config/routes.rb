@@ -139,6 +139,7 @@ Rails.application.routes.draw do
     resources :orders, only: %i[index show] do
       member do
         post :cancel
+        patch :start_production
         patch :ship
         patch :deliver
       end
