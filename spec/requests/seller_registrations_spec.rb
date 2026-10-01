@@ -7,6 +7,7 @@ RSpec.describe "Seller registrations", type: :request do
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("Antes de começar")
     expect(response.body).to include("conta de vendedor do Mercado Pago")
+    expect(response.body).to include(how_it_works_path(aba: "vende"))
   end
 
   it "creates a pending seller account and signs it in" do
