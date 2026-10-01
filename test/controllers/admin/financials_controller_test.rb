@@ -166,7 +166,10 @@ class Admin::FinancialsControllerTest < ActionDispatch::IntegrationTest
 
   test "admin can filter reconciliation rows by period, seller and release status" do
     payment = payments(:one)
-    payment.update!(gateway: "mercado_pago", status: "paid", external_id: "mp-payment-1")
+    # Data fixa: sem ela a venda é datada de "agora" (`updated_at`) e sai da janela de setembro assim
+    # que o calendário passa de 30/09/2026.
+    payment.update!(gateway: "mercado_pago", status: "paid", external_id: "mp-payment-1",
+                    updated_at: Time.zone.parse("2026-09-20T12:00:00Z"))
     Rails.cache.write(
       Admin::FinancialsController::RELEASE_DATES_CACHE_KEY,
       { payment.external_id => "2026-09-25T12:00:00Z" },
