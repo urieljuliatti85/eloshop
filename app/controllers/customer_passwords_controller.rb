@@ -23,13 +23,11 @@ class CustomerPasswordsController < StorefrontController
   end
 
   def update
-    password = params[:password].to_s
-
     # Senha em branco não é atribuída pelo `has_secure_password`: sem esta
     # checagem a tela diria "redefinida" sem ter mudado nada.
-    if password.blank?
+    if params[:password].blank?
       redirect_to edit_customer_password_path(params[:token]), alert: "Escolha uma nova senha."
-    elsif @customer.update(password: password, password_confirmation: params[:password_confirmation].to_s)
+    elsif @customer.update(params.permit(:password, :password_confirmation))
       @customer.customer_sessions.destroy_all
       redirect_to new_customer_session_path, notice: "Senha redefinida com sucesso. Entre com a nova senha."
     else
