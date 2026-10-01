@@ -1,4 +1,10 @@
-Você pode redefinir sua senha em
+Olá!
+
+Recebemos um pedido para redefinir a senha da sua conta na EloShop (<%= @user.email_address %>).
+
+Crie uma nova senha neste link:
 <%= edit_password_url(@user.password_reset_token) %>
 
 Este link expira em <%= distance_of_time_in_words(0, @user.password_reset_token_expires_in) %>.
+
+Se você não pediu isso, pode ignorar este e-mail: a sua senha continua a mesma.
