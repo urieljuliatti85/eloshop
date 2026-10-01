@@ -99,12 +99,38 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     expect(FunnelEvent.where(event_name: "seller_mp_connect_completed", seller_id: seller.id).sum(:event_count)).to eq(1)
   end
 
-  it "does not count a completion when the return from Mercado Pago is invalid" do
+  it "does not count a completion when the return from Mercado Pago is invalid, but counts a failure" do
     start_authorization
 
     get seller_mercado_pago_callback_path, params: { code: "valid-code", state: "estado-errado" }
 
     expect(FunnelEvent.where(event_name: "seller_mp_connect_completed")).to be_empty
+    expect(FunnelEvent.where(event_name: "seller_mp_connect_failed", seller_id: seller.id).sum(:event_count)).to eq(1)
+  end
+
+  it "counts a failure when Mercado Pago refuses the code exchange" do
+    state = start_authorization
+    allow(oauth).to receive(:exchange).and_raise(Marketplace::MercadoPagoOauth::RequestFailed, "Mercado Pago respondeu 400")
+
+    get seller_mercado_pago_callback_path, params: { code: "valid-code", state: state }
+
+    expect(FunnelEvent.where(event_name: "seller_mp_connect_failed", seller_id: seller.id).sum(:event_count)).to eq(1)
+    expect(FunnelEvent.where(event_name: "seller_mp_connect_completed")).to be_empty
+  end
+
+  it "counts a failure when the Mercado Pago account is already linked to another atelier" do
+    state = start_authorization
+    allow(oauth).to receive(:exchange).and_return(
+      Marketplace::MercadoPagoOauth::Credentials.new(
+        user_id: "mp-dup", access_token: "a", refresh_token: "b", expires_at: 180.days.from_now,
+        live_mode: true, test_account: false, public_key: "TEST-public-key"
+      )
+    )
+    allow_any_instance_of(Seller).to receive(:connect_mercado_pago!).and_raise(ActiveRecord::RecordNotUnique)
+
+    get seller_mercado_pago_callback_path, params: { code: "valid-code", state: state }
+
+    expect(FunnelEvent.where(event_name: "seller_mp_connect_failed", seller_id: seller.id).sum(:event_count)).to eq(1)
   end
 
   it "emails the platform when a seller connects a live_mode account, but not for a sandbox one" do

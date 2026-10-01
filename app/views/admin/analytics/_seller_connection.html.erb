@@ -2,23 +2,35 @@
   <div>
     <p class="admin-section-label">Entrada de vendedores</p>
     <h2 id="seller-connection-title" class="mt-1">Conexão com o Mercado Pago</h2>
-    <p class="mt-1 text-sm text-slate-500">Últimos 30 dias, sem dados pessoais. Cada reconexão de um ateliê já conectado também conta.</p>
+    <p class="mt-1 text-sm text-slate-500">
+      Últimos 30 dias. Taxa de conclusão (concluídas sobre cliques):
+      <strong><%= connection.started.zero? ? "—" : number_to_percentage(connection.completion_rate, precision: 0) %></strong>.
+      Cada reconexão de um ateliê já conectado também conta.
+    </p>
   </div>
-  <div class="grid gap-4 sm:grid-cols-3">
-    <article class="admin-stat-card">
-      <p class="admin-section-label relative z-10">Cliques em conectar</p>
-      <p class="admin-stat-value relative z-10"><%= number_with_delimiter(connection.started) %></p>
-      <p class="relative z-10 mt-3 text-sm text-slate-500"><%= pluralize(connection.sellers_started, "ateliê", plural: "ateliês") %></p>
-    </article>
-    <article class="admin-stat-card">
-      <p class="admin-section-label relative z-10">Conexões concluídas</p>
-      <p class="admin-stat-value relative z-10"><%= number_with_delimiter(connection.completed) %></p>
-      <p class="relative z-10 mt-3 text-sm text-slate-500"><%= pluralize(connection.sellers_completed, "ateliê", plural: "ateliês") %></p>
-    </article>
-    <article class="admin-stat-card">
-      <p class="admin-section-label relative z-10">Taxa de conclusão</p>
-      <p class="admin-stat-value relative z-10"><%= connection.started.zero? ? "—" : number_to_percentage(connection.completion_rate, precision: 0) %></p>
-      <p class="relative z-10 mt-3 text-sm text-slate-500">Concluídas sobre cliques</p>
-    </article>
+  <div class="grid gap-4 lg:grid-cols-3">
+    <% [
+      ["Cliques em conectar", connection.started, connection.started_by, "Nenhum clique no período."],
+      ["Conexões concluídas", connection.completed, connection.completed_by, "Nenhuma conexão concluída no período."],
+      ["Falhas na conexão", connection.failed, connection.failed_by, "Nenhuma falha no período."]
+    ].each do |label, total, entries, empty_text| %>
+      <article class="admin-card p-5">
+        <p class="admin-section-label"><%= label %></p>
+        <p class="mt-2 text-3xl font-semibold text-slate-900"><%= number_with_delimiter(total) %></p>
+        <% if entries.any? %>
+          <ul class="mt-4 divide-y divide-slate-200 text-sm">
+            <% entries.each do |entry| %>
+              <li class="py-2">
+                <%= link_to entry.seller.name, admin_seller_path(entry.seller), class: "admin-link font-semibold" %>
+                <span class="block break-all text-slate-600"><%= entry.seller.users.first&.email_address || "sem e-mail cadastrado" %></span>
+                <span class="block text-xs text-slate-500"><%= entry.count %>× · última em <%= l(entry.last_on, format: :short) %></span>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="mt-4 text-sm text-slate-500"><%= empty_text %></p>
+        <% end %>
+      </article>
+    <% end %>
   </div>
 </section>

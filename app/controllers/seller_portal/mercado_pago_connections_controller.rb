@@ -24,6 +24,7 @@ module SellerPortal
     def callback
       code_verifier = valid_state_and_code_verifier(params[:state])
       unless code_verifier && params[:code].present?
+        track_connection_failure
         redirect_to seller_atelier_path, alert: "Não foi possível validar o retorno do Mercado Pago. Tente novamente."
         return
       end
@@ -42,8 +43,10 @@ module SellerPortal
       redirect_to seller_atelier_path, notice: "Conta Mercado Pago conectada. A plataforma agora pode concluir a aprovação."
     rescue Marketplace::MercadoPagoOauth::ConfigurationError,
       Marketplace::MercadoPagoOauth::RequestFailed => e
+      track_connection_failure
       redirect_to seller_atelier_path, alert: e.message
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
+      track_connection_failure
       redirect_to seller_atelier_path, alert: "Esta conta Mercado Pago já está vinculada ou não pôde ser salva."
     end
 
@@ -53,6 +56,10 @@ module SellerPortal
     end
 
     private
+
+    def track_connection_failure
+      Analytics::Funnel.track("seller_mp_connect_failed", seller: current_seller)
+    end
 
     def oauth
       @oauth ||= Marketplace::MercadoPagoOauth.new
