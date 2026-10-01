@@ -2,6 +2,7 @@ require "test_helper"
 
 module Payments
   class RefundTest < ActiveSupport::TestCase
+    include ActiveJob::TestHelper
     def build_paid_payment
       customer = customers(:one)
       address = addresses(:one)
@@ -39,6 +40,36 @@ module Payments
       events = payment.order.order_events.refund_processed
       assert_equal 2, events.count
       assert_equal "refunded", events.last.status
+    end
+
+    test "tells the buyer once when a refund is approved, never again on a replay or a rejection" do
+      payment = build_paid_payment
+
+      assert_enqueued_with(job: NotifyCustomerOfRefundJob) do
+        Refund.new(payment: payment, amount_cents: 500, idempotency_key: "notify-once").call
+      end
+
+      assert_no_enqueued_jobs(only: NotifyCustomerOfRefundJob) do
+        Refund.new(payment: payment, amount_cents: 500, idempotency_key: "notify-once").call
+      end
+
+      rejecting = Object.new
+      rejecting.define_singleton_method(:refund) { |**| raise Gateways::MercadoPago::RequestRejected, "Mercado Pago respondeu 404" }
+      assert_no_enqueued_jobs(only: NotifyCustomerOfRefundJob) do
+        assert_raises(Gateways::MercadoPago::RequestRejected) do
+          Refund.new(payment: payment, amount_cents: 500, idempotency_key: "rejected-no-mail", gateway: rejecting).call
+        end
+      end
+    end
+
+    test "does not tell the buyer while the gateway still reports the refund as processing" do
+      payment = build_paid_payment
+      processing = Object.new
+      processing.define_singleton_method(:refund) { |**| Gateways::RefundIntent.new(external_id: "r-1", status: "processing") }
+
+      assert_no_enqueued_jobs(only: NotifyCustomerOfRefundJob) do
+        Refund.new(payment: payment, amount_cents: 500, idempotency_key: "still-processing", gateway: processing).call
+      end
     end
 
     test "reuses an approved refund with the same idempotency key" do
