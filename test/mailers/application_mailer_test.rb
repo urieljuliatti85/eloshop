@@ -29,4 +29,19 @@ class ApplicationMailerTest < ActionMailer::TestCase
     assert_equal [ "contato@eloshop.shop" ], email.reply_to
     assert_equal "Recebemos sua mensagem — EloShop", email.subject
   end
+
+  # Sem isso o Gmail adivinha o idioma pelo texto e, em e-mail curto, oferece
+  # "traduzir do inglês" para uma mensagem em português.
+  test "todo e-mail em HTML declara o idioma pt-BR" do
+    [
+      WelcomeMailer.welcome_customer(customers(:one)),
+      ContactMailer.confirmation(email: "maria@example.com"),
+      ContactMailer.notify(name: "Maria", email: "maria@example.com", message: "Oi"),
+      SellerOnboardingMailer.awaiting_approval(sellers(:pending))
+    ].each do |email|
+      html = email.html_part ? email.html_part.body.to_s : email.body.to_s
+      assert_includes html, '<html lang="pt-BR">', "#{email.subject}: sem lang=pt-BR"
+      assert_includes html, 'content="pt-BR"', "#{email.subject}: sem Content-Language"
+    end
+  end
 end
