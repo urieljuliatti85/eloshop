@@ -300,3 +300,8 @@ A sanitização é uma **varredura linear sem regex**, de propósito: `<[^>]*>` 
 * Pagamento recusado não deve confirmar o pedido nem debitar estoque de forma definitiva.
 
 `TODO — DECISION REQUIRED`: a política exata de quanto tempo um pedido `pending` aguarda confirmação de pagamento antes de liberar o estoque reservado (se houver reserva) não está definida — depende da modelagem de estoque escolhida na Fase 8 e deve ser uma decisão de negócio.
+
+## Sinais de risco enviados ao Mercado Pago
+
+Toda cobrança (PIX e cartão) leva, além do mínimo obrigatório, `statement_descriptor` ("ELOSHOP", o nome na fatura do cartão), `payer.first_name`/`payer.last_name` (o nome do cliente dividido na primeira palavra e no resto; um nome de uma palavra só envia `first_name`) e `additional_info.items` (SKU, nome truncado em 256 caracteres, quantidade e preço unitário do snapshot do `OrderItem`). São campos opcionais da API de pagamentos e servem ao motor antifraude do Mercado Pago, que tende a aprovar mais cartões legítimos com eles. **Não alteram o valor cobrado.** CPF e telefone do cliente continuam não enviados porque a EloShop não os coleta. Estes campos só foram verificados com HTTP simulado: na primeira cobrança real, conferir que o Mercado Pago não responde 400 por causa deles. Se responder, remover primeiro `additional_info` e depois `statement_descriptor`, nessa ordem, em `Gateways::MercadoPago#risk_signals_for`.
+

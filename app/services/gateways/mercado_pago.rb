@@ -23,6 +23,11 @@ module Gateways
     class RequestRejected < RequestFailed; end
     TRANSIENT_CLIENT_ERRORS = %w[408 409 429].freeze
 
+    # Texto que aparece na fatura do cartão (até 22 caracteres). Decisão do
+    # negócio (2026-10-01): o comprador reconhece a compra pelo nome da marca.
+    STATEMENT_DESCRIPTOR = "ELOSHOP"
+    ITEM_TITLE_MAX_LENGTH = 256
+
     API_HOST = "api.mercadopago.com"
     OPEN_TIMEOUT = 5
     READ_TIMEOUT = 15
@@ -165,8 +170,8 @@ module Gateways
           payment_method_id: "pix",
           description: "Pedido #{order.id} — EloShop",
           external_reference: order.id.to_s,
-          payer: { email: payer_email_for(order) }
-        },
+          payer: payer_for(order)
+        }.merge(risk_signals_for(order)),
         headers: { "X-Idempotency-Key" => idempotency_key },
         access_token: access_token
       )
@@ -205,8 +210,8 @@ module Gateways
         payment_method_id: payment_method_id,
         description: "Pedido #{order.id} — EloShop",
         external_reference: order.id.to_s,
-        payer: { email: payer_email_for(order) }
-      }
+        payer: payer_for(order)
+      }.merge(risk_signals_for(order))
       body[:issuer_id] = issuer_id if issuer_id.present?
 
       response = post(
@@ -231,6 +236,36 @@ module Gateways
       return token if token.present?
 
       raise ConfigurationError, "a conta Mercado Pago do artesão não está conectada"
+    end
+
+    # Comprador enviado ao Mercado Pago: e-mail (obrigatório) mais nome e
+    # sobrenome, que alimentam o motor antifraude dele. Só vai o que existe: um
+    # nome de uma palavra só envia apenas `first_name`, e nunca um campo vazio.
+    def payer_for(order)
+      first_name, last_name = order.customer.name.to_s.strip.split(/\s+/, 2)
+
+      { email: payer_email_for(order), first_name: first_name.presence, last_name: last_name.presence }.compact
+    end
+
+    # Sinais que o Mercado Pago usa para avaliar o risco e aprovar mais cartões
+    # legítimos: o nome que aparece na fatura e os itens comprados. Nenhum dos
+    # dois muda o valor cobrado (`transaction_amount` continua vindo do pedido).
+    def risk_signals_for(order)
+      {
+        statement_descriptor: STATEMENT_DESCRIPTOR,
+        additional_info: { items: items_for(order) }
+      }
+    end
+
+    def items_for(order)
+      order.order_items.map do |item|
+        {
+          id: item.sku.to_s,
+          title: item.product_name.to_s.truncate(ITEM_TITLE_MAX_LENGTH),
+          quantity: item.quantity,
+          unit_price: (item.unit_price_cents / 100.0).round(2)
+        }
+      end
     end
 
     # No sandbox, o Mercado Pago recusa o pagamento (400 "user_allowed_only_
