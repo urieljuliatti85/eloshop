@@ -1,7 +1,7 @@
 class PasswordsMailer < ApplicationMailer
   def reset(user)
     @user = user
-    mail subject: "Redefinição de senha", to: user.email_address
+    mail subject: "Redefinição de senha — EloShop", to: user.email_address
   end
 
   # Comprador: o link leva à tela de redefinição da loja, e não à de admin e

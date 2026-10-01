@@ -1,6 +1,13 @@
-<p>
-  Você pode redefinir sua senha
-  <%= link_to "nesta página de redefinição", edit_password_url(@user.password_reset_token) %>.
+<p>Olá!</p>
 
-  Este link expira em <%= distance_of_time_in_words(0, @user.password_reset_token_expires_in) %>.
+<p>Recebemos um pedido para redefinir a senha da sua conta na EloShop (<%= @user.email_address %>).</p>
+
+<p>
+  <a href="<%= edit_password_url(@user.password_reset_token) %>" style="display: inline-block; background-color: #c2410c; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+    Criar nova senha
+  </a>
 </p>
+
+<p>Este link expira em <%= distance_of_time_in_words(0, @user.password_reset_token_expires_in) %>.</p>
+
+<p style="color: #6b7280; font-size: 12px;">Se você não pediu isso, pode ignorar este e-mail: a sua senha continua a mesma.</p>

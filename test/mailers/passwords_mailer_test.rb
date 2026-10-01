@@ -14,4 +14,21 @@ class PasswordsMailerTest < ActionMailer::TestCase
       assert_match "15 minutos", body
     end
   end
+
+  test "reset gives admins and sellers the same clear layout as the buyer: greeting, button, expiry and an ignore note" do
+    user = users(:one)
+
+    email = PasswordsMailer.reset(user)
+
+    assert_equal [ user.email_address ], email.to
+    assert_equal "Redefinição de senha — EloShop", email.subject
+    html = email.html_part.body.to_s
+    assert_match "Criar nova senha", html
+    assert_match "pode ignorar este e-mail", html
+    [ html, email.text_part.body.to_s ].each do |body|
+      assert_match %r{/passwords/[^/]+/edit}, body
+      assert_no_match(%r{/recuperar-senha/}, body, "admin e vendedor não vão para a tela do comprador")
+      assert_match "15 minutos", body
+    end
+  end
 end
