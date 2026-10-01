@@ -190,6 +190,32 @@ module Gateways
       assert_equal @order.customer.email, body.dig("payer", "email")
     end
 
+    test "find_payment_for returns the charge that carries the order number as external_reference" do
+      payload = { "results" => [
+        { "id" => 999, "status" => "approved", "external_reference" => "999999" },
+        { "id" => 1234567, "status" => "in_process", "external_reference" => @order.id.to_s }
+      ] }
+
+      captured = stub_request(payload) do
+        found = @gateway.find_payment_for(order: @order)
+
+        assert_equal "1234567", found.external_id
+        assert_equal "pending", found.status
+      end
+
+      assert_includes captured.path, "/v1/payments/search?external_reference=#{@order.id}"
+    end
+
+    test "find_payment_for returns nil when no charge matches, and raises when it cannot ask" do
+      stub_request({ "results" => [] }) do
+        assert_nil @gateway.find_payment_for(order: @order)
+      end
+
+      stub_error_response(code: "500", body: "{}", content_type: "application/json") do
+        assert_raises(MercadoPago::RequestFailed) { @gateway.find_payment_for(order: @order) }
+      end
+    end
+
     test "payment_status translates gateway vocabulary into the domain's" do
       { "approved" => "approved", "authorized" => "approved", "rejected" => "declined",
         "cancelled" => "declined", "in_process" => "pending", "refunded" => "refunded" }.each do |remoto, esperado|

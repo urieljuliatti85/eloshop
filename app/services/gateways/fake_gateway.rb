@@ -29,6 +29,12 @@ module Gateways
       end
     end
 
+    # O gateway fake responde na hora, então uma tentativa nunca fica sem
+    # resposta: não há cobrança "perdida" para achar.
+    def find_payment_for(order:)
+      nil
+    end
+
     def refund(payment:, amount_cents:, idempotency_key:)
       RefundIntent.new(external_id: "fake_refund_#{SecureRandom.hex(10)}", status: "approved")
     end
