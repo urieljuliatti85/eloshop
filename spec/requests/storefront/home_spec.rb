@@ -28,6 +28,8 @@ RSpec.describe "Storefront home", type: :request do
       expect(response.body).to include("compre direto do artesão")
       expect(response.body).to include('"@type":"Organization"')
       expect(response.body).to include('"@type":"WebSite"')
+      expect(response.body).to include('"@type":"SearchAction"')
+      expect(response.body).to include("/produtos?q={search_term_string}")
     end
 
     # O carrossel é progressivo: os dois banners vêm no HTML e continuam

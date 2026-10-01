@@ -41,7 +41,15 @@ module SeoHelper
       "@context" => "https://schema.org",
       "@graph" => [
         { "@type" => "Organization", "name" => "EloShop", "url" => root_url, "logo" => image_url("logo.png") },
-        { "@type" => "WebSite", "name" => "EloShop", "url" => root_url }
+        {
+          "@type" => "WebSite", "name" => "EloShop", "url" => root_url,
+          # Mesmo parâmetro `q` do formulário do cabeçalho e do filtro do catálogo.
+          "potentialAction" => {
+            "@type" => "SearchAction",
+            "target" => { "@type" => "EntryPoint", "urlTemplate" => "#{products_url}?q={search_term_string}" },
+            "query-input" => "required name=search_term_string"
+          }
+        }
       ]
     }
 
