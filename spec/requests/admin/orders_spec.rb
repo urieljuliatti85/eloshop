@@ -287,6 +287,58 @@ RSpec.describe "Admin orders", type: :request do
       expect(notification.title).to eq("Reembolso parcial")
     end
 
+    context "when the payment gateway fails" do
+      let(:seller) { Seller.create!(name: "Ateliê Gateway", owner_full_name: "Proprietário Teste", cpf: "10777771080", status: :approved, approved_at: Time.current) }
+      let(:payment) do
+        order.seller_orders.create!(
+          seller: seller, status: :confirmed, subtotal_cents: 1000, shipping_cents: 500,
+          total_cents: 1500, platform_fee_cents: 150, seller_amount_cents: 1350
+        )
+        order.update!(status: :confirmed)
+        order.payments.create!(gateway: "fake", external_id: "fake-gw-fail", status: :paid, amount_cents: 1500, application_fee_cents: 150)
+      end
+      let(:gateway) { instance_double(Gateways::FakeGateway) }
+
+      before do
+        payment
+        allow(Gateways).to receive(:build).and_call_original
+        allow(Gateways).to receive(:build).with("fake").and_return(gateway)
+        post session_path, params: { email_address: user.email_address, password: "password" }
+      end
+
+      it "shows the Mercado Pago rejection instead of a 500 and leaves the payment untouched" do
+        allow(gateway).to receive(:refund).and_raise(Gateways::MercadoPago::RequestRejected, "Mercado Pago respondeu 404 em /v1/payments/1/refunds (not_found)")
+
+        post refund_admin_order_path(order), params: { amount: "5,00", idempotency_key: "gw-rejected" }
+
+        expect(response).to redirect_to(admin_order_path(order))
+        expect(flash[:alert]).to include("recusou o reembolso", "not_found")
+        expect(payment.reload).to be_paid
+        expect(PaymentRefund.find_by!(idempotency_key: "gw-rejected")).to be_failed
+        expect(seller.notifications.order_refunded).to be_empty
+      end
+
+      it "asks the admin to check Mercado Pago after an ambiguous failure" do
+        allow(gateway).to receive(:refund).and_raise(Gateways::MercadoPago::RequestFailed, "Mercado Pago respondeu 500")
+
+        post refund_admin_order_path(order), params: { amount: "5,00", idempotency_key: "gw-flaky" }
+
+        expect(response).to redirect_to(admin_order_path(order))
+        expect(flash[:alert]).to include("Confira o pagamento")
+        expect(PaymentRefund.find_by!(idempotency_key: "gw-flaky")).to be_processing
+      end
+
+      it "does not claim success while the refund is still processing" do
+        allow(gateway).to receive(:refund).and_return(Gateways::RefundIntent.new(external_id: "r-1", status: "processing"))
+
+        post refund_admin_order_path(order), params: { amount: "5,00", idempotency_key: "gw-processing" }
+
+        expect(flash[:notice]).to include("ainda está processando")
+        expect(flash[:notice]).not_to include("com sucesso")
+        expect(seller.notifications.order_refunded).to be_empty
+      end
+    end
+
     it "does not allow an unauthenticated refund" do
       post refund_admin_order_path(order), params: { amount: "5,00", idempotency_key: "anonymous-refund" }
 

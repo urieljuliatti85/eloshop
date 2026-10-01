@@ -19,11 +19,20 @@ module Payments
       refund = prepare_refund
       return refund unless refund.processing?
 
-      intent = @gateway.refund(
-        payment: @payment,
-        amount_cents: refund.amount_cents,
-        idempotency_key: refund.idempotency_key
-      )
+      intent = begin
+        @gateway.refund(
+          payment: @payment,
+          amount_cents: refund.amount_cents,
+          idempotency_key: refund.idempotency_key
+        )
+      rescue Gateways::MercadoPago::RequestRejected
+        # Recusa definitiva: o gateway não criou reembolso nenhum, então a
+        # tentativa deixa de reservar o valor e o admin pode tentar de novo.
+        # Falha ambígua (tempo esgotado, 5xx) segue `processing`: pode ter
+        # acontecido do outro lado, e a mesma chave de idempotência resolve.
+        refund.update!(status: "failed")
+        raise
+      end
 
       apply_refund!(refund, intent)
     rescue ActiveRecord::RecordNotUnique

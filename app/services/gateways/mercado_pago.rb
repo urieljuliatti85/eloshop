@@ -16,6 +16,13 @@ module Gateways
     class ConfigurationError < StandardError; end
     class RequestFailed < StandardError; end
 
+    # O Mercado Pago respondeu 4xx: recusou a chamada, então nada nasceu do lado
+    # dele e é seguro tratar a tentativa como falha. 408, 409 e 429 ficam de
+    # fora (tempo esgotado, conflito de idempotência e limite de taxa): ali a
+    # operação pode ter acontecido, e quem chama deve manter a tentativa aberta.
+    class RequestRejected < RequestFailed; end
+    TRANSIENT_CLIENT_ERRORS = %w[408 409 429].freeze
+
     API_HOST = "api.mercadopago.com"
     OPEN_TIMEOUT = 5
     READ_TIMEOUT = 15
@@ -297,7 +304,8 @@ module Gateways
         # porque é ele que diz o que houve — "respondeu 500" sozinho custou uma
         # investigação inteira em 2026-09-08.
         code = error_code(response)
-        raise RequestFailed, "Mercado Pago respondeu #{response.code} em #{request.path}#{" (#{code})" if code}"
+        error_class = response.code.start_with?("4") && TRANSIENT_CLIENT_ERRORS.exclude?(response.code) ? RequestRejected : RequestFailed
+        raise error_class, "Mercado Pago respondeu #{response.code} em #{request.path}#{" (#{code})" if code}"
       end
 
       JSON.parse(response.body.to_s)

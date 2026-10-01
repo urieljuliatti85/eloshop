@@ -34,22 +34,32 @@ module Admin
       payment = order.payments.where(status: %w[paid partially_refunded]).order(created_at: :desc).first!
       amount_cents = refund_amount_cents(payment)
 
-      Payments::Refund.new(
+      refund = Payments::Refund.new(
         payment: payment,
         amount_cents: amount_cents,
         idempotency_key: params.require(:idempotency_key)
       ).call
-      Notification.create!(
-        recipient: order.seller_order.seller,
-        kind: :order_refunded,
-        title: order.refunded? ? "Reembolso total" : "Reembolso parcial",
-        body: "O pedido ##{order.id} recebeu um reembolso#{" total" if order.refunded?}.",
-        url: seller_order_path(order)
-      )
 
-      redirect_to admin_order_path(order), notice: "Reembolso solicitado com sucesso."
+      if refund.approved?
+        Notification.create!(
+          recipient: order.seller_order.seller,
+          kind: :order_refunded,
+          title: order.refunded? ? "Reembolso total" : "Reembolso parcial",
+          body: "O pedido ##{order.id} recebeu um reembolso#{" total" if order.refunded?}.",
+          url: seller_order_path(order)
+        )
+        redirect_to admin_order_path(order), notice: "Reembolso solicitado com sucesso."
+      elsif refund.processing?
+        redirect_to admin_order_path(order), notice: "O Mercado Pago ainda está processando o reembolso. Confira o pedido em alguns minutos antes de tentar de novo."
+      else
+        redirect_to admin_order_path(order), alert: "O Mercado Pago não aprovou o reembolso. Nada foi devolvido."
+      end
     rescue Payments::Refund::InvalidRefund, ActiveRecord::RecordNotFound => e
       redirect_to admin_order_path(params[:id]), alert: e.message
+    rescue Gateways::MercadoPago::RequestRejected => e
+      redirect_to admin_order_path(params[:id]), alert: "O Mercado Pago recusou o reembolso e nada foi devolvido (#{e.message})."
+    rescue Gateways::MercadoPago::RequestFailed, Gateways::MercadoPago::ConfigurationError => e
+      redirect_to admin_order_path(params[:id]), alert: "Não foi possível confirmar o reembolso com o Mercado Pago (#{e.message}). Confira o pagamento lá antes de tentar de novo."
     end
 
     def cancel
