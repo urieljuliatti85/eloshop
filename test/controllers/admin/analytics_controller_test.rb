@@ -26,6 +26,22 @@ class Admin::AnalyticsControllerTest < ActionDispatch::IntegrationTest
     assert_select "code", text: "GOOGLE_ANALYTICS_MEASUREMENT_ID"
   end
 
+  test "shows how many sellers clicked connect and how many completed the Mercado Pago connection" do
+    Analytics::Funnel.track("seller_mp_connect_started", seller: sellers(:approved))
+    Analytics::Funnel.track("seller_mp_connect_started", seller: sellers(:other))
+    Analytics::Funnel.track("seller_mp_connect_completed", seller: sellers(:approved))
+    sign_in_as(users(:one))
+
+    with_env("GOOGLE_ANALYTICS_PROPERTY_ID" => nil, "GOOGLE_ANALYTICS_CREDENTIALS_JSON" => nil, "GOOGLE_ANALYTICS_MEASUREMENT_ID" => nil) do
+      get admin_analytics_path
+    end
+
+    assert_response :success
+    assert_select "h2", text: "Conexão com o Mercado Pago"
+    assert_select "p", text: "50%"
+    assert_select "p", text: "Cliques em conectar"
+  end
+
   test "shows the aggregate report without exposing service account credentials" do
     snapshot = analytics_snapshot
     report = Object.new

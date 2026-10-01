@@ -1,0 +1,24 @@
+<section class="space-y-4" aria-labelledby="seller-connection-title">
+  <div>
+    <p class="admin-section-label">Entrada de vendedores</p>
+    <h2 id="seller-connection-title" class="mt-1">Conexão com o Mercado Pago</h2>
+    <p class="mt-1 text-sm text-slate-500">Últimos 30 dias, sem dados pessoais. Cada reconexão de um ateliê já conectado também conta.</p>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-3">
+    <article class="admin-stat-card">
+      <p class="admin-section-label relative z-10">Cliques em conectar</p>
+      <p class="admin-stat-value relative z-10"><%= number_with_delimiter(connection.started) %></p>
+      <p class="relative z-10 mt-3 text-sm text-slate-500"><%= pluralize(connection.sellers_started, "ateliê", plural: "ateliês") %></p>
+    </article>
+    <article class="admin-stat-card">
+      <p class="admin-section-label relative z-10">Conexões concluídas</p>
+      <p class="admin-stat-value relative z-10"><%= number_with_delimiter(connection.completed) %></p>
+      <p class="relative z-10 mt-3 text-sm text-slate-500"><%= pluralize(connection.sellers_completed, "ateliê", plural: "ateliês") %></p>
+    </article>
+    <article class="admin-stat-card">
+      <p class="admin-section-label relative z-10">Taxa de conclusão</p>
+      <p class="admin-stat-value relative z-10"><%= connection.started.zero? ? "—" : number_to_percentage(connection.completion_rate, precision: 0) %></p>
+      <p class="relative z-10 mt-3 text-sm text-slate-500">Concluídas sobre cliques</p>
+    </article>
+  </div>
+</section>

@@ -13,8 +13,9 @@ module SellerPortal
         "created_at" => Time.current.to_i
       }
 
-      redirect_to oauth.authorization_url(state: state, code_challenge: code_challenge_for(code_verifier)),
-        allow_other_host: true
+      authorization_url = oauth.authorization_url(state: state, code_challenge: code_challenge_for(code_verifier))
+      Analytics::Funnel.track("seller_mp_connect_started", seller: current_seller)
+      redirect_to authorization_url, allow_other_host: true
     rescue Marketplace::MercadoPagoOauth::ConfigurationError => e
       session.delete(:mercado_pago_oauth)
       redirect_to seller_atelier_path, alert: e.message
@@ -28,6 +29,7 @@ module SellerPortal
       end
 
       current_seller.connect_mercado_pago!(oauth.exchange(code: params[:code], code_verifier: code_verifier))
+      Analytics::Funnel.track("seller_mp_connect_completed", seller: current_seller)
       if current_seller.mercado_pago_live_mode? && !current_seller.approved?
         Notification.notify_admins!(
           kind: :seller_pending_approval,
