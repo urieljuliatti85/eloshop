@@ -75,6 +75,21 @@ module Gateways
     # A notificação do Mercado Pago não carrega o status de forma confiável —
     # ela avisa "o pagamento X mudou" e espera que a aplicação consulte. Sem
     # isso, bastaria forjar um POST para marcar um pedido como pago.
+    # Procura no Mercado Pago uma cobrança deste pedido pelo `external_reference`
+    # (o número do pedido, enviado em toda cobrança). Devolve `nil` quando não
+    # existe, e levanta `RequestFailed` quando a consulta falha: quem chama não
+    # deve concluir "não existe" sem ter conseguido perguntar.
+    def find_payment_for(order:)
+      response = get(
+        "/v1/payments/search?external_reference=#{order.id}&sort=date_created&criteria=desc&limit=5",
+        access_token: access_token_for(order)
+      )
+      found = Array(response["results"]).find { |result| result["external_reference"].to_s == order.id.to_s }
+      return nil unless found
+
+      RemotePayment.new(external_id: found["id"].to_s, status: STATUS_MAP.fetch(found["status"].to_s, "pending"))
+    end
+
     def payment_status(external_id:)
       payment_details(external_id: external_id)[:status]
     end

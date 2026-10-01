@@ -3,5 +3,6 @@ class CancelExpiredOrdersJob < ApplicationJob
 
   def perform
     Orders::CancelExpired.new.call
+    Orders::CancelAbandoned.new.call
   end
 end
