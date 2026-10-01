@@ -6,7 +6,7 @@ class HomeCarouselTest < ApplicationSystemTestCase
 
     # Os dois banners estão no HTML desde o começo — o carrossel move a faixa,
     # não troca o conteúdo.
-    assert_text "Peças com história, feitas à mão"
+    assert_text "Encontre peças únicas. Conheça quem as faz."
     assert_text "Venda suas peças mais criativas através do nosso Ateliê"
 
     # Os controles só existem com JavaScript; sem ele a rolagem da faixa dá
