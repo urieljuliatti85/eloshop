@@ -10,6 +10,10 @@ class Customer < ApplicationRecord
   has_many :seller_reports, dependent: :destroy
   has_many :notifications, as: :recipient, dependent: :destroy
 
+  # Link de descadastro do lembrete de carrinho: assinado, sem expirar (quem
+  # abre um e-mail antigo ainda precisa conseguir parar de receber).
+  generates_token_for :cart_reminder_unsubscribe
+
   normalizes :email, with: ->(e) { e.strip.downcase }
 
   validates :name, presence: true
