@@ -102,3 +102,8 @@ Ficam para depois, por dependerem de limiares calibrados com dados reais: pico d
 ## Confirmação do formulário de contato
 
 O formulário de contato é aberto, e o e-mail do destinatário é só o que a pessoa digitou. Por isso `ContactMailer#confirmation` ("Recebemos sua mensagem", resposta em até 2 dias úteis) tem **texto fixo**: nome, assunto e mensagem digitados nunca voltam no e-mail, para o formulário não servir de canal de spam ou golpe contra terceiros. `ContactsController` manda **no máximo uma confirmação por e-mail por hora** (chave do `Rails.cache` com o hash SHA-256 do endereço, nunca o endereço), além do `rate_limit` de 5 envios por IP em 10 minutos; a mensagem em si chega sempre a `contato@`.
+
+## Recuperação de senha
+
+Admin e vendedor usam `PasswordsController` (`/passwords`) e o comprador usa `CustomerPasswordsController` (`/recuperar-senha`), com o mesmo desenho: o link leva o token assinado do `has_secure_password` (`password_reset_token`, 15 minutos) e carrega o hash da senha atual, então **deixa de valer assim que a senha muda**. O token de uma conta não serve na tela da outra (cada modelo assina com o seu escopo). O pedido sempre responde o mesmo texto, exista ou não a conta, e só enfileira o e-mail quando existe (`PasswordsMailer#customer_reset`), com `rate_limit` de 5 pedidos em 10 minutos por IP. Redefinir a senha encerra todas as sessões abertas do comprador, e uma senha em branco é recusada, porque o `has_secure_password` a ignora em silêncio e a tela diria "redefinida" sem ter mudado nada.
+
