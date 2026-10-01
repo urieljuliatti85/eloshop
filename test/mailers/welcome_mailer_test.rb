@@ -24,4 +24,12 @@ class WelcomeMailerTest < ActionMailer::TestCase
     assert_match "/painel", email.html_part.body.to_s
     assert_match "/painel", email.text_part.body.to_s
   end
+
+  test "welcome_seller puts the Mercado Pago connection first and links to the step-by-step guide" do
+    email = WelcomeMailer.welcome_seller(sellers(:approved), "dono@example.com")
+
+    assert_match "/painel/primeiros-passos", email.html_part.body.to_s
+    assert_match "/painel/primeiros-passos", email.text_part.body.to_s
+    assert_operator email.text_part.body.to_s.index("Mercado Pago"), :<, email.text_part.body.to_s.index("endereço de origem")
+  end
 end
