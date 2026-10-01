@@ -83,6 +83,31 @@ RSpec.describe "Seller Mercado Pago connection", type: :request do
     expect(notification.body).to include(seller.name)
   end
 
+  it "emails the platform when a seller connects a live_mode account, but not for a sandbox one" do
+    admin
+    live = Marketplace::MercadoPagoOauth::Credentials.new(
+      user_id: "mp-live-mail", access_token: "access-token-secret", refresh_token: "refresh-token-secret",
+      expires_at: 180.days.from_now, live_mode: true, test_account: false, public_key: "TEST-public-key"
+    )
+    allow(oauth).to receive(:exchange).and_return(live)
+
+    expect {
+      get seller_mercado_pago_callback_path, params: { code: "valid-code", state: start_authorization }
+    }.to have_enqueued_mail(SellerOnboardingMailer, :awaiting_approval)
+  end
+
+  it "does not email the platform for a sandbox connection" do
+    sandbox = Marketplace::MercadoPagoOauth::Credentials.new(
+      user_id: "mp-sandbox-mail", access_token: "access-token-secret", refresh_token: "refresh-token-secret",
+      expires_at: 180.days.from_now, live_mode: false, test_account: true, public_key: "TEST-public-key"
+    )
+    allow(oauth).to receive(:exchange).and_return(sandbox)
+
+    expect {
+      get seller_mercado_pago_callback_path, params: { code: "valid-code", state: start_authorization }
+    }.not_to have_enqueued_mail(SellerOnboardingMailer, :awaiting_approval)
+  end
+
   it "does not notify admins when a seller connects a sandbox (non-live) account" do
     admin
     state = start_authorization

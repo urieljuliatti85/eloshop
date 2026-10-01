@@ -17,6 +17,17 @@ RSpec.describe "Admin sellers", type: :request do
   let(:seller) { Seller.create!(name: "Ateliê Pendente #{SecureRandom.hex(4)}", owner_full_name: "Proprietário Teste", cpf: "10666670200") }
   let(:seller_user) { User.create!(email_address: "seller-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
 
+  it "shows each seller's onboarding stage on the list and on the detail page" do
+    seller
+    sign_in_as(admin)
+
+    get admin_sellers_path
+    expect(response.body).to include("Falta conectar o Mercado Pago")
+
+    get admin_seller_path(seller)
+    expect(response.body).to include("Falta conectar o Mercado Pago")
+  end
+
   it "lets platform admins approve a seller" do
     sign_in_as(admin)
     seller.connect_mercado_pago!(mercado_pago_credentials)

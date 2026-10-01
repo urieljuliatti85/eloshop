@@ -35,6 +35,7 @@ module SellerPortal
           body: "\"#{current_seller.name}\" conectou uma conta Mercado Pago de produção e aguarda aprovação.",
           url: admin_seller_path(current_seller)
         )
+        SellerOnboardingMailer.awaiting_approval(current_seller).deliver_later
       end
       redirect_to seller_atelier_path, notice: "Conta Mercado Pago conectada. A plataforma agora pode concluir a aprovação."
     rescue Marketplace::MercadoPagoOauth::ConfigurationError,
