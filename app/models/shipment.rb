@@ -33,6 +33,7 @@ class Shipment < ApplicationRecord
       service: service.presence || self.service,
       tracking_code: tracking_code.presence
     )
+    seller_order.record_production_start_from_shipping!
   end
 
   def mark_delivered!

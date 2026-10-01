@@ -13,7 +13,8 @@ class OrderEvent < ApplicationRecord
     webhook_applied: "webhook_applied",
     order_confirmed: "order_confirmed",
     order_cancelled: "order_cancelled",
-    refund_processed: "refund_processed"
+    refund_processed: "refund_processed",
+    production_started: "production_started"
   }
 
   validates :kind, presence: true

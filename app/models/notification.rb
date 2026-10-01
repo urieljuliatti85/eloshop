@@ -12,7 +12,8 @@ class Notification < ApplicationRecord
     new_review: "new_review",
     seller_report_received: "seller_report_received",
     seller_pending_approval: "seller_pending_approval",
-    payment_declined: "payment_declined"
+    payment_declined: "payment_declined",
+    production_started: "production_started"
   }
 
   validates :kind, :title, :body, presence: true
