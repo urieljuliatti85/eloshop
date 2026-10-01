@@ -95,4 +95,6 @@ O Google Analytics é opt-in: nenhum recurso externo é carregado antes do aceit
 | `unshipped_paid_order` | pedido pago sem envio após 7 dias corridos (+ prazo de produção máximo, se sob encomenda) | sim, quando o envio é marcado |
 | `shipped_without_tracking` | envio marcado há mais de 7 dias sem rastreio (retirada local fica de fora) | sim, quando o rastreio é informado |
 
-O prazo de 7 dias é decisão de negócio (`Fraud::SellerScan::SHIPPING_GRACE`). Ficam para depois, por dependerem de limiares calibrados com dados reais: pico de vendas de vendedor novo, taxa de reembolso por vendedor e chargeback.
+O prazo de 7 dias é decisão de negócio (`Fraud::SellerScan::SHIPPING_GRACE`). **Chargeback** não vem do scan: chega pelo webhook. `charged_back` do Mercado Pago tem status próprio (antes virava `declined` e era ignorado em pagamento já pago, além de contar um `payment_failed` falso). `Payments::ProcessWebhook` chama `Fraud::RecordChargeback`, que abre o alerta `chargeback` do vendedor (ou acrescenta o pedido ao alerta aberto, sem repetir o aviso) e `Fraud::Notifier` envia o e-mail e o Sentry. **Pagamento, pedido, comissão e repasse não mudam sozinhos**: quem arca com o valor é decisão de negócio. O alerta só fecha manualmente. Depende de o webhook do app MP estar inscrito no tópico de chargebacks.
+
+Ficam para depois, por dependerem de limiares calibrados com dados reais: pico de vendas de vendedor novo e taxa de reembolso por vendedor.

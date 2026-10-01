@@ -218,7 +218,8 @@ module Gateways
 
     test "payment_status translates gateway vocabulary into the domain's" do
       { "approved" => "approved", "authorized" => "approved", "rejected" => "declined",
-        "cancelled" => "declined", "in_process" => "pending", "refunded" => "refunded" }.each do |remoto, esperado|
+        "cancelled" => "declined", "in_process" => "pending", "refunded" => "refunded",
+        "charged_back" => "charged_back" }.each do |remoto, esperado|
         stub_request("status" => remoto) do
           assert_equal esperado, @gateway.payment_status(external_id: "1"), "status #{remoto}"
         end
