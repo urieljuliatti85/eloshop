@@ -61,6 +61,7 @@
 
       <% if @product.availability_type_made_to_order? %>
         <p class="mt-2 text-sm text-ink-muted">Produção em <%= @product.production_time_range %> após a compra.</p>
+        <p class="mt-1 text-sm text-ink-muted">Você pode desistir da compra até o ateliê iniciar a produção. <%= link_to "Trocas e devoluções", returns_policy_path(anchor: "sob-encomenda"), class: "text-brand-600 underline hover:text-brand-700" %></p>
       <% end %>
 
       <%# No celular a descrição desce para depois do botão de compra: sem isso
