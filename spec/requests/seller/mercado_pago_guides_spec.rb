@@ -49,6 +49,14 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
       )
     end
 
+    it "says the Mercado Pago e-mail can differ from the signup e-mail" do
+      sign_in_as(user)
+
+      get seller_mercado_pago_guide_path
+
+      expect(response.body).to include("Preciso usar o mesmo e-mail da EloShop no Mercado Pago?")
+    end
+
     it "shows the connected state instead of the connect button" do
       connect_seller!
       sign_in_as(user)
