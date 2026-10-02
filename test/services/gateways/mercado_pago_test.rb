@@ -311,6 +311,31 @@ module Gateways
       end
     end
 
+    # O tópico de contestações manda o id da contestação em `data.id` e o do
+    # pagamento em `data.payment_id`; a assinatura usa o `data.id` da query.
+    test "webhook_event for a chargeback notification uses the payment id and needs no API call" do
+      request = chargeback_request(payment_id: "81034165129", chargeback_id: "217000061307271000")
+
+      assert @gateway.verify_webhook(request)
+      event = @gateway.webhook_event(request)
+
+      assert_equal "81034165129", event[:external_id]
+      assert_equal "charged_back", event[:status]
+      assert_equal "mp-chargeback-217000061307271000-1720427447", event[:event_id]
+    end
+
+    test "webhook_event for a chargeback notification without a payment id is ignored" do
+      request = chargeback_request(payment_id: nil, chargeback_id: "1")
+
+      assert_nil @gateway.webhook_event(request)
+    end
+
+    test "verify_webhook rejects a chargeback notification signed for another id" do
+      request = chargeback_request(payment_id: "1", chargeback_id: "2", signed_id: "999")
+
+      assert_not @gateway.verify_webhook(request)
+    end
+
     # O log de erro existe desde 2026-09-08 justamente porque "respondeu 500"
     # sozinho não diz nada. Só o código de causa entra na exceção; o corpo,
     # que pode ecoar dados do pagamento, fica de fora (§43).
@@ -454,6 +479,19 @@ module Gateways
       yield
     ensure
       @gateway.remove_instance_variable(:@http) if @gateway.instance_variable_defined?(:@http)
+    end
+
+    def chargeback_request(payment_id:, chargeback_id:, signed_id: "114544942708", request_id: "req-1", ts: "1700000000")
+      digest = OpenSSL::HMAC.hexdigest("SHA256", WEBHOOK_SECRET, "id:#{signed_id};request-id:#{request_id};ts:#{ts};")
+
+      ActionDispatch::TestRequest.create("QUERY_STRING" => "data.id=114544942708&type=topic_chargebacks_wh").tap do |request|
+        request.headers["X-Signature"] = "ts=#{ts},v1=#{digest}"
+        request.headers["X-Request-Id"] = request_id
+        request.params.merge!(
+          "type" => "topic_chargebacks_wh", "id" => "114544942708", "version" => "1720427447",
+          "data" => { "id" => chargeback_id, "payment_id" => payment_id }.compact
+        )
+      end
     end
 
     def signed_request(signature: nil, data_id: "12345", request_id: "req-1", ts: "1700000000")
