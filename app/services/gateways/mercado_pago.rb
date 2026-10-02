@@ -24,6 +24,7 @@ module Gateways
     TRANSIENT_CLIENT_ERRORS = %w[408 409 429].freeze
 
     API_HOST = "api.mercadopago.com"
+    CHARGEBACK_TOPIC = "topic_chargebacks_wh".freeze
     OPEN_TIMEOUT = 5
     READ_TIMEOUT = 15
 
@@ -127,7 +128,7 @@ module Gateways
       received = signature[:v1]
       return false if timestamp.blank? || received.blank?
 
-      data_id = request.params.dig("data", "id") || request.params["data.id"]
+      data_id = signed_data_id(request)
       manifest = "id:#{data_id};request-id:#{request.headers['X-Request-Id']};ts:#{timestamp};"
       expected = OpenSSL::HMAC.hexdigest("SHA256", @webhook_secret, manifest)
 
@@ -139,6 +140,8 @@ module Gateways
     # o mesmo pagamento várias vezes conforme ele muda, e usar só o id do
     # pagamento faria a segunda notificação ser descartada como duplicata.
     def webhook_event(request)
+      return chargeback_event(request) if request.params["type"] == CHARGEBACK_TOPIC
+
       external_id = request.params.dig("data", "id") || request.params["data.id"]
       return nil if external_id.blank?
 
@@ -153,6 +156,28 @@ module Gateways
     end
 
     private
+
+    # O manifesto da assinatura usa o `data.id` da query string. Na notificação
+    # de contestação ele difere do `data.id` do corpo (id da contestação, não
+    # o do recurso), então a query tem prioridade; no tópico de pagamento os
+    # dois coincidem.
+    def signed_data_id(request)
+      request.query_parameters["data.id"] || request.params.dig("data", "id") || request.params["data.id"]
+    end
+
+    # O tópico de contestações já traz o id do pagamento no corpo
+    # (`data.payment_id`), então não há consulta à API. O `data.id` do corpo é
+    # o id da contestação: tratá-lo como pagamento daria 500 ao buscar um
+    # pagamento inexistente. O id do evento inclui a versão porque a mesma
+    # contestação é notificada a cada mudança de status.
+    def chargeback_event(request)
+      data = request.params["data"]
+      payment_id = data.is_a?(Hash) ? data["payment_id"] : nil
+      return nil if payment_id.blank?
+
+      version = request.params["version"] || request.params["id"]
+      { event_id: "mp-chargeback-#{data['id']}-#{version}", external_id: payment_id.to_s, status: "charged_back" }
+    end
 
     def authorize_pix(order:, idempotency_key:, application_fee_cents:)
       access_token = access_token_for(order)
