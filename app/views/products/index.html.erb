@@ -4,7 +4,7 @@
   elsif params[:q].present?
     "Busca por \"#{params[:q]}\" | EloShop"
   else
-    "Loja | EloShop — Artesanato e produtos feitos à mão"
+    "Comprar artesanato feito à mão: peças únicas de ateliês | EloShop"
   end
   index_description = @category ? "Produtos artesanais da categoria #{@category_tree.breadcrumb_name(@category)} na EloShop." : SeoHelper::DEFAULT_DESCRIPTION
 

@@ -12,6 +12,12 @@ RSpec.describe "Seller sessions", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Entrar no Ateliê")
     end
+
+    it "has a title that invites the seller to sign in" do
+      get seller_login_path
+
+      expect(response.body).to include("<title>Entre no seu ateliê: acesse o painel de vendas | EloShop</title>")
+    end
   end
 
   describe "POST /painel/entrar" do
