@@ -1,4 +1,4 @@
-# Categorias iniciais do marketplace de artesanato, acima das de `db/seeds.rb`
+# Categorias do marketplace de artesanato, acima das de `db/seeds.rb`
 # (Casa, Moda, Presentes).
 #
 # O entrypoint roda `db:seed` a cada boot em produção, então este arquivo é
@@ -8,16 +8,45 @@
 # já está em uso em outro lugar da árvore, a categoria é pulada. Falha aqui
 # não pode interromper o resto do seed.
 module CategorySeed
-  # Raiz => subcategorias. Escolha de catálogo, feita com o Uriel em
-  # 2026-10-01: o que um artesão de feira costuma vender. Categoria vazia vira
-  # página vazia na vitrine, por isso a lista é curta.
+  # Raiz => subcategorias. Escolha de catálogo, feita com o Uriel: o primeiro
+  # lote (2026-10-01) era curto porque categoria vazia vira página vazia na
+  # vitrine; o segundo (2026-10-03) amplia a árvore de uma vez, a pedido dele,
+  # para os ateliês já encontrarem onde publicar.
+  #
+  # O slug é único na árvore inteira, então nomes repetidos entre pais colidem
+  # e a segunda seria pulada: "Acessórios" já é de Moda (daí "Acessórios para
+  # pets"), e velas ficam só em Bem-estar. O teste confere que nenhum slug se
+  # repete aqui. As subcategorias já existentes (Cozinha, Decoração, Acessórios)
+  # vêm de `db/seeds.rb`.
   def self.tree
     {
-      "Casa" => [ "Têxteis para casa", "Iluminação" ],
-      "Moda" => [ "Roupas", "Bolsas e carteiras", "Joias e bijuterias" ],
-      "Presentes" => [ "Datas especiais" ],
-      "Infantil" => [],
-      "Papelaria" => []
+      "Casa" => [
+        "Têxteis para casa", "Iluminação", "Organização", "Jardim e plantas",
+        "Banho e mesa posta", "Quadros e arte de parede", "Móveis e peças de madeira"
+      ],
+      "Moda" => [
+        "Roupas", "Bolsas e carteiras", "Joias e bijuterias", "Calçados e sandálias",
+        "Chapéus e lenços", "Moda praia", "Bordados e patches"
+      ],
+      "Presentes" => [
+        "Datas especiais", "Aniversário", "Casamento", "Lembrancinhas", "Kits e cestas"
+      ],
+      "Infantil" => [
+        "Brinquedos de madeira e pano", "Roupas de bebê", "Decoração de quarto infantil",
+        "Enxoval de bebê"
+      ],
+      "Papelaria" => [
+        "Cadernos e agendas", "Cartões e convites", "Adesivos e ilustrações",
+        "Encadernação artesanal"
+      ],
+      "Bem-estar e cuidados" => [
+        "Velas aromáticas", "Sabonetes artesanais", "Cosméticos naturais",
+        "Aromaterapia e incensos"
+      ],
+      "Pets" => [ "Acessórios para pets", "Brinquedos para pets" ],
+      "Festas e eventos" => [ "Decoração de festa", "Topos de bolo e lembranças personalizadas" ],
+      "Arte e colecionáveis" => [ "Esculturas", "Pinturas e gravuras", "Miniaturas" ],
+      "Materiais e aviamentos" => []
     }
   end
 

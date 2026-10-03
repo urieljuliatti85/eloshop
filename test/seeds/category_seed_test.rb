@@ -10,14 +10,39 @@ class CategorySeedTest < ActiveSupport::TestCase
     @presentes = Category.create!(name: "Presentes")
   end
 
-  test "adds the new categories under the existing roots and as new roots" do
+  test "adds the categories under the existing roots and as new roots" do
     load SEED
 
-    assert_equal [ "Iluminação", "Têxteis para casa" ], @casa.children.pluck(:name).sort
-    assert_equal [ "Bolsas e carteiras", "Joias e bijuterias", "Roupas" ], @moda.children.pluck(:name).sort
-    assert_equal [ "Datas especiais" ], @presentes.children.pluck(:name)
-    assert Category.exists?(name: "Infantil", parent_id: nil)
-    assert Category.exists?(name: "Papelaria", parent_id: nil)
+    assert_includes @casa.children.pluck(:name), "Iluminação"
+    assert_includes @casa.children.pluck(:name), "Organização"
+    assert_includes @moda.children.pluck(:name), "Roupas"
+    assert_includes @moda.children.pluck(:name), "Calçados e sandálias"
+    assert_includes @presentes.children.pluck(:name), "Datas especiais"
+    assert_includes @presentes.children.pluck(:name), "Aniversário"
+    %w[Infantil Papelaria Pets].each do |root|
+      assert Category.exists?(name: root, parent_id: nil), "#{root} deveria ser raiz"
+    end
+    bem_estar = Category.find_by!(name: "Bem-estar e cuidados", parent_id: nil)
+    assert_includes bem_estar.children.pluck(:name), "Velas aromáticas"
+    assert_equal [ "Acessórios para pets", "Brinquedos para pets" ], Category.find_by!(name: "Pets").children.pluck(:name).sort
+  end
+
+  test "creates the whole tree: every name, with no slug repeated" do
+    names = CategorySeed.tree.flat_map { |root, children| [ root, *children ] }
+    slugs = names.map(&:parameterize)
+
+    assert_equal slugs.uniq.size, slugs.size, "slug repetido: #{slugs.tally.select { |_, n| n > 1 }.keys.inspect}"
+
+    load SEED
+
+    names.each { |name| assert Category.exists?(name: name), "#{name} não foi criada" }
+  end
+
+  test "does not collide with slugs of the categories that production already has" do
+    existing = %w[Cozinha Decoração Acessórios]
+    new_slugs = CategorySeed.tree.values.flatten.map(&:parameterize)
+
+    assert_empty new_slugs & existing.map(&:parameterize)
   end
 
   test "is idempotent, as production runs it on every boot" do
