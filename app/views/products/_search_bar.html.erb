@@ -6,7 +6,8 @@
     Os demais filtros da URL (ordem, ateliê, material…) acompanham a busca por
     campos ocultos, como no formulário "Mostrar/Ordenar". `q` e `category`
     saem da lista porque os campos visíveis os substituem, e `page` volta a 1. %>
-<%= form_with url: products_path, method: :get, role: "search",
+<%# `role` vai em `html:`: o form_with descarta atributos soltos como esse. %>
+<%= form_with url: products_path, method: :get, html: { role: "search" },
       class: "flex flex-col gap-2 sm:flex-row sm:items-stretch",
       data: { controller: "product-autocomplete",
               product_autocomplete_url_value: suggestions_products_path,

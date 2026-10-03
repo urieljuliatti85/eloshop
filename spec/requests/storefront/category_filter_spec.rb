@@ -66,6 +66,7 @@ RSpec.describe "Storefront category filter", type: :request do
 
       form = doc.at_css("form[data-controller='product-autocomplete']")
 
+      expect(form["role"]).to eq("search")
       expect(form["data-product-autocomplete-url-value"]).to eq(suggestions_products_path)
       input = form.at_css("input[name='q']")
       expect(input["role"]).to eq("combobox")

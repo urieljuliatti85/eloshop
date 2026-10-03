@@ -93,6 +93,24 @@ class StorefrontCategoryBrowserTest < ApplicationSystemTestCase
     assert_no_selector "#browse-casa-menu", visible: :visible
   end
 
+  test "'Ver todos' has the same size as the 'Buscar' button of the search bar" do
+    viewport(1280, 900)
+    visit products_path
+
+    buscar = rect("form[role='search'] input[type='submit']")
+    ver_todos = rect("#{BROWSER} button[data-account-menu-target='button']")
+    assert_in_delta buscar["bottom"] - buscar["top"], ver_todos["bottom"] - ver_todos["top"], 0.5, "altura diferente"
+
+    # No celular o "Buscar" ocupa a linha inteira, e o "Ver todos" também.
+    viewport(390, 844)
+    visit products_path
+
+    buscar = rect("form[role='search'] input[type='submit']")
+    ver_todos = rect("#{BROWSER} button[data-account-menu-target='button']")
+    assert_in_delta buscar["right"] - buscar["left"], ver_todos["right"] - ver_todos["left"], 0.5, "largura diferente no celular"
+    assert_in_delta buscar["bottom"] - buscar["top"], ver_todos["bottom"] - ver_todos["top"], 0.5, "altura diferente no celular"
+  end
+
   private
 
   def viewport(width, height)
