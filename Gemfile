@@ -45,7 +45,7 @@ gem "kamal", require: false
 gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 2.1"
+gem "image_processing", "~> 2.2"
 # A v2 do image_processing deixou de declarar mini_magick/ruby-vips como
 # dependência: o app precisa declarar o processador que usa. Aqui é Vips
 # (config.load_defaults 8.1 => variant_processor :vips), e a libvips do
