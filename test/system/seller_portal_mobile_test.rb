@@ -42,6 +42,43 @@ class SellerPortalMobileTest < ApplicationSystemTestCase
     assert_no_horizontal_overflow
   end
 
+  test "navigates the panel through the hamburger menu instead of a sideways-scrolling strip" do
+    sign_in_seller(users(:seller))
+    visit seller_root_path
+
+    # "Ver a loja" fica visível no topo, sem abrir o menu.
+    assert_link "Ver a loja", href: products_path
+
+    # Fechado: nenhum link do painel ocupa o topo, e nada rola para o lado.
+    assert_no_link "Novo produto"
+    assert_no_horizontal_overflow
+
+    click_button "Abrir menu do painel"
+    assert_selector "button[aria-expanded='true']"
+    %w[Visão\ geral Primeiros\ passos Produtos Pedidos Mensagens Avaliações Dados\ do\ Ateliê Novo\ produto].each do |label|
+      assert_link label
+    end
+    assert_no_horizontal_overflow
+
+    click_link "Novo produto"
+    assert_current_path new_seller_product_path
+
+    # Turbo troca a página: o menu volta fechado.
+    assert_no_link "Pedidos"
+    assert_selector "button[aria-expanded='false']"
+  end
+
+  test "closes the hamburger menu with Escape" do
+    sign_in_seller(users(:seller))
+    visit seller_root_path
+
+    click_button "Abrir menu do painel"
+    assert_link "Pedidos"
+    find("body").send_keys(:escape)
+
+    assert_no_link "Pedidos"
+  end
+
   private
 
   def sign_in_seller(user)

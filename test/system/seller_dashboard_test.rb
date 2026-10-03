@@ -24,6 +24,8 @@ class SellerDashboardTest < ApplicationSystemTestCase
 
     visit seller_root_path
 
+    # No celular a navegação vive no hambúrguer, não numa faixa com rolagem lateral.
+    click_button "Abrir menu do painel"
     assert_link "Novo produto", visible: true
     assert_equal page.evaluate_script("document.documentElement.clientWidth"),
       page.evaluate_script("document.documentElement.scrollWidth")
