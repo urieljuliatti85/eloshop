@@ -29,7 +29,13 @@
     </section>
   <% end %>
 
-  <%= render "seller_portal/mercado_pago_connections/banner" %>
+  <%# Só enquanto não há conexão (nunca conectou ou foi desconectado): é onde
+      aparecem as opções de Conectar. Com a conta conectada, o box com
+      Reconectar e Desconectar mora em "Conta Vendedor no Mercado Pago" (e em
+      "Dados do Ateliê"), e o painel fica limpo. %>
+  <% unless current_seller.mercado_pago_connected? %>
+    <%= render "seller_portal/mercado_pago_connections/banner" %>
+  <% end %>
 
   <section class="grid min-h-[31rem] gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,0.78fr)]">
     <article class="group relative isolate min-h-[25rem] overflow-hidden rounded-[2rem] bg-[#7a2410] text-white shadow-sm lg:min-h-full">

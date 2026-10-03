@@ -21,6 +21,13 @@
     <p class="mt-4 max-w-2xl text-sm leading-6 text-white/75 sm:text-base">Na EloShop você monta seu ateliê, cadastra as peças e cuida dos pedidos. Mas quem recebe o dinheiro é o <strong>Mercado Pago</strong>. Quando um cliente paga, o valor vai direto para a sua conta lá, já descontada a comissão da EloShop. Sem essa conta conectada, seus produtos não podem ser publicados.</p>
   </header>
 
+  <%# Com a conta conectada, é aqui que o vendedor reconecta ou desconecta
+      (o painel só mostra o box enquanto não há conexão). Sem conexão o passo 4
+      abaixo já tem o botão de conectar, então o box não se repete. %>
+  <% if current_seller.mercado_pago_connected? %>
+    <%= render "seller_portal/mercado_pago_connections/banner" %>
+  <% end %>
+
   <% if state == :not_accepted %>
     <p class="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900"><strong>A conta conectada não pode ser aprovada.</strong> Você conectou uma conta de teste ou uma conta que não conseguimos confirmar como real. Desconecte-a no painel e conecte a sua Conta Vendedor (ou Conta Negócio) real, seguindo os passos abaixo.</p>
   <% end %>
