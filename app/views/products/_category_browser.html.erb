@@ -11,12 +11,12 @@
   roots = @category_tree.visible_roots.sort_by(&:name)
   current_root_id = roots.find { |root| @category && @category_tree.self_and_descendant_ids(root).include?(@category.id) }&.id
 %>
-<div class="contents sm:relative sm:block" data-controller="account-menu category-flyout"
+<div class="contents sm:relative sm:block sm:w-full" data-controller="account-menu category-flyout"
      data-category-flyout-current-value="<%= current_root_id %>"
      data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
-  <%# Mesma medida do botão "Buscar" da barra acima (min-h-11, px-7, texto
-      semibold): largura total no celular, onde o "Buscar" também é. %>
-  <button type="button" class="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 px-7 text-sm font-semibold text-ink transition hover:border-ink sm:w-auto"
+  <%# Do tamanho da barra de busca acima: a mesma largura (a linha inteira, em
+      qualquer tela) e a mesma altura dos controles dela (min-h-11). %>
+  <button type="button" class="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 px-7 text-sm font-semibold text-ink transition hover:border-ink"
           aria-expanded="false" aria-haspopup="true"
           data-account-menu-target="button"
           data-action="account-menu#toggle category-flyout#openDefault">
