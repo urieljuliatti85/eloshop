@@ -74,13 +74,39 @@ module Checkout
       assert_equal 2000 + CreateOrder::SHIPPING_CENTS, order.total_cents
       assert_equal 1, order.seller_orders.count
       assert_equal product.seller, order.seller_order.seller
-      assert_equal 300, order.seller_order.platform_fee_cents
-      assert_equal order.total_cents - 300, order.seller_order.seller_amount_cents
+      # Vendedor aprovado há 1 dia: ainda na comissão de lançamento (8%).
+      assert_equal 800, order.seller_order.platform_fee_rate_bps
+      assert_equal 160, order.seller_order.platform_fee_cents
+      assert_equal order.total_cents - 160, order.seller_order.seller_amount_cents
       assert_equal order.seller_order, order.order_items.first.seller_order
       assert_equal "Entrega padrão", order.shipment.service
       assert_equal 5, order.shipment.estimated_days
       assert_equal 3, product.reload.stock_quantity
       assert_empty cart.cart_items.reload
+    end
+
+    test "charges the standard 15% once the seller's launch period is over" do
+      product = build_product(stock_quantity: 5)
+      product.seller.update!(approved_at: 4.months.ago)
+      cart = build_cart_with_item(product, quantity: 2)
+
+      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+
+      assert_equal 1_500, order.seller_order.platform_fee_rate_bps
+      assert_equal 300, order.seller_order.platform_fee_cents
+      assert_equal order.total_cents - 300, order.seller_order.seller_amount_cents
+    end
+
+    test "keeps the rate recorded on an order after the seller leaves the launch period" do
+      product = build_product(stock_quantity: 5)
+      cart = build_cart_with_item(product, quantity: 2)
+      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+
+      travel_to 4.months.from_now do
+        assert_equal 1_500, product.seller.reload.platform_fee_rate_bps
+        assert_equal 800, order.seller_order.reload.platform_fee_rate_bps
+        assert_equal 160, order.seller_order.platform_fee_cents
+      end
     end
 
     test "rejects a legacy or concurrently modified cart with more than one seller" do

@@ -30,6 +30,35 @@ RSpec.describe "Seller getting started", type: :request do
     expect(response.body).to include(edit_seller_atelier_path, seller_mercado_pago_connect_path, new_seller_product_path)
   end
 
+  it "tells a seller who is not approved yet how the launch commission will work" do
+    sign_in_as(user)
+
+    get seller_getting_started_path
+
+    expect(response.body).to include("8% nos 3 primeiros meses depois da aprovação do seu ateliê e 15% depois disso")
+  end
+
+  it "shows the launch commission with its end date to a recently approved seller" do
+    seller.update!(status: :approved, approved_at: Time.zone.local(2026, 10, 3))
+    sign_in_as(user)
+
+    travel_to Time.zone.local(2026, 10, 10) do
+      get seller_getting_started_path
+    end
+
+    expect(response.body).to include("8% (comissão de lançamento, até 03/01/2027; depois, 15%)")
+  end
+
+  it "shows only the standard commission after the launch period" do
+    seller.update!(status: :approved, approved_at: 4.months.ago)
+    sign_in_as(user)
+
+    get seller_getting_started_path
+
+    expect(response.body).not_to include("comissão de lançamento")
+    expect(response.body).to include("<strong>15%</strong>")
+  end
+
   it "derives completed steps from the current seller data" do
     seller.update!(
       status: :approved,

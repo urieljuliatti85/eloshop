@@ -71,6 +71,27 @@ module ApplicationHelper
     number_to_currency(cents / 100r)
   end
 
+  # "8%" / "12,5%": taxa em basis points como o vendedor lê.
+  def fee_rate_label(rate_bps)
+    number_to_percentage(rate_bps.fdiv(100), precision: 2, strip_insignificant_zeros: true, separator: ",")
+  end
+
+  # Comissão que vale para este vendedor, em uma frase que cabe depois de
+  # "a EloShop recebe ...": enquanto vale a de lançamento ela diz até quando e
+  # quanto passa a ser; antes da aprovação o prazo ainda não começou.
+  def seller_commission_text(seller)
+    launch = fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS)
+    standard = fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS)
+
+    if seller.launch_fee_active?
+      "#{launch} (comissão de lançamento, até #{seller.launch_fee_ends_at.strftime("%d/%m/%Y")}; depois, #{standard})"
+    elsif seller.approved_at.present?
+      standard
+    else
+      "#{launch} nos 3 primeiros meses depois da aprovação do seu ateliê e #{standard} depois disso"
+    end
+  end
+
   # Valor para dentro de um campo de formulário: "89,90", sem "R$" e sem
   # separador de milhar — o que o usuário edita, e o que `MoneyAttribute`
   # lê de volta.

@@ -3,7 +3,8 @@ require "test_helper"
 module Payments
   class RefundTest < ActiveSupport::TestCase
     include ActiveJob::TestHelper
-    def build_paid_payment
+    def build_paid_payment(approved_at: 4.months.ago)
+      sellers(:approved).update!(approved_at: approved_at)
       customer = customers(:one)
       address = addresses(:one)
       product = Product.create!(seller: sellers(:approved), name: "Reembolsável", sku: "REF-#{SecureRandom.hex(4)}", price_cents: 1_000, stock_quantity: 2, status: :active)
@@ -40,6 +41,21 @@ module Payments
       events = payment.order.order_events.refund_processed
       assert_equal 2, events.count
       assert_equal "refunded", events.last.status
+    end
+
+    test "reverses the launch fee proportionally when the sale was made at 8%" do
+      payment = build_paid_payment(approved_at: 1.day.ago)
+      seller_order = payment.order.seller_order
+
+      assert_equal 800, seller_order.platform_fee_rate_bps
+      assert_equal 80, seller_order.platform_fee_cents
+
+      Refund.new(payment: payment, amount_cents: 500, idempotency_key: "launch-partial").call
+      assert_equal 16, payment.reload.application_fee_refunded_cents
+
+      Refund.new(payment: payment, amount_cents: 2_000, idempotency_key: "launch-final").call
+      assert_equal 80, payment.reload.application_fee_refunded_cents
+      assert payment.refunded?
     end
 
     test "tells the buyer once when a refund is approved, never again on a replay or a rejection" do

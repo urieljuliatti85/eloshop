@@ -107,7 +107,7 @@ Variante (Fase 9: SKU, tamanho, cor, material) e personalização (Fase 10: labe
 
 Representa uma tentativa/execução de pagamento vinculada a um `Order`. Ver `docs/payments.md` para estados e regras.
 
-Implementado na Fase 23: split 1:1 com comissão da plataforma de 15% sobre o subtotal dos produtos após descontos, excluindo frete. O `Payment` preserva comissão, tarifa do Mercado Pago e valores reembolsados separadamente. `PaymentRefund` fornece auditoria e idempotência; reembolsos revertem a comissão proporcionalmente.
+Implementado na Fase 23: split 1:1 com comissão da plataforma de 15% (8% nos 3 primeiros meses depois da aprovação do vendedor — `Seller#platform_fee_rate_bps`, decisão de 2026-10-03; o pedido grava a taxa vigente na compra) sobre o subtotal dos produtos após descontos, excluindo frete. O `Payment` preserva comissão, tarifa do Mercado Pago e valores reembolsados separadamente. `PaymentRefund` fornece auditoria e idempotência; reembolsos revertem a comissão proporcionalmente.
 
 ## PaymentEvent `(MVP)`
 

@@ -119,7 +119,7 @@
             <div class="mt-5 grid gap-px overflow-hidden rounded-2xl border border-brand-100 bg-brand-100 md:grid-cols-4">
               <div class="bg-white p-5"><p class="text-xs font-bold uppercase tracking-wider text-brand-600">1. Compra</p><p class="mt-2 text-sm leading-5 text-stone-600">O cliente paga no checkout da EloShop.</p></div>
               <div class="bg-white p-5"><p class="text-xs font-bold uppercase tracking-wider text-brand-600">2. Processamento</p><p class="mt-2 text-sm leading-5 text-stone-600">O Mercado Pago autoriza e registra a transação.</p></div>
-              <div class="bg-white p-5"><p class="text-xs font-bold uppercase tracking-wider text-brand-600">3. Comissão</p><p class="mt-2 text-sm leading-5 text-stone-600">A EloShop recebe <strong><%= number_to_percentage(@platform_fee_percentage, precision: 2, strip_insignificant_zeros: true) %></strong> sobre os produtos após descontos. O frete não entra nessa comissão.</p></div>
+              <div class="bg-white p-5"><p class="text-xs font-bold uppercase tracking-wider text-brand-600">3. Comissão</p><p class="mt-2 text-sm leading-5 text-stone-600">A EloShop recebe <strong><%= seller_commission_text(current_seller) %></strong> sobre os produtos após descontos. O frete não entra nessa comissão.</p></div>
               <div class="bg-white p-5"><p class="text-xs font-bold uppercase tracking-wider text-brand-600">4. Saldo</p><p class="mt-2 text-sm leading-5 text-stone-600">O restante, incluindo o frete, segue para sua conta, descontadas as tarifas do Mercado Pago.</p></div>
             </div>
 

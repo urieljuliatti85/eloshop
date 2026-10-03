@@ -203,7 +203,7 @@
       <dl class="mt-6 space-y-6">
         <div>
           <dt class="font-semibold text-ink">Quanto a EloShop cobra?</dt>
-          <dd class="mt-1 text-ink-muted">15% sobre o valor dos produtos, já descontado qualquer cupom — o frete não entra nesse cálculo.</dd>
+          <dd class="mt-1 text-ink-muted"><%= fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS) %> nos 3 primeiros meses depois da aprovação do seu ateliê e <%= fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS) %> depois disso, sobre o valor dos produtos, já descontado qualquer cupom — o frete não entra nesse cálculo. Não há mensalidade, no momento.</dd>
         </div>
 
         <div>

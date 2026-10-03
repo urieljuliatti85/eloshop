@@ -44,6 +44,16 @@ RSpec.describe "Seller orders", type: :request do
     expect(response.body).to include("Fale com o cliente")
   end
 
+  it "shows the commission rate recorded on the order, not today's rate" do
+    order = create_order_for(own_product)
+    seller_order = order.seller_order
+    seller_order.update!(platform_fee_rate_bps: 800, platform_fee_cents: 400, seller_amount_cents: seller_order.total_cents - 400)
+
+    get seller_order_path(order)
+
+    expect(response.body).to include("Comissão EloShop (8%)")
+  end
+
   it "uses pickup wording for an order collected at the atelier" do
     order = create_order_for(own_product)
     order.confirm!

@@ -5,6 +5,10 @@
     <p class="mt-2 text-sm text-ink-muted">Versão <%= @terms_version %>. Leia o texto integral antes de aceitar.</p>
   </header>
 
+  <p class="rounded-2xl border border-brand-100 bg-brand-50/50 p-4 text-sm text-stone-700">
+    <strong>O que mudou nesta versão:</strong> a comissão de lançamento é de <%= fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS) %> nos 3 primeiros meses depois da aprovação do seu ateliê e passa para <%= fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS) %> depois disso. Não há mensalidade, no momento.
+  </p>
+
   <article class="whitespace-pre-line rounded-2xl border border-brand-100 bg-white p-6 text-sm leading-7 text-stone-700 shadow-sm sm:p-8"><%= @terms_text %></article>
 
   <% if Current.user&.seller? %>
