@@ -27,6 +27,10 @@
          [ "Dados do Ateliê", seller_atelier_path ],
          [ "Novo produto", new_seller_product_path ]
        ] %>
+    <%# "Ver a loja" leva à página do próprio ateliê (/artesaos/:slug). Enquanto
+        ela não existe (cadastro pendente, suspenso ou escondido), cai na loja
+        geral: a página própria responderia 404 ou "indisponível". %>
+    <% store_path = current_seller.public_page_available? ? seller_path(current_seller) : products_path %>
     <header class="sticky top-0 z-40 border-b border-brand-100 bg-white/90 backdrop-blur"
             data-controller="mobile-menu"
             data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
@@ -45,7 +49,7 @@
         <% end %>
 
         <div class="ml-auto flex shrink-0 items-center gap-2 sm:gap-5">
-          <%= link_to "Ver a loja", products_path, class: "inline-flex min-h-11 items-center whitespace-nowrap text-xs font-semibold text-stone-600 hover:text-brand-600" %>
+          <%= link_to "Ver a loja", store_path, class: "inline-flex min-h-11 items-center whitespace-nowrap text-xs font-semibold text-stone-600 hover:text-brand-600" %>
 
           <% recent_notifications = current_seller.notifications.chronological.limit(5)
              unread_count = current_seller.notifications.unread.count %>
@@ -120,7 +124,7 @@
           JavaScript ele não abre; a barra horizontal só existe a partir de lg. %>
       <div id="seller-nav-panel" class="border-t border-brand-100 bg-white lg:hidden" data-mobile-menu-target="panel" hidden>
         <nav class="mx-auto flex max-w-7xl flex-col px-4 sm:px-6" aria-label="Navegação do painel">
-          <%= link_to products_path, class: "flex min-h-11 items-center gap-2 border-b border-brand-100 py-1 text-base font-semibold text-stone-900" do %>
+          <%= link_to store_path, class: "flex min-h-11 items-center gap-2 border-b border-brand-100 py-1 text-base font-semibold text-stone-900" do %>
             Ver a loja
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
           <% end %>

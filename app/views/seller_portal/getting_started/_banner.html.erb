@@ -1,0 +1,22 @@
+<%# Cartão do painel inicial que leva à página "Primeiros passos". Mesmo desenho
+    do cartão do Mercado Pago logo abaixo (ícone, título, texto e botão), para
+    os dois lerem como o mesmo tipo de aviso: o que falta para vender. %>
+<% done = steps.values.count(true) %>
+<section class="relative flex flex-col justify-between gap-5 overflow-hidden rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:flex-row sm:items-center sm:p-8" aria-labelledby="getting-started-banner-title">
+  <span class="pointer-events-none absolute -right-8 -top-10 size-40 rounded-full bg-brand-50" aria-hidden="true"></span>
+  <span class="pointer-events-none absolute -right-2 -top-2 size-24 rounded-full bg-brand-100/70" aria-hidden="true"></span>
+  <div class="relative flex max-w-3xl items-start gap-4">
+    <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#7a2410] text-white" aria-hidden="true">
+      <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2Z"/><path d="m9 14 2 2 4-4"/></svg>
+    </span>
+    <div>
+      <p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Para começar a vender</p>
+      <h2 id="getting-started-banner-title" class="mt-1 text-2xl font-bold">Primeiros passos</h2>
+      <p class="mt-2 text-sm leading-6 text-stone-600">Preencha o endereço do ateliê, conecte sua conta do Mercado Pago, cadastre sua primeira peça e aguarde a aprovação da plataforma. Veja o que já está pronto e por que cada etapa é necessária.</p>
+      <p class="mt-2 text-sm font-semibold text-brand-700"><%= done %> de <%= steps.size %> etapas concluídas</p>
+    </div>
+  </div>
+  <div class="relative shrink-0">
+    <%= link_to "Ver primeiros passos", seller_getting_started_path, class: "inline-flex rounded-full bg-[#7a2410] px-6 py-3 text-sm font-bold text-white hover:bg-[#4a1508]" %>
+  </div>
+</section>

@@ -33,6 +33,96 @@ RSpec.describe "Seller dashboard", type: :request do
     expect(response.body).not_to include("Produto Alheio")
   end
 
+  describe "'Ver a loja' link" do
+    before { sign_in_as(user) }
+
+    def store_links
+      doc = Nokogiri::HTML(response.body)
+      doc.css("a").select { |node| node.text.squish == "Ver a loja" }.map { |node| node["href"] }
+    end
+
+    it "points to the seller's own storefront, in the header and in the mobile menu" do
+      get seller_root_path
+
+      expect(store_links).to eq([ seller_path(seller), seller_path(seller) ])
+      expect(seller_path(seller)).to eq("/artesaos/#{seller.slug}")
+    end
+
+    it "falls back to the general store while the seller has no public page (pending)" do
+      seller.update!(status: :pending, approved_at: nil)
+
+      get seller_root_path
+
+      expect(store_links).to eq([ products_path, products_path ])
+    end
+
+    it "falls back to the general store when the seller is hidden" do
+      seller.hide!
+
+      get seller_root_path
+
+      expect(store_links).to eq([ products_path, products_path ])
+    end
+  end
+
+  describe "getting started box" do
+    before { sign_in_as(user) }
+
+    it "is the first block of the dashboard, above the account warnings" do
+      seller.update!(status: :pending, approved_at: nil)
+
+      get seller_root_path
+
+      doc = Nokogiri::HTML(response.body)
+      blocks = doc.css(".seller-content > div > section").map { |node| node["aria-labelledby"] || node.text.squish.first(30) }
+      expect(blocks.first).to eq("getting-started-banner-title")
+      expect(blocks.size).to be > 1
+    end
+
+    it "tells the seller what is left and links to the Primeiros passos page" do
+      get seller_root_path
+
+      doc = Nokogiri::HTML(response.body)
+      box = doc.at_css("section[aria-labelledby='getting-started-banner-title']")
+      expect(box).to be_present
+      expect(box.text.squish).to include("Para começar a vender", "Primeiros passos")
+      # A fixture do vendedor já nasce aprovado: só a etapa de aprovação está pronta.
+      expect(box.text.squish).to include("1 de 4 etapas concluídas")
+      link = box.at_css("a")
+      expect(link.text.squish).to eq("Ver primeiros passos")
+      expect(link["href"]).to eq(seller_getting_started_path)
+    end
+
+    it "counts the steps the same way the Primeiros passos page does" do
+      seller.products.create!(name: "Primeira peça", sku: "PRIMEIRA-DASH", price_cents: 5_000, stock_quantity: 1)
+
+      get seller_root_path
+      dashboard_count = response.body[/(\d) de 4 etapas concluídas/, 1]
+
+      get seller_getting_started_path
+      page_count = response.body[/(\d) de 4 etapas concluídas/, 1]
+
+      expect(dashboard_count).to eq("2")
+      expect(dashboard_count).to eq(page_count)
+    end
+
+    it "disappears once the four steps are done" do
+      seller.update!(
+        origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
+        origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP",
+        mercado_pago_user_id: "123456", mercado_pago_access_token_ciphertext: "access-token-cifrado",
+        mercado_pago_refresh_token_ciphertext: "refresh-token-cifrado", mercado_pago_connected_at: Time.current
+      )
+      seller.products.create!(name: "Primeira peça", sku: "PRIMEIRA-DASH2", price_cents: 5_000, stock_quantity: 1)
+
+      get seller_root_path
+
+      expect(response).to have_http_status(:ok)
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("section[aria-labelledby='getting-started-banner-title']")).to be_nil
+    end
+  end
+
   private
 
   def create_seller_order(product)
