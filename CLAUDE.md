@@ -24,7 +24,7 @@ bin/setup                    # instala deps, prepara o banco, instala o git hook
 bin/setup --skip-server      # idem, sem subir o servidor
 docker compose up -d         # sobe só o Postgres local (eloshop/eloshop em localhost:5432)
 bin/dev                      # servidor Rails + watcher do Tailwind (Procfile.dev)
-bin/rails db:seed            # catálogo de exemplo, idempotente; só em dev/test cria uma conta por papel (admin@ / atelie@ / cliente@eloshop.test, senha password123)
+bin/rails db:seed            # db/seeds.rb: só dev/test (não faz nada em produção); catálogo de exemplo, idempotente, e uma conta por papel (admin@ / atelie@ / cliente@eloshop.test, senha password123). Produção roda só db/seeds/categories.rb (aditivo), chamado pelo bin/docker-entrypoint
 ```
 
 Testes — **duas suítes convivem de propósito** (ver "Testes" na arquitetura abaixo):

@@ -8,6 +8,10 @@ class CategorySeedTest < ActiveSupport::TestCase
     @casa = Category.create!(name: "Casa")
     @moda = Category.create!(name: "Moda")
     @presentes = Category.create!(name: "Presentes")
+    # Define `CategorySeed` mesmo para os testes que só leem `CategorySeed.tree`;
+    # sem isso o resultado dependia da ordem em que os testes rodam.
+    load SEED
+    Category.where.not(id: [ @casa.id, @moda.id, @presentes.id ]).delete_all
   end
 
   test "adds the categories under the existing roots and as new roots" do
