@@ -36,6 +36,15 @@ No MVP (Fases 0–7), o produto possui apenas os atributos necessários para o f
 * status (ciclo de vida acima)
 * imagem principal
 
+### Cadastro: o que é obrigatório
+
+O formulário de produto (painel do vendedor e admin) marca cada obrigatório com asterisco vermelho e, se ficar vazio, com borda vermelha e mensagem (`required_fields_controller.js`). Ao enviar com obrigatório vazio, a tela rola até o primeiro campo, o que importa no celular, onde o teclado esconde o campo. A borda só aparece depois que o campo é deixado vazio ou no envio; o formulário não nasce vermelho.
+
+* **Para salvar (rascunho):** nome e preço; no admin, também o artesão. Produção mínima e máxima só para `made_to_order` (o mínimo não passa do máximo). O servidor continua sendo a fonte da verdade — a marcação é só aviso.
+* **SKU é opcional.** Em branco, `Product#assign_sku` gera `NOME-XXXX` (prefixo do nome, sufixo aleatório). A coluna segue `NOT NULL` e o índice `(seller_id, sku)` continua único, porque o `OrderItem` guarda o SKU como snapshot.
+* **Categoria é opcional** (sem categoria o produto publica, mas não aparece nos filtros e páginas por categoria; o formulário explica isso).
+* **Só para publicar (`Product#publish!`):** peso, comprimento, largura e altura, vendedor aprovado e termos comerciais aceitos. Os quatro campos levam asterisco e aviso "obrigatório para publicar", mas **não bloqueiam o rascunho**. Decisão de 2026-10-03: manter a exigência para todo produto, mesmo os de frete fixo ou retirada, que não usam esses campos hoje; relaxar para "só com frete calculado" fica como alternativa aberta (ver `docs/shipping.md`).
+
 ### Escopo pós-MVP
 
 Os atributos abaixo fazem parte do domínio de artesanato descrito no `CLAUDE.md`, mas não devem ser implementados antes de existir uma justificativa de negócio concreta e a fase correspondente do roadmap ser iniciada:

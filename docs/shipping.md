@@ -57,8 +57,13 @@ vendedor, embora o primeiro lançamento aceite somente um vendedor por checkout.
 O provedor é isolado para permitir a integração futura com Correios,
 agregador ou transportadora privada quando essa decisão de negócio for tomada.
 
-O produto possui peso e dimensões opcionais. O peso participa do cálculo; as
-dimensões ficam registradas para o próximo provedor que exigir cubagem. CEP
+O produto salva sem peso e dimensões, mas **publicar exige os quatro campos**
+(`Product#publish!`): sem eles o frete real cotaria errado, e o artesão absorve
+a diferença. Hoje frete fixo por produto e retirada não usam esses campos; só a
+tabela interna usa o peso e o Melhor Envio usa todos. Relaxar a exigência para
+produtos sem frete calculado é uma alternativa em aberto (decisão de negócio).
+O peso participa do cálculo; as dimensões ficam registradas para o próximo
+provedor que exigir cubagem. CEP
 inválido ou peso acima do limite de envio tornam o frete indisponível e impedem
 a criação do pedido.
 

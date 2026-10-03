@@ -14,7 +14,7 @@ O cadastro nasce pendente e exige aprovação/KYC antes da publicação. O KYC �
 
 Representa um produto comercial vendido pela loja.
 
-Todo produto pertence obrigatoriamente a um `Seller`; a unicidade de `sku`/`slug` é escopada por vendedor no model e em índices únicos compostos. Produtos ativos só aparecem na vitrine e podem ser comprados quando o vendedor está aprovado. A URL pública inclui o vendedor: `/artesaos/:seller_slug/produtos/:slug`.
+Todo produto pertence obrigatoriamente a um `Seller`; a unicidade de `sku`/`slug` é escopada por vendedor no model e em índices únicos compostos. O SKU é opcional para quem cadastra: em branco, o model gera um (ver "Cadastro" em `docs/catalog.md`). Produtos ativos só aparecem na vitrine e podem ser comprados quando o vendedor está aprovado. A URL pública inclui o vendedor: `/artesaos/:seller_slug/produtos/:slug`.
 
 Desde a Fase 8, o produto tem um `availability_type`: `standard` (estoque numérico — cobre tanto produto comum quanto pequena tiragem), `one_of_a_kind` (peça única) ou `made_to_order` (feito sob encomenda, com prazo de produção). As formas abaixo ainda não existem no sistema:
 
