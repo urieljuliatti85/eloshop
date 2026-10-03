@@ -10,6 +10,12 @@ RSpec.describe "Seller registrations", type: :request do
     expect(response.body).to include(how_it_works_path(aba: "vende"))
   end
 
+  it "has a title aimed at artisans who want to sell" do
+    get new_seller_registration_path
+
+    expect(response.body).to include("<title>Venda seu artesanato online: cadastre seu ateliê | EloShop</title>")
+  end
+
   it "warns that the atelier URL does not change when the name does" do
     get new_seller_registration_path
 

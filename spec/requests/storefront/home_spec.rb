@@ -24,7 +24,7 @@ RSpec.describe "Storefront home", type: :request do
     it "sets its own title, description and site structured data" do
       get root_path
 
-      expect(response.body).to include("<title>EloShop | Artesanato feito à mão direto de ateliês independentes</title>")
+      expect(response.body).to include("<title>EloShop | Onde artesãos vendem e você compra peças feitas à mão</title>")
       expect(response.body).to include("compre direto do artesão")
       expect(response.body).to include('"@type":"Organization"')
       expect(response.body).to include('"@type":"WebSite"')

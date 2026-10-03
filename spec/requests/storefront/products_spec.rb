@@ -31,7 +31,7 @@ RSpec.describe "Storefront products", type: :request do
     it "sets a generic title and description on the unfiltered catalog" do
       get products_path
 
-      expect(response.body).to include("<title>Loja | EloShop")
+      expect(response.body).to include("<title>Comprar artesanato feito à mão: peças únicas de ateliês | EloShop</title>")
       expect(response.body).to include('<meta name="description"')
     end
 
