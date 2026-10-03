@@ -33,14 +33,15 @@ RSpec.describe "Storefront category filter", type: :request do
     end
 
     it "opens a dropdown only for the categories that have children" do
-      dropdown_labels = menu.css("button[data-account-menu-target='button']").map { |node| node.text.squish }
+      dropdown_labels = menu.css("button[data-account-menu-target='button']").map { |node| node.text.squish } - [ "Ver todos" ]
 
       expect(dropdown_labels).to contain_exactly("Casa", "Moda")
       expect(menu.css("a").map { |node| node["href"] }).to include(products_path(category: "infantil"))
     end
 
     it "lists 'Ver tudo' and the children inside the dropdown panel" do
-      panel = menu.at_css("[data-account-menu-target='panel']")
+      casa_pill = menu.css("button[data-account-menu-target='button']").find { |node| node.text.squish == "Casa" }
+      panel = casa_pill.parent.at_css("[data-account-menu-target='panel']")
 
       expect(panel.has_attribute?("hidden")).to be(true)
       expect(panel.css("a").map { |node| node.text.squish }).to eq([ "Ver tudo em Casa", "Cozinha", "Decoração" ])
@@ -67,12 +68,65 @@ RSpec.describe "Storefront category filter", type: :request do
     end
   end
 
+  describe "the 'Ver todos' menu" do
+    let(:doc) { Nokogiri::HTML(response.body) }
+    let(:browser) { doc.at_css("nav[aria-label='Categorias'] [data-controller~='category-flyout']") }
+
+    before { get products_path }
+
+    it "sits right after 'Todos', before the category pills" do
+      labels = doc.css("nav[aria-label='Categorias'] > a, nav[aria-label='Categorias'] > div > button[data-account-menu-target='button']").map { |node| node.text.squish }
+
+      expect(labels.first(2)).to eq([ "Todos", "Ver todos" ])
+    end
+
+    it "lists every top-level category in one column, with children behind the ones that have them" do
+      roots = browser.css("[data-account-menu-target='panel'] > ul > li").map { |item| item.at_css("button, a").text.squish }
+
+      expect(roots).to eq([ "Casa", "Infantil", "Moda" ])
+      expect(browser.css("button[data-category-flyout-target='root']").map { |node| node.text.squish }).to eq([ "Casa", "Moda" ])
+      expect(browser.css("a").map { |node| node["href"] }).to include(products_path(category: "infantil"))
+    end
+
+    it "keeps each submenu hidden, with the children and 'Ver tudo' beside it" do
+      casa_list = browser.at_css("ul[data-category-flyout-target='children'][id='browse-casa']")
+
+      expect(casa_list.has_attribute?("hidden")).to be(true)
+      expect(casa_list.css("a").map { |node| node.text.squish }).to eq([ "Ver tudo em Casa", "Cozinha", "Decoração" ])
+      expect(casa_list.css("a").map { |node| node["href"] }).to include(products_path(category: "decoracao"))
+    end
+
+    it "links each root button to its submenu for assistive technology" do
+      button = browser.at_css("button[data-category-flyout-target='root'][aria-controls='browse-casa']")
+
+      expect(button["aria-expanded"]).to eq("false")
+      expect(browser.at_css("##{button['aria-controls']}")).to be_present
+    end
+
+    it "starts on the category being browsed" do
+      get products_path(category: "roupas")
+
+      browser = Nokogiri::HTML(response.body).at_css("[data-controller~='category-flyout']")
+      expect(browser["data-category-flyout-current-value"]).to eq(moda.id.to_s)
+    end
+
+    it "does not offer a disabled category or its children" do
+      moda.update!(active: false)
+
+      get products_path
+
+      browser = Nokogiri::HTML(response.body).at_css("[data-controller~='category-flyout']")
+      expect(browser.text).not_to include("Moda")
+      expect(browser.text).not_to include("Roupas")
+    end
+  end
+
   describe "GET /produtos with a category" do
     it "highlights the parent when the current category is one of its children" do
       get products_path(category: "cozinha")
 
       doc = Nokogiri::HTML(response.body)
-      casa_button = doc.css("nav[aria-label='Categorias'] button").find { |node| node.text.squish == "Casa" }
+      casa_button = doc.css("nav[aria-label='Categorias'] button[data-account-menu-target='button']").find { |node| node.text.squish == "Casa" }
       expect(casa_button["class"]).to include("bg-ink")
       expect(doc.at_css("select#search-category option[value='cozinha']")["selected"]).to be_present
     end
