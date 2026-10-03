@@ -57,21 +57,11 @@
       em vários blocos translúcidos deixaria a página picotada. Um cartão
       contínuo lê como "a área de compras", com a paisagem só ao redor. %>
   <div class="mt-8 rounded-[2rem] bg-white/90 p-6 shadow-sm backdrop-blur-sm sm:p-8">
-  <%# As categorias deixam de morar dentro do dropdown: viram uma faixa sempre
-      visível, que é como o cliente navega o catálogo. As demais dimensões
-      (busca, material, técnica, disponibilidade) seguem recolhidas. %>
-  <nav aria-label="Categorias" class="flex gap-2 overflow-x-auto pb-1">
-    <%= link_to "Todos", products_path,
-          class: "flex-none rounded-full border px-5 py-2 text-sm transition #{@category ? 'border-gray-200 text-ink hover:border-ink' : 'border-ink bg-ink text-white'}" %>
-    <%# A árvore vem ordenada por nome simples; como a pill mostra o caminho
-        inteiro, ordenar pelo texto exibido é o que mantém pai e filhas juntos
-        ("Casa", "Casa > Cozinha", "Casa > Decoração"). %>
-    <% @categories.sort_by { |category| @category_tree.breadcrumb_name(category) }.each do |category| %>
-      <%= link_to @category_tree.breadcrumb_name(category),
-            products_path(request.query_parameters.merge(category: category.slug, page: nil)),
-            class: "flex-none rounded-full border px-5 py-2 text-sm transition #{@category == category ? 'border-ink bg-ink text-white' : 'border-gray-200 text-ink hover:border-ink'}" %>
-    <% end %>
-  </nav>
+  <%# Busca com autocomplete (categoria escolhida no dropdown inicial) e, logo
+      abaixo, a faixa de categorias com dropdown pai > filhas. As demais
+      dimensões (material, técnica, disponibilidade) seguem recolhidas. %>
+  <%= render "search_bar" %>
+  <div class="mt-4"><%= render "category_menu" %></div>
 
   <% if @tags.any? %>
     <nav aria-label="Tags" class="mt-3 flex gap-2 overflow-x-auto pb-1">

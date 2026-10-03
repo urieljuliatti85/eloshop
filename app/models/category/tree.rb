@@ -88,6 +88,13 @@ class Category::Tree
     ids
   end
 
+  # Filhas diretas visíveis de uma categoria — o dropdown do filtro da vitrine
+  # lista as de cada categoria de topo. Uma filha desativada, ou sob uma
+  # desativada, nunca aparece.
+  def visible_children(category)
+    Array(@children[category.id]) & visible
+  end
+
   # A categoria pai, ou nil quando é de topo. Responde da árvore já carregada,
   # evitando o `belongs_to` ir ao banco linha a linha.
   def parent(category)

@@ -1,0 +1,71 @@
+<%# Busca da vitrine com autocomplete de produtos. O dropdown no começo escolhe
+    a categoria (ela e as filhas) em que a busca e as sugestões valem; sem
+    JavaScript é um formulário GET comum (categoria + texto + botão), que a
+    ProductsController#index já entende.
+
+    Os demais filtros da URL (ordem, ateliê, material…) acompanham a busca por
+    campos ocultos, como no formulário "Mostrar/Ordenar". `q` e `category`
+    saem da lista porque os campos visíveis os substituem, e `page` volta a 1. %>
+<%= form_with url: products_path, method: :get, role: "search",
+      class: "flex flex-col gap-2 sm:flex-row sm:items-stretch",
+      data: { controller: "product-autocomplete",
+              product_autocomplete_url_value: suggestions_products_path,
+              action: "click@window->product-autocomplete#closeOnOutsideClick keydown.esc@window->product-autocomplete#closeOnEscape" } do |form| %>
+  <% request.query_parameters.except("q", "category", "page").each do |name, value| %>
+    <%= hidden_field_tag name, value, id: nil %>
+  <% end %>
+
+  <%# Categoria: "Todos em X" primeiro, depois as filhas — o `optgroup` da
+      categoria de topo não é selecionável, então ela entra como a primeira
+      opção do próprio grupo. %>
+  <div class="sm:w-60 sm:flex-none">
+    <%= form.label :category, "Categoria", class: "sr-only", for: "search-category" %>
+    <select name="category" id="search-category"
+            class="min-h-11 w-full rounded-full border border-gray-200 bg-white px-4 text-sm text-ink focus:border-ink focus:outline-none"
+            data-product-autocomplete-target="category" data-action="change->product-autocomplete#refresh">
+      <option value="">Todas as categorias</option>
+      <% @category_tree.visible_roots.sort_by(&:name).each do |root| %>
+        <% children = @category_tree.visible_children(root).sort_by(&:name) %>
+        <% if children.empty? %>
+          <option value="<%= root.slug %>" <%= "selected" if @category == root %>><%= root.name %></option>
+        <% else %>
+          <optgroup label="<%= root.name %>">
+            <option value="<%= root.slug %>" <%= "selected" if @category == root %>>Todos em <%= root.name %></option>
+            <% children.each do |child| %>
+              <option value="<%= child.slug %>" <%= "selected" if @category == child %>><%= child.name %></option>
+            <% end %>
+          </optgroup>
+        <% end %>
+      <% end %>
+    </select>
+  </div>
+
+  <div class="relative min-w-0 flex-1">
+    <%= form.label :q, "Buscar produtos", class: "sr-only", for: "search-q" %>
+    <input type="search" name="q" id="search-q" value="<%= params[:q] %>"
+           placeholder="Buscar produtos" autocomplete="off"
+           class="min-h-11 w-full rounded-full border border-gray-200 bg-white px-5 text-sm text-ink focus:border-ink focus:outline-none"
+           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="search-suggestions"
+           data-product-autocomplete-target="input"
+           data-action="input->product-autocomplete#search keydown->product-autocomplete#keydown">
+
+    <ul id="search-suggestions" role="listbox" aria-label="Sugestões de produtos" hidden
+        class="absolute inset-x-0 top-full z-30 mt-2 max-h-80 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-2 shadow-lg"
+        data-product-autocomplete-target="list"></ul>
+
+    <%# Modelo de uma sugestão: as classes ficam no ERB (e não montadas em
+        strings do JS) para o Tailwind enxergá-las. %>
+    <template data-product-autocomplete-target="option">
+      <li role="option" aria-selected="false">
+        <a href="#" tabindex="-1" class="flex min-h-11 flex-col justify-center rounded-xl px-3 py-1.5 hover:bg-gray-50 aria-selected:bg-brand-50">
+          <span class="text-sm font-medium text-ink" data-name></span>
+          <span class="text-xs text-ink-muted" data-category></span>
+        </a>
+      </li>
+    </template>
+
+    <p class="sr-only" role="status" aria-live="polite" data-product-autocomplete-target="status"></p>
+  </div>
+
+  <%= form.submit "Buscar", name: nil, class: "min-h-11 cursor-pointer rounded-full bg-ink px-7 text-sm font-semibold text-white transition hover:bg-brand-600" %>
+<% end %>

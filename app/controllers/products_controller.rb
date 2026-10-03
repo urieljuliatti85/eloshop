@@ -13,7 +13,46 @@ class ProductsController < StorefrontController
   }.freeze
   DEFAULT_SORT = "recentes"
 
+  # Quantas sugestões o autocomplete devolve, e quantos caracteres a busca
+  # precisa antes de consultar o banco (uma letra só devolveria quase o catálogo).
+  SUGGESTION_LIMIT = 8
+  SUGGESTION_MIN_LENGTH = 2
+
   allow_unauthenticated_customer_access
+
+  # O autocomplete dispara uma requisição por pausa de digitação; o limite
+  # impede que a rota pública vire um jeito barato de martelar a busca.
+  rate_limit to: 60, within: 1.minute, only: :suggestions, with: -> { head :too_many_requests }
+
+  # Sugestões de produto para o autocomplete, dentro da categoria escolhida no
+  # dropdown (ela e as filhas, como o filtro do catálogo). Mesma regra de
+  # visibilidade e mesma busca por texto da vitrine: só aparece o que o
+  # cliente poderia ver em /produtos?q=.
+  def suggestions
+    query = params[:q].to_s.strip
+    return render(json: { suggestions: [] }) if query.length < SUGGESTION_MIN_LENGTH
+
+    tree = Category::Tree.load
+    scope = Product.publicly_visible.matching_query(query).order(:name).limit(SUGGESTION_LIMIT)
+
+    if params[:category].present?
+      category = tree.visible.find { |candidate| candidate.slug == params[:category] }
+      return render(json: { suggestions: [] }) unless category
+
+      scope = scope.where(category_id: tree.self_and_descendant_ids(category))
+    end
+
+    products = scope.preload(:seller, :category)
+    render json: {
+      suggestions: products.map do |product|
+        {
+          name: product.name,
+          category: product.category && tree.breadcrumb_name(product.category),
+          url: product_path(product.seller, product.slug)
+        }
+      end
+    }
+  end
 
   def index
     Analytics::Funnel.track("view_catalog")
