@@ -10,6 +10,13 @@ RSpec.describe "Seller registrations", type: :request do
     expect(response.body).to include(how_it_works_path(aba: "vende"))
   end
 
+  it "warns that the atelier URL does not change when the name does" do
+    get new_seller_registration_path
+
+    expect(response.body).to include("https://eloshop.shop/artesaos/atelie-da-ana")
+    expect(response.body).to include("a URL não será alterada")
+  end
+
   it "creates a pending seller account and signs it in" do
     expect do
       post seller_registration_path, params: {

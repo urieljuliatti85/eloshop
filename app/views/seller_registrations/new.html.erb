@@ -23,7 +23,9 @@
   <p class="mt-6 text-xs text-ink-muted">* campo obrigatório</p>
 
   <%= form_with url: seller_registration_path, class: "mt-4 flex flex-col gap-5" do |form| %>
-    <div><%= form.label :name, "Nome do ateliê *", for: "seller_name" %><%= form.text_field :name, name: "seller[name]", id: "seller_name", value: @seller.name, required: true, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
+    <div><%= form.label :name, "Nome do ateliê *", for: "seller_name" %><%= form.text_field :name, name: "seller[name]", id: "seller_name", value: @seller.name, required: true, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+      <p class="mt-2 text-xs text-ink-muted">Quando você cria um ateliê com o nome "Ateliê da Ana", por exemplo, ele gera uma URL (ex.: https://eloshop.shop/artesaos/atelie-da-ana). Caso você queira alterar o nome do ateliê, a URL não será alterada, devido aos riscos de quebra de links e de referências feitas por mecanismos de busca, como o Google.</p>
+    </div>
     <div><%= form.label :owner_full_name, "Nome completo do proprietário *", for: "seller_owner_full_name" %><%= form.text_field :owner_full_name, name: "seller[owner_full_name]", id: "seller_owner_full_name", value: @seller.owner_full_name, required: true, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
     <div><%= form.label :cpf, "CPF *", for: "seller_cpf" %><%= form.text_field :cpf, name: "seller[cpf]", id: "seller_cpf", value: @seller.cpf, required: true, inputmode: "numeric", placeholder: "000.000.000-00", class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
     <div><%= form.label :email_address, "E-mail *", for: "user_email_address" %><%= form.email_field :email_address, name: "user[email_address]", id: "user_email_address", value: @user.email_address, required: true, autocomplete: "email", class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
