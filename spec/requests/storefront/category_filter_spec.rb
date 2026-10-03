@@ -128,6 +128,26 @@ RSpec.describe "Storefront category filter", type: :request do
     end
   end
 
+  describe "hashtags" do
+    it "no longer shows the tag strip on the catalog, but keeps the tag filter in the URL" do
+      tag = Tag.create!(name: "feito-a-mao")
+      tagged = create_product(name: "Vaso com tag", category: casa)
+      tagged.tags << tag
+      create_product(name: "Vaso sem tag", category: casa)
+
+      get products_path
+
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("nav[aria-label='Tags']")).to be_nil
+      expect(response.body).not_to include("#feito-a-mao")
+
+      get products_path(tag: "feito-a-mao")
+
+      expect(response.body).to include("Vaso com tag")
+      expect(response.body).not_to include("Vaso sem tag")
+    end
+  end
+
   describe "GET /produtos with a category" do
     it "highlights the parent in the menu when the current category is one of its children" do
       get products_path(category: "cozinha")
