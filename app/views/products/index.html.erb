@@ -63,16 +63,6 @@
   <%= render "search_bar" %>
   <div class="mt-4"><%= render "category_menu" %></div>
 
-  <% if @tags.any? %>
-    <nav aria-label="Tags" class="mt-3 flex gap-2 overflow-x-auto pb-1">
-      <% @tags.each do |tag| %>
-        <%= link_to "##{tag.name}",
-              products_path(request.query_parameters.merge(tag: tag.slug, page: nil)),
-              class: "flex-none rounded-full px-4 py-1.5 text-sm transition #{params[:tag] == tag.slug ? 'bg-brand-50 text-brand-600' : 'text-ink-muted hover:text-ink'}" %>
-      <% end %>
-    </nav>
-  <% end %>
-
   <div class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-4 border-y border-gray-200 py-4">
     <p class="text-sm text-ink-muted">
       <% if @total_count.zero? %>

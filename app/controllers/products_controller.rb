@@ -65,7 +65,6 @@ class ProductsController < StorefrontController
     # nível, por categoria (medido: 5 das 24 queries do catálogo filtrado).
     @category_tree = Category::Tree.load
     @categories = @category_tree.visible
-    @tags = Tag.order(:name)
     @materials = Material.order(:name)
     @techniques = Technique.order(:name)
     # Só ateliês com peça à venda: oferecer no filtro um artesão que devolve
