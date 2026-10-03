@@ -1,5 +1,9 @@
 class SellerOrder < ApplicationRecord
   PLATFORM_FEE_RATE_BPS = 1_500
+  # Comissão de lançamento: vale nos primeiros meses depois da aprovação do
+  # vendedor (ver `Seller::LAUNCH_FEE_PERIOD`). O pedido grava a taxa que
+  # valeu no momento da compra em `platform_fee_rate_bps`.
+  LAUNCH_PLATFORM_FEE_RATE_BPS = 800
   BASIS_POINTS = 10_000
   MESSAGEABLE_STATUSES = %w[confirmed partially_refunded refunded].freeze
 

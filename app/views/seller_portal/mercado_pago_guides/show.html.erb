@@ -84,7 +84,7 @@
     <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-stone-600">
       <li>Use a sua conta <strong>real</strong>. Contas de teste não recebem de verdade.</li>
       <li>É preciso ser maior de idade.</li>
-      <li>Como funciona o dinheiro: o Mercado Pago desconta a tarifa dele e a EloShop retém <strong><%= number_to_percentage(@platform_fee_percentage, precision: 2, strip_insignificant_zeros: true) %></strong> da venda, sobre os produtos e sem contar o frete. O restante cai na sua conta automaticamente.</li>
+      <li>Como funciona o dinheiro: o Mercado Pago desconta a tarifa dele e a EloShop retém <strong><%= seller_commission_text(current_seller) %></strong> da venda, sobre os produtos e sem contar o frete. O restante cai na sua conta automaticamente.</li>
       <li>Nota fiscal e impostos são de responsabilidade do vendedor.</li>
     </ul>
   </section>

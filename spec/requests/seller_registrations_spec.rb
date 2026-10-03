@@ -10,6 +10,13 @@ RSpec.describe "Seller registrations", type: :request do
     expect(response.body).to include(how_it_works_path(aba: "vende"))
   end
 
+  it "tells the seller about the launch commission before signing up" do
+    get new_seller_registration_path
+
+    expect(response.body).to include("8% nos 3 primeiros meses depois da aprovação")
+    expect(response.body).to include("Não há mensalidade, no momento.")
+  end
+
   it "has a title aimed at artisans who want to sell" do
     get new_seller_registration_path
 

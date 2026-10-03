@@ -139,9 +139,11 @@ module Checkout
     end
 
     def create_seller_order!(order, seller, shipping)
+      platform_fee_rate_bps = seller.platform_fee_rate_bps
       platform_fee_cents = SellerOrder.platform_fee_cents_for(
         subtotal_cents: order.subtotal_cents,
-        discount_cents: order.discount_cents
+        discount_cents: order.discount_cents,
+        rate_bps: platform_fee_rate_bps
       )
 
       order.seller_orders.create!(
@@ -152,6 +154,7 @@ module Checkout
         discount_cents: order.discount_cents,
         shipping_cents: shipping.shipping_cents,
         total_cents: order.total_cents,
+        platform_fee_rate_bps: platform_fee_rate_bps,
         platform_fee_cents: platform_fee_cents,
         seller_amount_cents: order.total_cents - platform_fee_cents
       )

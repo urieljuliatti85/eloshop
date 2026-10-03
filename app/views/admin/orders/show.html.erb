@@ -180,7 +180,7 @@
           <% seller_order = @order.seller_order %>
           <dl class="mt-5 space-y-3 border-t border-slate-200 pt-4 text-sm">
             <div class="flex justify-between gap-4"><dt class="text-slate-500">Artesão</dt><dd class="font-medium"><%= seller_order.seller.name %></dd></div>
-            <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão (15%)</dt><dd class="font-medium"><%= format_price(seller_order.platform_fee_cents) %></dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão (<%= fee_rate_label(seller_order.platform_fee_rate_bps) %>)</dt><dd class="font-medium"><%= format_price(seller_order.platform_fee_cents) %></dd></div>
             <div class="flex justify-between gap-4"><dt class="text-slate-500">Valor do artesão</dt><dd class="font-medium"><%= format_price(seller_order.seller_amount_cents) %></dd></div>
           </dl>
         <% end %>

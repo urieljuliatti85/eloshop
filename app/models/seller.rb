@@ -61,6 +61,25 @@ class Seller < ApplicationRecord
   validates :origin_zip_code, presence: true, if: :origin_address_started?
   validates :origin_state, length: { is: 2 }, allow_blank: true
 
+  LAUNCH_FEE_PERIOD = 3.months
+
+  # Fim da comissão de lançamento: 3 meses depois da aprovação deste vendedor.
+  # Vendedor ainda não aprovado não tem prazo correndo.
+  def launch_fee_ends_at
+    approved_at + LAUNCH_FEE_PERIOD if approved_at.present?
+  end
+
+  def launch_fee_active?(at: Time.current)
+    ends_at = launch_fee_ends_at
+    ends_at.present? && at < ends_at
+  end
+
+  # Taxa que vale para uma venda feita agora. O checkout grava o resultado no
+  # `SellerOrder`, então mudar de faixa não altera pedidos já criados.
+  def platform_fee_rate_bps(at: Time.current)
+    launch_fee_active?(at: at) ? SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS : SellerOrder::PLATFORM_FEE_RATE_BPS
+  end
+
   def approve!(kyc_level_6_confirmed: false)
     unless mercado_pago_connected? && approvable_account? && kyc_level_6_confirmed
       raise VerificationRequired, "Conecte uma conta Mercado Pago de produção e confirme o KYC nível 6 antes da aprovação."

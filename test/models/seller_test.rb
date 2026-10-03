@@ -26,6 +26,27 @@ class SellerTest < ActiveSupport::TestCase
     assert_not pending_seller.terms_accepted?
   end
 
+  test "launch fee is 8% until 3 months after approval and 15% afterwards" do
+    seller = sellers(:approved)
+    seller.update!(approved_at: Time.zone.local(2026, 10, 3, 12))
+
+    assert_equal Time.zone.local(2027, 1, 3, 12), seller.launch_fee_ends_at
+    assert_equal 800, seller.platform_fee_rate_bps(at: Time.zone.local(2026, 10, 3, 12))
+    assert_equal 800, seller.platform_fee_rate_bps(at: Time.zone.local(2027, 1, 3, 11, 59))
+    assert_predicate seller, :launch_fee_active?
+    assert_equal 1_500, seller.platform_fee_rate_bps(at: Time.zone.local(2027, 1, 3, 12))
+    assert_not seller.launch_fee_active?(at: Time.zone.local(2027, 6, 1))
+  end
+
+  test "a seller that was never approved has no launch period running" do
+    seller = sellers(:pending)
+
+    assert_nil seller.approved_at
+    assert_nil seller.launch_fee_ends_at
+    assert_not seller.launch_fee_active?
+    assert_equal 1_500, seller.platform_fee_rate_bps
+  end
+
   test "approval and suspension preserve explicit status" do
     seller = sellers(:pending)
     seller.connect_mercado_pago!(mercado_pago_credentials)
