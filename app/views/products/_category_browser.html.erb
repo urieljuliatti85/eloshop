@@ -1,7 +1,8 @@
-<%# "Ver todos": um único menu com todas as categorias de topo em uma coluna.
-    No desktop, escolher uma abre as filhas ao lado, à direita (submenu lateral);
+<%# "Ver todos": o único controle da faixa de categorias. Abre um menu com
+    "Todos os produtos" e todas as categorias de topo em uma coluna. No desktop,
+    escolher uma categoria abre as filhas ao lado, à direita (submenu lateral);
     no celular não há largura para isso, então as filhas expandem por baixo da
-    própria categoria. Complementa as pílulas, não as substitui.
+    própria categoria.
 
     A abertura/fechamento do painel é do `account-menu` (clique fora, Esc,
     navegação); a escolha da categoria e o teclado são do `category-flyout`. %>
@@ -29,13 +30,20 @@
   <div class="w-full basis-full rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:absolute sm:left-0 sm:top-full sm:z-20 sm:mt-2 sm:w-72 sm:basis-auto sm:shadow-lg"
        data-account-menu-target="panel" hidden>
     <ul>
+      <%# Listagem sem categoria: é o padrão da página, e o jeito de limpar a
+          categoria escolhida. %>
+      <li>
+        <%= link_to "Todos os produtos", products_path,
+              class: "flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold #{@category ? 'text-ink hover:bg-gray-50' : 'bg-brand-50 text-brand-600'}",
+              aria: { current: ("true" unless @category) } %>
+      </li>
       <% roots.each do |root| %>
         <% children = @category_tree.visible_children(root).sort_by(&:name)
            root_active = @category && @category_tree.self_and_descendant_ids(root).include?(@category.id)
            root_class = "flex min-h-11 w-full items-center justify-between gap-2 rounded-xl px-3 text-left text-sm #{root_active ? 'bg-brand-50 font-semibold text-brand-600' : 'text-ink hover:bg-gray-50'}" %>
         <li>
           <% if children.empty? %>
-            <%= link_to root.name, browse_params.call(root), class: root_class, aria: { current: ("page" if @category == root) } %>
+            <%= link_to root.name, browse_params.call(root), class: root_class, aria: { current: ("true" if @category == root) } %>
           <% else %>
             <button type="button" class="<%= root_class %> cursor-pointer"
                     aria-expanded="false" aria-controls="browse-<%= root.slug %>"
@@ -53,14 +61,14 @@
               <li>
                 <%= link_to "Ver tudo em #{root.name}", browse_params.call(root),
                       class: "flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold #{@category == root ? 'bg-brand-50 text-brand-600' : 'text-ink hover:bg-gray-50'}",
-                      aria: { current: ("page" if @category == root) },
+                      aria: { current: ("true" if @category == root) },
                       data: { action: "keydown->category-flyout#childKeydown" } %>
               </li>
               <% children.each do |child| %>
                 <li>
                   <%= link_to child.name, browse_params.call(child),
                         class: "flex min-h-11 items-center rounded-xl px-3 text-sm #{@category == child ? 'bg-brand-50 font-semibold text-brand-600' : 'text-ink hover:bg-gray-50'}",
-                        aria: { current: ("page" if @category == child) },
+                        aria: { current: ("true" if @category == child) },
                         data: { action: "keydown->category-flyout#childKeydown" } %>
                 </li>
               <% end %>
