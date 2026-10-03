@@ -32,11 +32,11 @@ RSpec.describe Product, type: :model do
       expect(product.errors[:name]).to include("can't be blank")
     end
 
-    it "requires a sku" do
+    it "generates a sku when it is blank" do
       product = described_class.new(valid_attributes.except(:sku).merge(sku: nil))
 
-      expect(product).not_to be_valid
-      expect(product.errors[:sku]).to include("can't be blank")
+      expect(product).to be_valid
+      expect(product.sku).to be_present
     end
 
     it "rejects duplicate slug" do

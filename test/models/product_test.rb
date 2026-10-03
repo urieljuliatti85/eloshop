@@ -38,10 +38,24 @@ class ProductTest < ActiveSupport::TestCase
     assert_includes product.errors[:name], "can't be blank"
   end
 
-  test "invalid without sku" do
-    product = Product.new(products(:one).attributes.except("id", "sku"))
-    assert_not product.valid?
-    assert_includes product.errors[:sku], "can't be blank"
+  test "generates a sku when it is left blank" do
+    product = Product.new(seller: sellers(:approved), name: "Vaso Azul Grande", price_cents: 1000, stock_quantity: 1)
+
+    assert product.save, product.errors.full_messages.to_sentence
+    assert_match(/\AVASO-AZUL-GRANDE-[A-Z0-9]{4}\z/, product.sku)
+  end
+
+  test "keeps the sku the seller typed" do
+    product = Product.create!(seller: sellers(:approved), name: "Vaso Verde", sku: "MEU-SKU", price_cents: 1000, stock_quantity: 1)
+
+    assert_equal "MEU-SKU", product.sku
+  end
+
+  test "generated skus differ for products of the same seller" do
+    first = Product.create!(seller: sellers(:approved), name: "Caneca", price_cents: 1000, stock_quantity: 1)
+    second = Product.create!(seller: sellers(:approved), name: "Caneca ", slug: "caneca-2", price_cents: 1000, stock_quantity: 1)
+
+    assert_not_equal first.sku, second.sku
   end
 
   test "invalid with duplicate slug" do
