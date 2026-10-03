@@ -1,0 +1,81 @@
+<%# "Ver todos": o único controle da faixa de categorias. Abre um menu com
+    "Todos os produtos" e todas as categorias de topo em uma coluna. No desktop,
+    escolher uma categoria abre as filhas ao lado, à direita (submenu lateral);
+    no celular não há largura para isso, então as filhas expandem por baixo da
+    própria categoria.
+
+    A abertura/fechamento do painel é do `account-menu` (clique fora, Esc,
+    navegação); a escolha da categoria e o teclado são do `category-flyout`. %>
+<%
+  pill = "flex-none rounded-full border px-5 py-2 text-sm transition"
+  browse_params = ->(category) { products_path(request.query_parameters.merge(category: category.slug, page: nil)) }
+  roots = @category_tree.visible_roots.sort_by(&:name)
+  current_root_id = roots.find { |root| @category && @category_tree.self_and_descendant_ids(root).include?(@category.id) }&.id
+%>
+<div class="contents sm:relative sm:block" data-controller="account-menu category-flyout"
+     data-category-flyout-current-value="<%= current_root_id %>"
+     data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
+  <button type="button" class="<%= pill %> inline-flex cursor-pointer items-center gap-2 border-gray-200 text-ink hover:border-ink"
+          aria-expanded="false" aria-haspopup="true"
+          data-account-menu-target="button"
+          data-action="account-menu#toggle category-flyout#openDefault">
+    Ver todos
+    <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
+  <%# Os submenus (`sm:absolute`) se posicionam em relação a este painel, ao
+      lado da coluna de categorias. Sem altura máxima: no celular a lista
+      cresce com as filhas expandidas, e uma rolagem dentro da página seria
+      uma segunda barra de rolagem no toque. %>
+  <div class="w-full basis-full rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:absolute sm:left-0 sm:top-full sm:z-20 sm:mt-2 sm:w-72 sm:basis-auto sm:shadow-lg"
+       data-account-menu-target="panel" hidden>
+    <ul>
+      <%# Listagem sem categoria: é o padrão da página, e o jeito de limpar a
+          categoria escolhida. %>
+      <li>
+        <%= link_to "Todos os produtos", products_path,
+              class: "flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold #{@category ? 'text-ink hover:bg-gray-50' : 'bg-brand-50 text-brand-600'}",
+              aria: { current: ("true" unless @category) } %>
+      </li>
+      <% roots.each do |root| %>
+        <% children = @category_tree.visible_children(root).sort_by(&:name)
+           root_active = @category && @category_tree.self_and_descendant_ids(root).include?(@category.id)
+           root_class = "flex min-h-11 w-full items-center justify-between gap-2 rounded-xl px-3 text-left text-sm #{root_active ? 'bg-brand-50 font-semibold text-brand-600' : 'text-ink hover:bg-gray-50'}" %>
+        <li>
+          <% if children.empty? %>
+            <%= link_to root.name, browse_params.call(root), class: root_class, aria: { current: ("true" if @category == root) } %>
+          <% else %>
+            <button type="button" class="<%= root_class %> cursor-pointer"
+                    aria-expanded="false" aria-controls="browse-<%= root.slug %>"
+                    data-category-flyout-target="root" data-root-id="<%= root.id %>"
+                    data-action="click->category-flyout#select mouseenter->category-flyout#hover keydown->category-flyout#rootKeydown">
+              <%= root.name %>
+              <svg viewBox="0 0 24 24" class="size-3.5 flex-none transition sm:-rotate-90" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" data-chevron><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+
+            <%# Celular: lista recuada logo abaixo da categoria. Desktop: coluna ao
+                lado (`left-full`), alinhada ao topo do painel. %>
+            <ul id="browse-<%= root.slug %>" hidden
+                class="ml-3 mt-1 border-l border-gray-200 pl-2 sm:absolute sm:left-full sm:top-0 sm:ml-2 sm:mt-0 sm:max-h-[28rem] sm:w-72 sm:overflow-y-auto sm:rounded-2xl sm:border sm:bg-white sm:p-2 sm:shadow-lg"
+                data-category-flyout-target="children" data-root-id="<%= root.id %>">
+              <li>
+                <%= link_to "Ver tudo em #{root.name}", browse_params.call(root),
+                      class: "flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold #{@category == root ? 'bg-brand-50 text-brand-600' : 'text-ink hover:bg-gray-50'}",
+                      aria: { current: ("true" if @category == root) },
+                      data: { action: "keydown->category-flyout#childKeydown" } %>
+              </li>
+              <% children.each do |child| %>
+                <li>
+                  <%= link_to child.name, browse_params.call(child),
+                        class: "flex min-h-11 items-center rounded-xl px-3 text-sm #{@category == child ? 'bg-brand-50 font-semibold text-brand-600' : 'text-ink hover:bg-gray-50'}",
+                        aria: { current: ("true" if @category == child) },
+                        data: { action: "keydown->category-flyout#childKeydown" } %>
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+</div>

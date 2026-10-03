@@ -23,31 +23,36 @@ RSpec.describe "Storefront category filter", type: :request do
     let(:doc) { Nokogiri::HTML(response.body) }
     let(:menu) { doc.at_css("nav[aria-label='Categorias']") }
 
-    before { get products_path }
+    it "opens on the whole catalog, with no category selected" do
+      create_product(name: "Vaso da casa", category: cozinha)
+      create_product(name: "Camiseta lisa", category: roupas)
 
-    it "lists one entry per top-level category instead of one pill per category" do
-      labels = menu.css("a, button").map { |node| node.text.squish }
+      get products_path
 
-      expect(labels).to include("Todos", "Casa", "Moda", "Infantil")
-      expect(labels).not_to include("Casa > Cozinha")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Vaso da casa", "Camiseta lisa")
+      expect(doc.at_css("select#search-category option[selected]")).to be_nil
     end
 
-    it "opens a dropdown only for the categories that have children" do
-      dropdown_labels = menu.css("button[data-account-menu-target='button']").map { |node| node.text.squish }
+    it "keeps a single control in the category strip: the 'Ver todos' button" do
+      get products_path
 
-      expect(dropdown_labels).to contain_exactly("Casa", "Moda")
-      expect(menu.css("a").map { |node| node["href"] }).to include(products_path(category: "infantil"))
+      controls = menu.xpath("./a | ./button | ./div/button | ./div/a").map { |node| node.text.squish }
+
+      expect(controls).to eq([ "Ver todos" ])
     end
 
-    it "lists 'Ver tudo' and the children inside the dropdown panel" do
-      panel = menu.at_css("[data-account-menu-target='panel']")
+    it "no longer shows the 'Todos' button or one pill per category" do
+      get products_path
 
-      expect(panel.has_attribute?("hidden")).to be(true)
-      expect(panel.css("a").map { |node| node.text.squish }).to eq([ "Ver tudo em Casa", "Cozinha", "Decoração" ])
-      expect(panel.css("a").map { |node| node["href"] }).to include(products_path(category: "cozinha"))
+      expect(menu.css("button[data-account-menu-target='button']").map { |node| node.text.squish }).to eq([ "Ver todos" ])
+      expect(menu.css("a").map { |node| node.text.squish }).not_to include("Todos")
+      expect(menu.text).not_to include("Casa > Cozinha")
     end
 
     it "offers the same categories, grouped by parent, in the search dropdown" do
+      get products_path
+
       select = doc.at_css("select#search-category")
 
       expect(select.at_css("option")["value"]).to eq("")
@@ -57,6 +62,8 @@ RSpec.describe "Storefront category filter", type: :request do
     end
 
     it "wires the search box as an accessible combobox with a suggestions endpoint" do
+      get products_path
+
       form = doc.at_css("form[data-controller='product-autocomplete']")
 
       expect(form["data-product-autocomplete-url-value"]).to eq(suggestions_products_path)
@@ -67,14 +74,78 @@ RSpec.describe "Storefront category filter", type: :request do
     end
   end
 
+  describe "the 'Ver todos' menu" do
+    let(:doc) { Nokogiri::HTML(response.body) }
+    let(:browser) { doc.at_css("nav[aria-label='Categorias'] [data-controller~='category-flyout']") }
+
+    before { get products_path }
+
+    it "starts the menu with 'Todos os produtos', the way back to the whole catalog" do
+      first = browser.at_css("[data-account-menu-target='panel'] > ul > li")
+
+      expect(first.at_css("a").text.squish).to eq("Todos os produtos")
+      expect(first.at_css("a")["href"]).to eq(products_path)
+    end
+
+    it "lists every top-level category in one column, with children behind the ones that have them" do
+      entries = browser.css("[data-account-menu-target='panel'] > ul > li").map { |item| item.at_css("button, a").text.squish }
+
+      expect(entries).to eq([ "Todos os produtos", "Casa", "Infantil", "Moda" ])
+      expect(browser.css("button[data-category-flyout-target='root']").map { |node| node.text.squish }).to eq([ "Casa", "Moda" ])
+      expect(browser.css("a").map { |node| node["href"] }).to include(products_path(category: "infantil"))
+    end
+
+    it "keeps each submenu hidden, with the children and 'Ver tudo' beside it" do
+      casa_list = browser.at_css("ul[data-category-flyout-target='children'][id='browse-casa']")
+
+      expect(casa_list.has_attribute?("hidden")).to be(true)
+      expect(casa_list.css("a").map { |node| node.text.squish }).to eq([ "Ver tudo em Casa", "Cozinha", "Decoração" ])
+      expect(casa_list.css("a").map { |node| node["href"] }).to include(products_path(category: "decoracao"))
+    end
+
+    it "links each root button to its submenu for assistive technology" do
+      button = browser.at_css("button[data-category-flyout-target='root'][aria-controls='browse-casa']")
+
+      expect(button["aria-expanded"]).to eq("false")
+      expect(browser.at_css("##{button['aria-controls']}")).to be_present
+    end
+
+    it "starts on the category being browsed" do
+      get products_path(category: "roupas")
+
+      browser = Nokogiri::HTML(response.body).at_css("[data-controller~='category-flyout']")
+      expect(browser["data-category-flyout-current-value"]).to eq(moda.id.to_s)
+    end
+
+    it "does not offer a disabled category or its children" do
+      moda.update!(active: false)
+
+      get products_path
+
+      browser = Nokogiri::HTML(response.body).at_css("[data-controller~='category-flyout']")
+      expect(browser.text).not_to include("Moda")
+      expect(browser.text).not_to include("Roupas")
+    end
+  end
+
   describe "GET /produtos with a category" do
-    it "highlights the parent when the current category is one of its children" do
+    it "highlights the parent in the menu when the current category is one of its children" do
       get products_path(category: "cozinha")
 
       doc = Nokogiri::HTML(response.body)
-      casa_button = doc.css("nav[aria-label='Categorias'] button").find { |node| node.text.squish == "Casa" }
-      expect(casa_button["class"]).to include("bg-ink")
+      casa_root = doc.at_css("[data-controller~='category-flyout'] button[data-category-flyout-target='root'][aria-controls='browse-casa']")
+      expect(casa_root["class"]).to include("bg-brand-50")
+      cozinha_link = doc.at_css("#browse-casa a[href='#{products_path(category: 'cozinha')}']")
+      expect(cozinha_link["aria-current"]).to eq("true")
       expect(doc.at_css("select#search-category option[value='cozinha']")["selected"]).to be_present
+    end
+
+    it "marks 'Todos os produtos' as the current entry only when no category is selected" do
+      get products_path
+      expect(Nokogiri::HTML(response.body).at_css("[data-controller~='category-flyout'] a[href='#{products_path}']")["aria-current"]).to eq("true")
+
+      get products_path(category: "casa")
+      expect(Nokogiri::HTML(response.body).at_css("[data-controller~='category-flyout'] a[href='#{products_path}']")["aria-current"]).to be_nil
     end
 
     it "does not offer a disabled category or a child of a disabled one" do
@@ -83,8 +154,7 @@ RSpec.describe "Storefront category filter", type: :request do
       get products_path
 
       doc = Nokogiri::HTML(response.body)
-      menu_labels = doc.css("nav[aria-label='Categorias'] a, nav[aria-label='Categorias'] button").map { |node| node.text.squish }
-      expect(menu_labels).not_to include("Moda")
+      expect(doc.at_css("nav[aria-label='Categorias']").text).not_to include("Moda")
       expect(doc.css("select#search-category option").map { |option| option["value"] }).not_to include("moda", "roupas")
     end
 
