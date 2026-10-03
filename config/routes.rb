@@ -81,7 +81,11 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :products, only: :index, path: "produtos"
+  resources :products, only: :index, path: "produtos" do
+    # Autocomplete da busca da vitrine. Declarada antes de `produtos/:slug`
+    # (legacy_show) para "sugestoes" não ser lido como slug de produto.
+    get :sugestoes, action: :suggestions, on: :collection, as: :suggestions
+  end
   # A vitrine pública do ateliê ocupa o mesmo prefixo que já identificava o
   # vendedor na URL do produto.
   resources :sellers, only: %i[index show], param: :slug, path: "artesaos" do

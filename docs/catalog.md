@@ -85,6 +85,13 @@ O catálogo também aceita `q` (nome ou descrição), `tag`, `material`, `techni
 
 A vitrine também aceita `sort` e `per_page`, expostos na barra "Ordenar por" / "Mostrar". Os dois são listas fechadas no `ProductsController` (`SORT_OPTIONS` e `PER_PAGE_OPTIONS`), porque viram `ORDER BY` e `LIMIT`: valor fora da lista cai no padrão (`recentes`, 12 por página) em vez de chegar ao SQL. A paginação preserva os demais parâmetros da query string; trocar ordenação ou tamanho de página volta para a primeira página.
 
+### Filtro de categorias e autocomplete da vitrine
+
+`/produtos` abre com uma **busca** e, logo abaixo, a **faixa de categorias**. O dropdown no começo da busca escolhe a categoria (ela e as filhas, como o filtro do catálogo) em que a busca vale; "Todas as categorias" é o padrão. Sem JavaScript é um formulário GET comum.
+
+* **Faixa de categorias:** "Todos" e uma entrada por categoria de topo visível. Quem tem subcategorias abre um dropdown no clique, com "Ver tudo em X" e as filhas (`Category::Tree#visible_children`); quem não tem é um link. A faixa quebra em linhas em vez de rolar, porque um container com `overflow-x` cortaria o painel. No celular o painel abre colado à pílula e empurra as seguintes; a partir de `sm` ele flutua sob a pílula. Antes era uma pílula por categoria ("Casa > Cozinha") com rolagem lateral, que deixou de caber com a árvore completa.
+* **Autocomplete de produtos:** `GET /produtos/sugestoes?q=&category=` devolve JSON com até 8 produtos (`name`, `category`, `url`), a partir de 2 caracteres, com a mesma busca (`Product.matching_query`) e a mesma visibilidade (`publicly_visible`, categoria desabilitada fora) da listagem. Categoria desconhecida ou desabilitada devolve lista vazia. A rota é pública e limitada a 60 requisições por minuto por IP (`rate_limit`), porque dispara uma consulta por pausa de digitação. O `product_autocomplete_controller.js` espera 200 ms, cancela a requisição anterior (resposta velha não sobrescreve a nova), preenche o DOM por `textContent` (nunca HTML) e segue o padrão ARIA de combobox (setas, Enter, Esc). Enter sem escolher uma sugestão roda a busca normal na categoria escolhida.
+
 A partir da Fase 11, a busca deve considerar nome, descrição, categoria, tags, materiais e técnicas, começando com os recursos de busca do próprio PostgreSQL. Não introduzir um mecanismo de busca externo (ex.: Elasticsearch) antes de existir necessidade real e medida.
 
 Filtros (categoria, preço, material, técnica, cor, disponibilidade, personalização, sob encomenda) também são pós-MVP e devem ser suportados por índices apropriados quando implementados.
