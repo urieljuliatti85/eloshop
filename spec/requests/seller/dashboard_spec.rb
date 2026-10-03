@@ -33,6 +33,37 @@ RSpec.describe "Seller dashboard", type: :request do
     expect(response.body).not_to include("Produto Alheio")
   end
 
+  describe "setup boxes once everything is ready" do
+    before { sign_in_as(user) }
+
+    def box_texts
+      Nokogiri::HTML(response.body).css(".seller-content > div > section").map { |node| node.text.squish }
+    end
+
+    it "keeps only the Mercado Pago box ('Recebimentos e verificação') when the setup is done" do
+      seller.update!(
+        origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
+        origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP",
+        mercado_pago_user_id: "123456", mercado_pago_access_token_ciphertext: "access-token-cifrado",
+        mercado_pago_refresh_token_ciphertext: "refresh-token-cifrado", mercado_pago_connected_at: Time.current,
+        mercado_pago_live_mode: true, mercado_pago_test_account: false, mercado_pago_public_key: "APP_USR-chave-publica"
+      )
+      seller.products.create!(name: "Primeira peça", sku: "PRONTO-DASH", price_cents: 5_000, stock_quantity: 1)
+
+      get seller_root_path
+
+      boxes = box_texts
+      expect(boxes.first).to include("Recebimentos e verificação")
+      expect(boxes.join(" ")).not_to include("Primeiros passos para começar", "Para começar a vender", "Passo obrigatório", "Cadastro em análise")
+    end
+
+    it "shows the Mercado Pago box even before the setup is done" do
+      get seller_root_path
+
+      expect(box_texts.join(" ")).to include("Recebimentos e verificação")
+    end
+  end
+
   describe "'Ver a loja' link" do
     before { sign_in_as(user) }
 
