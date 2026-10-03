@@ -118,6 +118,14 @@ class Seller < ApplicationRecord
     update!(hidden_at: nil)
   end
 
+  # A página pública /artesaos/:slug só existe para ateliê aprovado e não
+  # escondido (ver SellersController#show): pendente responde 404, e suspenso
+  # ou escondido têm uma página de "indisponível". O "Ver a loja" do painel usa
+  # isto para não mandar o vendedor a um beco.
+  def public_page_available?
+    approved? && !hidden?
+  end
+
   def hidden?
     hidden_at.present?
   end
@@ -142,6 +150,18 @@ class Seller < ApplicationRecord
   # salvaguarda existe para evitar.
   def mercado_pago_real_account?
     mercado_pago_live_mode? && mercado_pago_test_account == false
+  end
+
+  # Etapas para começar a vender, na ordem da página "Primeiros passos". É a
+  # fonte única: a página e o cartão do painel inicial leem daqui, para os dois
+  # nunca discordarem sobre o que já está pronto.
+  def getting_started_steps
+    {
+      address: origin_address_complete?,
+      mercado_pago: mercado_pago_connected?,
+      product: products.exists?,
+      approval: approved?
+    }
   end
 
   def mercado_pago_connected?

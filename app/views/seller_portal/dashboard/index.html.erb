@@ -1,7 +1,14 @@
 <% content_for :title, "Visão geral | #{current_seller.name}" %>
 
 <div class="space-y-8">
-  <%# No topo, acima do hero: o hero ocupa a primeira tela inteira, e avisos
+  <%# Primeiro de tudo: é o caminho para quem acabou de chegar. Some quando as
+      quatro etapas estão prontas — depois disso "Para começar a vender" seria
+      ruído, e a página segue na navegação. %>
+  <% unless @getting_started_steps.values.all? %>
+    <%= render "seller_portal/getting_started/banner", steps: @getting_started_steps %>
+  <% end %>
+
+  <%# Logo abaixo, acima do hero: o hero ocupa a primeira tela inteira, e avisos
       abaixo dele passavam despercebidos sem rolar a página. A ordem importa:
       "Cadastro em análise" remete ao aviso da conta, que fica acima dele. %>
   <% unless current_seller.mercado_pago_account_state == :ready %>

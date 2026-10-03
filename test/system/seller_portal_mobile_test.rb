@@ -47,7 +47,8 @@ class SellerPortalMobileTest < ApplicationSystemTestCase
     visit seller_root_path
 
     # "Ver a loja" fica visível no topo, sem abrir o menu.
-    assert_link "Ver a loja", href: products_path
+    # Leva à página pública do próprio ateliê, não à loja geral.
+    assert_link "Ver a loja", href: seller_path(users(:seller).seller)
 
     # Fechado: nenhum link do painel ocupa o topo, e nada rola para o lado.
     assert_no_link "Novo produto"
