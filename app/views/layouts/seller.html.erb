@@ -13,7 +13,23 @@
   </head>
 
   <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased">
-    <header class="sticky top-0 z-40 border-b border-brand-100 bg-white/90 backdrop-blur">
+    <%# Navegação do painel: lista única, usada na barra horizontal (lg+) e no
+        painel do hambúrguer (celular). Antes era uma faixa com rolagem lateral,
+        e "Novo produto" ficava fora da tela sem indício de arrastar. %>
+    <% nav_items = [
+         [ "Visão geral", seller_root_path ],
+         [ "Primeiros passos", seller_getting_started_path ],
+         [ "Conta Vendedor no Mercado Pago", seller_mercado_pago_guide_path ],
+         [ "Produtos", seller_products_path ],
+         [ "Pedidos", seller_orders_path ],
+         [ "Mensagens", seller_messages_path ],
+         [ "Avaliações", seller_reviews_path ],
+         [ "Dados do Ateliê", seller_atelier_path ],
+         [ "Novo produto", new_seller_product_path ]
+       ] %>
+    <header class="sticky top-0 z-40 border-b border-brand-100 bg-white/90 backdrop-blur"
+            data-controller="mobile-menu"
+            data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
       <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6 lg:flex-nowrap lg:px-8">
         <%= link_to seller_root_path, class: "flex min-h-11 shrink-0 items-center gap-3", aria: { label: "Início do painel" } do %>
           <%= image_tag "logo.png", alt: "EloShop", class: "h-7 w-auto" %>
@@ -28,8 +44,8 @@
           </button>
         <% end %>
 
-        <div class="ml-auto flex shrink-0 items-center gap-3 sm:gap-5">
-          <%= link_to "Ver loja", products_path, class: "hidden min-h-11 items-center text-xs font-semibold text-stone-600 hover:text-brand-600 sm:inline-flex" %>
+        <div class="ml-auto flex shrink-0 items-center gap-2 sm:gap-5">
+          <%= link_to "Ver a loja", products_path, class: "inline-flex min-h-11 items-center whitespace-nowrap text-xs font-semibold text-stone-600 hover:text-brand-600" %>
 
           <% recent_notifications = current_seller.notifications.chronological.limit(5)
              unread_count = current_seller.notifications.unread.count %>
@@ -80,61 +96,51 @@
 
           <div class="hidden h-7 w-px bg-brand-100 sm:block"></div>
           <div class="text-right">
-            <p class="max-w-36 truncate text-sm font-bold text-stone-900"><%= current_seller.name %></p>
+            <p class="max-w-24 truncate sm:max-w-36 text-sm font-bold text-stone-900"><%= current_seller.name %></p>
             <p class="text-[0.65rem] font-semibold uppercase tracking-wider text-brand-600"><%= t(current_seller.status, scope: "sellers.statuses") %></p>
           </div>
-          <span class="grid size-9 place-items-center rounded-full bg-brand-600 text-sm font-bold text-white" aria-hidden="true"><%= current_seller.name.first.upcase %></span>
-          <%= button_to seller_logout_path, method: :delete, class: "grid size-11 cursor-pointer place-items-center rounded-full border border-brand-200 text-stone-600 transition hover:border-brand-400 hover:text-brand-600", form: { aria: { label: "Sair" } } do %>
+          <span class="hidden size-9 place-items-center rounded-full bg-brand-600 text-sm font-bold text-white sm:grid" aria-hidden="true"><%= current_seller.name.first.upcase %></span>
+          <%= button_to seller_logout_path, method: :delete, class: "hidden size-11 cursor-pointer place-items-center rounded-full border border-brand-200 text-stone-600 transition hover:border-brand-400 hover:text-brand-600 sm:grid", form: { aria: { label: "Sair" } } do %>
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/></svg>
           <% end %>
+
+          <button type="button"
+                  class="grid size-11 cursor-pointer place-items-center text-stone-900 hover:text-brand-600 lg:hidden"
+                  aria-expanded="false" aria-controls="seller-nav-panel" aria-label="Abrir menu do painel"
+                  data-mobile-menu-target="button"
+                  data-action="mobile-menu#toggle">
+            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
+            </svg>
+          </button>
         </div>
       </div>
 
-      <%# O gradiente na borda direita é a única pista de que a nav tem mais
-          itens fora da tela no celular: sem ele "Dados do Ateliê" parecia o
-          último e "Novo produto" ficava escondido sem indício de arrastar. %>
-      <div class="relative mx-auto max-w-7xl">
-        <nav class="flex gap-2 overflow-x-auto px-4 pb-3 text-xs font-semibold sm:px-6 lg:px-8" aria-label="Navegação do painel">
-          <% [
-            ["Visão geral", seller_root_path],
-            ["Primeiros passos", seller_getting_started_path],
-            ["Conta Vendedor no Mercado Pago", seller_mercado_pago_guide_path],
-            ["Produtos", seller_products_path],
-            ["Pedidos", seller_orders_path],
-            ["Mensagens", seller_messages_path],
-            ["Avaliações", seller_reviews_path],
-            ["Dados do Ateliê", seller_atelier_path],
-            ["Novo produto", new_seller_product_path]
-          ].each do |label, path| %>
-            <% active = current_page?(path) || (label == "Mensagens" && controller_name == "order_messages") %>
-            <%# min-h-11: no celular estes são os alvos de toque principais do
-                painel, e a altura do texto sozinha ficava abaixo de 40px. %>
-            <%= link_to path,
-                  class: "inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 transition #{active ? 'bg-brand-500 text-white shadow-sm' : 'text-stone-600 hover:bg-brand-50 hover:text-brand-700'}",
-                  aria: (active ? { current: "page" } : {}) do %>
-              <%= label %>
-              <%# Passo obrigatório: sem a conta conectada não há publicação. O
-                  texto carrega o significado (não só a cor) para leitores de tela. %>
-              <% if path == seller_mercado_pago_guide_path %>
-                <% case current_seller.mercado_pago_account_state %>
-                <% when :ready %>
-                  <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-emerald-800">✓ Conectado</span>
-                <% when :not_accepted %>
-                  <span class="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-white">
-                    <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
-                    Conta não aceita
-                  </span>
-                <% else %>
-                  <span class="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-white">
-                    <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
-                    Obrigatório
-                  </span>
-                <% end %>
-              <% end %>
-            <% end %>
+      <%# Celular e tablet: painel do hambúrguer, fechado ao carregar. Sem
+          JavaScript ele não abre; a barra horizontal só existe a partir de lg. %>
+      <div id="seller-nav-panel" class="border-t border-brand-100 bg-white lg:hidden" data-mobile-menu-target="panel" hidden>
+        <nav class="mx-auto flex max-w-7xl flex-col px-4 sm:px-6" aria-label="Navegação do painel">
+          <%= link_to products_path, class: "flex min-h-11 items-center gap-2 border-b border-brand-100 py-1 text-base font-semibold text-stone-900" do %>
+            Ver a loja
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          <% end %>
+          <% nav_items.each do |label, path| %>
+            <%= render "layouts/seller_nav_link", label: label, path: path, mobile: true %>
           <% end %>
         </nav>
-        <div class="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white via-white/90 to-transparent shadow-[inset_-12px_0_10px_-10px_rgba(28,25,23,0.15)] lg:hidden" aria-hidden="true"></div>
+        <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 pb-5 pt-3 sm:px-6">
+          <p class="px-1 text-sm text-stone-500"><span class="font-semibold text-stone-900"><%= current_seller.name %></span> · <%= t(current_seller.status, scope: "sellers.statuses") %></p>
+          <%= button_to "Sair", seller_logout_path, method: :delete, class: "w-full cursor-pointer rounded-full bg-stone-900 px-5 py-3 text-base font-semibold text-white" %>
+        </div>
+      </div>
+
+      <%# Telas largas: a barra horizontal de antes. %>
+      <div class="mx-auto hidden max-w-7xl lg:block">
+        <nav class="flex gap-2 overflow-x-auto px-8 pb-3 text-xs font-semibold" aria-label="Navegação do painel">
+          <% nav_items.each do |label, path| %>
+            <%= render "layouts/seller_nav_link", label: label, path: path, mobile: false %>
+          <% end %>
+        </nav>
       </div>
     </header>
 
