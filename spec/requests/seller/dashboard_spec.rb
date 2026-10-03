@@ -33,34 +33,65 @@ RSpec.describe "Seller dashboard", type: :request do
     expect(response.body).not_to include("Produto Alheio")
   end
 
-  describe "setup boxes once everything is ready" do
+  describe "Mercado Pago box" do
     before { sign_in_as(user) }
 
     def box_texts
       Nokogiri::HTML(response.body).css(".seller-content > div > section").map { |node| node.text.squish }
     end
 
-    it "keeps only the Mercado Pago box ('Recebimentos e verificação') when the setup is done" do
+    def connect_account!
       seller.update!(
-        origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
-        origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP",
         mercado_pago_user_id: "123456", mercado_pago_access_token_ciphertext: "access-token-cifrado",
         mercado_pago_refresh_token_ciphertext: "refresh-token-cifrado", mercado_pago_connected_at: Time.current,
         mercado_pago_live_mode: true, mercado_pago_test_account: false, mercado_pago_public_key: "APP_USR-chave-publica"
+      )
+    end
+
+    it "shows the connect options while the seller has never connected" do
+      allow(oauth).to receive(:configured?).and_return(true)
+
+      get seller_root_path
+
+      box = box_texts.find { |text| text.include?("Recebimentos e verificação") }
+      expect(box).to be_present
+      expect(Nokogiri::HTML(response.body).css("a").map { |node| node["href"] }).to include(seller_mercado_pago_connect_path)
+    end
+
+    it "shows the connect options again after the seller is disconnected" do
+      connect_account!
+      seller.disconnect_mercado_pago!
+      allow(oauth).to receive(:configured?).and_return(true)
+
+      get seller_root_path
+
+      expect(box_texts.join(" ")).to include("Recebimentos e verificação")
+      expect(Nokogiri::HTML(response.body).css("a").map { |node| node["href"] }).to include(seller_mercado_pago_connect_path)
+    end
+
+    it "removes the box from the dashboard while the account is connected (Reconectar/Desconectar live in the guide)" do
+      connect_account!
+      allow(oauth).to receive(:configured?).and_return(true)
+
+      get seller_root_path
+
+      expect(box_texts.join(" ")).not_to include("Recebimentos e verificação")
+      expect(response.body).not_to include("Desconectar")
+    end
+
+    it "shows no setup box at all when the four steps are done and the account is accepted" do
+      connect_account!
+      seller.update!(
+        origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
+        origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP"
       )
       seller.products.create!(name: "Primeira peça", sku: "PRONTO-DASH", price_cents: 5_000, stock_quantity: 1)
 
       get seller_root_path
 
-      boxes = box_texts
-      expect(boxes.first).to include("Recebimentos e verificação")
-      expect(boxes.join(" ")).not_to include("Primeiros passos para começar", "Para começar a vender", "Passo obrigatório", "Cadastro em análise")
-    end
-
-    it "shows the Mercado Pago box even before the setup is done" do
-      get seller_root_path
-
-      expect(box_texts.join(" ")).to include("Recebimentos e verificação")
+      expect(response).to have_http_status(:ok)
+      expect(box_texts.join(" ")).not_to include("Recebimentos e verificação", "Para começar a vender", "Passo obrigatório", "Cadastro em análise")
+      expect(response.body).to include("Crie, publique e acompanhe cada venda")
     end
   end
 

@@ -64,7 +64,48 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
       get seller_mercado_pago_guide_path
 
       expect(response.body).to include("Conta conectada")
-      expect(response.body).not_to include(seller_mercado_pago_connect_path)
+      # O botão de conectar do passo 4 dá lugar ao box com Reconectar/Desconectar
+      # (o texto "Conectar Mercado Pago" segue na explicação do passo; o que some
+      # é o link com esse rótulo).
+      labels = Nokogiri::HTML(response.body).css("a").map { |node| node.text.squish }
+      expect(labels).not_to include("Conectar Mercado Pago")
+      expect(labels).to include("Reconectar")
+    end
+
+    it "offers Reconectar and Desconectar in the 'Recebimentos e verificação' box when connected" do
+      connect_seller!
+      sign_in_as(user)
+
+      get seller_mercado_pago_guide_path
+
+      doc = Nokogiri::HTML(response.body)
+      box = doc.css("section").find { |node| node.text.include?("Recebimentos e verificação") }
+      expect(box).to be_present
+      expect(box.text.squish).to include("Conta conectada em", "Identificador: 123456")
+      expect(box.at_css("a[href='#{seller_mercado_pago_connect_path}']").text.squish).to eq("Reconectar")
+      disconnect = box.at_css("form[action='#{seller_mercado_pago_connection_path}']")
+      expect(disconnect.at_css("input[name='_method']")["value"]).to eq("delete")
+      expect(disconnect.text.squish).to include("Desconectar")
+    end
+
+    it "does not repeat the box when there is no connection: step 4 already has the connect button" do
+      sign_in_as(user)
+
+      get seller_mercado_pago_guide_path
+
+      expect(response.body).not_to include("Recebimentos e verificação")
+      labels = Nokogiri::HTML(response.body).css("a").map { |node| node.text.squish }
+      expect(labels).to include("Conectar Mercado Pago")
+      expect(labels).not_to include("Reconectar")
+    end
+
+    it "also shows the box when the connected account is not accepted, so it can be disconnected" do
+      connect_seller!(test_account: true)
+      sign_in_as(user)
+
+      get seller_mercado_pago_guide_path
+
+      expect(response.body).to include("Recebimentos e verificação", "Desconectar")
     end
   end
 
