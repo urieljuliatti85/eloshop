@@ -111,6 +111,10 @@
   .admin-flash { @apply mb-6 rounded-xl border px-4 py-3 text-sm font-medium shadow-sm; }
   .admin-flash--danger { @apply border-rose-200 bg-rose-50 text-rose-800; }
   .admin-empty-state { @apply rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center text-sm text-slate-500; }
+  /* Campo obrigatório vazio (controller required-fields). O `!` vence o
+     estilo de input do admin e o focus:border da vitrine. */
+  input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { @apply border-red-500! focus:border-red-500! focus:ring-red-100!; }
+  .field-error { @apply mt-1 text-xs font-medium text-red-600; }
 }
 
 /* Fundo fotográfico das páginas que usam a paisagem quente da marca (hoje

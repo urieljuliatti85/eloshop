@@ -62,10 +62,13 @@ class Product < ApplicationRecord
   belongs_to :category, optional: true
 
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
+  before_validation :assign_sku, if: -> { sku.blank? && name.present? }
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: { scope: :seller_id }
-  validates :sku, presence: true, uniqueness: { scope: :seller_id }
+  # O SKU é opcional para quem cadastra: em branco, `assign_sku` gera um. A
+  # coluna continua NOT NULL porque o OrderItem guarda o SKU como snapshot.
+  validates :sku, uniqueness: { scope: :seller_id }
   validates :currency, presence: true
   validates :price_cents, numericality: { greater_than_or_equal_to: 0 }
   validates :stock_quantity, numericality: { greater_than_or_equal_to: 0 }
@@ -280,6 +283,12 @@ class Product < ApplicationRecord
 
   def assign_slug
     self.slug = name.parameterize
+  end
+
+  # Prefixo legível (do nome) + sufixo aleatório; o índice único
+  # (seller_id, sku) garante que uma colisão rara não passe em silêncio.
+  def assign_sku
+    self.sku = "#{name.parameterize.upcase.first(20).delete_suffix('-')}-#{SecureRandom.alphanumeric(4).upcase}"
   end
 
   def production_time_range_valid

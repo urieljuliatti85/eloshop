@@ -80,6 +80,13 @@ module ApplicationHelper
     number_with_precision(cents / 100r, precision: 2, separator: ",", delimiter: "")
   end
 
+  # Asterisco de campo obrigatório. `visible: false` renderiza oculto: o
+  # `required-fields` o revela quando a regra condicional passa a valer
+  # (ex.: prazo de produção só é obrigatório para peça sob encomenda).
+  def required_marker(visible: true)
+    tag.span("*", class: "ml-0.5 text-red-600", aria: { hidden: true }, hidden: !visible, data: { required_fields_target: "marker" })
+  end
+
   def shipping_estimate_label(shipping)
     return "Retirada combinada com o ateliê" if shipping.local_pickup?
 
