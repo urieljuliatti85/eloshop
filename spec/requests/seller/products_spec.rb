@@ -289,4 +289,71 @@ RSpec.describe "Seller products", type: :request do
 
     expect(other_product.reload).to be_active
   end
+
+  describe "required field markers" do
+    it "marks name and price as required with the red-border controller" do
+      get new_seller_product_path
+
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("form[data-controller='required-fields'][novalidate]")).to be_present
+      %w[product_name product_price].each do |id|
+        field = doc.at_css("##{id}")
+        expect(field["required"]).to be_present
+        expect(field["data-required-fields-target"]).to eq("field")
+        expect(doc.at_css("label[for='#{id}'] [data-required-fields-target='marker']")).to be_present
+      end
+    end
+
+    it "hides the production time markers unless the product is made to order" do
+      get new_seller_product_path
+
+      doc = Nokogiri::HTML(response.body)
+      %w[product_production_time_min_days product_production_time_max_days].each do |id|
+        expect(doc.at_css("##{id}")["required"]).to be_nil
+        expect(doc.at_css("label[for='#{id}'] [data-required-fields-target='marker']")["hidden"]).to be_present
+      end
+    end
+
+    it "marks the production time as required for a made to order product" do
+      own_product.update!(availability_type: :made_to_order, production_time_min_days: 3, production_time_max_days: 7)
+
+      get edit_seller_product_path(own_product)
+
+      doc = Nokogiri::HTML(response.body)
+      %w[product_production_time_min_days product_production_time_max_days].each do |id|
+        expect(doc.at_css("##{id}")["required"]).to be_present
+        expect(doc.at_css("label[for='#{id}'] [data-required-fields-target='marker']")["hidden"]).to be_nil
+      end
+    end
+
+    it "labels the category as optional and explains why to pick one" do
+      get new_seller_product_path
+
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("label[for='product_category_id']").text).to eq("Categoria (opcional)")
+      expect(doc.at_css("#product_category_id")["required"]).to be_nil
+      expect(response.body).to include("ajuda o cliente a encontrar o seu produto")
+    end
+
+    it "does not mark the SKU as required" do
+      get new_seller_product_path
+
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("#product_sku")["required"]).to be_nil
+      expect(doc.at_css("label[for='product_sku'] [data-required-fields-target='marker']")).to be_nil
+    end
+
+    it "marks weight and dimensions as required to publish, without blocking the save" do
+      get new_seller_product_path
+
+      doc = Nokogiri::HTML(response.body)
+      %w[product_weight_grams product_length_cm product_width_cm product_height_cm].each do |id|
+        field = doc.at_css("##{id}")
+        expect(field["required"]).to be_nil
+        expect(field["data-publish-required"]).to eq("true")
+        expect(doc.at_css("label[for='#{id}'] [data-required-fields-target='marker']")["hidden"]).to be_nil
+      end
+      expect(response.body).to include("obrigatórios para <strong>publicar</strong>")
+    end
+  end
 end

@@ -1,4 +1,7 @@
-<%= form_with model: [ :admin, product ], class: "admin-form" do |form| %>
+<% made_to_order = product.availability_type_made_to_order? %>
+<%= form_with model: [ :admin, product ], class: "admin-form", html: { novalidate: true }, data: { controller: "required-fields", action: "submit->required-fields#validate focusout->required-fields#touch input->required-fields#touch change->required-fields#touch" } do |form| %>
+  <p class="text-xs text-slate-500"><span class="text-red-600" aria-hidden="true">*</span> Campo obrigatório</p>
+
   <% if product.errors.any? %>
     <div class="admin-flash admin-flash--danger">
       <ul>
@@ -10,15 +13,15 @@
   <% end %>
 
   <div>
-    <%= form.label :seller_id, "Artesão" %>
+    <%= form.label :seller_id do %>Artesão<%= required_marker %><% end %>
     <%= form.select :seller_id,
           options_for_select(Seller.order(:name).map { |seller| [ seller.name, seller.id ] }, form.object.seller_id),
-          { include_blank: "Selecione o artesão" }, class: "w-full", required: true %>
+          { include_blank: "Selecione o artesão" }, class: "w-full", required: true, data: { required_fields_target: "field" } %>
   </div>
 
   <div>
-    <%= form.label :name, "Nome" %>
-    <%= form.text_field :name, class: "w-full" %>
+    <%= form.label :name do %>Nome<%= required_marker %><% end %>
+    <%= form.text_field :name, required: true, data: { required_fields_target: "field" }, class: "w-full" %>
   </div>
 
   <div>
@@ -42,9 +45,9 @@
   </div>
 
   <div>
-    <%= form.label :price, "Preço (R$)" %>
+    <%= form.label :price do %>Preço (R$)<%= required_marker %><% end %>
     <%= form.text_field :price, value: price_field_value(form.object.price_cents),
-          inputmode: "decimal", placeholder: "0,00", data: { controller: "price-input", action: "input->price-input#format" }, class: "w-full" %>
+          inputmode: "decimal", placeholder: "0,00", data: { controller: "price-input", action: "input->price-input#format", required_fields_target: "field" }, required: true, class: "w-full" %>
   </div>
 
   <div>
@@ -53,8 +56,8 @@
   </div>
 
   <div>
-    <%= form.label :sku, "SKU" %>
-    <%= form.text_field :sku, class: "w-full" %>
+    <%= form.label :sku, "SKU (opcional)" %>
+    <%= form.text_field :sku, placeholder: "Em branco, a EloShop gera", class: "w-full" %>
   </div>
 
   <div>
@@ -62,6 +65,7 @@
     <%= form.select :category_id,
           options_for_select(category_tree.categories.map { |c| [ category_tree.breadcrumb_name(c), c.id ] }, form.object.category_id),
           { include_blank: "Sem categoria" }, class: "w-full" %>
+    <p class="text-sm text-gray-600">Escolher uma categoria ajuda o cliente a encontrar o produto.</p>
   </div>
 
   <div>
@@ -70,7 +74,7 @@
           options_for_select(
             [["Estoque padrão", "standard"], ["Peça única", "one_of_a_kind"], ["Sob encomenda", "made_to_order"]],
             form.object.availability_type
-          ), {}, class: "w-full" %>
+          ), {}, class: "w-full", data: { required_fields_target: "trigger", action: "change->required-fields#refresh" } %>
   </div>
 
   <div>
@@ -80,29 +84,31 @@
   </div>
 
   <div>
-    <%= form.label :production_time_min_days, "Prazo de produção — mínimo (dias úteis)" %>
-    <%= form.number_field :production_time_min_days, class: "w-full" %>
+    <%= form.label :production_time_min_days do %>Prazo de produção — mínimo (dias úteis)<%= required_marker(visible: made_to_order) %><% end %>
+    <%= form.number_field :production_time_min_days, required: made_to_order, data: { required_fields_target: "field", required_when: "made_to_order" }, class: "w-full" %>
   </div>
 
   <div>
-    <%= form.label :production_time_max_days, "Prazo de produção — máximo (dias úteis)" %>
-    <%= form.number_field :production_time_max_days, class: "w-full" %>
+    <%= form.label :production_time_max_days do %>Prazo de produção — máximo (dias úteis)<%= required_marker(visible: made_to_order) %><% end %>
+    <%= form.number_field :production_time_max_days, required: made_to_order, data: { required_fields_target: "field", required_when: "made_to_order" }, class: "w-full" %>
     <p class="text-sm text-gray-600">Obrigatório apenas para produtos sob encomenda.</p>
   </div>
 
   <div>
-    <%= form.label :weight_grams, "Peso para frete (gramas)" %>
-    <%= form.number_field :weight_grams, min: 1, class: "w-full" %>
+    <%= form.label :weight_grams do %>Peso para frete (gramas)<%= required_marker %><% end %>
+    <%= form.number_field :weight_grams, min: 1, data: { required_fields_target: "field", publish_required: true }, class: "w-full" %>
   </div>
 
   <div class="grid grid-cols-3 gap-3">
     <% { length_cm: "Comprimento", width_cm: "Largura", height_cm: "Altura" }.each do |field, label| %>
       <div>
-        <%= form.label field, "#{label} (cm)" %>
-        <%= form.number_field field, min: 1, class: "w-full" %>
+        <%= form.label field do %><%= label %> (cm)<%= required_marker %><% end %>
+        <%= form.number_field field, min: 1, data: { required_fields_target: "field", publish_required: true }, class: "w-full" %>
       </div>
     <% end %>
   </div>
+
+  <p class="text-sm text-gray-600"><span class="text-red-600" aria-hidden="true">*</span> Peso e dimensões são obrigatórios para <strong>publicar</strong>. Sem eles ainda é possível salvar como rascunho.</p>
 
   <fieldset class="rounded-xl border border-slate-200 p-4">
     <legend class="px-1 text-sm font-semibold text-slate-700">Frete deste produto</legend>
