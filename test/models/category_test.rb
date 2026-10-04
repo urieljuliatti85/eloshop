@@ -83,7 +83,7 @@ class CategoryTest < ActiveSupport::TestCase
     products(:one).update!(category: category)
 
     assert_not category.destroy
-    assert_includes category.errors[:base], "Não é possível excluir o registro porque existem produtos dependentes"
+    assert_includes category.errors[:base], "Não é possível excluir o registro pois existem produtos dependentes"
   end
 
   test "cannot destroy a category that still has children" do

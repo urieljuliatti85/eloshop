@@ -21,7 +21,7 @@ class ErrorMessagesTranslationTest < ActiveSupport::TestCase
     assert_includes messages, "Estoque deve ser maior ou igual a 0"
     assert_includes messages, "Peso deve ser maior que 0"
     assert_includes messages, "Produção mínima não pode ficar em branco"
-    assert_includes messages, "Artesão é obrigatório"
+    assert_includes messages, "Artesão é obrigatório(a)"
     assert_empty messages.grep(/can't|must|is not|has already|Weight|Price cents|Stock quantity|Production time/i)
   end
 
@@ -35,6 +35,6 @@ class ErrorMessagesTranslationTest < ActiveSupport::TestCase
 
     assert_includes product.errors.full_messages, "Galeria de imagens não pode ter mais de #{Product::IMAGES_MAX_COUNT} imagens"
     assert_includes variant.errors.full_messages, "SKU não pode ficar em branco"
-    assert_includes variant.errors.full_messages, "Produto é obrigatório"
+    assert_includes variant.errors.full_messages, "Produto é obrigatório(a)"
   end
 end
