@@ -21,7 +21,7 @@ class Product < ApplicationRecord
 
   MAIN_IMAGE_MAX_BYTES = 5.megabytes
   MAIN_IMAGE_ALLOWED_CONTENT_TYPES = %w[image/png image/jpeg image/webp].freeze
-  IMAGES_MAX_COUNT = 8
+  IMAGES_MAX_COUNT = 2
 
   # Limiar de alerta no dashboard do admin — só para produtos com estoque
   # físico rastreável (availability_type standard); não se aplica a
@@ -336,7 +336,12 @@ class Product < ApplicationRecord
     errors.add(:images, "cada imagem deve ter no máximo 5MB")
   end
 
+  # Só quando a galeria está recebendo fotos: produtos antigos têm mais fotos
+  # do que o limite atual, e a baixa de estoque de uma venda não pode falhar
+  # por isso (mesmo raciocínio do `:publication`). Eles seguem como estão até
+  # o vendedor tentar acrescentar outra.
   def images_count_within_limit
+    return unless attachment_changes["images"]
     return if images.size <= IMAGES_MAX_COUNT
 
     errors.add(:images, "não pode ter mais de #{IMAGES_MAX_COUNT} imagens")
