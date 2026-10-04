@@ -9,7 +9,7 @@ class CartItemTest < ActiveSupport::TestCase
   test "invalid with quantity zero or negative" do
     item = CartItem.new(cart: carts(:one), product: products(:one), quantity: 0)
     assert_not item.valid?
-    assert_includes item.errors[:quantity], "must be greater than 0"
+    assert_includes item.errors[:quantity], "deve ser maior que 0"
   end
 
   test "invalid when the product is not active" do
@@ -33,7 +33,7 @@ class CartItemTest < ActiveSupport::TestCase
   test "invalid when the same product is added twice to the same cart" do
     duplicate = CartItem.new(cart: cart_items(:one).cart, product: cart_items(:one).product, quantity: 1)
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:product_id], "has already been taken"
+    assert_includes duplicate.errors[:product_id], "já está em uso"
   end
 
   test "invalid when the cart already contains a product from another seller" do
@@ -183,6 +183,6 @@ class CartItemTest < ActiveSupport::TestCase
     )
 
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:product_id], "has already been taken"
+    assert_includes duplicate.errors[:product_id], "já está em uso"
   end
 end

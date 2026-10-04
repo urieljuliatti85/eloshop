@@ -7,7 +7,7 @@ class WishlistItemTest < ActiveSupport::TestCase
 
     duplicate = WishlistItem.new(customer: customer, product: products(:one))
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:product_id], "has already been taken"
+    assert_includes duplicate.errors[:product_id], "já está em uso"
   end
 
   test "the same product can be favorited by different customers" do

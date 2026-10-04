@@ -9,13 +9,13 @@ class OrderItemTest < ActiveSupport::TestCase
   test "invalid without product_name or sku" do
     item = OrderItem.new(order: orders(:one), product: products(:one), unit_price_cents: 100, quantity: 1)
     assert_not item.valid?
-    assert_includes item.errors[:product_name], "can't be blank"
-    assert_includes item.errors[:sku], "can't be blank"
+    assert_includes item.errors[:product_name], "não pode ficar em branco"
+    assert_includes item.errors[:sku], "não pode ficar em branco"
   end
 
   test "invalid with quantity zero" do
     item = OrderItem.new(order: orders(:one), product: products(:one), product_name: "X", sku: "X", unit_price_cents: 100, quantity: 0)
     assert_not item.valid?
-    assert_includes item.errors[:quantity], "must be greater than 0"
+    assert_includes item.errors[:quantity], "deve ser maior que 0"
   end
 end

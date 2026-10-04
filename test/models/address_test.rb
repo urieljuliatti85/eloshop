@@ -32,7 +32,7 @@ class AddressTest < ActiveSupport::TestCase
     address = Address.new(customer: customers(:one))
     assert_not address.valid?
     %i[street number neighborhood city state zip_code].each do |field|
-      assert_includes address.errors[field], "can't be blank"
+      assert_includes address.errors[field], "não pode ficar em branco"
     end
   end
 end

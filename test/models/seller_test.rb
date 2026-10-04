@@ -205,8 +205,8 @@ class SellerTest < ActiveSupport::TestCase
     seller = Seller.new(name: "Sem dono")
 
     assert_not seller.valid?
-    assert_includes seller.errors[:owner_full_name], "can't be blank"
-    assert_includes seller.errors[:cpf], "can't be blank"
+    assert_includes seller.errors[:owner_full_name], "não pode ficar em branco"
+    assert_includes seller.errors[:cpf], "não pode ficar em branco"
   end
 
   test "rejects a CPF with an invalid checksum" do

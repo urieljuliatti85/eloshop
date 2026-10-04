@@ -4,13 +4,13 @@ class CustomerTest < ActiveSupport::TestCase
   test "invalid without name" do
     customer = Customer.new(email: "new@example.com", password: "password123")
     assert_not customer.valid?
-    assert_includes customer.errors[:name], "can't be blank"
+    assert_includes customer.errors[:name], "não pode ficar em branco"
   end
 
   test "invalid with duplicate email" do
     duplicate = Customer.new(name: "Outro", email: customers(:one).email, password: "password123")
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:email], "has already been taken"
+    assert_includes duplicate.errors[:email], "já está em uso"
   end
 
   test "normalizes email" do
