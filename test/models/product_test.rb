@@ -304,6 +304,19 @@ class ProductTest < ActiveSupport::TestCase
     assert_includes product.errors[:images], "não pode ter mais de #{Product::IMAGES_MAX_COUNT} imagens"
   end
 
+  test "a product that already exceeds the gallery limit can still be saved without new images" do
+    product = products(:one)
+    (Product::IMAGES_MAX_COUNT + 2).times do |i|
+      product.images.attach(io: StringIO.new("fake image bytes"), filename: "photo#{i}.png", content_type: "image/png")
+    end
+    product.save!(validate: false)
+
+    product = Product.find(product.id)
+    product.stock_quantity = 1
+
+    assert product.valid?
+  end
+
   test "accepts valid gallery images" do
     product = products(:one)
     product.images.attach(io: StringIO.new("fake image bytes"), filename: "photo.png", content_type: "image/png")
