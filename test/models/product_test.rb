@@ -6,7 +6,7 @@ class ProductTest < ActiveSupport::TestCase
     product = Product.new(name: "Peça", sku: "PECA-SEM-VENDEDOR", price_cents: 1000, stock_quantity: 1)
 
     assert_not product.valid?
-    assert_includes product.errors[:seller], "é obrigatório"
+    assert_includes product.errors[:seller], "é obrigatório(a)"
   end
 
   test "slug and SKU are unique per seller" do

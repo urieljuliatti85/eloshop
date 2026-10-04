@@ -28,42 +28,6 @@ pt-BR:
       x_days:
         one: "1 dia"
         other: "%{count} dias"
-  # O projeto não usa a gem rails-i18n: sem estas chaves, toda validação
-  # padrão do Rails ("can't be blank", "must exist"...) aparece em inglês.
-  errors:
-    format: "%{attribute} %{message}"
-    messages:
-      accepted: "deve ser aceito"
-      blank: "não pode ficar em branco"
-      confirmation: "não é igual a %{attribute}"
-      empty: "não pode ficar vazio"
-      equal_to: "deve ser igual a %{count}"
-      even: "deve ser par"
-      exclusion: "não está disponível"
-      greater_than: "deve ser maior que %{count}"
-      greater_than_or_equal_to: "deve ser maior ou igual a %{count}"
-      in: "deve estar entre %{count}"
-      inclusion: "não está incluído na lista"
-      invalid: "não é válido"
-      less_than: "deve ser menor que %{count}"
-      less_than_or_equal_to: "deve ser menor ou igual a %{count}"
-      model_invalid: "A validação falhou: %{errors}"
-      not_a_number: "não é um número"
-      not_an_integer: "deve ser um número inteiro"
-      odd: "deve ser ímpar"
-      other_than: "deve ser diferente de %{count}"
-      present: "deve ficar em branco"
-      required: "é obrigatório"
-      taken: "já está em uso"
-      too_long:
-        one: "é muito longo (máximo de 1 caractere)"
-        other: "é muito longo (máximo de %{count} caracteres)"
-      too_short:
-        one: "é muito curto (mínimo de 1 caractere)"
-        other: "é muito curto (mínimo de %{count} caracteres)"
-      wrong_length:
-        one: "não tem o tamanho esperado (1 caractere)"
-        other: "não tem o tamanho esperado (%{count} caracteres)"
   activerecord:
     attributes:
       user:
@@ -113,11 +77,6 @@ pt-BR:
         sender: "Remetente"
         seller_order: "Pedido"
     errors:
-      messages:
-        record_invalid: "A validação falhou: %{errors}"
-        restrict_dependent_destroy:
-          has_one: "Não é possível excluir o registro porque existe um(a) %{record} dependente"
-          has_many: "Não é possível excluir o registro porque existem %{record} dependentes"
       models:
         user:
           attributes:
