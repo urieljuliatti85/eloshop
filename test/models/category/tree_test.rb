@@ -64,6 +64,17 @@ class Category::TreeTest < ActiveSupport::TestCase
     assert_equal "Casa sozinha", Category::Tree.load.breadcrumb_name(casa)
   end
 
+  test "breadcrumb_options are sorted alphabetically by the full path, ignoring case and accents" do
+    zebra = Category.create!(name: "Zebra opções")
+    Category.create!(name: "Árvore opções", parent: zebra)
+    Category.create!(name: "abacaxi opções")
+    Category.create!(name: "Ótica opções", parent: zebra)
+
+    names = Category::Tree.load.breadcrumb_options.map(&:first).grep(/opções/)
+
+    assert_equal [ "abacaxi opções", "Zebra opções", "Zebra opções > Árvore opções", "Zebra opções > Ótica opções" ], names
+  end
+
   test "load caches the records and does not query the database on a second call" do
     Category.create!(name: "Casa cache")
     Category::Tree.load
