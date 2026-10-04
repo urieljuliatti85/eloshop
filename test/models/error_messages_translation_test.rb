@@ -37,4 +37,34 @@ class ErrorMessagesTranslationTest < ActiveSupport::TestCase
     assert_includes variant.errors.full_messages, "SKU não pode ficar em branco"
     assert_includes variant.errors.full_messages, "Produto é obrigatório(a)"
   end
+
+  test "seller registration errors are in Portuguese" do
+    seller = Seller.new.tap { |record| record.valid?(:create) }
+    customer = Customer.new.tap(&:valid?)
+
+    assert_includes seller.errors.full_messages, "Nome do ateliê não pode ficar em branco"
+    assert_includes seller.errors.full_messages, "Nome completo do responsável não pode ficar em branco"
+    assert_includes seller.errors.full_messages, "CPF não pode ficar em branco"
+    assert_includes customer.errors.full_messages, "Nome não pode ficar em branco"
+    assert_includes customer.errors.full_messages, "Senha não pode ficar em branco"
+  end
+
+  # Modelos com formulário: um atributo validado sem tradução vira "Owner full
+  # name não pode ficar em branco" na tela.
+  FORM_MODELS = %w[
+    User Customer Address Seller Category Material Tag Technique Coupon Review SellerReport
+    WishlistItem MercadoPagoTestAccount CartItem Product ProductVariant PersonalizationOption OrderMessage
+  ].freeze
+
+  test "every validated attribute of a form model has a pt-BR name" do
+    missing = FORM_MODELS.flat_map do |name|
+      model = name.constantize
+      scope = model < ActiveRecord::Base ? "activerecord" : "activemodel"
+      model.validators.flat_map(&:attributes).uniq
+        .reject { |attribute| I18n.exists?("#{scope}.attributes.#{model.model_name.i18n_key}.#{attribute}", :"pt-BR") }
+        .map { |attribute| "#{name}##{attribute}" }
+    end
+
+    assert_empty missing, "atributos validados sem nome em pt-BR: #{missing.join(', ')}"
+  end
 end

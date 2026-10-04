@@ -28,12 +28,109 @@ pt-BR:
       x_days:
         one: "1 dia"
         other: "%{count} dias"
+  activemodel:
+    attributes:
+      contact_message:
+        name: "Nome"
+        email: "E-mail"
+        message: "Mensagem"
   activerecord:
     attributes:
       user:
         email_address: "E-mail"
-      cart_item:
+        password: "Senha"
+        password_confirmation: "Confirmação da senha"
+        role: "Papel"
+        seller: "Ateliê"
+      customer:
+        name: "Nome"
+        email: "E-mail"
+        password: "Senha"
+        password_confirmation: "Confirmação da senha"
+        cart_reminder_emails: "Lembretes de carrinho por e-mail"
+      address:
+        customer: "Cliente"
+        street: "Rua"
+        number: "Número"
+        complement: "Complemento"
+        neighborhood: "Bairro"
+        city: "Cidade"
+        state: "Estado"
+        zip_code: "CEP"
+      seller:
+        name: "Nome do ateliê"
+        slug: "URL do ateliê"
+        status: "Situação"
+        owner_full_name: "Nome completo do responsável"
+        cpf: "CPF"
+        cpf_hash: "CPF"
+        origin_zip_code: "CEP de origem"
+        origin_street: "Rua de origem"
+        origin_number: "Número de origem"
+        origin_complement: "Complemento de origem"
+        origin_neighborhood: "Bairro de origem"
+        origin_city: "Cidade de origem"
+        origin_state: "Estado de origem"
+        mercado_pago_user: "Conta do Mercado Pago"
+        mercado_pago_user_id: "Conta do Mercado Pago"
+      category:
+        name: "Nome"
+        slug: "URL"
+        parent: "Categoria pai"
+        active: "Ativa"
+        products: "produtos"
+      material:
+        name: "Nome"
+        slug: "URL"
+      tag:
+        name: "Nome"
+        slug: "URL"
+      technique:
+        name: "Nome"
+        slug: "URL"
+      coupon:
+        code: "Código"
+        discount_type: "Tipo de desconto"
+        percentage: "Percentual"
+        amount_cents: "Valor do desconto"
+        minimum_subtotal_cents: "Subtotal mínimo"
+        max_uses: "Limite de usos"
+        uses_count: "Usos"
+        starts_at: "Início"
+        expires_at: "Validade"
+        active: "Ativo"
+      review:
+        customer: "Cliente"
         product: "Produto"
+        rating: "Nota"
+        comment: "Comentário"
+        status: "Situação"
+        verified_purchase: "Compra verificada"
+        seller_reply: "Resposta do ateliê"
+        customer_id: "Cliente"
+      seller_report:
+        customer: "Cliente"
+        seller: "Ateliê"
+        reason: "Motivo"
+        details: "Detalhes"
+        status: "Situação"
+        customer_id: "Cliente"
+      wishlist_item:
+        customer: "Cliente"
+        product: "Produto"
+        product_id: "Produto"
+      mercado_pago_test_account:
+        account_type: "Tipo de conta"
+        label: "Identificação"
+        email: "E-mail"
+        username: "Usuário"
+      cart_item:
+        cart: "Carrinho"
+        product: "Produto"
+        product_variant: "Variante"
+        quantity: "Quantidade"
+        personalizations: "Personalização"
+        product_id: "Produto"
       product:
         name: "Nome"
         slug: "URL"
@@ -58,8 +155,6 @@ pt-BR:
         fixed_shipping: "Valor do frete fixo"
         fixed_shipping_cents: "Valor do frete fixo"
         fixed_shipping_estimated_days: "Prazo do frete fixo"
-      category:
-        products: "produtos"
       product_variant:
         product: "Produto"
         sku: "SKU"
@@ -68,6 +163,7 @@ pt-BR:
         size: "Tamanho"
         color: "Cor"
         material: "Material"
+        product_id: "Produto"
       personalization_option:
         product: "Produto"
         label: "Nome do campo"
@@ -76,6 +172,7 @@ pt-BR:
         body: "Mensagem"
         sender: "Remetente"
         seller_order: "Pedido"
+        sender_type: "Remetente"
     errors:
       models:
         user:
