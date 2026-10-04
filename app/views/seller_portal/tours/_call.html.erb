@@ -1,0 +1,12 @@
+<%# Chamada para o tour guiado no painel inicial. Sempre presente (ao contrário
+    do cartão de primeiros passos, que some quando tudo está pronto): quem
+    ainda não fez vê "Fazer o tour", quem já concluiu vê "Refazer o tour". O
+    `tour#start` é o mesmo botão da página Primeiros passos. %>
+<% seen = current_seller.tour_completed_at.present? %>
+<section class="flex flex-col gap-3 rounded-2xl border border-brand-100 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between" aria-labelledby="tour-call-title">
+  <div>
+    <h2 id="tour-call-title" class="text-sm font-bold text-stone-950">Conheça o painel em 1 minuto</h2>
+    <p class="mt-0.5 text-sm text-stone-600">Um passo a passo mostra onde cadastrar o endereço, conectar o Mercado Pago e criar sua primeira peça.</p>
+  </div>
+  <button type="button" data-action="tour#start" class="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-brand-200 px-5 py-2 text-sm font-bold text-brand-700 transition hover:bg-brand-50"><%= seen ? "Refazer o tour" : "Fazer o tour" %></button>
+</section>
