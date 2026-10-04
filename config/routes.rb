@@ -108,6 +108,7 @@ Rails.application.routes.draw do
 
     root to: "dashboard#index"
     get "primeiros-passos", to: "getting_started#show", as: :getting_started
+    post "tour/concluir", to: "tours#complete", as: :tour_completion
     get "conta-vendedor-mercado-pago", to: "mercado_pago_guides#show", as: :mercado_pago_guide
     get "termos-comerciais", to: "terms#show", as: :terms
     post "termos-comerciais", to: "terms#accept"

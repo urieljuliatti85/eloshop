@@ -12,7 +12,13 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased">
+  <%# Tour guiado: abre sozinho enquanto o vendedor não o concluiu e também por
+      qualquer elemento com `data-action="tour#start"` (ver Primeiros passos). %>
+  <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased"
+        data-controller="tour"
+        data-tour-steps-value="<%= seller_tour_steps.to_json %>"
+        data-tour-complete-url-value="<%= seller_tour_completion_path %>"
+        data-tour-auto-value="<%= current_seller.tour_completed_at.nil? %>">
     <%# Navegação do painel: lista única, usada na barra horizontal (lg+) e no
         painel do hambúrguer (celular). Antes era uma faixa com rolagem lateral,
         e "Novo produto" ficava fora da tela sem indício de arrastar. %>

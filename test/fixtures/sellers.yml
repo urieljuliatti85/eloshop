@@ -4,12 +4,14 @@ approved:
   status: approved
   approved_at: <%= 1.day.ago %>
   owner_full_name: Maria da Silva
+  tour_completed_at: <%= 1.day.ago %>
 
 pending:
   name: Ateliê Pendente
   slug: atelier-pendente
   status: pending
   owner_full_name: João Pereira
+  tour_completed_at: <%= 1.day.ago %>
 
 other:
   name: Outro Ateliê
@@ -17,3 +19,4 @@ other:
   status: approved
   approved_at: <%= 2.days.ago %>
   owner_full_name: Ana Souza
+  tour_completed_at: <%= 1.day.ago %>
