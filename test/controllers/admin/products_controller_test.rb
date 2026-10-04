@@ -86,6 +86,7 @@ class Admin::ProductsControllerTest < ActionDispatch::IntegrationTest
   test "publishes a draft product" do
     sign_in_as(@user)
     draft_product = products(:two)
+    draft_product.update!(category: Category.create!(name: "Categoria publicar"))
 
     patch publish_admin_product_path(draft_product)
 

@@ -114,6 +114,7 @@ class ProductTest < ActiveSupport::TestCase
 
   test "publish! transitions draft to active" do
     product = products(:two)
+    product.update!(category: Category.create!(name: "Categoria transição"))
     product.publish!
     assert product.active?
   end
@@ -209,7 +210,7 @@ class ProductTest < ActiveSupport::TestCase
 
   test "standard product can go back to active after sold out (restock)" do
     product = products(:one)
-    product.update!(status: "sold_out")
+    product.update!(status: "sold_out", category: Category.create!(name: "Categoria restock"))
 
     product.publish!
 
@@ -484,6 +485,38 @@ class ProductTest < ActiveSupport::TestCase
 
     assert_match(/comprimento/, error.message)
     assert_no_match(/peso/, error.message)
+  end
+
+  test "publish! refuses a product without category" do
+    product = Product.create!(seller: sellers(:approved), name: "Sem categoria", sku: "CAT-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 1, currency: "BRL", status: "draft",
+      weight_grams: 300, length_cm: 10, width_cm: 10, height_cm: 10)
+
+    error = assert_raises(Product::InvalidStatusTransition) { product.publish! }
+
+    assert_match(/categoria/, error.message)
+    assert product.reload.draft?
+  end
+
+  test "publish! reports a missing category together with missing measurements" do
+    product = Product.create!(seller: sellers(:approved), name: "Nada", sku: "CAT-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 1, currency: "BRL", status: "draft")
+
+    error = assert_raises(Product::InvalidStatusTransition) { product.publish! }
+
+    assert_match(/peso/, error.message)
+    assert_match(/categoria/, error.message)
+  end
+
+  test "publish! accepts a product with category and measurements" do
+    category = Category.create!(name: "Categoria para publicar")
+    product = Product.create!(seller: sellers(:approved), name: "Completo", sku: "CAT-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 1, currency: "BRL", status: "draft", category: category,
+      weight_grams: 300, length_cm: 10, width_cm: 10, height_cm: 10)
+
+    product.publish!
+
+    assert product.reload.active?
   end
 
   # Rascunho segue livre: o vendedor cadastra a peça enquanto ainda a faz.

@@ -202,12 +202,21 @@ RSpec.describe "Seller products", type: :request do
   end
 
   it "publishes once name, price and shipping dimensions are set" do
-    own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10)
+    own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10, category: Category.create!(name: "Categoria publicar"))
 
     patch publish_seller_product_path(own_product)
 
     expect(response).to redirect_to(seller_product_path(own_product))
     expect(own_product.reload).to be_active
+  end
+
+  it "refuses to publish without a category" do
+    own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10)
+
+    patch publish_seller_product_path(own_product)
+
+    expect(own_product.reload).to be_draft
+    expect(flash[:alert]).to include("categoria")
   end
 
   it "accepts weight and dimensions through the update form" do
@@ -326,13 +335,16 @@ RSpec.describe "Seller products", type: :request do
       end
     end
 
-    it "labels the category as optional and explains why to pick one" do
+    it "marks the category as required to publish, in red, and explains why" do
       get new_seller_product_path
 
       doc = Nokogiri::HTML(response.body)
-      expect(doc.at_css("label[for='product_category_id']").text).to eq("Categoria (opcional)")
+      expect(doc.at_css("label[for='product_category_id']").text).to start_with("Categoria")
+      expect(doc.at_css("label[for='product_category_id'] [data-required-fields-target='marker']")).to be_present
+      expect(doc.at_css("#product_category_id")["data-required-fields-target"]).to eq("field")
+      expect(doc.at_css("#product_category_id")["data-publish-required"]).to be_present
       expect(doc.at_css("#product_category_id")["required"]).to be_nil
-      expect(response.body).to include("ajuda o cliente a encontrar o seu produto")
+      expect(response.body).to include("para publicar, escolha uma categoria")
     end
 
     it "does not mark the SKU as required" do
