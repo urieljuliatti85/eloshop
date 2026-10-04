@@ -6,7 +6,7 @@ class ProductTest < ActiveSupport::TestCase
     product = Product.new(name: "Peça", sku: "PECA-SEM-VENDEDOR", price_cents: 1000, stock_quantity: 1)
 
     assert_not product.valid?
-    assert_includes product.errors[:seller], "must exist"
+    assert_includes product.errors[:seller], "é obrigatório"
   end
 
   test "slug and SKU are unique per seller" do
@@ -35,7 +35,7 @@ class ProductTest < ActiveSupport::TestCase
   test "invalid without name" do
     product = Product.new(products(:one).attributes.except("id", "name"))
     assert_not product.valid?
-    assert_includes product.errors[:name], "can't be blank"
+    assert_includes product.errors[:name], "não pode ficar em branco"
   end
 
   test "generates a sku when it is left blank" do
@@ -61,25 +61,25 @@ class ProductTest < ActiveSupport::TestCase
   test "invalid with duplicate slug" do
     duplicate = Product.new(products(:two).attributes.except("id").merge("slug" => products(:one).slug, "sku" => "OUTRO-SKU"))
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:slug], "has already been taken"
+    assert_includes duplicate.errors[:slug], "já está em uso"
   end
 
   test "invalid with duplicate sku" do
     duplicate = Product.new(products(:two).attributes.except("id").merge("sku" => products(:one).sku, "slug" => "outro-slug"))
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:sku], "has already been taken"
+    assert_includes duplicate.errors[:sku], "já está em uso"
   end
 
   test "invalid with negative price_cents" do
     product = Product.new(products(:one).attributes.except("id").merge("price_cents" => -1, "slug" => nil, "sku" => "NEG-PRICE"))
     assert_not product.valid?
-    assert_includes product.errors[:price_cents], "must be greater than or equal to 0"
+    assert_includes product.errors[:price_cents], "deve ser maior ou igual a 0"
   end
 
   test "invalid with negative stock_quantity" do
     product = Product.new(products(:one).attributes.except("id").merge("stock_quantity" => -1, "slug" => nil, "sku" => "NEG-STOCK"))
     assert_not product.valid?
-    assert_includes product.errors[:stock_quantity], "must be greater than or equal to 0"
+    assert_includes product.errors[:stock_quantity], "deve ser maior ou igual a 0"
   end
 
   test "accepts a complete fixed shipping configuration in reais" do
@@ -96,7 +96,7 @@ class ProductTest < ActiveSupport::TestCase
     product.assign_attributes(fixed_shipping: "20,00")
 
     assert_not product.valid?
-    assert_includes product.errors[:fixed_shipping_estimated_days], "can't be blank"
+    assert_includes product.errors[:fixed_shipping_estimated_days], "não pode ficar em branco"
     assert_not_predicate product, :fixed_shipping_configured?
   end
 
@@ -188,7 +188,7 @@ class ProductTest < ActiveSupport::TestCase
       "name" => "Peça única 1", "sku" => "UNICA-001", "availability_type" => "one_of_a_kind", "stock_quantity" => 2
     ))
     assert_not product.valid?
-    assert_includes product.errors[:stock_quantity], "must be less than or equal to 1"
+    assert_includes product.errors[:stock_quantity], "deve ser menor ou igual a 1"
   end
 
   test "one_of_a_kind accepts stock_quantity of 1" do
@@ -222,8 +222,8 @@ class ProductTest < ActiveSupport::TestCase
       "sku" => "ENCOMENDA-001", "availability_type" => "made_to_order"
     ))
     assert_not product.valid?
-    assert_includes product.errors[:production_time_min_days], "can't be blank"
-    assert_includes product.errors[:production_time_max_days], "can't be blank"
+    assert_includes product.errors[:production_time_min_days], "não pode ficar em branco"
+    assert_includes product.errors[:production_time_max_days], "não pode ficar em branco"
   end
 
   test "made_to_order rejects a maximum lead time smaller than the minimum" do

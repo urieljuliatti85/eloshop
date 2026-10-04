@@ -4,7 +4,7 @@ class CategoryTest < ActiveSupport::TestCase
   test "invalid without name" do
     category = Category.new
     assert_not category.valid?
-    assert_includes category.errors[:name], "can't be blank"
+    assert_includes category.errors[:name], "não pode ficar em branco"
   end
 
   test "assigns slug from name when slug is blank" do
@@ -18,7 +18,7 @@ class CategoryTest < ActiveSupport::TestCase
 
     duplicate = Category.new(name: "Decoração", parent: parent)
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:name], "has already been taken"
+    assert_includes duplicate.errors[:name], "já está em uso"
   end
 
   test "different names under different parents do not collide" do
@@ -37,7 +37,7 @@ class CategoryTest < ActiveSupport::TestCase
 
     duplicate = Category.new(name: "Acessórios", parent: moda)
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:slug], "has already been taken"
+    assert_includes duplicate.errors[:slug], "já está em uso"
   end
 
   test "invalid when parent is itself" do
@@ -83,7 +83,7 @@ class CategoryTest < ActiveSupport::TestCase
     products(:one).update!(category: category)
 
     assert_not category.destroy
-    assert_includes category.errors[:base], "Cannot delete record because dependent products exist"
+    assert_includes category.errors[:base], "Não é possível excluir o registro porque existem produtos dependentes"
   end
 
   test "cannot destroy a category that still has children" do

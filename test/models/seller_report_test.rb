@@ -4,13 +4,13 @@ class SellerReportTest < ActiveSupport::TestCase
   test "invalid without a reason" do
     report = SellerReport.new(customer: customers(:one), seller: sellers(:approved))
     assert_not report.valid?
-    assert_includes report.errors[:reason], "can't be blank"
+    assert_includes report.errors[:reason], "não pode ficar em branco"
   end
 
   test "invalid with a reason outside the allowed list" do
     report = SellerReport.new(customer: customers(:one), seller: sellers(:approved), reason: "not-a-real-reason")
     assert_not report.valid?
-    assert_includes report.errors[:reason], "is not included in the list"
+    assert_includes report.errors[:reason], "não está incluído na lista"
   end
 
   test "invalid when the same customer reports the same seller twice" do

@@ -4,25 +4,25 @@ class ProductVariantTest < ActiveSupport::TestCase
   test "invalid without sku" do
     variant = ProductVariant.new(product_variants(:one).attributes.except("id", "sku"))
     assert_not variant.valid?
-    assert_includes variant.errors[:sku], "can't be blank"
+    assert_includes variant.errors[:sku], "não pode ficar em branco"
   end
 
   test "invalid with duplicate sku" do
     duplicate = ProductVariant.new(product_variants(:two).attributes.except("id").merge("sku" => product_variants(:one).sku))
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:sku], "has already been taken"
+    assert_includes duplicate.errors[:sku], "já está em uso"
   end
 
   test "invalid with negative price_cents" do
     variant = ProductVariant.new(product_variants(:one).attributes.except("id", "sku").merge("sku" => "NEW-SKU", "price_cents" => -1))
     assert_not variant.valid?
-    assert_includes variant.errors[:price_cents], "must be greater than or equal to 0"
+    assert_includes variant.errors[:price_cents], "deve ser maior ou igual a 0"
   end
 
   test "invalid with negative stock_quantity" do
     variant = ProductVariant.new(product_variants(:one).attributes.except("id", "sku").merge("sku" => "NEW-SKU", "stock_quantity" => -1))
     assert_not variant.valid?
-    assert_includes variant.errors[:stock_quantity], "must be greater than or equal to 0"
+    assert_includes variant.errors[:stock_quantity], "deve ser maior ou igual a 0"
   end
 
   test "invalid without at least one axis (size, color or material)" do
@@ -37,7 +37,7 @@ class ProductVariantTest < ActiveSupport::TestCase
       size: product_variants(:one).size, color: product_variants(:one).color, material: product_variants(:one).material
     )
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:product_id], "has already been taken"
+    assert_includes duplicate.errors[:product_id], "já está em uso"
   end
 
   test "invalid when the product does not support variants" do
