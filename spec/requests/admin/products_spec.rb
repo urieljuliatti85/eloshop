@@ -274,7 +274,7 @@ RSpec.describe "Admin products", type: :request do
     it "publishes a draft product" do
       sign_in_as(user)
       product = Product.create!(seller: approved_seller, name: "Vaso publicar", sku: "PUB-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "draft",
-        weight_grams: 500, length_cm: 20, width_cm: 15, height_cm: 10)
+        category: Category.create!(name: "Categoria publicar"), weight_grams: 500, length_cm: 20, width_cm: 15, height_cm: 10)
 
       patch publish_admin_product_path(product)
 
@@ -390,7 +390,10 @@ RSpec.describe "Admin products", type: :request do
     it "explains why to pick a category" do
       get new_admin_product_path
 
-      expect(response.body).to include("ajuda o cliente a encontrar o produto")
+      expect(response.body).to include("para publicar, escolha uma categoria")
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("label[for='product_category_id'] [data-required-fields-target='marker']")).to be_present
+      expect(doc.at_css("#product_category_id")["data-publish-required"]).to be_present
     end
 
     it "does not require the SKU" do

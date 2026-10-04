@@ -147,7 +147,7 @@ RSpec.describe Product, type: :model do
 
   describe "status transitions" do
     it "publishes a draft product to active" do
-      product = described_class.create!(valid_attributes.merge(slug: "vaso-draft", sku: "STATUS-001", status: :draft))
+      product = described_class.create!(valid_attributes.merge(slug: "vaso-draft", sku: "STATUS-001", status: :draft, category: Category.create!(name: "Categoria rascunho")))
 
       product.publish!
 
@@ -184,7 +184,7 @@ RSpec.describe Product, type: :model do
     end
 
     it "allows a standard product to return to active after sold_out" do
-      product = described_class.create!(valid_attributes.merge(slug: "vaso-restock", sku: "STATUS-006", status: :active, stock_quantity: 1))
+      product = described_class.create!(valid_attributes.merge(slug: "vaso-restock", sku: "STATUS-006", status: :active, stock_quantity: 1, category: Category.create!(name: "Categoria restock")))
       product.update!(status: "sold_out")
 
       product.publish!

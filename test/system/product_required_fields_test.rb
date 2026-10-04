@@ -25,18 +25,18 @@ class ProductRequiredFieldsTest < ApplicationSystemTestCase
     assert_no_selector "[aria-invalid='true']"
 
     # Enviar vazio: não envia, marca os dois obrigatórios (e, sem bloquear,
-    # peso e dimensões, que só são exigidos para publicar) e leva ao primeiro.
+    # categoria, peso e dimensões, que só são exigidos para publicar) e leva ao primeiro.
     click_button "Salvar produto"
     assert_current_path new_seller_product_path
-    assert_selector "[aria-invalid='true']", count: 6
+    assert_selector "[aria-invalid='true']", count: 7
     assert_text "Preencha este campo.", count: 2
-    assert_text "Obrigatório para publicar.", count: 4
+    assert_text "Obrigatório para publicar.", count: 5
     assert_equal "product_name", page.evaluate_script("document.activeElement.id")
     assert_in_viewport "product_name"
 
     # Preencher o campo limpa o erro dele.
     fill_in "Nome", with: "Vaso azul"
-    assert_selector "[aria-invalid='true']", count: 5
+    assert_selector "[aria-invalid='true']", count: 6
 
     # Prazo de produção só é obrigatório (e marcado) para sob encomenda.
     assert_no_selector "label[for='product_production_time_min_days'] [data-required-fields-target='marker']", visible: :visible
@@ -47,7 +47,7 @@ class ProductRequiredFieldsTest < ApplicationSystemTestCase
     fill_in "Preço (R$)", with: "500"
     click_button "Salvar produto"
     assert_current_path new_seller_product_path
-    assert_selector "[aria-invalid='true']", count: 6
+    assert_selector "[aria-invalid='true']", count: 7
     assert_equal "product_production_time_min_days", page.evaluate_script("document.activeElement.id")
 
     # Peso e dimensões têm asterisco, mas não impedem salvar como rascunho.

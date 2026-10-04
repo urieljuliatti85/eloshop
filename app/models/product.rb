@@ -90,6 +90,12 @@ class Product < ApplicationRecord
   # frete e passaria a falhar em catálogo legado.
   validate :shippable_dimensions_for_publication, on: :publication
 
+  # Categoria é como o cliente encontra a peça (§14): sem ela o produto some
+  # dos filtros e das seções da home. Mesma lógica do peso — exigida para
+  # publicar, não para rascunhar, e fora do `save` comum para não quebrar o
+  # catálogo legado sem categoria.
+  validate :category_for_publication, on: :publication
+
   validates :stock_quantity, numericality: { less_than_or_equal_to: 1 }, if: :availability_type_one_of_a_kind?
   validates :production_time_min_days, :production_time_max_days,
             presence: true, numericality: { greater_than: 0 }, if: :availability_type_made_to_order?
@@ -109,11 +115,15 @@ class Product < ApplicationRecord
     raise InvalidStatusTransition, "aceite os termos comerciais antes de publicar" unless seller.terms_accepted?
 
     unless valid?(:publication)
-      raise InvalidStatusTransition, errors.full_messages_for(:base).first ||
+      raise InvalidStatusTransition, errors.full_messages_for(:base).join(" ").presence ||
         "informe peso e dimensões antes de publicar"
     end
 
     transition_to!("active")
+  end
+
+  def category_for_publication
+    errors.add(:base, "Escolha uma categoria antes de publicar: é como o cliente encontra o produto.") if category.blank?
   end
 
   # Sem peso ou dimensões o frete real não cotiza, e o produto não deveria
