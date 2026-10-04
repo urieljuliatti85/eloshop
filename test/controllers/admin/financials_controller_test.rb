@@ -117,8 +117,9 @@ class Admin::FinancialsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to admin_financials_path
-    assert_equal "2026-09-25T12:00:00Z",
-      Rails.cache.read(Admin::FinancialsController::RELEASE_DATES_CACHE_KEY).fetch("mp-payment-1")
+    # O instante é o mesmo; só o deslocamento muda com o fuso da aplicação.
+    assert_equal Time.utc(2026, 9, 25, 12),
+      Time.iso8601(Rails.cache.read(Admin::FinancialsController::RELEASE_DATES_CACHE_KEY).fetch("mp-payment-1"))
   end
 
   test "page labels a matching official sale and uses the report amounts" do

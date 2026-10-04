@@ -21,7 +21,10 @@ module Eloshop
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # A loja opera no Brasil: as telas mostram o horário de Brasília. O banco
+    # continua gravando em UTC (`active_record.default_timezone`), então só
+    # muda como as datas são exibidas e onde cai a virada do dia.
+    config.time_zone = "Brasilia"
     # config.eager_load_paths << Rails.root.join("extras")
 
     # A loja vende em reais para o Brasil: o locale define o símbolo e a
