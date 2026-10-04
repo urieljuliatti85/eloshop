@@ -112,4 +112,14 @@ class Category::Tree
 
     names.join(" > ")
   end
+
+  # Opções do select de categoria dos formulários de produto: nome completo
+  # com a hierarquia, em ordem alfabética pelo caminho (sem diferenciar
+  # maiúsculas nem acentos). Ordenar pelo nome da folha deixaria
+  # "Casa > Decoração" antes de "Casa > Cozinha" só pela inicial da filha.
+  def breadcrumb_options
+    categories
+      .map { |category| [ breadcrumb_name(category), category.id ] }
+      .sort_by { |name, _id| I18n.transliterate(name).downcase }
+  end
 end
