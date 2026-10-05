@@ -21,6 +21,17 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
   end
 
   describe "GET /painel/conta-vendedor-mercado-pago" do
+    it "shows the PIX key warning until the seller confirms the key" do
+      sign_in_as(user)
+
+      get seller_mercado_pago_guide_path
+      expect(response.body).to include("precisa ter uma chave PIX cadastrada", "Já cadastrei minha chave PIX")
+
+      seller.update_column(:pix_key_confirmed_at, Time.current)
+      get seller_mercado_pago_guide_path
+      expect(response.body).not_to include("precisa ter uma chave PIX cadastrada")
+    end
+
     it "redirects unauthenticated visitors to the seller login" do
       get seller_mercado_pago_guide_path
 

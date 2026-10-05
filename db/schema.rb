@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -518,6 +518,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
     t.string "origin_street"
     t.string "origin_zip_code"
     t.string "owner_full_name"
+    t.datetime "pix_key_confirmed_at"
     t.string "slug", null: false
     t.string "status", default: "pending", null: false
     t.datetime "tour_completed_at"

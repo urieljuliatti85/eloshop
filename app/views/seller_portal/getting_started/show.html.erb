@@ -83,10 +83,37 @@
       </section>
     </li>
 
+    <%# Etapa por declaração: o Mercado Pago não permite consultar se há chave
+        PIX, então "concluído" é a palavra do vendedor (`pix_key_confirmed_at`). %>
+    <li>
+      <section class="rounded-[2rem] border-2 p-6 sm:p-8 <%= @steps[:pix_key] ? 'border-brand-100 bg-white' : 'border-red-300 bg-red-50' %>" aria-labelledby="getting-started-pix-key">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <span class="grid size-12 shrink-0 place-items-center rounded-2xl text-lg font-black <%= @steps[:pix_key] ? 'bg-brand-50 text-brand-700' : 'bg-red-100 text-red-700' %>" aria-hidden="true">3</span>
+          <div class="min-w-0 flex-1">
+            <% unless @steps[:pix_key] %>
+              <p class="text-xs font-bold uppercase tracking-[0.16em] text-red-700">Atenção: sem isso o PIX não funciona</p>
+            <% end %>
+            <div class="mt-1 flex flex-wrap items-center justify-between gap-3">
+              <h2 id="getting-started-pix-key" class="text-2xl font-bold <%= @steps[:pix_key] ? 'text-stone-950' : 'text-red-950' %>">Cadastre uma chave PIX no Mercado Pago</h2>
+              <%= render "status", completed: @steps[:pix_key] %>
+            </div>
+            <p class="mt-3 text-sm leading-6 <%= @steps[:pix_key] ? 'text-stone-600' : 'text-red-900' %>">A conta do Mercado Pago que você conectou precisa ter uma chave PIX cadastrada. Sem ela, o pagamento por PIX dos seus clientes é recusado. Pagamentos no cartão não dependem disso. Como cadastrar, em poucos minutos:</p>
+            <%= render "seller_portal/mercado_pago_connections/pix_key_steps", text_class: (@steps[:pix_key] ? "text-stone-600" : "text-red-900") %>
+            <p class="mt-2 text-sm leading-6 <%= @steps[:pix_key] ? 'text-stone-600' : 'text-red-900' %>">A EloShop não consegue consultar a sua conta: esta etapa fica concluída quando você nos avisa que cadastrou a chave.</p>
+            <% if @steps[:pix_key] %>
+              <%= button_to "Ainda não cadastrei", seller_pix_key_confirmation_path, method: :delete, class: "mt-5 inline-flex min-h-11 cursor-pointer items-center rounded-full border border-brand-200 px-6 py-3 text-sm font-bold text-brand-700 transition hover:bg-brand-50" %>
+            <% else %>
+              <%= button_to "Já cadastrei minha chave PIX", seller_pix_key_confirmation_path, method: :post, class: "mt-5 inline-flex min-h-11 cursor-pointer items-center rounded-full bg-red-700 px-6 py-3 text-sm font-bold text-white hover:bg-red-800" %>
+            <% end %>
+          </div>
+        </div>
+      </section>
+    </li>
+
     <li>
       <section class="rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8" aria-labelledby="getting-started-product">
         <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">3</span>
+          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">4</span>
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <h2 id="getting-started-product" class="text-2xl font-bold text-stone-950">Cadastre seu primeiro produto</h2>
@@ -109,7 +136,7 @@
     <li>
       <section class="rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8" aria-labelledby="getting-started-money">
         <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">4</span>
+          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">5</span>
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <h2 id="getting-started-money" class="text-2xl font-bold text-stone-950">Entenda como você recebe</h2>

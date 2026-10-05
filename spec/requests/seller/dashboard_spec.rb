@@ -33,6 +33,34 @@ RSpec.describe "Seller dashboard", type: :request do
     expect(response.body).not_to include("Produto Alheio")
   end
 
+  it "warns that the Mercado Pago account needs a PIX key" do
+    sign_in_as(user)
+
+    get seller_root_path
+
+    expect(response.body).to include("precisa ter uma chave PIX cadastrada", "Gerenciar chaves Pix", "Cadastrar chave")
+  end
+
+  it "opens with the tour invitation, followed by the PIX key warning above every other box" do
+    sign_in_as(user)
+
+    get seller_root_path
+
+    doc = Nokogiri::HTML(response.body)
+    boxes = doc.at_css(".seller-content > div").element_children
+    expect(boxes.first["aria-labelledby"]).to eq("tour-call-title")
+    expect(boxes[1]["aria-labelledby"]).to eq("pix-key-notice-title")
+  end
+
+  it "hides the PIX key warning once the seller confirmed the key" do
+    seller.update_column(:pix_key_confirmed_at, Time.current)
+    sign_in_as(user)
+
+    get seller_root_path
+
+    expect(response.body).not_to include("precisa ter uma chave PIX cadastrada")
+  end
+
   describe "Mercado Pago box" do
     before { sign_in_as(user) }
 
@@ -79,11 +107,12 @@ RSpec.describe "Seller dashboard", type: :request do
       expect(response.body).not_to include("Desconectar")
     end
 
-    it "shows no setup box at all when the four steps are done and the account is accepted" do
+    it "shows no setup box at all when the five steps are done and the account is accepted" do
       connect_account!
       seller.update!(
         origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
-        origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP"
+        origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP",
+        pix_key_confirmed_at: Time.current
       )
       seller.products.create!(name: "Primeira peça", sku: "PRONTO-DASH", price_cents: 5_000, stock_quantity: 1)
 
@@ -130,15 +159,15 @@ RSpec.describe "Seller dashboard", type: :request do
   describe "getting started box" do
     before { sign_in_as(user) }
 
-    it "is the first block of the dashboard, above the account warnings" do
+    it "comes right after the tour invitation, above the account warnings" do
       seller.update!(status: :pending, approved_at: nil)
 
       get seller_root_path
 
       doc = Nokogiri::HTML(response.body)
       blocks = doc.css(".seller-content > div > section").map { |node| node["aria-labelledby"] || node.text.squish.first(30) }
-      expect(blocks.first).to eq("getting-started-banner-title")
-      expect(blocks.size).to be > 1
+      expect(blocks.first(2)).to eq(%w[tour-call-title getting-started-banner-title])
+      expect(blocks.size).to be > 2
     end
 
     it "tells the seller what is left and links to the Primeiros passos page" do
@@ -149,7 +178,7 @@ RSpec.describe "Seller dashboard", type: :request do
       expect(box).to be_present
       expect(box.text.squish).to include("Para começar a vender", "Primeiros passos")
       # A fixture do vendedor já nasce aprovado: só a etapa de aprovação está pronta.
-      expect(box.text.squish).to include("1 de 4 etapas concluídas")
+      expect(box.text.squish).to include("1 de 5 etapas concluídas")
       link = box.at_css("a")
       expect(link.text.squish).to eq("Ver primeiros passos")
       expect(link["href"]).to eq(seller_getting_started_path)
@@ -159,21 +188,22 @@ RSpec.describe "Seller dashboard", type: :request do
       seller.products.create!(name: "Primeira peça", sku: "PRIMEIRA-DASH", price_cents: 5_000, stock_quantity: 1)
 
       get seller_root_path
-      dashboard_count = response.body[/(\d) de 4 etapas concluídas/, 1]
+      dashboard_count = response.body[/(\d) de 5 etapas concluídas/, 1]
 
       get seller_getting_started_path
-      page_count = response.body[/(\d) de 4 etapas concluídas/, 1]
+      page_count = response.body[/(\d) de 5 etapas concluídas/, 1]
 
       expect(dashboard_count).to eq("2")
       expect(dashboard_count).to eq(page_count)
     end
 
-    it "disappears once the four steps are done" do
+    it "disappears once the five steps are done" do
       seller.update!(
         origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
         origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP",
         mercado_pago_user_id: "123456", mercado_pago_access_token_ciphertext: "access-token-cifrado",
-        mercado_pago_refresh_token_ciphertext: "refresh-token-cifrado", mercado_pago_connected_at: Time.current
+        mercado_pago_refresh_token_ciphertext: "refresh-token-cifrado", mercado_pago_connected_at: Time.current,
+        pix_key_confirmed_at: Time.current
       )
       seller.products.create!(name: "Primeira peça", sku: "PRIMEIRA-DASH2", price_cents: 5_000, stock_quantity: 1)
 

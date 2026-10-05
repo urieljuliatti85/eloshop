@@ -1,0 +1,13 @@
+<%# Passo a passo da chave PIX no app do Mercado Pago (nomes conforme o blog do
+    próprio MP; podem variar um pouco com a versão do app). Usado no aviso do
+    painel e na etapa dos primeiros passos. Local: cor do texto do bloco. %>
+<% text_class = local_assigns.fetch(:text_class, "text-stone-700") %>
+<ol class="mt-3 space-y-1.5 text-sm leading-6 <%= text_class %>">
+  <li><strong>1.</strong> Abra o <strong>app do Mercado Pago</strong> e entre na conta que você conectou à EloShop.</li>
+  <li><strong>2.</strong> Na tela inicial, toque em <strong>Pix</strong> (a "Área Pix").</li>
+  <li><strong>3.</strong> Escolha <strong>Gerenciar chaves Pix</strong> e depois <strong>Cadastrar chave</strong>.</li>
+  <li><strong>4.</strong> Escolha o tipo de chave: <strong>CPF/CNPJ, celular, e-mail ou chave aleatória</strong>. Qualquer uma serve.</li>
+  <li><strong>5.</strong> Siga as instruções na tela. Se escolher celular ou e-mail, você recebe um código por SMS ou e-mail para digitar no app. Na primeira vez o app pode pedir uma confirmação de segurança (como uma selfie).</li>
+  <li><strong>6.</strong> Voltou para a lista com a chave aparecendo? Pronto: volte aqui e clique em <strong>"Já cadastrei minha chave PIX"</strong>.</li>
+</ol>
+<p class="mt-2 text-xs leading-5 <%= text_class %>">Importante: a chave precisa estar na <strong>mesma conta do Mercado Pago</strong> que você conectou à EloShop. Os nomes dos botões podem mudar um pouco conforme a versão do app.</p>

@@ -186,11 +186,13 @@ class Seller < ApplicationRecord
 
   # Etapas para começar a vender, na ordem da página "Primeiros passos". É a
   # fonte única: a página e o cartão do painel inicial leem daqui, para os dois
-  # nunca discordarem sobre o que já está pronto.
+  # nunca discordarem sobre o que já está pronto. `pix_key` é declaração do
+  # vendedor (o Mercado Pago não permite consultar se há chave PIX).
   def getting_started_steps
     {
       address: origin_address_complete?,
       mercado_pago: mercado_pago_connected?,
+      pix_key: pix_key_confirmed_at.present?,
       product: products.exists?,
       approval: approved?
     }

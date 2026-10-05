@@ -21,6 +21,7 @@ RSpec.describe "Seller tour", type: :request do
       expect(steps.map { |step| step["path"] }).to eq([
         seller_getting_started_path, seller_atelier_path, seller_mercado_pago_guide_path, new_seller_product_path
       ])
+      expect(steps[2]["alert"]).to eq("Não se esqueça de cadastrar a sua chave pix na sua conta Mercado Pago!")
     end
 
     it "does not start on its own once completed" do
