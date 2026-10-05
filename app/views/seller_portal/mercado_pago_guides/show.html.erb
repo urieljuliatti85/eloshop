@@ -1,10 +1,12 @@
 <% content_for :title, "Conta Vendedor no Mercado Pago | #{current_seller.name}" %>
 
 <% state = current_seller.mercado_pago_account_state %>
-<%# Os textos abaixo não citam botões do app do Mercado Pago: os nomes das
+<%# Os passos abaixo não citam botões do app do Mercado Pago: os nomes das
     telas mudam e não há como validá-los daqui. O que é estável (o tipo de
     conta exigido, os documentos, o prazo) está descrito; o resto aponta para
-    a central de ajuda. %>
+    a central de ajuda. Exceção deliberada: o aviso da chave PIX traz os
+    nomes das telas (vindos do blog do próprio MP), porque sem a chave o PIX
+    é recusado e o vendedor precisa de um caminho concreto. %>
 <div class="space-y-8">
   <header class="overflow-hidden rounded-[2rem] bg-[#5c1a0b] px-6 py-8 text-white shadow-sm sm:px-9 sm:py-10">
     <p class="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#fbbeb6]">
@@ -35,6 +37,8 @@
   <% if @mercado_pago_oauth_sandbox %>
     <p class="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900"><strong>Ambiente de teste:</strong> aqui a conexão é feita com uma conta de teste (TESTUSER) do tipo Vendedor. Ela não permite aprovação nem vendas reais. Em produção, vale o passo a passo abaixo com a sua conta real.</p>
   <% end %>
+
+  <%= render "seller_portal/mercado_pago_connections/pix_key_notice" %>
 
   <ol class="space-y-5" aria-label="Passo a passo para ativar os recebimentos">
     <li class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
@@ -84,6 +88,7 @@
     <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-stone-600">
       <li>Use a sua conta <strong>real</strong>. Contas de teste não recebem de verdade.</li>
       <li>É preciso ser maior de idade.</li>
+      <li><strong>Cadastre uma chave PIX na sua conta do Mercado Pago.</strong> Sem ela, os pagamentos por PIX dos seus clientes são recusados.</li>
       <li>Como funciona o dinheiro: o Mercado Pago desconta a tarifa dele e a EloShop retém <strong><%= seller_commission_text(current_seller) %></strong> da venda, sobre os produtos e sem contar o frete. O restante cai na sua conta automaticamente.</li>
       <li>Nota fiscal e impostos são de responsabilidade do vendedor.</li>
     </ul>

@@ -19,10 +19,12 @@ RSpec.describe "Seller getting started", type: :request do
     get seller_getting_started_path
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("0 de 4 etapas concluídas")
+    expect(response.body).to include("0 de 5 etapas concluídas")
     expect(response.body).to include(
       "Preencha o endereço do ateliê",
       "Conecte sua conta do Mercado Pago",
+      "Cadastre uma chave PIX no Mercado Pago",
+      "Gerenciar chaves Pix",
       "Cadastre seu primeiro produto",
       "Entenda como você recebe",
       "15%"
@@ -72,7 +74,8 @@ RSpec.describe "Seller getting started", type: :request do
       mercado_pago_user_id: "123456",
       mercado_pago_access_token_ciphertext: "access-token-cifrado",
       mercado_pago_refresh_token_ciphertext: "refresh-token-cifrado",
-      mercado_pago_connected_at: Time.current
+      mercado_pago_connected_at: Time.current,
+      pix_key_confirmed_at: Time.current
     )
     seller.products.create!(name: "Primeira peça", sku: "PRIMEIRA-1", price_cents: 5_000, stock_quantity: 1)
     sign_in_as(user)
@@ -80,8 +83,8 @@ RSpec.describe "Seller getting started", type: :request do
     get seller_getting_started_path
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("4 de 4 etapas concluídas")
-    expect(response.body.scan("Concluído").size).to eq(4)
+    expect(response.body).to include("5 de 5 etapas concluídas")
+    expect(response.body.scan("Concluído").size).to eq(5)
     expect(response.body).to include("Revisar endereço", "Ver conexão", "Gerenciar produtos", "Acompanhar pedidos")
   end
 end

@@ -1,0 +1,20 @@
+<%# Sem chave PIX na conta do Mercado Pago do vendedor, o MP recusa a cobrança
+    PIX (400 "Collector user without key enabled for QR render"). A EloShop não
+    tem como consultar se a chave existe: o aviso fica até o vendedor declarar
+    que cadastrou (`pix_key_confirmed_at`); cartão não é afetado. %>
+<% unless current_seller.pix_key_confirmed_at? %>
+  <aside class="flex flex-col gap-5 rounded-2xl border-2 border-red-300 bg-red-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between" aria-labelledby="pix-key-notice-title">
+    <div class="flex items-start gap-4">
+      <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "mt-0.5 size-7 shrink-0 text-red-600" %>
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.16em] text-red-700">Atenção: sem isso o PIX não funciona</p>
+        <h2 id="pix-key-notice-title" class="mt-1 text-xl font-bold text-red-950">Sua conta do Mercado Pago precisa ter uma chave PIX cadastrada</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-red-900">Sem uma chave PIX na sua conta do Mercado Pago, o pagamento por PIX dos seus clientes é recusado. Pagamentos no cartão não dependem disso. Como cadastrar, em poucos minutos:</p>
+        <%= render "seller_portal/mercado_pago_connections/pix_key_steps", text_class: "text-red-900" %>
+      </div>
+    </div>
+    <div class="shrink-0">
+      <%= button_to "Já cadastrei minha chave PIX", seller_pix_key_confirmation_path, method: :post, class: "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-red-700 px-6 py-3 text-sm font-bold text-white hover:bg-red-800" %>
+    </div>
+  </aside>
+<% end %>

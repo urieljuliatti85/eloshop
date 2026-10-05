@@ -1,14 +1,19 @@
 <% content_for :title, "Visão geral | #{current_seller.name}" %>
 
 <div class="space-y-8">
+  <%# Convite ao tour: o topo da página, antes de qualquer aviso. %>
+  <%= render "seller_portal/tours/call" %>
+
+  <%# Primeiro aviso, acima de todos os outros boxes: sem chave PIX o pagamento
+      PIX é recusado. %>
+  <%= render "seller_portal/mercado_pago_connections/pix_key_notice" %>
+
   <%# Primeiro de tudo: é o caminho para quem acabou de chegar. Some quando as
       quatro etapas estão prontas — depois disso "Para começar a vender" seria
       ruído, e a página segue na navegação. %>
   <% unless @getting_started_steps.values.all? %>
     <%= render "seller_portal/getting_started/banner", steps: @getting_started_steps %>
   <% end %>
-
-  <%= render "seller_portal/tours/call" %>
 
   <%# Logo abaixo, acima do hero: o hero ocupa a primeira tela inteira, e avisos
       abaixo dele passavam despercebidos sem rolar a página. A ordem importa:

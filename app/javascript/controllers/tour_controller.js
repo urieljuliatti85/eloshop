@@ -91,11 +91,19 @@ export default class extends Controller {
       this.element_("p", { text: `Passo ${this.index + 1} de ${this.stepsValue.length}`, style: "font-size:0.7rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#a8a29e;" }),
       this.element_("h2", { id: "tour-title", text: step.title, style: "margin-top:0.25rem;font-size:1.125rem;font-weight:800;color:#1c1917;" }),
       this.element_("p", { text: step.body, style: "margin-top:0.5rem;font-size:0.875rem;line-height:1.5;color:#57534e;" }),
+      ...this.alertPill(step),
       this.actions(last)
     )
 
     this.position()
     this.dialog.focus({ preventScroll: true })
+  }
+
+  // Aviso opcional do passo (`alert`), em pílula vermelha abaixo do texto.
+  alertPill(step) {
+    if (!step.alert) return []
+
+    return [this.element_("p", { text: step.alert, style: "margin-top:0.75rem;display:inline-block;padding:0.375rem 0.875rem;border-radius:9999px;background:#dc2626;color:#fff;font-size:0.8125rem;font-weight:700;line-height:1.3;" })]
   }
 
   actions(last) {

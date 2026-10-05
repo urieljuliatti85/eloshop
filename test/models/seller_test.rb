@@ -517,20 +517,21 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.reload.mercado_pago_test_account
   end
 
-  test "getting_started_steps reflects address, Mercado Pago, first product and approval" do
+  test "getting_started_steps reflects address, Mercado Pago, PIX key, first product and approval" do
     seller = Seller.create!(name: "Ateliê dos passos", owner_full_name: "Ana Passos", cpf: "11144477735")
 
-    assert_equal({ address: false, mercado_pago: false, product: false, approval: false }, seller.getting_started_steps)
+    assert_equal({ address: false, mercado_pago: false, pix_key: false, product: false, approval: false }, seller.getting_started_steps)
 
     seller.update!(
       origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
       origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP",
       mercado_pago_user_id: "123456", mercado_pago_access_token_ciphertext: "a", mercado_pago_refresh_token_ciphertext: "r",
-      mercado_pago_connected_at: Time.current, status: :approved, approved_at: Time.current
+      mercado_pago_connected_at: Time.current, status: :approved, approved_at: Time.current,
+      pix_key_confirmed_at: Time.current
     )
     seller.products.create!(name: "Primeira peça", sku: "PASSOS-1", price_cents: 5_000, stock_quantity: 1)
 
-    assert_equal({ address: true, mercado_pago: true, product: true, approval: true }, seller.getting_started_steps)
+    assert_equal({ address: true, mercado_pago: true, pix_key: true, product: true, approval: true }, seller.getting_started_steps)
   end
 
   test "public_page_available? is true only for an approved seller that is not hidden" do
