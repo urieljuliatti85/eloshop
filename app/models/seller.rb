@@ -32,6 +32,19 @@ class Seller < ApplicationRecord
   # não muda o status do vendedor, é um filtro à parte.
   scope :visible, -> { where(hidden_at: nil) }
 
+  # Nome livre para um novo ateliê? A unicidade é do slug, então "Ateliê da Ana"
+  # e "atelie da ana" colidem. Devolve a sugestão mais próxima quando não é.
+  def self.name_availability(name)
+    base = name.to_s.strip.parameterize
+    return { valid: false, available: false } if base.blank?
+
+    taken = where("slug = :base OR slug LIKE :prefix", base: base, prefix: "#{sanitize_sql_like(base)}-%").pluck(:slug).to_set
+    return { valid: true, available: true, slug: base } unless taken.include?(base)
+
+    suffix = (2..).find { |n| taken.exclude?("#{base}-#{n}") }
+    { valid: true, available: false, slug: base, suggestion: "#{name.to_s.strip} #{suffix}" }
+  end
+
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 
   validates :name, presence: true

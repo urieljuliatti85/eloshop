@@ -3,6 +3,12 @@ class SellerRegistrationsController < ApplicationController
   rate_limit to: 5, within: 15.minutes, only: :create,
     with: -> { redirect_to new_seller_registration_path, alert: "Tente novamente mais tarde." }
 
+  rate_limit to: 60, within: 1.minute, only: :name_availability, with: -> { head :too_many_requests }
+
+  def name_availability
+    render json: Seller.name_availability(params[:name].to_s.first(120))
+  end
+
   def new
     @seller = Seller.new
     @user = User.new(role: :seller)
