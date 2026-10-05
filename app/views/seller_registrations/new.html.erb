@@ -25,7 +25,9 @@
   <p class="mt-6 text-xs text-ink-muted">* campo obrigatório</p>
 
   <%= form_with url: seller_registration_path, class: "mt-4 flex flex-col gap-5" do |form| %>
-    <div><%= form.label :name, "Nome do ateliê *", for: "seller_name" %><%= form.text_field :name, name: "seller[name]", id: "seller_name", value: @seller.name, required: true, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+    <div data-controller="atelier-name" data-atelier-name-url-value="<%= seller_registration_name_availability_path %>">
+      <%= form.label :name, "Nome do ateliê *", for: "seller_name" %><%= form.text_field :name, name: "seller[name]", id: "seller_name", value: @seller.name, required: true, autocomplete: "off", maxlength: 120, data: { atelier_name_target: "input", action: "input->atelier-name#check" }, aria_describedby: "seller_name_status", class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+      <p id="seller_name_status" role="status" aria-live="polite" data-atelier-name-target="status" class="mt-2 text-sm"></p>
       <p class="mt-2 text-xs text-ink-muted">Quando você cria um ateliê com o nome "Ateliê da Ana", por exemplo, ele gera uma URL (ex.: https://eloshop.shop/artesaos/atelie-da-ana). Caso você queira alterar o nome do ateliê, a URL não será alterada, devido aos riscos de quebra de links e de referências feitas por mecanismos de busca, como o Google.</p>
     </div>
     <div><%= form.label :owner_full_name, "Nome completo do proprietário *", for: "seller_owner_full_name" %><%= form.text_field :owner_full_name, name: "seller[owner_full_name]", id: "seller_owner_full_name", value: @seller.owner_full_name, required: true, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>

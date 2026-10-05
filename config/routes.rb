@@ -99,6 +99,7 @@ Rails.application.routes.draw do
   get "produtos/:slug", to: "products#legacy_show", as: :legacy_product
 
   get "seja-um-artesao", to: "seller_registrations#new", as: :new_seller_registration
+  get "seja-um-artesao/nome", to: "seller_registrations#name_availability", as: :seller_registration_name_availability
   post "seja-um-artesao", to: "seller_registrations#create", as: :seller_registration
 
   scope module: :seller_portal, as: :seller, path: "painel" do

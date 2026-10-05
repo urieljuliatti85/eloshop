@@ -1,6 +1,23 @@
 require "rails_helper"
 
 RSpec.describe "Seller registrations", type: :request do
+  describe "GET name availability" do
+    it "reports a taken name and suggests a free one" do
+      Seller.create!(name: "Ateliê da Ana", owner_full_name: "Ana", cpf: "11144477735")
+
+      get seller_registration_name_availability_path(name: "atelie da ana")
+
+      body = response.parsed_body
+      expect(body).to include("available" => false, "suggestion" => "atelie da ana 2")
+    end
+
+    it "reports a free name" do
+      get seller_registration_name_availability_path(name: "Ateliê Livre")
+
+      expect(response.parsed_body).to include("available" => true, "slug" => "atelie-livre")
+    end
+  end
+
   it "tells the seller what to have ready before signing up" do
     get new_seller_registration_path
 

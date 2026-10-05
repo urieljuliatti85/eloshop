@@ -9,6 +9,21 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.approved_at
   end
 
+  test "name_availability detects slug collisions and suggests a free name" do
+    Seller.create!(name: "Ateliê da Lua", owner_full_name: "Ana Lua", cpf: "11144477735")
+
+    assert_equal({ valid: true, available: true, slug: "atelie-do-sol" }, Seller.name_availability("Ateliê do Sol"))
+
+    taken = Seller.name_availability("  atelie DA lua ")
+    assert_equal false, taken[:available]
+    assert_equal "atelie DA lua 2", taken[:suggestion]
+
+    Seller.create!(name: "Ateliê da Lua 2", owner_full_name: "Bia Lua", cpf: "52998224725")
+    assert_equal "Ateliê da Lua 3", Seller.name_availability("Ateliê da Lua")[:suggestion]
+
+    assert_equal({ valid: false, available: false }, Seller.name_availability("!!!"))
+  end
+
   test "accepted_current_terms_ids matches terms_accepted? for every seller" do
     accepted_seller = sellers(:approved)
     accepted_user = User.create!(email_address: "terms-ok-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: accepted_seller)
