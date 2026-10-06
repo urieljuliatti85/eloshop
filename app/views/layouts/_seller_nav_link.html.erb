@@ -1,22 +1,22 @@
-<%# Um item da navegação do painel. Usado na barra horizontal (lg+) e no painel
+<%# Um item da navegação do painel. Usado na barra lateral (lg+) e no painel
     do hambúrguer (celular), que só diferem no formato do alvo de toque.
-    min-h-11: no celular estes são os alvos de toque principais do painel. %>
-<% active = current_page?(path) || (label == "Mensagens" && controller_name == "order_messages") %>
+    min-h-11: no celular estes são os alvos de toque principais do painel.
+    `active` vem do layout (área atual, na cor da marca). %>
 <%# A aba da chave PIX é toda vermelha, ativa ou não: sem a chave o PIX é recusado. %>
 <% pix_tab = path == seller_pix_key_guide_path %>
 <%= link_to path,
       class: (pix_tab ?
         (mobile ?
           "flex min-h-11 items-center justify-between gap-3 border-b border-red-200 bg-red-50 px-2 py-1 text-base font-bold #{active ? 'text-red-800' : 'text-red-700'}" :
-          "inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 font-bold transition #{active ? 'bg-red-700 text-white shadow-sm' : 'bg-red-600 text-white hover:bg-red-700'}") :
+          "flex min-h-11 items-center gap-2 rounded-xl px-4 font-bold transition #{active ? 'bg-red-700 text-white shadow-sm' : 'bg-red-600 text-white hover:bg-red-700'}") :
       mobile ?
         "flex min-h-11 items-center justify-between gap-3 border-b border-brand-100 py-1 text-base font-medium #{active ? 'text-brand-600' : 'text-stone-900'}" :
-        "inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 transition #{active ? 'bg-brand-500 text-white shadow-sm' : 'text-stone-600 hover:bg-brand-50 hover:text-brand-700'}"),
+        "flex min-h-11 flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-xl px-4 py-2 transition #{active ? 'bg-brand-500 text-white shadow-sm' : 'text-stone-700 hover:bg-brand-50 hover:text-brand-700'}"),
       aria: (active ? { current: "page" } : {}) do %>
   <% if pix_tab %>
     <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-4" %>
   <% end %>
-  <%= label %>
+  <span><%= label %></span>
   <%# Passo obrigatório: sem a conta conectada não há publicação. O texto
       carrega o significado (não só a cor) para leitores de tela. %>
   <% if path == seller_mercado_pago_guide_path %>

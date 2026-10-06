@@ -19,9 +19,10 @@
         data-tour-steps-value="<%= seller_tour_steps.to_json %>"
         data-tour-complete-url-value="<%= seller_tour_completion_path %>"
         data-tour-auto-value="<%= current_seller.tour_completed_at.nil? %>">
-    <%# Navegação do painel: lista única, usada na barra horizontal (lg+) e no
-        painel do hambúrguer (celular). Antes era uma faixa com rolagem lateral,
-        e "Novo produto" ficava fora da tela sem indício de arrastar. %>
+    <%# Navegação do painel: lista única, usada na barra lateral (lg+) e no
+        painel do hambúrguer (celular). Antes era uma faixa horizontal com
+        rolagem lateral, e "Novo produto" ficava fora da tela sem indício de
+        arrastar. %>
     <% nav_items = [
          [ "Visão geral", seller_root_path ],
          [ "Primeiros passos", seller_getting_started_path ],
@@ -34,6 +35,17 @@
          [ "Dados do Ateliê", seller_atelier_path ],
          [ "Novo produto", new_seller_product_path ]
        ] %>
+    <%# A área atual é o item de caminho mais longo que prefixa a URL (assim
+        /painel/produtos/12/editar marca "Produtos" e /painel/produtos/novo
+        marca "Novo produto"); a raiz só vale por igualdade. As mensagens de um
+        pedido moram sob /pedidos, mas pertencem a "Mensagens". %>
+    <% active_nav_path = if controller_name == "order_messages"
+         seller_messages_path
+       else
+         nav_items.map(&:last)
+                  .select { |path| path == seller_root_path ? request.path == path : request.path.start_with?(path) }
+                  .max_by(&:length)
+       end %>
     <%# "Ver a loja" leva à página do próprio ateliê (/artesaos/:slug). Enquanto
         ela não existe (cadastro pendente, suspenso ou escondido), cai na loja
         geral: a página própria responderia 404 ou "indisponível". %>
@@ -136,7 +148,7 @@
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
           <% end %>
           <% nav_items.each do |label, path| %>
-            <%= render "layouts/seller_nav_link", label: label, path: path, mobile: true %>
+            <%= render "layouts/seller_nav_link", label: label, path: path, mobile: true, active: path == active_nav_path %>
           <% end %>
         </nav>
         <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 pb-5 pt-3 sm:px-6">
@@ -144,22 +156,24 @@
           <%= button_to "Sair", seller_logout_path, method: :delete, class: "w-full cursor-pointer rounded-full bg-stone-900 px-5 py-3 text-base font-semibold text-white" %>
         </div>
       </div>
-
-      <%# Telas largas: a barra horizontal de antes. %>
-      <div class="mx-auto hidden max-w-7xl lg:block">
-        <nav class="flex gap-2 overflow-x-auto px-8 pb-3 text-xs font-semibold" aria-label="Navegação do painel">
-          <% nav_items.each do |label, path| %>
-            <%= render "layouts/seller_nav_link", label: label, path: path, mobile: false %>
-          <% end %>
-        </nav>
-      </div>
     </header>
 
     <%= render "layouts/flash_message", message: flash[:notice], variant: :success %>
     <%= render "layouts/flash_message", message: flash[:alert], variant: :error %>
 
-    <main class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-      <div class="seller-content"><%= yield %></div>
-    </main>
+    <%# Telas largas: barra lateral fixa à esquerda; o conteúdo ocupa o resto. %>
+    <div class="mx-auto flex w-full max-w-7xl gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <aside class="hidden w-60 shrink-0 lg:block">
+        <nav class="sticky top-24 flex flex-col gap-1.5 text-sm font-semibold" aria-label="Navegação do painel">
+          <% nav_items.each do |label, path| %>
+            <%= render "layouts/seller_nav_link", label: label, path: path, mobile: false, active: path == active_nav_path %>
+          <% end %>
+        </nav>
+      </aside>
+
+      <main class="min-w-0 flex-1">
+        <div class="seller-content"><%= yield %></div>
+      </main>
+    </div>
   </body>
 </html>
