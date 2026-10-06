@@ -35,6 +35,13 @@ RSpec.describe "Storefront products", type: :request do
       expect(response.body).to include('<meta name="description"')
     end
 
+    it "describes the unfiltered catalog with its own text, not the site default" do
+      get products_path
+
+      expect(response.body).to include('<meta name="description" content="Compre peças artesanais feitas à mão')
+      expect(response.body).not_to include(SeoHelper::DEFAULT_DESCRIPTION)
+    end
+
     it "orders by price when the shopper picks a price sort" do
       cheap = Product.create!(seller: approved_seller, name: "Vaso barato", sku: "STORE-010", price_cents: 1_000, stock_quantity: 3, currency: "BRL", status: :active)
       expensive = Product.create!(seller: approved_seller, name: "Vaso caro", sku: "STORE-011", price_cents: 9_000, stock_quantity: 3, currency: "BRL", status: :active)
