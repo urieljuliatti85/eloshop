@@ -198,6 +198,7 @@ Rails.application.routes.draw do
 
   get "politica-de-privacidade", to: "privacy_policy#show", as: :privacy_policy
 
+  get "customers/disponibilidade-email", to: "customers#email_availability", as: :customer_email_availability
   resources :customers, only: %i[new create]
   resource :customer_session, only: %i[new create destroy]
   # Recuperação de senha do comprador (admin e vendedor usam /passwords).

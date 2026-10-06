@@ -26,4 +26,15 @@ class CustomerTest < ActiveSupport::TestCase
   test "authenticate_by returns nil with wrong password" do
     assert_nil Customer.authenticate_by(email: customers(:one).email, password: "wrong")
   end
+
+  test "email availability ignores case and spaces when looking for an existing account" do
+    assert_equal({ valid: true, available: false }, Customer.email_availability("  MARIA@Example.com "))
+    assert_equal({ valid: true, available: true }, Customer.email_availability("livre@example.com"))
+  end
+
+  test "email availability rejects what is not an e-mail address" do
+    [ "", "sem-arroba", "a@", "@b.com", "dois @example.com", "isso@nao" ].each do |value|
+      assert_equal({ valid: false, available: false }, Customer.email_availability(value), value.inspect)
+    end
+  end
 end
