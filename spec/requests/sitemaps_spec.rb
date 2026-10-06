@@ -69,6 +69,45 @@ RSpec.describe "Sitemap", type: :request do
     end
   end
 
+  describe "GET /sitemap.xml categories" do
+    def sitemap_locs
+      get sitemap_path(format: :xml)
+      Nokogiri::XML(response.body).remove_namespaces!.xpath("//url/loc").map(&:text)
+    end
+
+    def category_product(category, sku)
+      Product.create!(seller: approved_seller, category: category, name: "Peça #{sku}", sku: sku, price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+    end
+
+    it "omits a category with no public product, so crawlers do not hit an empty page" do
+      empty = Category.create!(name: "Categoria vazia sitemap", slug: "categoria-vazia-sitemap")
+      filled = Category.create!(name: "Categoria cheia sitemap", slug: "categoria-cheia-sitemap")
+      category_product(filled, "SITE-C1")
+
+      locs = sitemap_locs
+
+      expect(locs).to include(products_url(category: filled.slug))
+      expect(locs).not_to include(products_url(category: empty.slug))
+    end
+
+    it "keeps a parent category whose only products are in a subcategory" do
+      parent = Category.create!(name: "Pai sitemap", slug: "pai-sitemap")
+      child = Category.create!(name: "Filha sitemap", slug: "filha-sitemap", parent: parent)
+      category_product(child, "SITE-C2")
+
+      locs = sitemap_locs
+
+      expect(locs).to include(products_url(category: parent.slug), products_url(category: child.slug))
+    end
+
+    it "omits a category whose only product is a draft" do
+      category = Category.create!(name: "Só rascunho sitemap", slug: "so-rascunho-sitemap")
+      category_product(category, "SITE-C3").update!(status: :draft)
+
+      expect(sitemap_locs).not_to include(products_url(category: category.slug))
+    end
+  end
+
   # Crawlers exigem URL absoluta na linha Sitemap do robots.txt; o caminho
   # relativo é ignorado.
   describe "public/robots.txt" do
