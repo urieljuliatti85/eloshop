@@ -42,6 +42,15 @@ RSpec.describe "Storefront products", type: :request do
       expect(response.body).not_to include(SeoHelper::DEFAULT_DESCRIPTION)
     end
 
+    it "shares a card image and Twitter Card tags so links preview with a picture" do
+      get products_path
+
+      expect(response.body).to match(%r{<meta property="og:image" content="http://www\.example\.com/assets/og-card-[0-9a-f]+\.jpg">})
+      expect(response.body).to include('<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">')
+      expect(response.body).to include('<meta name="twitter:card" content="summary_large_image">')
+      expect(response.body).to match(%r{<meta name="twitter:image" content="http://www\.example\.com/assets/og-card-[0-9a-f]+\.jpg">})
+    end
+
     it "orders by price when the shopper picks a price sort" do
       cheap = Product.create!(seller: approved_seller, name: "Vaso barato", sku: "STORE-010", price_cents: 1_000, stock_quantity: 3, currency: "BRL", status: :active)
       expensive = Product.create!(seller: approved_seller, name: "Vaso caro", sku: "STORE-011", price_cents: 9_000, stock_quantity: 3, currency: "BRL", status: :active)
@@ -168,6 +177,17 @@ RSpec.describe "Storefront products", type: :request do
       expect(response.body).to include(%(<link rel="canonical" href="#{product_url(product.seller, product.slug)}">))
       expect(response.body).to include('<meta property="og:type" content="product">')
       expect(response.body).to include('<meta property="og:title" content="Vaso SEO | EloShop">')
+    end
+
+    it "shares the product photo, not the generic card, when the product has one" do
+      product = Product.create!(seller: approved_seller, name: "Vaso com foto", sku: "STORE-OG1", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+      product.main_image.attach(fixture_file_upload("sample.png", "image/png"))
+
+      get product_path(product.seller, product.slug)
+
+      expect(response.body).to match(%r{<meta property="og:image" content="[^"]*/rails/active_storage/blobs/[^"]+">})
+      expect(response.body).to match(%r{<meta name="twitter:image" content="[^"]*/rails/active_storage/blobs/[^"]+">})
+      expect(response.body).not_to include("og-card")
     end
 
     it "includes Product structured data (JSON-LD)" do

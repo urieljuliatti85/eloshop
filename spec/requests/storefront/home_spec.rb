@@ -75,6 +75,15 @@ RSpec.describe "Storefront home", type: :request do
       expect(banner_link["href"]).to eq(how_it_works_path(aba: "vende"))
     end
 
+    it "shares a card image and Twitter Card tags so links preview with a picture" do
+      get root_path
+
+      expect(response.body).to match(%r{<meta property="og:image" content="http://www\.example\.com/assets/og-card-[0-9a-f]+\.jpg">})
+      expect(response.body).to include('<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">')
+      expect(response.body).to include('<meta name="twitter:card" content="summary_large_image">')
+      expect(response.body).to match(%r{<meta name="twitter:image" content="http://www\.example\.com/assets/og-card-[0-9a-f]+\.jpg">})
+    end
+
     it "sets its own canonical URL" do
       get root_path
 

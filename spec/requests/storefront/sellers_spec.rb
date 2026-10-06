@@ -9,6 +9,15 @@ RSpec.describe "Storefront sellers", type: :request do
   end
 
   describe "GET /artesaos" do
+    it "shares a card image and Twitter Card tags so links preview with a picture" do
+      get sellers_path
+
+      expect(response.body).to match(%r{<meta property="og:image" content="http://www\.example\.com/assets/og-card-[0-9a-f]+\.jpg">})
+      expect(response.body).to include('<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">')
+      expect(response.body).to include('<meta name="twitter:card" content="summary_large_image">')
+      expect(response.body).to match(%r{<meta name="twitter:image" content="http://www\.example\.com/assets/og-card-[0-9a-f]+\.jpg">})
+    end
+
     it "describes the listing with its own meta description" do
       get sellers_path
 

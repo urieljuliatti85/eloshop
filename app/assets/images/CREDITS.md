@@ -8,6 +8,7 @@ catálogo do seed, que ficam em `db/seeds/images/` e têm crédito próprio em
 | --- | --- | --- |
 | `atelie-banner.jpg` | ["The carpenters workshed"](https://www.rawpixel.com/image/5939289/the-carpenters-workshed), via [Openverse](https://openverse.org) | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) — domínio público |
 | `logo.png` | Marca própria da EloShop | — |
+| `og-card.jpg` | Cartão de compartilhamento 1200x630 gerado a partir do `logo.png` (imagem das prévias de link no WhatsApp, Instagram e Facebook) | — |
 
 ## Por que CC0 aqui
 
