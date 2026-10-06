@@ -14,7 +14,6 @@ class SitemapsController < StorefrontController
     products = Product.publicly_visible
     @products = products.includes(:seller).order(:slug)
     tree = Category::Tree.load(order: :slug)
-    @categories = tree.visible
     # Só ateliês com peça publicada: uma vitrine vazia não é conteúdo que
     # valha indexar.
     @sellers = Seller.approved.where(id: products.select(:seller_id)).order(:slug)
@@ -23,6 +22,10 @@ class SitemapsController < StorefrontController
     # de home, catálogo, categorias e ateliês vem da peça mais recente que
     # eles mostram.
     latest_by_category = products.group("products.category_id").maximum("products.updated_at")
+    # Categoria sem peça pública (nela ou nas subcategorias, que a listagem
+    # também mostra) abre vazia, e o Google trata página vazia como soft 404.
+    # Ela volta ao sitemap sozinha quando ganhar uma peça.
+    @categories = tree.visible.select { |category| tree.self_and_descendant_ids(category).any? { |id| latest_by_category.key?(id) } }
     latest_by_seller = products.group("products.seller_id").maximum("products.updated_at")
     @catalog_lastmod = latest_by_category.values.max
     @category_lastmod = @categories.index_with do |category|
