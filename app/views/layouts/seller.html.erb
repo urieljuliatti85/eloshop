@@ -50,7 +50,7 @@
         ela não existe (cadastro pendente, suspenso ou escondido), cai na loja
         geral: a página própria responderia 404 ou "indisponível". %>
     <% store_path = current_seller.public_page_available? ? seller_path(current_seller) : products_path %>
-    <header class="sticky top-0 z-40 border-b border-brand-100 bg-white/90 backdrop-blur"
+    <header class="sticky top-0 z-40 border-b border-brand-100 bg-white/90 sm:backdrop-blur"
             data-controller="mobile-menu"
             data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
       <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6 lg:flex-nowrap lg:px-8">
@@ -91,12 +91,27 @@
               <% end %>
             </button>
 
-            <div class="absolute right-0 top-full z-20 mt-3 w-80 overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-lg"
+            <%# Celular: folha que sobe da base da tela, com fundo escurecido que
+                fecha ao toque; antes era um painel de 20rem preso ao sininho, que
+                fica no meio do cabeçalho e saía pela esquerda em 320-390px. Do
+                `sm` em diante volta a ser o painel flutuante sob o sininho. O
+                alvo `panel` é o conjunto (fundo + folha), então abrir/fechar
+                continua sendo só o `hidden` do account-menu. O `fixed` só é
+                relativo à tela porque o cabeçalho não tem `backdrop-blur`
+                abaixo de `sm` (backdrop-filter vira contêiner do `fixed`). %>
+            <div class="fixed inset-0 z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:z-20 sm:mt-3 sm:w-80"
                  data-account-menu-target="panel" hidden>
-              <p class="border-b border-brand-100 px-4 py-3 text-sm font-semibold text-stone-900">Notificações</p>
+              <div class="absolute inset-0 bg-stone-900/40 sm:hidden" data-action="click->account-menu#close" aria-hidden="true"></div>
+              <div class="absolute inset-x-0 bottom-0 flex max-h-[75vh] flex-col overflow-hidden rounded-t-2xl border-t border-brand-100 bg-white pb-[env(safe-area-inset-bottom)] shadow-lg sm:static sm:max-h-none sm:rounded-2xl sm:border sm:pb-0">
+              <div class="flex items-center justify-between border-b border-brand-100 px-4 py-3">
+                <p class="text-sm font-semibold text-stone-900">Notificações</p>
+                <button type="button" class="grid size-11 -my-2 -mr-2 cursor-pointer place-items-center rounded-full text-stone-500 hover:bg-brand-50 sm:hidden" aria-label="Fechar notificações" data-action="account-menu#close">
+                  <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke-linecap="round"/></svg>
+                </button>
+              </div>
 
               <% if recent_notifications.any? %>
-                <ul class="max-h-96 overflow-y-auto">
+                <ul class="min-h-0 flex-1 overflow-y-auto sm:max-h-96">
                   <% recent_notifications.each do |notification| %>
                     <li>
                       <%= button_to mark_as_read_seller_notification_path(notification), method: :patch,
@@ -112,7 +127,8 @@
               <% end %>
 
               <div class="border-t border-brand-100">
-                <%= link_to "Ver todas", seller_notifications_path, class: "block px-4 py-2.5 text-center text-sm font-medium text-brand-600 hover:bg-brand-50" %>
+                <%= link_to "Ver todas", seller_notifications_path, class: "block px-4 py-3 text-center text-sm font-medium text-brand-600 hover:bg-brand-50" %>
+              </div>
               </div>
             </div>
           </div>
