@@ -18,6 +18,12 @@ RSpec.describe "Seller registrations", type: :request do
     end
   end
 
+  it "describes the signup page with its own meta description" do
+    get new_seller_registration_path
+
+    expect(response.body).to include('<meta name="description" content="Cadastre seu ateliê na EloShop')
+  end
+
   it "tells the seller what to have ready before signing up" do
     get new_seller_registration_path
 

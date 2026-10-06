@@ -9,6 +9,12 @@ RSpec.describe "Storefront sellers", type: :request do
   end
 
   describe "GET /artesaos" do
+    it "describes the listing with its own meta description" do
+      get sellers_path
+
+      expect(response.body).to include('<meta name="description" content="Conheça os ateliês que vendem peças feitas à mão na EloShop.">')
+    end
+
     it "lists ateliers that have something for sale" do
       create_product(seller: approved_seller, name: "Peça listada")
 
@@ -244,6 +250,12 @@ RSpec.describe "Storefront sellers", type: :request do
 
     # Sem breadcrumb a página vira um beco: chega-se nela a partir de um
     # produto e não há como voltar à loja pela própria página.
+    it "describes the atelier by name in the meta description" do
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).to include(%(<meta name="description" content="Conheça as peças feitas à mão pelo ateliê #{approved_seller.name} na EloShop.">))
+    end
+
     it "renders a breadcrumb back to the storefront" do
       get seller_path(approved_seller.slug)
 
