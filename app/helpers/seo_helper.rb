@@ -1,5 +1,9 @@
 module SeoHelper
   DEFAULT_TITLE = "EloShop — Artesanato e produtos feitos à mão"
+  # Cartão de compartilhamento (1200x630, o tamanho que WhatsApp, Instagram e
+  # Facebook recomendam) usado quando a página não tem imagem própria.
+  DEFAULT_OG_IMAGE = "og-card.jpg"
+  DEFAULT_OG_IMAGE_SIZE = [ 1200, 630 ].freeze
   DEFAULT_DESCRIPTION = "Loja online de artesanato e peças feitas à mão: cerâmica, madeira, tecido e muito mais, direto de quem produz."
 
   def page_title
@@ -8,6 +12,19 @@ module SeoHelper
 
   def page_description
     content_for(:meta_description).presence || DEFAULT_DESCRIPTION
+  end
+
+  def page_og_image
+    content_for(:og_image).presence || image_url(DEFAULT_OG_IMAGE)
+  end
+
+  # Só declara as dimensões da imagem da página quando o Active Storage já as
+  # conhece; sem isso, declarar o tamanho do cartão padrão para outra imagem
+  # seria mentir ao rastreador.
+  def page_og_image_size
+    return DEFAULT_OG_IMAGE_SIZE if content_for(:og_image).blank?
+
+    [ content_for(:og_image_width).presence, content_for(:og_image_height).presence ]
   end
 
   def canonical_url
