@@ -38,7 +38,7 @@ RSpec.describe "Seller dashboard", type: :request do
 
     get seller_root_path
 
-    expect(response.body).to include("precisa ter uma chave PIX cadastrada", "Gerenciar chaves Pix", "Cadastrar chave")
+    expect(response.body).to include("precisa ter uma chave PIX cadastrada", "Gerenciar chaves Pix", "Cadastrar chave", seller_pix_key_guide_path)
   end
 
   it "opens with the tour invitation, followed by the PIX key warning above every other box" do

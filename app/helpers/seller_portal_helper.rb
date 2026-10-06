@@ -11,6 +11,9 @@ module SellerPortalHelper
       { path: seller_mercado_pago_guide_path, title: "Conta no Mercado Pago",
         body: "Conecte a conta que vai receber seus pagamentos. Sem ela não é possível publicar produtos.",
         alert: "Não se esqueça de cadastrar a sua chave pix na sua conta Mercado Pago!" },
+      { path: seller_pix_key_guide_path, title: "Cadastro da Chave Pix",
+        body: "Passo a passo, com imagens do app, para cadastrar uma chave PIX na sua conta do Mercado Pago.",
+        alert: "Sem chave PIX, o pagamento por PIX dos seus clientes é recusado." },
       { path: new_seller_product_path, title: "Novo produto",
         body: "Cadastre sua primeira peça. Você pode salvar como rascunho e terminar depois." }
     ]

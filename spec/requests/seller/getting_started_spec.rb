@@ -30,6 +30,7 @@ RSpec.describe "Seller getting started", type: :request do
       "15%"
     )
     expect(response.body).to include(edit_seller_atelier_path, seller_mercado_pago_connect_path, new_seller_product_path)
+    expect(response.body).to include("Ver o passo a passo do cadastro da chave", "Ver o passo a passo com imagens", seller_pix_key_guide_path)
   end
 
   it "tells a seller who is not approved yet how the launch commission will work" do
@@ -86,5 +87,6 @@ RSpec.describe "Seller getting started", type: :request do
     expect(response.body).to include("5 de 5 etapas concluídas")
     expect(response.body.scan("Concluído").size).to eq(5)
     expect(response.body).to include("Revisar endereço", "Ver conexão", "Gerenciar produtos", "Acompanhar pedidos")
+    expect(response.body).not_to include("Ver o passo a passo do cadastro da chave", "Ver o passo a passo com imagens")
   end
 end

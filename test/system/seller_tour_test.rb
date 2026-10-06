@@ -14,16 +14,16 @@ class SellerTourTest < ApplicationSystemTestCase
     @seller.update!(tour_completed_at: nil)
     sign_in_seller(@user)
 
-    assert_selector "[role='dialog']", text: /passo 1 de 4/i
+    assert_selector "[role='dialog']", text: /passo 1 de 5/i
     assert_text "Primeiros passos"
 
     click_button "Próximo"
-    assert_text(/passo 2 de 4/i)
+    assert_text(/passo 2 de 5/i)
     click_button "Voltar"
-    assert_text(/passo 1 de 4/i)
+    assert_text(/passo 1 de 5/i)
 
-    3.times { click_button "Próximo" }
-    assert_text(/passo 4 de 4/i)
+    4.times { click_button "Próximo" }
+    assert_text(/passo 5 de 5/i)
     click_button "Concluir"
 
     assert_no_selector "[role='dialog']"
@@ -52,7 +52,7 @@ class SellerTourTest < ApplicationSystemTestCase
     visit seller_getting_started_path
     click_button "Fazer tour pelo painel"
 
-    assert_selector "[role='dialog']", text: /passo 1 de 4/i
+    assert_selector "[role='dialog']", text: /passo 1 de 5/i
   end
 
   test "the dashboard call starts the tour again after it was completed" do
@@ -62,7 +62,7 @@ class SellerTourTest < ApplicationSystemTestCase
 
     click_button "Refazer o tour"
 
-    assert_selector "[role='dialog']", text: /passo 1 de 4/i
+    assert_selector "[role='dialog']", text: /passo 1 de 5/i
   end
 
   test "opens the mobile menu to highlight the links and closes it afterwards" do
@@ -71,10 +71,10 @@ class SellerTourTest < ApplicationSystemTestCase
     @seller.update!(tour_completed_at: nil)
     sign_in_seller(@user)
 
-    assert_selector "[role='dialog']", text: /passo 1 de 4/i
+    assert_selector "[role='dialog']", text: /passo 1 de 5/i
     assert_selector "#seller-nav-panel", visible: :visible
 
-    4.times { |i| click_button(i == 3 ? "Concluir" : "Próximo") }
+    5.times { |i| click_button(i == 4 ? "Concluir" : "Próximo") }
 
     assert_no_selector "[role='dialog']"
     assert_no_selector "#seller-nav-panel", visible: :visible
