@@ -144,7 +144,7 @@ export default class extends Controller {
   }
 
   visibleLink(path) {
-    return [...document.querySelectorAll(`header a[href="${path}"]`)].find((link) => link.offsetParent !== null)
+    return [...document.querySelectorAll(`header a[href="${path}"], aside a[href="${path}"]`)].find((link) => link.offsetParent !== null)
   }
 
   // Abre/fecha o painel do hambúrguer direto no DOM, como o `mobile-menu`
