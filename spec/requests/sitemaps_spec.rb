@@ -78,4 +78,14 @@ RSpec.describe "Sitemap", type: :request do
       expect(sitemap_lines.map(&:strip)).to eq([ "Sitemap: https://eloshop.shop/sitemap.xml" ])
     end
   end
+
+  # O Google exige que este arquivo continue no ar para manter a propriedade
+  # verificada no Search Console; apagá-lo derruba a verificação.
+  describe "Google Search Console verification file" do
+    it "stays in public/ with the content Google expects" do
+      file = Rails.public_path.join("googlec5fa6aba7c229f86.html")
+
+      expect(file.read.strip).to eq("google-site-verification: googlec5fa6aba7c229f86.html")
+    end
+  end
 end
