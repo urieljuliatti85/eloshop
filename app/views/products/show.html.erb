@@ -1,5 +1,5 @@
-<% content_for :title, "#{@product.name} | EloShop" %>
-<% content_for :meta_description, truncate(@product.description.to_s.presence || "#{@product.name}, artesanal, feito à mão na EloShop.", length: 160) %>
+<% content_for :title, product_page_title(@product) %>
+<% content_for :meta_description, product_meta_description(@product) %>
 <% content_for :canonical_url, product_url(@product.seller, @product.slug) %>
 <% content_for :og_type, "product" %>
 <% if @product.main_image.attached? %>

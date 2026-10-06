@@ -27,6 +27,23 @@ module SeoHelper
     [ content_for(:og_image_width).presence, content_for(:og_image_height).presence ]
   end
 
+  # Nome digitado pelo vendedor pode trazer espaços duplos ou nas pontas; no
+  # <title> e nos resumos de busca isso aparece como buraco no texto.
+  def product_page_title(product)
+    "#{product.name.to_s.squish} | EloShop"
+  end
+
+  # Usa a descrição escrita pelo vendedor (sem quebras de linha, que o Google
+  # mostraria como espaços soltos). Sem ela, monta um resumo com o que é
+  # sempre verdade: nome, ateliê e preço.
+  def product_meta_description(product)
+    text = product.description.to_s.squish.presence ||
+      "#{product.name.to_s.squish}, peça artesanal feita à mão pelo ateliê #{product.seller.name}. " \
+      "#{format_price(product.starting_price_cents)} na EloShop."
+
+    truncate(text, length: 160)
+  end
+
   def canonical_url
     content_for(:canonical_url).presence || request.original_url
   end
