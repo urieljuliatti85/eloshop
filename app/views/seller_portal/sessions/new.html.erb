@@ -1,4 +1,10 @@
 <% content_for :title, "Entre no seu ateliê: acesse o painel de vendas | EloShop" %>
+<%# O login do ateliê não deve aparecer no Google nem disputar posição com
+    /seja-um-artesao. Não bloqueie /painel no robots.txt: o robô precisa abrir a
+    página para ler o noindex. %>
+<% content_for :head do %>
+  <meta name="robots" content="noindex">
+<% end %>
 <div class="mx-auto w-full max-w-md">
   <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Painel do Artesão</p>
   <h1 class="mb-8 mt-2 text-2xl font-bold text-ink">Entrar no Ateliê</h1>

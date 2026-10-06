@@ -13,6 +13,20 @@ RSpec.describe "Seller sessions", type: :request do
       expect(response.body).to include("Entrar no Ateliê")
     end
 
+    it "asks search engines not to index the login page" do
+      get seller_login_path
+
+      expect(response.body).to include('<meta name="robots" content="noindex">')
+    end
+
+    # Com Disallow, o robô nunca abriria a página e não veria o noindex; a URL
+    # ainda poderia aparecer no Google, só que sem descrição.
+    it "is not blocked by robots.txt, so crawlers can read the noindex" do
+      disallowed = Rails.public_path.join("robots.txt").read.lines.grep(/\ADisallow:/i).map { |line| line.split(":", 2).last.strip }
+
+      expect(disallowed.none? { |path| seller_login_path.start_with?(path) }).to be(true)
+    end
+
     it "has a title that invites the seller to sign in" do
       get seller_login_path
 
