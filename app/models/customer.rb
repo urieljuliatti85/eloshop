@@ -14,4 +14,15 @@ class Customer < ApplicationRecord
 
   validates :name, presence: true
   validates :email, presence: true, uniqueness: true
+
+  # Resposta da conferência de e-mail do cadastro, enquanto o comprador digita.
+  # Só diz se o endereço serve e está livre; a unicidade (`validates` + índice)
+  # continua sendo a validação final no `create`.
+  def self.email_availability(raw_email)
+    email = normalize_value_for(:email, raw_email.to_s)
+    # A regex padrão aceita "a@b"; um e-mail de cadastro precisa de domínio com ponto.
+    return { valid: false, available: false } unless email.match?(URI::MailTo::EMAIL_REGEXP) && email.split("@").last.include?(".")
+
+    { valid: true, available: !exists?(email: email) }
+  end
 end

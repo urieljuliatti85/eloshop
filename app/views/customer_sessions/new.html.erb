@@ -1,5 +1,6 @@
 <div class="mx-auto w-full max-w-md">
-  <h1 class="mb-8 text-2xl font-bold text-ink">Entrar</h1>
+  <h1 class="mb-4 text-2xl font-bold text-ink">Quero comprar</h1>
+  <%= render "customers/buy_tabs", active: :login %>
 
   <%= form_with url: customer_session_path, class: "flex flex-col gap-4" do |form| %>
     <div>
@@ -17,9 +18,5 @@
 
   <p class="mt-4 text-sm text-ink-muted">
     <%= link_to "Esqueci minha senha", new_customer_password_path, class: "font-medium text-brand-600 hover:underline" %>
-  </p>
-
-  <p class="mt-6 text-sm text-ink-muted">
-    Ainda não tem conta? <%= link_to "Criar conta", new_customer_path, class: "font-medium text-brand-600 hover:underline" %>
   </p>
 </div>
