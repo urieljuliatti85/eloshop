@@ -29,4 +29,14 @@ RSpec.describe "Sitemap", type: :request do
       expect(response.body).to include(products_url)
     end
   end
+
+  # Crawlers exigem URL absoluta na linha Sitemap do robots.txt; o caminho
+  # relativo é ignorado.
+  describe "public/robots.txt" do
+    it "points to the sitemap with its full URL" do
+      sitemap_lines = Rails.public_path.join("robots.txt").read.lines.grep(/\ASitemap:/i)
+
+      expect(sitemap_lines.map(&:strip)).to eq([ "Sitemap: https://eloshop.shop/sitemap.xml" ])
+    end
+  end
 end
