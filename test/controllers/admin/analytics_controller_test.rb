@@ -80,6 +80,8 @@ class Admin::AnalyticsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".admin-stat-value", text: "18"
     assert_select ".admin-stat-value", text: "45"
     assert_select "td", text: "Catálogo"
+    assert_select "h2", text: "Origem do tráfego"
+    assert_select "td", text: "Acesso direto"
     assert_not_includes response.body, "service-account-secret"
   end
 
@@ -110,6 +112,9 @@ class Admin::AnalyticsControllerTest < ActionDispatch::IntegrationTest
       ],
       top_pages: [
         Analytics::GoogleAnalyticsReport::PageRow.new(path: "/catalogo", title: "Catálogo", page_views: 20, active_users: 7)
+      ],
+      sources: [
+        Analytics::GoogleAnalyticsReport::SourceRow.new(source: "(direct)", medium: "(none)", sessions: 9, active_users: 6)
       ],
       fetched_at: Time.zone.parse("2026-09-22 12:00:00")
     )
