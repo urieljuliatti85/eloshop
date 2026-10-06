@@ -97,5 +97,34 @@
         <p class="m-5 admin-empty-state">Ainda não há páginas registradas no período.</p>
       <% end %>
     </section>
+    <section class="admin-card overflow-hidden" aria-labelledby="analytics-sources-title">
+      <div class="admin-card-header">
+        <div>
+          <p class="admin-section-label">Aquisição</p>
+          <h2 id="analytics-sources-title" class="mt-1">Origem do tráfego</h2>
+        </div>
+      </div>
+      <% if @analytics_snapshot.sources.any? %>
+        <div class="overflow-x-auto">
+          <table>
+            <thead><tr><th>Origem</th><th>Meio</th><th>Sessões</th><th>Usuários ativos</th></tr></thead>
+            <tbody>
+              <% @analytics_snapshot.sources.each do |source| %>
+                <tr>
+                  <td class="font-semibold text-slate-900"><%= source.source == "(direct)" ? "Acesso direto" : source.source %></td>
+                  <td><code class="text-xs"><%= source.medium == "(none)" ? "—" : source.medium %></code></td>
+                  <td><%= number_with_delimiter(source.sessions) %></td>
+                  <td><%= number_with_delimiter(source.active_users) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <p class="px-5 pb-5 text-xs leading-5 text-slate-500">Só conta quem aceitou o banner de cookies. Links abertos pelo WhatsApp e por apps costumam aparecer como acesso direto.</p>
+      <% else %>
+        <p class="m-5 admin-empty-state">Ainda não há sessões registradas no período.</p>
+      <% end %>
+    </section>
+
   <% end %>
 </div>

@@ -7,9 +7,10 @@ module Analytics
     CACHE_TTL = 15.minutes
     REPORT_DAYS = 30
 
-    Snapshot = Data.define(:active_users, :sessions, :page_views, :daily, :top_pages, :fetched_at)
+    Snapshot = Data.define(:active_users, :sessions, :page_views, :daily, :top_pages, :sources, :fetched_at)
     DailyPoint = Data.define(:date, :active_users, :page_views)
     PageRow = Data.define(:path, :title, :page_views, :active_users)
+    SourceRow = Data.define(:source, :medium, :sessions, :active_users)
 
     def initialize(
       property_id: ENV["GOOGLE_ANALYTICS_PROPERTY_ID"],
@@ -48,7 +49,7 @@ module Analytics
     attr_reader :property_id, :credentials_json
 
     def cache_key
-      "admin/google_analytics/v1/#{property_id}/#{REPORT_DAYS}days"
+      "admin/google_analytics/v2/#{property_id}/#{REPORT_DAYS}days"
     end
 
     def valid_credentials?
@@ -86,6 +87,12 @@ module Analytics
         order_bys: [ { metric: { metric_name: "screenPageViews" }, desc: true } ],
         limit: 10
       )
+      sources = run_report(
+        dimensions: %w[sessionSource sessionMedium],
+        metrics: %w[sessions activeUsers],
+        order_bys: [ { metric: { metric_name: "sessions" }, desc: true } ],
+        limit: 10
+      )
 
       summary_values = metric_values(summary.rows.first, 3)
       Snapshot.new(
@@ -94,6 +101,7 @@ module Analytics
         page_views: summary_values[2],
         daily: daily_rows(daily),
         top_pages: page_rows(pages),
+        sources: source_rows(sources),
         fetched_at: Time.current
       )
     end
@@ -129,6 +137,18 @@ module Analytics
           path: row.dimension_values[0].value,
           title: row.dimension_values[1].value.presence || row.dimension_values[0].value,
           page_views: values[0],
+          active_users: values[1]
+        )
+      end
+    end
+
+    def source_rows(response)
+      response.rows.map do |row|
+        values = metric_values(row, 2)
+        SourceRow.new(
+          source: row.dimension_values[0].value,
+          medium: row.dimension_values[1].value,
+          sessions: values[0],
           active_users: values[1]
         )
       end
