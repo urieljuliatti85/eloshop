@@ -190,6 +190,33 @@ RSpec.describe "Storefront products", type: :request do
       expect(response.body).not_to include("og-card")
     end
 
+    it "collapses stray spaces in the product name inside the title" do
+      product = Product.create!(seller: approved_seller, name: "  Vaso   azul ", sku: "STORE-SEO2", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+
+      get product_path(product.seller, product.slug)
+
+      expect(response.body).to include("<title>Vaso azul | EloShop</title>")
+    end
+
+    it "builds a fallback description from name, atelier and price when the product has none" do
+      product = Product.create!(seller: approved_seller, name: "Vaso sem texto", sku: "STORE-SEO3", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+
+      get product_path(product.seller, product.slug)
+
+      expect(response.body).to include(%(<meta name="description" content="Vaso sem texto, peça artesanal feita à mão pelo ateliê #{approved_seller.name}. R$ 89,90 na EloShop.">))
+    end
+
+    it "keeps the seller's own description, flattened to one line and capped at 160 characters" do
+      product = Product.create!(seller: approved_seller, name: "Vaso com texto", sku: "STORE-SEO4", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active,
+        description: "Primeira linha.\n\nSegunda linha. #{'Texto longo. ' * 30}")
+
+      get product_path(product.seller, product.slug)
+
+      content = response.body[/<meta name="description" content="([^"]*)"/, 1]
+      expect(content).to start_with("Primeira linha. Segunda linha.")
+      expect(content.length).to be <= 160
+    end
+
     it "includes Product structured data (JSON-LD)" do
       product = Product.create!(seller: approved_seller, name: "Vaso JSON-LD", sku: "STORE-007", price_cents: 12_345, stock_quantity: 3, currency: "BRL", status: :active)
 
