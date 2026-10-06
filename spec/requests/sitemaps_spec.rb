@@ -30,6 +30,45 @@ RSpec.describe "Sitemap", type: :request do
     end
   end
 
+  describe "GET /sitemap.xml pages and lastmod" do
+    def sitemap_entries
+      get sitemap_path(format: :xml)
+      Nokogiri::XML(response.body).remove_namespaces!.xpath("//url").to_h do |url|
+        [ url.at_xpath("loc").text, url.at_xpath("lastmod")&.text ]
+      end
+    end
+
+    it "lists the public static pages" do
+      entries = sitemap_entries
+
+      expect(entries.keys).to include(how_it_works_url, new_seller_registration_url, privacy_policy_url)
+    end
+
+    it "gives every URL a lastmod" do
+      Product.create!(seller: approved_seller, name: "Vaso lastmod", sku: "SITE-LM1", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+
+      entries = sitemap_entries
+
+      expect(entries).not_to be_empty
+      expect(entries.select { |_loc, lastmod| lastmod.blank? }).to be_empty
+    end
+
+    it "dates the storefront pages by the most recently changed product they show" do
+      older = Product.create!(seller: approved_seller, name: "Vaso antigo", sku: "SITE-LM2", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+      newer = Product.create!(seller: approved_seller, name: "Vaso novo", sku: "SITE-LM3", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+      older.update_columns(updated_at: Time.utc(2026, 1, 1, 12))
+      newer.update_columns(updated_at: Time.utc(2026, 3, 1, 12))
+
+      entries = sitemap_entries
+
+      # O fuso do app é o de Brasília, então comparamos o instante, não o texto.
+      expect(Time.iso8601(entries[root_url])).to eq(Time.utc(2026, 3, 1, 12))
+      expect(Time.iso8601(entries[products_url])).to eq(Time.utc(2026, 3, 1, 12))
+      expect(Time.iso8601(entries[seller_url(approved_seller.slug)])).to eq(Time.utc(2026, 3, 1, 12))
+      expect(Time.iso8601(entries[product_url(older.seller, older.slug)])).to eq(Time.utc(2026, 1, 1, 12))
+    end
+  end
+
   # Crawlers exigem URL absoluta na linha Sitemap do robots.txt; o caminho
   # relativo é ignorado.
   describe "public/robots.txt" do
