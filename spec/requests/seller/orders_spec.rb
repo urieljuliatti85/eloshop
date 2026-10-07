@@ -102,6 +102,19 @@ RSpec.describe "Seller orders", type: :request do
       expect(response.body).to include("Produção iniciada em")
     end
 
+    it "tells the buyer they can withdraw until production starts, and stops once it has started" do
+      order = confirmed_custom_order
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+
+      get order_path(order)
+      expect(response.body).to include("desistir desta compra até o ateliê iniciar a produção")
+
+      patch start_production_seller_order_path(order)
+      get order_path(order)
+      expect(response.body).not_to include("desistir desta compra até o ateliê iniciar a produção")
+      expect(response.body).to include("Produção iniciada em")
+    end
+
     it "cannot be undone or repeated, and keeps the original timestamp" do
       order = confirmed_custom_order
       patch start_production_seller_order_path(order)
