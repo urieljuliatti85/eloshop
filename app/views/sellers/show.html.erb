@@ -2,6 +2,10 @@
 <% content_for :meta_description, "Conheça as peças feitas à mão pelo ateliê #{@seller.name} na EloShop." %>
 <% content_for :canonical_url, seller_url(@seller.slug) %>
 
+<% content_for :structured_data do %>
+  <%= tag.script seller_breadcrumb_structured_data(@seller), type: "application/ld+json" %>
+<% end %>
+
 <div class="w-full">
   <%# Mesmo breadcrumb da PDP: o ateliê é alcançado a partir de um produto, e
       sem ele a página vira um beco — não há como voltar à loja pela própria

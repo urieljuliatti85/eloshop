@@ -9,6 +9,12 @@ RSpec.describe "Contacts", type: :request do
 
       expect(response).to have_http_status(:ok)
     end
+
+    it "has its own title instead of the site default" do
+      get new_contact_path
+
+      expect(response.body).to include("<title>Fale com a gente | EloShop</title>")
+    end
   end
 
   describe "POST /contact" do
