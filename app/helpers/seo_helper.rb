@@ -136,17 +136,43 @@ module SeoHelper
     breadcrumb_structured_data(seller.name, seller_url(seller.slug))
   end
 
+  # Rastro da categoria na loja: Início → Loja → ancestrais → categoria. Cada
+  # nível aponta para a listagem filtrada que o sitemap já publica.
+  def category_breadcrumb_structured_data(category, tree)
+    path = [ category ]
+    while (parent = tree.parent(path.first))
+      path.unshift(parent)
+    end
+
+    trail = path.map { |c| [ c.name, products_url(category: c.slug) ] }
+    breadcrumb_structured_data(trail)
+  end
+
+  # JSON-LD da vitrine (schema.org/ItemList) com as peças da página atual.
+  def catalog_item_list_structured_data(products)
+    data = {
+      "@context" => "https://schema.org/",
+      "@type" => "ItemList",
+      "itemListElement" => products.each_with_index.map do |product, index|
+        { "@type" => "ListItem", "position" => index + 1, "url" => product_url(product.seller, product.slug) }
+      end
+    }
+
+    json_escape(data.to_json).html_safe
+  end
+
   private
 
-  def breadcrumb_structured_data(leaf_name, leaf_url)
+  def breadcrumb_structured_data(leaf_name_or_trail, leaf_url = nil)
+    trail = leaf_name_or_trail.is_a?(Array) ? leaf_name_or_trail : [ [ leaf_name_or_trail, leaf_url ] ]
+    items = [ [ "Início", root_url ], [ "Loja", products_url ] ] + trail
+
     data = {
       "@context" => "https://schema.org/",
       "@type" => "BreadcrumbList",
-      "itemListElement" => [
-        { "@type" => "ListItem", "position" => 1, "name" => "Início", "item" => root_url },
-        { "@type" => "ListItem", "position" => 2, "name" => "Loja", "item" => products_url },
-        { "@type" => "ListItem", "position" => 3, "name" => leaf_name, "item" => leaf_url }
-      ]
+      "itemListElement" => items.each_with_index.map do |(name, url), index|
+        { "@type" => "ListItem", "position" => index + 1, "name" => name, "item" => url }
+      end
     }
 
     json_escape(data.to_json).html_safe
