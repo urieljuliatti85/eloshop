@@ -183,6 +183,14 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(response.body).to include(product.name)
     end
 
+    it "publishes breadcrumb structured data for the atelier" do
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).to include("application/ld+json")
+      expect(response.body).to include("BreadcrumbList")
+      expect(response.body).to include(seller_url(approved_seller.slug))
+    end
+
     it "omits products that are not publicly visible" do
       draft = create_product(seller: approved_seller, name: "Rascunho oculto", status: :draft)
 

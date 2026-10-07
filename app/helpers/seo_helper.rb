@@ -128,13 +128,24 @@ module SeoHelper
   # JSON-LD do rastro de navegação (schema.org/BreadcrumbList) do produto,
   # espelhando o breadcrumb visual em app/views/products/show.html.erb.
   def product_breadcrumb_structured_data(product)
+    breadcrumb_structured_data(product.name, product_url(product.seller, product.slug))
+  end
+
+  # Mesmo rastro para a página do ateliê (app/views/sellers/show.html.erb).
+  def seller_breadcrumb_structured_data(seller)
+    breadcrumb_structured_data(seller.name, seller_url(seller.slug))
+  end
+
+  private
+
+  def breadcrumb_structured_data(leaf_name, leaf_url)
     data = {
       "@context" => "https://schema.org/",
       "@type" => "BreadcrumbList",
       "itemListElement" => [
         { "@type" => "ListItem", "position" => 1, "name" => "Início", "item" => root_url },
         { "@type" => "ListItem", "position" => 2, "name" => "Loja", "item" => products_url },
-        { "@type" => "ListItem", "position" => 3, "name" => product.name, "item" => product_url(product.seller, product.slug) }
+        { "@type" => "ListItem", "position" => 3, "name" => leaf_name, "item" => leaf_url }
       ]
     }
 
