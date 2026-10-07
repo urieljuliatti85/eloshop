@@ -135,6 +135,30 @@ RSpec.describe "Storefront products", type: :request do
 
       expect(response.body).to include("<title>#{category.breadcrumb_name} | EloShop")
     end
+
+    it "publishes an ItemList and the category breadcrumb as structured data" do
+      parent = Category.create!(name: "Casa SEO")
+      category = parent.children.create!(name: "Cozinha SEO")
+      product = Product.create!(seller: approved_seller, name: "Tigela categoria seo", sku: "STORE-006", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active, category: category)
+
+      get products_path(category: category.slug)
+
+      blocks = response.body.scan(%r{<script[^>]*application/ld\+json[^>]*>(.*?)</script>}m).flatten.map { |json| JSON.parse(json) }
+      list = blocks.find { |b| b["@type"] == "ItemList" }
+      crumbs = blocks.find { |b| b["@type"] == "BreadcrumbList" }
+
+      expect(list["itemListElement"].map { |i| i["url"] }).to eq([ product_url(product.seller, product.slug) ])
+      expect(crumbs["itemListElement"].map { |i| i["name"] }).to eq([ "Início", "Loja", "Casa SEO", "Cozinha SEO" ])
+    end
+
+    it "omits the breadcrumb outside a category" do
+      Product.create!(seller: approved_seller, name: "Peça sem categoria", sku: "STORE-007", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+
+      get products_path
+
+      expect(response.body).to include("ItemList")
+      expect(response.body).not_to include("BreadcrumbList")
+    end
   end
 
   describe "GET /produtos/:slug" do

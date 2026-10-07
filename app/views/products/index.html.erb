@@ -27,6 +27,14 @@
 <% content_for :title, index_title %>
 <% content_for :meta_description, index_description %>
 <% content_for :canonical_url, products_url(category: @category&.slug) %>
+<% content_for :structured_data do %>
+  <% if @category %>
+    <%= tag.script category_breadcrumb_structured_data(@category, @category_tree), type: "application/ld+json" %>
+  <% end %>
+  <% if @products.any? %>
+    <%= tag.script catalog_item_list_structured_data(@products), type: "application/ld+json" %>
+  <% end %>
+<% end %>
 <% content_for :body_class, "products-background" %>
 
 <div class="w-full">
