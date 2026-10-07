@@ -147,6 +147,14 @@
             <% if payment.processor_fee_cents.present? %>
               <div class="flex justify-between gap-4"><dt class="text-slate-500">Tarifa Mercado Pago</dt><dd class="font-semibold text-slate-800"><%= format_price(payment.processor_fee_cents) %></dd></div>
             <% end %>
+            <% if @release_date %>
+              <div class="flex justify-between gap-4">
+                <dt class="text-slate-500">Saldo para reembolso</dt>
+                <dd class="font-semibold text-slate-800">
+                  <%= @release_date.future? ? "Previsto para #{l(@release_date.in_time_zone.to_date)}" : "Já liberado em #{l(@release_date.in_time_zone.to_date)}" %>
+                </dd>
+              </div>
+            <% end %>
             <% if payment.refunded_amount_cents.positive? %>
               <div class="flex justify-between gap-4"><dt class="text-slate-500">Reembolsado</dt><dd class="font-semibold text-rose-700">− <%= format_price(payment.refunded_amount_cents) %></dd></div>
               <div class="flex justify-between gap-4"><dt class="text-slate-500">Comissão devolvida</dt><dd class="font-semibold text-slate-800"><%= format_price(payment.application_fee_refunded_cents) %></dd></div>

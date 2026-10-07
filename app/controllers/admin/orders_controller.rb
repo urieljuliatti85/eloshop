@@ -27,6 +27,7 @@ module Admin
       @order = Order.includes(:customer, :coupon, :payments, seller_orders: %i[seller shipment],
         order_items: { product: :main_image_attachment }).find(params[:id])
       @order_events = @order.order_events.chronological
+      @release_date = release_date_for(@order.payments.max_by(&:created_at))
     end
 
     def refund
@@ -56,6 +57,8 @@ module Admin
       end
     rescue Payments::Refund::InvalidRefund, ActiveRecord::RecordNotFound => e
       redirect_to admin_order_path(params[:id]), alert: e.message
+    rescue Gateways::MercadoPago::InsufficientFunds => e
+      redirect_to admin_order_path(params[:id]), alert: insufficient_funds_message(e.release_date)
     rescue Gateways::MercadoPago::RequestRejected => e
       redirect_to admin_order_path(params[:id]), alert: "O Mercado Pago recusou o reembolso e nada foi devolvido (#{e.message})."
     rescue Gateways::MercadoPago::RequestFailed, Gateways::MercadoPago::ConfigurationError => e
@@ -79,6 +82,35 @@ module Admin
     end
 
     private
+
+    # Previsão do Mercado Pago de quando o dinheiro fica disponível para um
+    # reembolso. É só informação: se a consulta falhar, a página abre sem ela,
+    # e o resultado fica em cache para o admin abrir o pedido sem esperar o
+    # provedor a cada visita.
+    def release_date_for(payment)
+      return unless payment&.gateway == "mercado_pago" && (payment.paid? || payment.partially_refunded?)
+
+      Rails.cache.fetch([ "mercado_pago_release_date", payment.id ], expires_in: 1.hour, skip_nil: true) do
+        Gateways::MercadoPago.new.reconciliation_details(external_id: payment.external_id)[:money_release_date]
+      end
+    rescue Gateways::MercadoPago::ConfigurationError, Gateways::MercadoPago::RequestFailed => e
+      Rails.event.notify(
+        "admin.order.release_date_lookup_failed",
+        payment_id: payment.id,
+        error_class: e.class.name
+      )
+      nil
+    end
+
+    def insufficient_funds_message(release_date)
+      base = "O Mercado Pago não devolveu o dinheiro porque a conta do artesão ainda não tem saldo disponível. Nada foi devolvido."
+
+      if release_date&.future?
+        "#{base} A liberação está prevista para #{I18n.l(release_date.in_time_zone.to_date)}; tente o reembolso de novo depois dessa data."
+      else
+        "#{base} Confira a data de liberação no painel do Mercado Pago e tente de novo depois dela."
+      end
+    end
 
     def apply_filters(orders)
       orders = orders.where(id: params[:order_id]) if params[:order_id].present?
