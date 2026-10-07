@@ -103,12 +103,14 @@ module Admin
     end
 
     def insufficient_funds_message(release_date)
-      base = "O Mercado Pago não devolveu o dinheiro porque a conta do artesão ainda não tem saldo disponível. Nada foi devolvido."
+      base = "O Mercado Pago não devolveu o dinheiro porque a conta do artesão não tem saldo disponível para o reembolso. Nada foi devolvido."
 
       if release_date&.future?
-        "#{base} A liberação está prevista para #{I18n.l(release_date.in_time_zone.to_date)}; tente o reembolso de novo depois dessa data."
+        "#{base} O dinheiro deste pagamento só será liberado em #{I18n.l(release_date.in_time_zone.to_date)}; tente de novo depois dessa data."
+      elsif release_date
+        "#{base} O dinheiro deste pagamento já foi liberado em #{I18n.l(release_date.in_time_zone.to_date)}, mas o saldo atual da conta é menor que o valor a devolver (por exemplo, se o artesão já sacou ou transferiu). Confira o saldo no painel do Mercado Pago, coloque saldo na conta e tente de novo."
       else
-        "#{base} Confira a data de liberação no painel do Mercado Pago e tente de novo depois dela."
+        "#{base} Confira o saldo e a data de liberação no painel do Mercado Pago e tente de novo."
       end
     end
 

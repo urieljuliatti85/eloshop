@@ -278,7 +278,7 @@ RSpec.describe "Admin orders", type: :request do
 
       get admin_order_path(order)
 
-      expect(response.body).to include("Saldo para reembolso", "Previsto para #{I18n.l(release.to_date)}")
+      expect(response.body).to include("Liberação do dinheiro", "Prevista para #{I18n.l(release.to_date)}")
     end
 
     it "says the balance was already released when the date has passed" do
@@ -288,7 +288,7 @@ RSpec.describe "Admin orders", type: :request do
 
       get admin_order_path(order)
 
-      expect(response.body).to include("Já liberado em #{I18n.l(release.to_date)}")
+      expect(response.body).to include("Liberado em #{I18n.l(release.to_date)}")
     end
 
     it "still opens the order when Mercado Pago does not answer" do
@@ -298,7 +298,7 @@ RSpec.describe "Admin orders", type: :request do
       get admin_order_path(order)
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).not_to include("Saldo para reembolso")
+      expect(response.body).not_to include("Liberação do dinheiro")
     end
 
     it "does not ask Mercado Pago about payments that are not paid" do
@@ -308,7 +308,7 @@ RSpec.describe "Admin orders", type: :request do
       get admin_order_path(order)
 
       expect(gateway).not_to have_received(:reconciliation_details)
-      expect(response.body).not_to include("Saldo para reembolso")
+      expect(response.body).not_to include("Liberação do dinheiro")
     end
 
     it "reuses the cached date on the next visit" do
@@ -386,17 +386,26 @@ RSpec.describe "Admin orders", type: :request do
 
         post refund_admin_order_path(order), params: { amount: "5,00", idempotency_key: "gw-no-balance" }
 
-        expect(flash[:alert]).to include("ainda não tem saldo disponível", "Nada foi devolvido", I18n.l(release.to_date))
+        expect(flash[:alert]).to include("não tem saldo disponível", "Nada foi devolvido", "só será liberado em #{I18n.l(release.to_date)}")
         expect(flash[:alert]).not_to include("bad_request")
         expect(PaymentRefund.find_by!(idempotency_key: "gw-no-balance")).to be_failed
       end
 
-      it "points to the Mercado Pago panel when no future release date is known" do
+      it "says the money was released but the current balance is lower when the date has passed" do
+        release = 2.days.ago
+        allow(gateway).to receive(:refund).and_raise(Gateways::MercadoPago::InsufficientFunds.new("Mercado Pago respondeu 400", release_date: release))
+
+        post refund_admin_order_path(order), params: { amount: "5,00", idempotency_key: "gw-no-balance-3" }
+
+        expect(flash[:alert]).to include("já foi liberado em #{I18n.l(release.to_date)}", "saldo atual da conta é menor", "sacou ou transferiu")
+      end
+
+      it "points to the Mercado Pago panel when no release date is known" do
         allow(gateway).to receive(:refund).and_raise(Gateways::MercadoPago::InsufficientFunds, "Mercado Pago respondeu 400")
 
         post refund_admin_order_path(order), params: { amount: "5,00", idempotency_key: "gw-no-balance-2" }
 
-        expect(flash[:alert]).to include("ainda não tem saldo disponível", "painel do Mercado Pago")
+        expect(flash[:alert]).to include("não tem saldo disponível", "painel do Mercado Pago")
       end
 
       it "asks the admin to check Mercado Pago after an ambiguous failure" do
