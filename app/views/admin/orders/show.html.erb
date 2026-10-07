@@ -149,9 +149,9 @@
             <% end %>
             <% if @release_date %>
               <div class="flex justify-between gap-4">
-                <dt class="text-slate-500">Saldo para reembolso</dt>
+                <dt class="text-slate-500">Liberação do dinheiro</dt>
                 <dd class="font-semibold text-slate-800">
-                  <%= @release_date.future? ? "Previsto para #{l(@release_date.in_time_zone.to_date)}" : "Já liberado em #{l(@release_date.in_time_zone.to_date)}" %>
+                  <%= @release_date.future? ? "Prevista para #{l(@release_date.in_time_zone.to_date)}" : "Liberado em #{l(@release_date.in_time_zone.to_date)}" %>
                 </dd>
               </div>
             <% end %>
