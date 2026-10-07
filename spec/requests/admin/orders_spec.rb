@@ -259,6 +259,68 @@ RSpec.describe "Admin orders", type: :request do
     end
   end
 
+  describe "GET /admin/orders/:id refund balance release date" do
+    let(:gateway) { instance_double(Gateways::MercadoPago) }
+
+    def paid_mercado_pago_payment(status: :paid)
+      order.payments.create!(gateway: "mercado_pago", external_id: "mp-release-#{SecureRandom.hex(3)}", status: status, amount_cents: 1500, application_fee_cents: 150)
+    end
+
+    before do
+      allow(Gateways::MercadoPago).to receive(:new).and_return(gateway)
+      post session_path, params: { email_address: user.email_address, password: "password" }
+    end
+
+    it "shows the forecast release date for a paid Mercado Pago payment" do
+      paid_mercado_pago_payment
+      release = 5.days.from_now
+      allow(gateway).to receive(:reconciliation_details).and_return(money_release_date: release, processor_fee_cents: 0)
+
+      get admin_order_path(order)
+
+      expect(response.body).to include("Saldo para reembolso", "Previsto para #{I18n.l(release.to_date)}")
+    end
+
+    it "says the balance was already released when the date has passed" do
+      paid_mercado_pago_payment
+      release = 2.days.ago
+      allow(gateway).to receive(:reconciliation_details).and_return(money_release_date: release, processor_fee_cents: 0)
+
+      get admin_order_path(order)
+
+      expect(response.body).to include("Já liberado em #{I18n.l(release.to_date)}")
+    end
+
+    it "still opens the order when Mercado Pago does not answer" do
+      paid_mercado_pago_payment
+      allow(gateway).to receive(:reconciliation_details).and_raise(Gateways::MercadoPago::RequestFailed, "timeout")
+
+      get admin_order_path(order)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include("Saldo para reembolso")
+    end
+
+    it "does not ask Mercado Pago about payments that are not paid" do
+      paid_mercado_pago_payment(status: :pending)
+      allow(gateway).to receive(:reconciliation_details)
+
+      get admin_order_path(order)
+
+      expect(gateway).not_to have_received(:reconciliation_details)
+      expect(response.body).not_to include("Saldo para reembolso")
+    end
+
+    it "reuses the cached date on the next visit" do
+      paid_mercado_pago_payment
+      allow(gateway).to receive(:reconciliation_details).and_return(money_release_date: 5.days.from_now, processor_fee_cents: 0)
+
+      2.times { get admin_order_path(order) }
+
+      expect(gateway).to have_received(:reconciliation_details).once
+    end
+  end
+
   describe "POST /admin/orders/:id/refund" do
     it "allows the platform admin to refund an approved payment" do
       seller = Seller.create!(name: "Ateliê Refund", owner_full_name: "Proprietário Teste", cpf: "10444446818", status: :approved, approved_at: Time.current)
@@ -316,6 +378,25 @@ RSpec.describe "Admin orders", type: :request do
         expect(payment.reload).to be_paid
         expect(PaymentRefund.find_by!(idempotency_key: "gw-rejected")).to be_failed
         expect(seller.notifications.order_refunded).to be_empty
+      end
+
+      it "explains the missing balance and when it will be released" do
+        release = 5.days.from_now
+        allow(gateway).to receive(:refund).and_raise(Gateways::MercadoPago::InsufficientFunds.new("Mercado Pago respondeu 400", release_date: release))
+
+        post refund_admin_order_path(order), params: { amount: "5,00", idempotency_key: "gw-no-balance" }
+
+        expect(flash[:alert]).to include("ainda não tem saldo disponível", "Nada foi devolvido", I18n.l(release.to_date))
+        expect(flash[:alert]).not_to include("bad_request")
+        expect(PaymentRefund.find_by!(idempotency_key: "gw-no-balance")).to be_failed
+      end
+
+      it "points to the Mercado Pago panel when no future release date is known" do
+        allow(gateway).to receive(:refund).and_raise(Gateways::MercadoPago::InsufficientFunds, "Mercado Pago respondeu 400")
+
+        post refund_admin_order_path(order), params: { amount: "5,00", idempotency_key: "gw-no-balance-2" }
+
+        expect(flash[:alert]).to include("ainda não tem saldo disponível", "painel do Mercado Pago")
       end
 
       it "asks the admin to check Mercado Pago after an ambiguous failure" do

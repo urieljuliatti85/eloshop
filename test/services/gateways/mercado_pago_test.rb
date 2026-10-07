@@ -259,6 +259,51 @@ module Gateways
       assert_equal 5.0, JSON.parse(captured.body)["amount"]
     end
 
+    # Pedido #54 (2026-10-07): o reembolso voltou 400 `bad_request` e só o
+    # `cause` dizia que a conta do artesão não tinha saldo disponível.
+    test "refund without available balance raises InsufficientFunds with the release date" do
+      refund_body = { "error" => "bad_request", "cause" => [ { "description" => "Collector hasn't enough available money" } ] }.to_json
+      details_body = { "status" => "approved", "money_release_date" => "2026-10-20T12:00:00.000-03:00" }.to_json
+      fake_http = Object.new
+      fake_http.define_singleton_method(:request) do |req|
+        ok = req.method == "GET"
+        response = Net::HTTPResponse.send(:response_class, ok ? "200" : "400").new("1.1", ok ? "200" : "400", "x")
+        response.define_singleton_method(:body) { ok ? details_body : refund_body }
+        response
+      end
+      @gateway.instance_variable_set(:@http, fake_http)
+
+      erro = assert_raises(MercadoPago::InsufficientFunds) do
+        @gateway.refund(payment: payments(:one), amount_cents: 500, idempotency_key: "refund-no-balance")
+      end
+
+      assert_kind_of MercadoPago::RequestRejected, erro
+      assert_equal Time.zone.parse("2026-10-20T12:00:00.000-03:00"), erro.release_date
+    ensure
+      @gateway.remove_instance_variable(:@http) if @gateway.instance_variable_defined?(:@http)
+    end
+
+    test "refund without balance still raises InsufficientFunds when the release date lookup fails" do
+      body = { "error" => "bad_request", "cause" => [ { "description" => "Collector hasn't enough available money" } ] }.to_json
+      stub_error_response(code: "400", body: body, content_type: "application/json") do
+        erro = assert_raises(MercadoPago::InsufficientFunds) do
+          @gateway.refund(payment: payments(:one), amount_cents: 500, idempotency_key: "refund-no-balance-2")
+        end
+
+        assert_nil erro.release_date
+      end
+    end
+
+    test "other 400 on refund is a plain RequestRejected" do
+      stub_error_response(code: "400", body: { "error" => "bad_request", "cause" => [ { "description" => "other" } ] }.to_json, content_type: "application/json") do
+        erro = assert_raises(MercadoPago::RequestRejected) do
+          @gateway.refund(payment: payments(:one), amount_cents: 500, idempotency_key: "refund-other")
+        end
+
+        assert_not_kind_of MercadoPago::InsufficientFunds, erro
+      end
+    end
+
     test "refund maps a rejected response to failed" do
       stub_request("id" => 100, "status" => "rejected") do
         intent = @gateway.refund(payment: payments(:one), amount_cents: 500, idempotency_key: "refund-rejected")

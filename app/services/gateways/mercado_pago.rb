@@ -21,6 +21,18 @@ module Gateways
     # fora (tempo esgotado, conflito de idempotência e limite de taxa): ali a
     # operação pode ter acontecido, e quem chama deve manter a tentativa aberta.
     class RequestRejected < RequestFailed; end
+
+    # Reembolso recusado porque a conta que recebeu o pagamento ainda não tem
+    # saldo disponível (o dinheiro do cartão fica retido até a liberação).
+    # `release_date` é a previsão do próprio Mercado Pago, quando ele informa.
+    class InsufficientFunds < RequestRejected
+      attr_reader :release_date
+
+      def initialize(message = nil, release_date: nil)
+        super(message)
+        @release_date = release_date
+      end
+    end
     TRANSIENT_CLIENT_ERRORS = %w[408 409 429].freeze
 
     API_HOST = "api.mercadopago.com"
@@ -115,6 +127,8 @@ module Gateways
         external_id: response["id"].to_s,
         status: refund_status(response["status"])
       )
+    rescue InsufficientFunds => e
+      raise InsufficientFunds.new(e.message, release_date: release_date_for(payment))
     end
 
     # Autenticidade via HMAC-SHA256 sobre um manifesto montado com o id do
@@ -344,7 +358,8 @@ module Gateways
         # porque é ele que diz o que houve — "respondeu 500" sozinho custou uma
         # investigação inteira em 2026-09-08.
         code = error_code(response)
-        error_class = response.code.start_with?("4") && TRANSIENT_CLIENT_ERRORS.exclude?(response.code) ? RequestRejected : RequestFailed
+        error_class = InsufficientFunds if insufficient_funds?(response)
+        error_class ||= response.code.start_with?("4") && TRANSIENT_CLIENT_ERRORS.exclude?(response.code) ? RequestRejected : RequestFailed
         raise error_class, "Mercado Pago respondeu #{response.code} em #{request.path}#{" (#{code})" if code}"
       end
 
@@ -480,6 +495,24 @@ module Gateways
     # O identificador do erro do Mercado Pago (ex.: "user_allowed_only_in_test")
     # é seguro para a mensagem da exceção — é um código de causa, não conteúdo
     # do pagamento. O resto do corpo continua de fora.
+    # O Mercado Pago não dá um código estável para isto: `cause` traz só a
+    # descrição ("Collector hasn't enough available money"), então é ela que
+    # identifica o caso.
+    def insufficient_funds?(response)
+      causes = Array(JSON.parse(response.body.to_s)["cause"])
+      causes.any? { |cause| cause.is_a?(Hash) && cause["description"].to_s.match?(/enough available money/i) }
+    rescue StandardError
+      false
+    end
+
+    # A previsão é só um complemento da mensagem: se a consulta falhar, o
+    # reembolso já foi recusado e o admin ainda precisa saber o motivo.
+    def release_date_for(payment)
+      payment_details(external_id: payment.external_id)[:money_release_date]
+    rescue RequestFailed, ConfigurationError
+      nil
+    end
+
     def error_code(response)
       body = JSON.parse(response.body.to_s)
       body["error"].presence
