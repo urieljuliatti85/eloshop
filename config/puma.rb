@@ -25,7 +25,13 @@
 # Any libraries that use a connection pool or another resource pool should
 # be configured to provide at least as many connections as the number of
 # threads. This includes Active Record's `pool` parameter in `database.yml`.
-threads_count = ENV.fetch("RAILS_MAX_THREADS", 3)
+#
+# Aqui o padrão é 2 (era 3) para reduzir a memória base na Railway. O pool do
+# banco NÃO acompanha: `database.yml` usa 5 quando RAILS_MAX_THREADS está
+# ausente, folga suficiente para as threads do Puma e do worker do Solid Queue
+# (que roda no mesmo processo, ver `config/queue.yml`). Se for definir
+# RAILS_MAX_THREADS na Railway, o pool passa a valer esse mesmo número.
+threads_count = ENV.fetch("RAILS_MAX_THREADS", 2)
 threads threads_count, threads_count
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
