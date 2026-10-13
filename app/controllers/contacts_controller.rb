@@ -3,6 +3,12 @@ class ContactsController < StorefrontController
 
   CONFIRMATION_INTERVAL = 1.hour
 
+  # Tetos globais por dia (todos os visitantes somados): o Resend tem cota
+  # diária compartilhada com e-mails de pedido e de senha, e o spam por IP
+  # distribuído já a esgotou. Passou do teto, o formulário para de enviar.
+  DAILY_NOTIFY_LIMIT = 30
+  DAILY_CONFIRMATION_LIMIT = 15
+
   rate_limit to: 5, within: 10.minutes, only: :create, with: -> { redirect_to new_contact_path, alert: "Muitas tentativas. Tente novamente em alguns minutos." }
 
   # TEMPORÁRIO: descobrir qual cabeçalho traz o IP real do visitante atrás de
@@ -17,7 +23,21 @@ class ContactsController < StorefrontController
   def create
     @contact_message = ContactMessage.new(contact_message_params)
 
+    case ContactMessage.rejection_for(token: params[:form_token], honeypot: params[:website])
+    when :honeypot
+      # Bot: finge sucesso para não dar sinal do que o barrou.
+      return redirect_to new_contact_path, notice: "Mensagem enviada! Vamos responder em até 2 dias úteis."
+    when :token
+      @contact_message.errors.add(:base, "Não foi possível enviar. Recarregue a página e tente de novo.")
+      return render :new, status: :unprocessable_entity
+    end
+
     if @contact_message.valid?
+      unless within_daily_budget?("notify", DAILY_NOTIFY_LIMIT)
+        Rails.logger.warn("contact_daily_limit_reached")
+        return redirect_to new_contact_path, alert: "Estamos com muitas mensagens no momento. Tente novamente mais tarde."
+      end
+
       ContactMailer.notify(
         name: @contact_message.name,
         email: @contact_message.email,
@@ -49,8 +69,15 @@ class ContactsController < StorefrontController
   def send_confirmation_once(email)
     key = "contact_confirmation:#{Digest::SHA256.hexdigest(email.to_s.strip.downcase)}"
     return unless Rails.cache.write(key, true, unless_exist: true, expires_in: CONFIRMATION_INTERVAL)
+    return unless within_daily_budget?("confirmation", DAILY_CONFIRMATION_LIMIT)
 
     ContactMailer.confirmation(email: email).deliver_later
+  end
+
+  def within_daily_budget?(name, limit)
+    key = "contact_budget:#{name}:#{Date.current.iso8601}"
+    Rails.cache.write(key, 0, unless_exist: true, expires_in: 2.days)
+    Rails.cache.increment(key).to_i <= limit
   end
 
   def contact_message_params

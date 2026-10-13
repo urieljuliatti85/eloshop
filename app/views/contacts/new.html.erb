@@ -38,6 +38,13 @@
       <%= form.text_area :message, rows: 5, class: "w-full rounded border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
     </div>
 
+    <%# Isca anti-spam: fora da tela e fora da ordem de tabulação; só bot preenche. %>
+    <div class="absolute left-[-9999px]" aria-hidden="true">
+      <%= label_tag :website, "Não preencha este campo" %>
+      <%= text_field_tag :website, nil, tabindex: -1, autocomplete: "off" %>
+    </div>
+    <%= hidden_field_tag :form_token, ContactMessage.issue_token %>
+
     <%= form.submit "Enviar", class: "mt-2 w-fit rounded bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
   <% end %>
 </div>
