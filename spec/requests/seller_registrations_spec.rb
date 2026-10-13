@@ -99,4 +99,29 @@ RSpec.describe "Seller registrations", type: :request do
     expect(response.body).to include("E-mail já está em uso")
     expect(response.body).not_to include("Translation missing")
   end
+
+  describe "anti-abuse" do
+    let(:signup) do
+      {
+        seller: { name: "Ateliê Anti", owner_full_name: "Maria Anti", cpf: "60000000060" },
+        user: { email_address: "anti@example.com", password: "password123", password_confirmation: "password123" },
+        terms_accepted: "1"
+      }
+    end
+
+    it "creates nothing when the Turnstile refuses the token" do
+      allow(Turnstile).to receive(:verify).and_return(:failed)
+
+      expect { post seller_registration_path, params: signup }.not_to change(Seller, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    it "still registers but sends no welcome e-mail once the daily account e-mail limit is reached" do
+      Rails.cache.write("email_budget:account:#{Date.current.iso8601}", EmailAbuseProtection::DAILY_ACCOUNT_EMAIL_LIMIT, expires_in: 1.day)
+
+      expect { post seller_registration_path, params: signup }.to change(Seller, :count).by(1)
+      expect(SendWelcomeSellerJob).not_to have_been_enqueued
+    end
+  end
 end

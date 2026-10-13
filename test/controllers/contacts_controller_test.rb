@@ -114,7 +114,7 @@ class ContactsControllerTest < ActionDispatch::IntegrationTest
 
   test "stops sending once the global daily limit is reached" do
     limit = ContactsController::DAILY_NOTIFY_LIMIT
-    Rails.cache.write("contact_budget:notify:#{Date.current.iso8601}", limit, expires_in: 1.day)
+    Rails.cache.write("email_budget:contact_notify:#{Date.current.iso8601}", limit, expires_in: 1.day)
 
     post_contact({ name: "Maria", email: "maria@example.com", message: "Olá!" })
 
@@ -124,7 +124,7 @@ class ContactsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "stops confirming once the daily confirmation limit is reached, but still delivers the message" do
-    Rails.cache.write("contact_budget:confirmation:#{Date.current.iso8601}", ContactsController::DAILY_CONFIRMATION_LIMIT, expires_in: 1.day)
+    Rails.cache.write("email_budget:contact_confirmation:#{Date.current.iso8601}", ContactsController::DAILY_CONFIRMATION_LIMIT, expires_in: 1.day)
 
     post_contact({ name: "Maria", email: "maria@example.com", message: "Olá!" })
 

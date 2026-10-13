@@ -42,6 +42,7 @@
         <span>Li e aceito os <%= link_to "Termos Comerciais do Marketplace", seller_terms_path, target: "_blank", rel: "noopener", class: "font-semibold text-brand-700 underline" %> (<%= SellerTerms.version %>), incluindo comissão, reembolsos, chargebacks e responsabilidades fiscais.</span>
       </label>
     </div>
+    <%= render "shared/turnstile" %>
     <%= form.submit "Criar cadastro", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 font-semibold text-white hover:bg-brand-600" %>
   <% end %>
 </div>

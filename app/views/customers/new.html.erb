@@ -36,6 +36,8 @@
 
     <p class="text-xs text-ink-muted"><span class="font-bold text-red-600" aria-hidden="true">*</span> Campo obrigatório</p>
 
+    <%= render "shared/turnstile" %>
+
     <%= form.submit "Criar conta", class: "mt-2 w-fit cursor-pointer rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
   <% end %>
 </div>

@@ -118,4 +118,26 @@ RSpec.describe "Customer password recovery", type: :request do
       expect(Customer.authenticate_by(email: customer.email, password: "senha-antiga-1")).to eq(customer)
     end
   end
+
+  describe "anti-abuse" do
+    it "refuses the request when the Turnstile refuses the token" do
+      allow(Turnstile).to receive(:verify).and_return(:failed)
+
+      expect do
+        post customer_passwords_path, params: { email: customer.email }
+      end.not_to have_enqueued_mail(PasswordsMailer, :customer_reset)
+
+      expect(response).to redirect_to(new_customer_password_path)
+    end
+
+    it "sends nothing once the daily account e-mail limit is reached, with the same answer" do
+      Rails.cache.write("email_budget:account:#{Date.current.iso8601}", EmailAbuseProtection::DAILY_ACCOUNT_EMAIL_LIMIT, expires_in: 1.day)
+
+      expect do
+        post customer_passwords_path, params: { email: customer.email }
+      end.not_to have_enqueued_mail(PasswordsMailer, :customer_reset)
+
+      expect(response).to redirect_to(new_customer_session_path)
+    end
+  end
 end

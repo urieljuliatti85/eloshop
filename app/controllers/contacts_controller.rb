@@ -1,4 +1,6 @@
 class ContactsController < StorefrontController
+  include EmailAbuseProtection
+
   allow_unauthenticated_customer_access
 
   CONFIRMATION_INTERVAL = 1.hour
@@ -28,12 +30,12 @@ class ContactsController < StorefrontController
     end
 
     unless turnstile_passed?
-      @contact_message.errors.add(:base, "Não conseguimos confirmar que você é uma pessoa. Tente de novo.")
+      @contact_message.errors.add(:base, TURNSTILE_ERROR)
       return render :new, status: :unprocessable_entity
     end
 
     if @contact_message.valid?
-      unless within_daily_budget?("notify", DAILY_NOTIFY_LIMIT)
+      unless within_daily_budget?("contact_notify", DAILY_NOTIFY_LIMIT)
         Rails.logger.warn("contact_daily_limit_reached")
         return redirect_to new_contact_path, alert: "Estamos com muitas mensagens no momento. Tente novamente mais tarde."
       end
@@ -53,34 +55,15 @@ class ContactsController < StorefrontController
 
   private
 
-  # Falha aberta se o Cloudflare estiver fora do ar: o formulário não para por
-  # causa de um terceiro, e o campo isca, o token e os tetos diários seguem
-  # valendo.
-  def turnstile_passed?
-    case Turnstile.verify(params["cf-turnstile-response"], remote_ip: request.remote_ip)
-    when :ok then true
-    when :unavailable
-      Rails.logger.warn("turnstile_unavailable")
-      true
-    else false
-    end
-  end
-
   # Uma confirmação por e-mail por hora: o formulário é aberto, e sem esse
   # limite alguém poderia encher a caixa de um terceiro com confirmações. A
   # chave usa o hash do e-mail, nunca o endereço.
   def send_confirmation_once(email)
     key = "contact_confirmation:#{Digest::SHA256.hexdigest(email.to_s.strip.downcase)}"
     return unless Rails.cache.write(key, true, unless_exist: true, expires_in: CONFIRMATION_INTERVAL)
-    return unless within_daily_budget?("confirmation", DAILY_CONFIRMATION_LIMIT)
+    return unless within_daily_budget?("contact_confirmation", DAILY_CONFIRMATION_LIMIT)
 
     ContactMailer.confirmation(email: email).deliver_later
-  end
-
-  def within_daily_budget?(name, limit)
-    key = "contact_budget:#{name}:#{Date.current.iso8601}"
-    Rails.cache.write(key, 0, unless_exist: true, expires_in: 2.days)
-    Rails.cache.increment(key).to_i <= limit
   end
 
   def contact_message_params

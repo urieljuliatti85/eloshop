@@ -45,10 +45,7 @@
     </div>
     <%= hidden_field_tag :form_token, ContactMessage.issue_token %>
 
-    <% if Turnstile.enabled? %>
-      <%= javascript_include_tag "https://challenges.cloudflare.com/turnstile/v0/api.js", async: true, defer: true, nonce: true %>
-      <div class="cf-turnstile" data-sitekey="<%= Turnstile.site_key %>" data-language="pt-br"></div>
-    <% end %>
+    <%= render "shared/turnstile" %>
 
     <%= form.submit "Enviar", class: "mt-2 w-fit rounded bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
   <% end %>

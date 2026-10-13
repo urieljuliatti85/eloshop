@@ -1,0 +1,5 @@
+<%# Captcha do Cloudflare Turnstile; só aparece com o segredo configurado. %>
+<% if Turnstile.enabled? %>
+  <%= javascript_include_tag "https://challenges.cloudflare.com/turnstile/v0/api.js", async: true, defer: true, nonce: true %>
+  <div class="cf-turnstile" data-sitekey="<%= Turnstile.site_key %>" data-language="pt-br"></div>
+<% end %>
