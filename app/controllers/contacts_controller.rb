@@ -27,6 +27,11 @@ class ContactsController < StorefrontController
       return render :new, status: :unprocessable_entity
     end
 
+    unless turnstile_passed?
+      @contact_message.errors.add(:base, "Não conseguimos confirmar que você é uma pessoa. Tente de novo.")
+      return render :new, status: :unprocessable_entity
+    end
+
     if @contact_message.valid?
       unless within_daily_budget?("notify", DAILY_NOTIFY_LIMIT)
         Rails.logger.warn("contact_daily_limit_reached")
@@ -47,6 +52,19 @@ class ContactsController < StorefrontController
   end
 
   private
+
+  # Falha aberta se o Cloudflare estiver fora do ar: o formulário não para por
+  # causa de um terceiro, e o campo isca, o token e os tetos diários seguem
+  # valendo.
+  def turnstile_passed?
+    case Turnstile.verify(params["cf-turnstile-response"], remote_ip: request.remote_ip)
+    when :ok then true
+    when :unavailable
+      Rails.logger.warn("turnstile_unavailable")
+      true
+    else false
+    end
+  end
 
   # Uma confirmação por e-mail por hora: o formulário é aberto, e sem esse
   # limite alguém poderia encher a caixa de um terceiro com confirmações. A
