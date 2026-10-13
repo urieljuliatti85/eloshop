@@ -10,6 +10,15 @@ class ContactsControllerTest < ActionDispatch::IntegrationTest
     post contact_path, params: { contact_message: contact_message, form_token: aged_token }.merge(extra)
   end
 
+  # Minitest 6 não traz mais `stub`; troca o método só durante o bloco.
+  def with_turnstile(method, result)
+    original = Turnstile.method(method)
+    Turnstile.define_singleton_method(method) { |*, **| result }
+    yield
+  ensure
+    Turnstile.define_singleton_method(method, original)
+  end
+
   test "new" do
     get new_contact_path
     assert_response :success
@@ -121,5 +130,42 @@ class ContactsControllerTest < ActionDispatch::IntegrationTest
 
     enqueued = enqueued_jobs.map { |job| job["arguments"][1] }
     assert_equal [ "notify" ], enqueued
+  end
+
+  test "blocks the message when the Turnstile refuses the token" do
+    with_turnstile(:verify, :failed) do
+      post_contact({ name: "Bot", email: "bot@example.com", message: "Spam" })
+    end
+
+    assert_response :unprocessable_entity
+    assert_no_enqueued_emails
+  end
+
+  test "sends the message when the Turnstile confirms the token" do
+    with_turnstile(:verify, :ok) do
+      post_contact({ name: "Maria", email: "maria@example.com", message: "Olá!" })
+    end
+
+    assert_redirected_to new_contact_path
+    assert_enqueued_email_with ContactMailer, :notify, args: [ { name: "Maria", email: "maria@example.com", subject: nil, message: "Olá!" } ]
+  end
+
+  test "fails open when the Turnstile is unavailable" do
+    with_turnstile(:verify, :unavailable) do
+      post_contact({ name: "Maria", email: "maria@example.com", message: "Olá!" })
+    end
+
+    assert_redirected_to new_contact_path
+  end
+
+  test "renders the widget only when the Turnstile is enabled" do
+    get new_contact_path
+    assert_no_match "cf-turnstile", response.body
+
+    with_turnstile(:enabled?, true) do
+      get new_contact_path
+    end
+    assert_match "cf-turnstile", response.body
+    assert_match "challenges.cloudflare.com/turnstile/v0/api.js", response.body
   end
 end

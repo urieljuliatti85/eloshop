@@ -49,13 +49,17 @@ Rails.application.configure do
   google_analytics_eu = "https://region1.google-analytics.com"
   google_analytics_ui = "https://analytics.google.com"
   google              = "https://www.google.com"
+  # Cloudflare Turnstile (captcha do formulário de contato): o loader é
+  # <script> e o desafio roda num iframe do mesmo domínio exato; não precisa de
+  # connect-src nem de curinga.
+  turnstile           = "https://challenges.cloudflare.com"
 
   config.content_security_policy do |policy|
     policy.default_src :self
     policy.font_src    :self
     policy.img_src     :self, :data, mercado_libre_cdn, google_tag_manager, google_analytics, google_analytics_eu
     policy.object_src  :none
-    policy.script_src  :self, mercado_pago_sdk, mercado_pago_static, mercado_libre_cdn, google_tag_manager
+    policy.script_src  :self, mercado_pago_sdk, mercado_pago_static, mercado_libre_cdn, google_tag_manager, turnstile
     # `unsafe_inline` e não um domínio: o SDK não busca nenhum .css externo
     # (zero referências a stylesheet no bundle), mas injeta <style> em
     # runtime — o spinner de carregamento, o botão de fechar e os estilos do
@@ -82,7 +86,7 @@ Rails.application.configure do
     # iframe, agora na diretiva que o outro uso exige.
     policy.connect_src :self, mercado_pago_api, mercado_pago_static, mercado_pago_fields, mercado_libre_cdn, mercado_libre_api,
       google_tag_manager, google_analytics, google_analytics_eu, google_analytics_ui, google
-    policy.frame_src   :self, mercado_pago_fields, mercado_pago_sdk
+    policy.frame_src   :self, mercado_pago_fields, mercado_pago_sdk, turnstile
     policy.base_uri    :self
     policy.form_action :self
   end

@@ -57,6 +57,13 @@ RSpec.describe "Security headers", type: :request do
     expect(directive("style-src")).not_to include("https://www.googletagmanager.com")
   end
 
+  it "libera o Cloudflare Turnstile só em script-src e frame-src, pelo domínio exato" do
+    expect(directive("script-src")).to include("https://challenges.cloudflare.com")
+    expect(directive("frame-src")).to include("https://challenges.cloudflare.com")
+    expect(directive("connect-src")).not_to include("https://challenges.cloudflare.com")
+    expect(csp).not_to include("*.cloudflare.com")
+  end
+
   # script-src com nonce e SEM unsafe-inline é o que sustenta a política:
   # o afrouxamento de estilo inline (necessário para os <style> que o SDK
   # injeta) não pode transbordar para script.
