@@ -5,6 +5,11 @@ class ContactsController < StorefrontController
 
   rate_limit to: 5, within: 10.minutes, only: :create, with: -> { redirect_to new_contact_path, alert: "Muitas tentativas. Tente novamente em alguns minutos." }
 
+  # TEMPORÁRIO: descobrir qual cabeçalho traz o IP real do visitante atrás de
+  # Cloudflare + Railway (o `remote_ip` chega como 100.64.0.x). Remover junto
+  # com a correção do IP.
+  before_action :log_client_ip_headers, only: :create
+
   def new
     @contact_message = ContactMessage.new
   end
@@ -27,6 +32,16 @@ class ContactsController < StorefrontController
   end
 
   private
+
+  def log_client_ip_headers
+    Rails.logger.info(
+      "client_ip_diagnostic remote_ip=#{request.remote_ip} " \
+      "remote_addr=#{request.env['REMOTE_ADDR']} " \
+      "x_real_ip=#{request.headers['X-Real-IP'].inspect} " \
+      "x_forwarded_for=#{request.headers['X-Forwarded-For'].inspect} " \
+      "cf_connecting_ip=#{request.headers['CF-Connecting-IP'].inspect}"
+    )
+  end
 
   # Uma confirmação por e-mail por hora: o formulário é aberto, e sem esse
   # limite alguém poderia encher a caixa de um terceiro com confirmações. A
