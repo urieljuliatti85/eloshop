@@ -1,4 +1,6 @@
 class CustomersController < StorefrontController
+  include EmailAbuseProtection
+
   allow_unauthenticated_customer_access
 
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to new_customer_path, alert: "Tente novamente mais tarde." }
@@ -18,8 +20,13 @@ class CustomersController < StorefrontController
   def create
     @customer = Customer.new(customer_params)
 
+    unless turnstile_passed?
+      @customer.errors.add(:base, TURNSTILE_ERROR)
+      return render :new, status: :unprocessable_entity
+    end
+
     if @customer.save
-      SendWelcomeCustomerJob.perform_later(@customer)
+      SendWelcomeCustomerJob.perform_later(@customer) if account_email_budget_available?
       start_new_customer_session_for(@customer)
       associate_cart_with_customer(@customer)
       redirect_to after_customer_authentication_url, notice: "Conta criada com sucesso."

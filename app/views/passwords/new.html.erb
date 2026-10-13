@@ -10,6 +10,8 @@
             class: "w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
     </div>
 
+    <%= render "shared/turnstile" %>
+
     <%= form.submit "Enviar instruções por e-mail", class: "mt-2 w-fit cursor-pointer rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
   <% end %>
 

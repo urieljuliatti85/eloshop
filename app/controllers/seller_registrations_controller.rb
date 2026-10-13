@@ -1,4 +1,6 @@
 class SellerRegistrationsController < ApplicationController
+  include EmailAbuseProtection
+
   allow_unauthenticated_access
   rate_limit to: 5, within: 15.minutes, only: :create,
     with: -> { redirect_to new_seller_registration_path, alert: "Tente novamente mais tarde." }
@@ -18,13 +20,18 @@ class SellerRegistrationsController < ApplicationController
     @seller = Seller.new(seller_params)
     @user = User.new(user_params.merge(role: :seller, seller: @seller))
 
+    unless turnstile_passed?
+      @user.errors.add(:base, TURNSTILE_ERROR)
+      return render :new, status: :unprocessable_entity
+    end
+
     if @seller.valid? && @user.valid? && params[:terms_accepted] == "1"
       Seller.transaction do
         @seller.save!
         @user.save!
         SellerTermsAcceptance.record!(user: @user, seller: @seller, request: request)
       end
-      SendWelcomeSellerJob.perform_later(@seller, @user.email_address)
+      SendWelcomeSellerJob.perform_later(@seller, @user.email_address) if account_email_budget_available?
       start_new_session_for(@user)
       redirect_to seller_root_path, notice: "Cadastro recebido. A publicação será liberada após a aprovação da plataforma."
     else

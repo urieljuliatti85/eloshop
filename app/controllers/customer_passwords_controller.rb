@@ -3,6 +3,8 @@
 # resposta ao pedido é sempre a mesma (não revela quem tem conta) e redefinir a
 # senha encerra as sessões abertas.
 class CustomerPasswordsController < StorefrontController
+  include EmailAbuseProtection
+
   allow_unauthenticated_customer_access
 
   before_action :set_customer_by_token, only: %i[edit update]
@@ -12,7 +14,9 @@ class CustomerPasswordsController < StorefrontController
   end
 
   def create
-    if (customer = Customer.find_by(email: params[:email].to_s.strip))
+    return redirect_to new_customer_password_path, alert: TURNSTILE_ERROR unless turnstile_passed?
+
+    if (customer = Customer.find_by(email: params[:email].to_s.strip)) && account_email_budget_available?
       PasswordsMailer.customer_reset(customer).deliver_later
     end
 

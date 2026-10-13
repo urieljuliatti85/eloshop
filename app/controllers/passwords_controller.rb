@@ -1,4 +1,6 @@
 class PasswordsController < ApplicationController
+  include EmailAbuseProtection
+
   allow_unauthenticated_access
   before_action :set_user_by_token, only: %i[ edit update ]
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to new_password_path, alert: "Tente novamente mais tarde." }
@@ -7,7 +9,9 @@ class PasswordsController < ApplicationController
   end
 
   def create
-    if user = User.find_by(email_address: params[:email_address])
+    return redirect_to new_password_path, alert: TURNSTILE_ERROR unless turnstile_passed?
+
+    if (user = User.find_by(email_address: params[:email_address])) && account_email_budget_available?
       PasswordsMailer.reset(user).deliver_later
     end
 
