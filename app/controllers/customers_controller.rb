@@ -26,10 +26,13 @@ class CustomersController < StorefrontController
     end
 
     if @customer.save
-      SendWelcomeCustomerJob.perform_later(@customer) if account_email_budget_available?
+      welcome_queued = account_email_budget_available?
+      SendWelcomeCustomerJob.perform_later(@customer) if welcome_queued
       start_new_customer_session_for(@customer)
       associate_cart_with_customer(@customer)
-      redirect_to after_customer_authentication_url, notice: "Conta criada com sucesso."
+      notice = "Conta criada com sucesso."
+      notice += " Enviamos um e-mail de boas-vindas. #{SPAM_HINT}" if welcome_queued
+      redirect_to after_customer_authentication_url, notice: notice
     else
       render :new, status: :unprocessable_entity
     end

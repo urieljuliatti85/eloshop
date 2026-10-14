@@ -44,4 +44,14 @@ class ApplicationMailerTest < ActionMailer::TestCase
       assert_includes html, 'content="pt-BR"', "#{email.subject}: sem Content-Language"
     end
   end
+
+  # E-mail só em HTML pontua pior nos filtros de spam; domínio novo já parte
+  # sem reputação.
+  test "todo e-mail em HTML tem uma versão em texto" do
+    sem_texto = Rails.root.glob("app/views/*_mailer/*.html.erb").reject do |html|
+      File.exist?(html.to_s.sub(/\.html\.erb\z/, ".text.erb"))
+    end
+
+    assert_empty sem_texto.map { |path| path.relative_path_from(Rails.root).to_s }
+  end
 end

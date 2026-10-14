@@ -31,9 +31,12 @@ class SellerRegistrationsController < ApplicationController
         @user.save!
         SellerTermsAcceptance.record!(user: @user, seller: @seller, request: request)
       end
-      SendWelcomeSellerJob.perform_later(@seller, @user.email_address) if account_email_budget_available?
+      welcome_queued = account_email_budget_available?
+      SendWelcomeSellerJob.perform_later(@seller, @user.email_address) if welcome_queued
       start_new_session_for(@user)
-      redirect_to seller_root_path, notice: "Cadastro recebido. A publicação será liberada após a aprovação da plataforma."
+      notice = "Cadastro recebido. A publicação será liberada após a aprovação da plataforma."
+      notice += " #{SPAM_HINT}" if welcome_queued
+      redirect_to seller_root_path, notice: notice
     else
       @user.errors.add(:base, "aceite os termos comerciais para criar o cadastro") unless params[:terms_accepted] == "1"
       render :new, status: :unprocessable_entity

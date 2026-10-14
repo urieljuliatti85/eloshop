@@ -1,0 +1,38 @@
+Olá, <%= @seller.name %>!
+
+Você recebeu uma nova venda — pedido #<%= @order.id %>, já com pagamento confirmado.
+
+Itens a produzir/despachar:
+<% @seller_order.order_items.each do |item| %>
+- <%= item.product_name %> (<%= item.sku %>) × <%= item.quantity %>
+<% if item.variant_sku.present? %>
+  Variante: <%= item.variant_sku %>
+<% end %>
+<% if item.production_time_snapshot.present? %>
+  Prazo informado ao cliente: <%= item.production_time_snapshot %>
+<% end %>
+<% item.personalization_entries.each do |entry| %>
+  <%= entry[:label] %>: <%= entry[:value] %>
+<% end %>
+<% end %>
+
+Valores:
+Subtotal: <%= format_price(@seller_order.subtotal_cents) %>
+<% if @seller_order.discount_cents.positive? %>
+Desconto: −<%= format_price(@seller_order.discount_cents) %>
+<% end %>
+Frete: <%= format_price(@seller_order.shipping_cents) %>
+Comissão da plataforma (<%= @seller_order.platform_fee_rate_bps / 100 %>%): −<%= format_price(@seller_order.platform_fee_cents) %>
+Você recebe: <%= format_price(@seller_order.seller_amount_cents) %>
+
+Enviar para:
+<% address = @order.shipping_address_snapshot %>
+<%= @order.customer.name %>
+<%= address["street"] %>, <%= address["number"] %>
+<% if address["complement"].present? %>
+<%= address["complement"] %>
+<% end %>
+<%= address["neighborhood"] %> — <%= address["city"] %>/<%= address["state"] %>
+CEP <%= address["zip_code"] %>
+
+Ver pedido no painel: <%= seller_order_url(@order) %>

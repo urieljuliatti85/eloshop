@@ -1,0 +1,14 @@
+Olá, <%= @order.customer.name %>!
+
+<% if @shipment.local_pickup? %>
+Seu pedido #<%= @order.id %> está pronto para retirada no ateliê <%= @seller.name %>.
+<% else %>
+Seu pedido #<%= @order.id %> foi enviado pelo ateliê <%= @seller.name %> e está a caminho.
+<% if @shipment.tracking_code.present? %>
+
+Transportadora: <%= @shipment.carrier %>
+Código de rastreio: <%= @shipment.tracking_code %>
+<% end %>
+<% end %>
+
+Acompanhar meu pedido: <%= order_url(@order) %>

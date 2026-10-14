@@ -6,6 +6,9 @@ module EmailAbuseProtection
 
   TURNSTILE_ERROR = "Não conseguimos confirmar que você é uma pessoa. Tente de novo.".freeze
 
+  # Domínio novo ainda sem reputação: os primeiros e-mails podem cair no spam.
+  SPAM_HINT = "Se o e-mail não chegar em alguns minutos, olhe também a caixa de spam.".freeze
+
   # Teto diário combinado dos e-mails de conta (boas-vindas e redefinição de
   # senha): o restante da cota fica reservado para pedidos.
   DAILY_ACCOUNT_EMAIL_LIMIT = 40

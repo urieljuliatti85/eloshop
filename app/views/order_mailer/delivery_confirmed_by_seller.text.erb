@@ -1,0 +1,7 @@
+Olá, <%= @order.customer.name %>!
+
+O ateliê <%= @seller.name %> confirmou <%= @seller_order.shipment&.local_pickup? ? "a retirada" : "a entrega" %> do pedido #<%= @order.id %>.
+
+Se você ainda não recebeu o pedido, fale com o ateliê antes de qualquer outra providência.
+
+Ver meu pedido: <%= order_url(@order) %>
