@@ -1,0 +1,35 @@
+Olá, <%= @order.customer.name %>!
+
+Pagamento efetuado com sucesso.
+Seu pedido #<%= @order.id %> está em preparação e o ateliê já foi avisado.
+
+O que você comprou:
+<% @order.order_items.each do |item| %>
+- <%= item.product_name %> × <%= item.quantity %> — <%= format_price(item.unit_price_cents * item.quantity) %>
+<% if item.production_time_snapshot.present? %>
+  Prazo de produção: <%= item.production_time_snapshot %>
+<% end %>
+<% item.personalization_entries.each do |entry| %>
+  <%= entry[:label] %>: <%= entry[:value] %>
+<% end %>
+<% end %>
+
+Subtotal: <%= format_price(@order.subtotal_cents) %>
+<% if @order.discount_cents.positive? %>
+Desconto: −<%= format_price(@order.discount_cents) %>
+<% end %>
+Frete: <%= format_price(@order.shipping_cents) %>
+Total: <%= format_price(@order.total_cents) %>
+
+Entrega:
+<% address = @order.shipping_address_snapshot %>
+<%= address["street"] %>, <%= address["number"] %>
+<% if address["complement"].present? %>
+<%= address["complement"] %>
+<% end %>
+<%= address["neighborhood"] %> — <%= address["city"] %>/<%= address["state"] %>
+CEP <%= address["zip_code"] %>
+
+Peça feita à mão por <%= @seller.name %>. Assim que for despachada, avisamos você.
+
+Acompanhar meu pedido: <%= order_url(@order) %>

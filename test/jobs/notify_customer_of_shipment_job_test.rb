@@ -25,7 +25,7 @@ class NotifyCustomerOfShipmentJobTest < ActiveJob::TestCase
 
     email = ActionMailer::Base.deliveries.last
     assert_includes email.to, seller_order.order.customer.email
-    assert_match "/orders/#{seller_order.order_id}", email.body.to_s
-    assert_match "AA123456789BR", email.body.to_s
+    assert_match "/orders/#{seller_order.order_id}", email.text_part.body.to_s
+    assert_match "AA123456789BR", email.text_part.body.to_s
   end
 end

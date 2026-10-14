@@ -68,4 +68,15 @@ class CustomersControllerTest < ActionDispatch::IntegrationTest
     assert_difference("Customer.count", 1) { post customers_path, params: SIGNUP }
     assert_no_enqueued_jobs only: SendWelcomeCustomerJob
   end
+
+  test "signing up tells the customer to check the spam folder when the welcome e-mail was sent" do
+    post customers_path, params: SIGNUP
+    assert_match "caixa de spam", flash[:notice]
+  end
+
+  test "signing up does not mention the welcome e-mail once the daily limit is reached" do
+    exhaust_account_email_budget
+    post customers_path, params: SIGNUP
+    assert_no_match "spam", flash[:notice]
+  end
 end

@@ -20,7 +20,7 @@ class CustomerPasswordsController < StorefrontController
       PasswordsMailer.customer_reset(customer).deliver_later
     end
 
-    redirect_to new_customer_session_path, notice: "Se houver uma conta com esse e-mail, as instruções de redefinição foram enviadas."
+    redirect_to new_customer_session_path, notice: "Se houver uma conta com esse e-mail, as instruções de redefinição foram enviadas. #{SPAM_HINT}"
   end
 
   def edit

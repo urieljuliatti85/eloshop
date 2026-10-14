@@ -14,11 +14,12 @@ class OrderMailerTest < ActionMailer::TestCase
     order = build_order
 
     email = OrderMailer.confirmation(order)
-    body = email.body.to_s
+    body = email.html_part.body.to_s
 
     assert_equal [ order.customer.email ], email.to
     assert_match "Pagamento efetuado com sucesso", body
     assert_match "está em preparação", body
+    assert_match "Pagamento efetuado com sucesso", email.text_part.body.to_s
     assert_match "/orders/#{order.id}", body
   end
 
