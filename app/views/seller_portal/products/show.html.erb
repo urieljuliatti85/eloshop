@@ -16,7 +16,7 @@
     <div class="flex flex-wrap gap-2">
       <%= link_to "Editar", edit_seller_product_path(@product), class: "inline-flex min-h-11 items-center rounded-full border border-brand-200 bg-white px-5 py-2 text-sm font-semibold text-stone-700 transition hover:bg-brand-50" %>
       <% if @product.draft? %>
-        <%= button_to "Publicar", publish_seller_product_path(@product), method: :patch, class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600" %>
+        <%= button_to "Publicar", publish_seller_product_path(@product), method: :patch, class: "inline-flex min-h-11 items-center rounded-full bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %>
       <% elsif @product.active? %>
         <%= button_to "Despublicar", unpublish_seller_product_path(@product), method: :patch, class: "inline-flex min-h-11 items-center rounded-full border border-brand-200 bg-white px-5 py-2 text-sm font-semibold text-stone-700 transition hover:bg-brand-50" %>
       <% end %>
@@ -30,7 +30,7 @@
   </div>
 
   <section class="seller-card">
-    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Variantes</h2><p class="mt-1 text-sm text-ink-muted">Combinações comerciais reais de tamanho, cor ou material.</p></div><%= link_to "Nova variante", new_seller_product_product_variant_path(@product), class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600" %></div>
+    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Variantes</h2><p class="mt-1 text-sm text-ink-muted">Combinações comerciais reais de tamanho, cor ou material.</p></div><%= link_to "Nova variante", new_seller_product_product_variant_path(@product), class: "inline-flex min-h-11 items-center rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %></div>
     <% if @product.product_variants.any? %>
       <div class="mt-5 divide-y divide-brand-100">
         <% @product.product_variants.order(:sku).each do |variant| %>
@@ -46,7 +46,7 @@
   </section>
 
   <section class="seller-card">
-    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Personalizações</h2><p class="mt-1 text-sm text-ink-muted">Informações que o comprador deverá fornecer.</p></div><%= link_to "Novo campo", new_seller_product_personalization_option_path(@product), class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600" %></div>
+    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Personalizações</h2><p class="mt-1 text-sm text-ink-muted">Informações que o comprador deverá fornecer.</p></div><%= link_to "Novo campo", new_seller_product_personalization_option_path(@product), class: "inline-flex min-h-11 items-center rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %></div>
     <% if @product.personalization_options.any? %>
       <div class="mt-5 divide-y divide-brand-100">
         <% @product.personalization_options.order(:label).each do |option| %>

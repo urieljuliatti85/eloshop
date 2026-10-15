@@ -1,3 +1,7 @@
+<%# Um selo de andamento por pedido (o mesmo da linha do tempo), mais o status
+    financeiro só quando muda a história: cancelado ou com reembolso. Usado na
+    lista e no detalhe do pedido. %>
+<% money_status_classes = { "cancelled" => "bg-amber-100 text-amber-800", "partially_refunded" => "bg-amber-100 text-amber-800", "refunded" => "bg-amber-100 text-amber-800" } %>
 <% state = seller_order_fulfillment_state(seller_order) %>
 <% unless state == :closed %>
   <span class="seller-badge <%= seller_order_fulfillment_badge_classes(seller_order) %>"><%= seller_order_fulfillment_label(seller_order) %></span>

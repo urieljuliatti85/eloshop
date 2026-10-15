@@ -73,7 +73,7 @@ RSpec.describe "Seller orders", type: :request do
     get seller_order_path(order)
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("Linha do tempo")
+    expect(response.body).to include("Da confirmação à entrega")
     expect(response.body).to include("Pedido recebido")
     expect(response.body).to include("Em preparação")
     expect(response.body).to include("Marcar como enviado")
