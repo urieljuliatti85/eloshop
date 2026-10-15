@@ -72,6 +72,17 @@ RSpec.describe "Seller dashboard", type: :request do
     expect(boxes[3]["aria-labelledby"]).to eq("todo-title")
   end
 
+  it "keeps the tour invitation at the top after the tour was completed" do
+    seller.update!(tour_completed_at: Time.current)
+    sign_in_as(user)
+
+    get seller_root_path
+
+    boxes = Nokogiri::HTML(response.body).at_css(".seller-content > div").element_children
+    expect(boxes[1]["aria-labelledby"]).to eq("tour-call-title")
+    expect(boxes[1].text).to include("Refazer o tour")
+  end
+
   it "puts the work summary before the setup block once the seller has orders" do
     product = Product.create!(seller: seller, name: "Cesto Ordem", sku: "ORDEM-1", price_cents: 8_000, stock_quantity: 3, status: :active)
     create_seller_order(product)

@@ -9,10 +9,9 @@
     <%= link_to "Novo produto", new_seller_product_path, class: "seller-button seller-button--primary" %>
   </header>
 
-  <%# Convite ao tour: no topo só para quem ainda não fez. Depois de concluído,
-      "Refazer o tour" vai para o fim da página — continua à mão, sem disputar
-      espaço com o que precisa de ação. %>
-  <%= render "seller_portal/tours/call" unless current_seller.tour_completed_at? %>
+  <%# Convite ao tour sempre no topo: "Fazer o tour" para quem ainda não fez,
+      "Refazer o tour" para quem já concluiu. %>
+  <%= render "seller_portal/tours/call" %>
 
   <%# Com pedidos, o trabalho do dia vem antes do que falta configurar; sem
       nenhum pedido ainda, o cadastro é o trabalho do dia. %>
@@ -34,11 +33,13 @@
     <div class="grid gap-px overflow-hidden rounded-2xl border border-brand-100 bg-brand-100 sm:grid-cols-2 lg:grid-cols-4">
       <% [
         ["Produtos", @products_count],
-        ["Publicados", @active_products_count],
+        ["Publicados", @active_products_count, "de #{@products_count} #{@products_count == 1 ? 'produto' : 'produtos'}"],
         ["Pedidos", @orders_count],
         ["Líquido em vendas", format_price(@seller_revenue_cents), "Já sem a comissão da EloShop"]
       ].each do |label, value, note| %>
-        <div class="bg-white px-5 py-6"><p class="text-xs font-semibold uppercase tracking-wider text-stone-500"><%= label %></p><p class="mt-2 text-2xl font-black tracking-tight text-stone-950"><%= value %></p><% if note %><p class="mt-1 text-xs text-stone-500"><%= note %></p><% end %></div>
+        <%# "Publicados" no verde do status "Publicado": o que está à venda. %>
+        <% published = label == "Publicados" %>
+        <div class="bg-white px-5 py-6"><p class="text-xs font-semibold uppercase tracking-wider text-stone-500"><%= label %></p><p class="mt-2 text-2xl font-black tracking-tight <%= published ? 'text-emerald-700' : 'text-stone-950' %>"><%= value %></p><% if note %><p class="mt-1 text-xs text-stone-500"><%= note %></p><% end %></div>
       <% end %>
     </div>
   </section>
@@ -53,9 +54,11 @@
       <% if @recent_products.any? %>
         <div class="mt-6 grid gap-4 sm:grid-cols-2">
           <% @recent_products.each do |product| %>
-            <%= link_to seller_product_path(product), class: "group flex min-w-0 items-center gap-4 rounded-2xl border border-brand-100 p-3 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md" do %>
+            <%# Peça publicada (à venda) com borda verde: o mesmo verde do selo
+                "Publicado" da lista de produtos, que diz o status em texto. %>
+            <%= link_to seller_product_path(product), class: "group flex min-w-0 items-center gap-4 rounded-2xl border p-3 transition hover:-translate-y-0.5 hover:shadow-md #{product.active? ? 'border-emerald-300 bg-emerald-50/40 hover:border-emerald-400' : 'border-brand-100 hover:border-brand-300'}" do %>
               <%= render "seller_portal/products/thumbnail", product: product, large: true %>
-              <span class="min-w-0"><strong class="block truncate text-sm text-stone-950"><%= product.name %></strong><span class="mt-1 block text-xs text-stone-500"><%= t(product.status, scope: "products.statuses") %> · <%= product.stock_quantity %> em estoque</span><span class="mt-2 block text-sm font-bold"><%= format_price(product.price_cents) %></span></span>
+              <span class="min-w-0"><strong class="block truncate text-sm text-stone-950"><%= product.name %></strong><span class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1"><%= seller_product_status_badge(product) %><span class="text-xs text-stone-600"><%= product.stock_quantity %> em estoque</span></span><span class="mt-2 block text-sm font-bold"><%= format_price(product.price_cents) %></span></span>
             <% end %>
           <% end %>
         </div>
@@ -78,5 +81,4 @@
     </div>
   </section>
 
-  <%= render "seller_portal/tours/call" if current_seller.tour_completed_at? %>
 </div>

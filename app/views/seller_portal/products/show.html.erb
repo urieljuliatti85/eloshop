@@ -1,17 +1,9 @@
-<%
-  product_status_classes = {
-    "draft" => "bg-stone-100 text-stone-600",
-    "active" => "bg-emerald-100 text-emerald-800",
-    "sold_out" => "bg-amber-100 text-amber-800",
-    "discontinued" => "bg-stone-200 text-stone-600"
-  }
-%>
 <div class="space-y-6">
   <header class="flex flex-wrap items-start justify-between gap-4">
     <div>
       <%= link_to "← Produtos", seller_products_path, class: "inline-flex min-h-11 items-center text-sm font-semibold text-brand-600" %>
       <h1 class="mt-3 text-3xl font-black tracking-tight"><%= @product.name %></h1>
-      <p class="mt-3 flex items-center gap-2 text-sm text-ink-muted">SKU <%= @product.sku %> <span class="seller-badge <%= product_status_classes[@product.status] %>"><%= t(@product.status, scope: "products.statuses") %></span></p>
+      <p class="mt-3 flex items-center gap-2 text-sm text-ink-muted">SKU <%= @product.sku %> <%= seller_product_status_badge(@product) %></p>
     </div>
     <div class="flex flex-wrap gap-2">
       <%= link_to "Editar", edit_seller_product_path(@product), class: "inline-flex min-h-11 items-center rounded-full border border-brand-200 bg-white px-5 py-2 text-sm font-semibold text-stone-700 transition hover:bg-brand-50" %>
