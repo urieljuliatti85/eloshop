@@ -42,6 +42,21 @@ class SellerPortalMobileTest < ApplicationSystemTestCase
     assert_no_horizontal_overflow
   end
 
+  # Ações em massa só aparecem com algo selecionado, na barra presa ao pé da
+  # tela (o polegar alcança), com a contagem anunciada.
+  test "shows the bulk actions only after selecting a product" do
+    sign_in_seller(users(:seller))
+    visit seller_products_path
+
+    assert_no_button "Descontinuar"
+    first("label", text: /Selecionar (?!todos)/, visible: true).click
+
+    assert_button "Descontinuar"
+    assert_button "Esconder"
+    assert_text "1 selecionado"
+    assert_no_horizontal_overflow
+  end
+
   test "navigates the panel through the hamburger menu instead of a sideways-scrolling strip" do
     sign_in_seller(users(:seller))
     visit seller_root_path
@@ -50,8 +65,9 @@ class SellerPortalMobileTest < ApplicationSystemTestCase
     # Leva à página pública do próprio ateliê, não à loja geral.
     assert_link "Ver a loja", href: seller_path(users(:seller).seller)
 
-    # Fechado: nenhum link do painel ocupa o topo, e nada rola para o lado.
-    assert_no_link "Novo produto"
+    # Fechado: nenhum link do menu ocupa o topo, e nada rola para o lado. (O
+    # início tem o próprio botão "Novo produto"; aqui interessa o menu.)
+    within("header[data-controller='mobile-menu']") { assert_no_link "Novo produto" }
     assert_no_horizontal_overflow
 
     click_button "Abrir menu do painel"
@@ -61,7 +77,7 @@ class SellerPortalMobileTest < ApplicationSystemTestCase
     end
     assert_no_horizontal_overflow
 
-    click_link "Novo produto"
+    within("#seller-nav-panel") { click_link "Novo produto" }
     assert_current_path new_seller_product_path
 
     # Turbo troca a página: o menu volta fechado.

@@ -4,25 +4,7 @@
     que cadastrou (`pix_key_confirmed_at`); cartão não é afetado. %>
 <%# `guide_link: false` na própria página do passo a passo, onde o link seria circular. %>
 <% guide_link = local_assigns.fetch(:guide_link, true) %>
-<%# `compact: true` no painel inicial: título, motivo e as duas ações. Os passos
-    ficam na página do guia, a um toque — inteiros, eles ocupavam mais de uma
-    tela de celular antes de qualquer pedido. %>
-<% compact = local_assigns.fetch(:compact, false) %>
-<% if compact && !current_seller.pix_key_confirmed_at? %>
-  <aside class="flex flex-col gap-4 rounded-2xl border-2 border-red-300 bg-red-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between" aria-labelledby="pix-key-notice-title">
-    <div class="flex items-start gap-3">
-      <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "mt-0.5 size-6 shrink-0 text-red-600" %>
-      <div>
-        <h2 id="pix-key-notice-title" class="text-base font-bold text-red-950">Sua conta do Mercado Pago precisa ter uma chave PIX cadastrada</h2>
-        <p class="mt-1 text-sm leading-6 text-red-900">Sem ela, o pagamento por PIX dos seus clientes é recusado. Pagamentos no cartão não dependem disso.</p>
-      </div>
-    </div>
-    <div class="flex shrink-0 flex-col gap-2 sm:items-end">
-      <%= link_to "Ver o passo a passo com imagens", seller_pix_key_guide_path, class: "inline-flex min-h-11 items-center justify-center rounded-full bg-red-700 px-5 text-sm font-bold text-white hover:bg-red-800" %>
-      <%= button_to "Já cadastrei minha chave PIX", seller_pix_key_confirmation_path, method: :post, class: "inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-full border border-red-300 bg-white px-5 text-sm font-bold text-red-800 hover:bg-red-100" %>
-    </div>
-  </aside>
-<% elsif !current_seller.pix_key_confirmed_at? %>
+<% unless current_seller.pix_key_confirmed_at? %>
   <aside class="flex flex-col gap-5 rounded-2xl border-2 border-red-300 bg-red-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between" aria-labelledby="pix-key-notice-title">
     <div class="flex items-start gap-4">
       <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "mt-0.5 size-7 shrink-0 text-red-600" %>

@@ -30,7 +30,9 @@ RSpec.describe "Seller getting started", type: :request do
       "15%"
     )
     expect(response.body).to include(edit_seller_atelier_path, seller_mercado_pago_connect_path, new_seller_product_path)
-    expect(response.body).to include("Ver o passo a passo do cadastro da chave", "Ver o passo a passo com imagens", seller_pix_key_guide_path)
+    expect(response.body).to include("Ver o passo a passo com imagens", seller_pix_key_guide_path)
+    # O aviso de PIX aparece uma vez, na própria etapa 3.
+    expect(response.body.scan("Ver o passo a passo com imagens").size).to eq(1)
   end
 
   it "tells a seller who is not approved yet how the launch commission will work" do

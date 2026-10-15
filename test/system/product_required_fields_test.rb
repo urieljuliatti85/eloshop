@@ -41,8 +41,11 @@ class ProductRequiredFieldsTest < ApplicationSystemTestCase
     # Prazo de produção só é obrigatório (e marcado) para sob encomenda.
     assert_no_selector "label[for='product_production_time_min_days'] [data-required-fields-target='marker']", visible: :visible
     assert_no_field "Produção mínima (dias úteis)"
+    assert_field "Estoque"
     select "Sob encomenda", from: "Disponibilidade"
     assert_field "Produção mínima (dias úteis)"
+    # Sob encomenda não tem estoque físico.
+    assert_no_field "Estoque"
     assert_selector "label[for='product_production_time_min_days'] [data-required-fields-target='marker']", visible: :visible
     assert_selector "label[for='product_production_time_max_days'] [data-required-fields-target='marker']", visible: :visible
 

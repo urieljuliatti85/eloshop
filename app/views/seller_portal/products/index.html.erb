@@ -23,24 +23,15 @@
       <% else %>
         <p class="font-semibold text-stone-950">Sua primeira peça começa aqui.</p>
         <p class="mt-1 text-sm text-stone-600">Você pode salvar como rascunho e publicar depois.</p>
-        <%= link_to "Cadastrar produto", new_seller_product_path, class: "seller-button seller-button--primary mt-5" %>
+        <%= link_to "Novo produto", new_seller_product_path, class: "seller-button seller-button--primary mt-5" %>
       <% end %>
     </div>
   <% else %>
     <%= form_with url: bulk_discontinue_seller_products_path, method: :patch, data: { turbo_confirm: "Descontinuar os produtos selecionados? Essa ação não pode ser desfeita.", controller: "bulk-select" } do %>
-      <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <label class="-ml-3 flex min-h-11 cursor-pointer items-center gap-2 px-3 text-sm font-semibold text-ink-muted">
-            <input type="checkbox" data-bulk-select-target="selectAll" data-action="bulk-select#toggleAll" class="size-4 rounded border-brand-200">
-            Selecionar todos
-          </label>
-          <span class="text-sm font-semibold text-stone-700" data-bulk-select-target="count" aria-live="polite"></span>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button type="submit" formaction="<%= bulk_unpublish_seller_products_path %>" data-turbo-confirm="Esconder os produtos selecionados da vitrine?" data-bulk-select-target="action" class="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-semibold text-stone-700 disabled:cursor-not-allowed disabled:opacity-50">Esconder selecionados</button>
-          <button type="submit" data-bulk-select-target="action" class="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50">Descontinuar selecionados</button>
-        </div>
-      </div>
+      <label class="-ml-3 mb-2 flex min-h-11 w-fit cursor-pointer items-center gap-2 px-3 text-sm font-semibold text-ink-muted">
+        <input type="checkbox" data-bulk-select-target="selectAll" data-action="bulk-select#toggleAll" class="size-4 rounded border-brand-200">
+        Selecionar todos
+      </label>
 
       <%# Lista em cartões no celular e tabela a partir de sm: cinco colunas em
           390px não cabem, e com overflow-hidden a coluna de ação ficava fora de
@@ -107,6 +98,17 @@
             <% end %>
           </tbody>
         </table>
+      </div>
+
+      <%# Ações em massa só com algo selecionado, presas ao pé da tela (no
+          celular, ao alcance do polegar). Sem JS a barra fica sempre visível,
+          e o servidor continua validando a seleção. %>
+      <div class="sticky bottom-0 z-20 -mx-4 mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-brand-100 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(120,40,10,0.08)] sm:mx-0 sm:rounded-2xl sm:border" data-bulk-select-target="bar">
+        <span class="text-sm font-semibold text-stone-800" data-bulk-select-target="count" aria-live="polite"></span>
+        <div class="flex flex-wrap gap-2">
+          <button type="submit" formaction="<%= bulk_unpublish_seller_products_path %>" data-turbo-confirm="Esconder os produtos selecionados da vitrine?" data-bulk-select-target="action" class="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-semibold text-stone-700 disabled:cursor-not-allowed disabled:opacity-50">Esconder</button>
+          <button type="submit" data-bulk-select-target="action" class="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50">Descontinuar</button>
+        </div>
       </div>
     <% end %>
   <% end %>
