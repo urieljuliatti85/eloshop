@@ -14,66 +14,16 @@
       espaço com o que precisa de ação. %>
   <%= render "seller_portal/tours/call" unless current_seller.tour_completed_at? %>
 
-  <%# Os avisos vêm antes do resumo de trabalho, na mesma ordem de antes: sem
-      chave PIX o pagamento PIX é recusado, e sem a conta do Mercado Pago nada
-      pode ser publicado. %>
-  <%= render "seller_portal/mercado_pago_connections/pix_key_notice", compact: true %>
-
-  <%# Some quando as quatro etapas estão prontas — depois disso "Para começar a
-      vender" seria ruído, e a página segue na navegação. %>
-  <% unless @getting_started_steps.values.all? %>
-    <%= render "seller_portal/getting_started/banner", steps: @getting_started_steps %>
+  <%# Com pedidos, o trabalho do dia vem antes do que falta configurar; sem
+      nenhum pedido ainda, o cadastro é o trabalho do dia. %>
+  <% setup_pending = !@getting_started_steps.values.all? || current_seller.mercado_pago_account_state == :not_accepted %>
+  <% if @orders_count.positive? %>
+    <%= render "seller_portal/dashboard/todo" %>
+    <%= render "seller_portal/dashboard/setup", steps: @getting_started_steps if setup_pending %>
+  <% else %>
+    <%= render "seller_portal/dashboard/setup", steps: @getting_started_steps if setup_pending %>
+    <%= render "seller_portal/dashboard/todo" %>
   <% end %>
-
-  <%# A ordem importa: "Cadastro em análise" remete ao aviso da conta, que fica acima dele. %>
-  <% unless current_seller.mercado_pago_account_state == :ready %>
-    <%= render "seller_portal/mercado_pago_connections/required_banner" %>
-  <% end %>
-
-  <% unless current_seller.approved? %>
-    <section class="rounded-2xl border border-amber-300 bg-amber-50 px-6 py-5">
-      <p class="text-xs font-bold uppercase tracking-[0.16em] text-amber-700">Ação necessária</p>
-      <h2 class="mt-1 text-xl font-bold text-amber-950">Cadastro em análise</h2>
-      <%# Enquanto não há conta aceita, o próximo passo é da vendedora, não da
-          plataforma: o admin nem consegue aprovar (`approve!`). %>
-      <% if current_seller.mercado_pago_account_state == :ready %>
-        <p class="mt-2 text-sm text-amber-800">A plataforma ainda precisa concluir a validação. Produtos não podem ser publicados enquanto o cadastro estiver <%= t(current_seller.status, scope: "sellers.statuses").downcase %>.</p>
-      <% else %>
-        <p class="mt-2 text-sm text-amber-800">Conecte uma Conta Vendedor real do Mercado Pago (aviso acima) para a plataforma poder analisar o cadastro. Produtos não podem ser publicados enquanto o cadastro estiver <%= t(current_seller.status, scope: "sellers.statuses").downcase %>.</p>
-      <% end %>
-    </section>
-  <% end %>
-
-  <%# Só enquanto não há conexão (nunca conectou ou foi desconectado): é onde
-      aparecem as opções de Conectar. Com a conta conectada, o box com
-      Reconectar e Desconectar mora em "Conta Vendedor no Mercado Pago" (e em
-      "Dados do Ateliê"), e o painel fica limpo. %>
-  <% unless current_seller.mercado_pago_connected? %>
-    <%= render "seller_portal/mercado_pago_connections/banner" %>
-  <% end %>
-
-  <%# O que pede ação hoje, em frases e não em números soltos: o artesão abre o
-      painel para saber se tem pedido para enviar. Só aparecem as linhas com algo. %>
-  <section class="seller-card" aria-labelledby="todo-title">
-    <h2 id="todo-title" class="text-xl font-bold text-stone-950">O que fazer agora</h2>
-    <% todo = [
-      ([ @to_prepare_count, @to_prepare_count == 1 ? "pedido pago para preparar e enviar" : "pedidos pagos para preparar e enviar", "Ver pedidos", seller_orders_path, true ] if @to_prepare_count.positive?),
-      ([ @low_stock_count, @low_stock_count == 1 ? "produto com estoque baixo" : "produtos com estoque baixo", "Ver produtos", seller_products_path, false ] if @low_stock_count.positive?),
-      ([ @awaiting_payment_count, @awaiting_payment_count == 1 ? "pedido aguardando o pagamento do cliente" : "pedidos aguardando o pagamento do cliente", "Acompanhar", seller_orders_path, false ] if @awaiting_payment_count.positive?)
-    ].compact %>
-    <% if todo.any? %>
-      <ul class="mt-4 divide-y divide-brand-100">
-        <% todo.each do |count, text, action, path, urgent| %>
-          <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
-            <p class="text-sm text-stone-700"><strong class="text-lg font-black <%= urgent ? 'text-brand-700' : 'text-stone-950' %>"><%= count %></strong> <%= text %></p>
-            <%= link_to action, path, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-600" %>
-          </li>
-        <% end %>
-      </ul>
-    <% else %>
-      <p class="mt-2 text-sm leading-6 text-stone-600">Nada pendente agora. Quando um pedido for pago, ele aparece aqui para você preparar.</p>
-    <% end %>
-  </section>
 
   <section aria-labelledby="numbers-title">
     <div class="mb-4 flex items-end justify-between gap-4">

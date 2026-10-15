@@ -166,32 +166,30 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
 
       get seller_root_path
 
-      expect(response.body).to include("Conta Vendedor no Mercado Pago", "Obrigatório", "Passo obrigatório")
+      expect(response.body).to include("Conta Vendedor no Mercado Pago", "Obrigatório", "Sem ela, nada é publicado.")
       expect(response.body).to include(seller_mercado_pago_guide_path)
     end
 
-    # Os avisos vêm antes do resumo de trabalho: abaixo dele o passo
-    # obrigatório passava despercebido sem rolar a página.
-    it "shows the mandatory banner above the work summary" do
+    # Sem pedidos ainda, o cadastro é o trabalho do dia: a etapa obrigatória
+    # fica acima do resumo, e não abaixo, onde passava despercebida.
+    it "shows the mandatory step above the work summary while there are no orders" do
       sign_in_as(user)
 
       get seller_root_path
 
-      expect(response.body.index("Passo obrigatório")).to be < response.body.index("O que fazer agora")
+      expect(response.body.index("Sem ela, nada é publicado.")).to be < response.body.index("O que fazer agora")
     end
 
-    it "keeps every notice above the work summary, in reading order" do
+    it "keeps the account steps in reading order inside the setup block" do
+      seller.update!(status: :pending, approved_at: nil)
       sign_in_as(user)
 
       get seller_root_path
 
       body = response.body
-      hero = body.index("O que fazer agora")
-      order = [ "Passo obrigatório", "Cadastro em análise", "Recebimentos e verificação" ].map { |text| body.index(text) }
-
+      order = [ "Conta Vendedor no Mercado Pago</h3>", "Aprovação da EloShop" ].map { |text| body.index(text) || body.index(text.sub("</h3>", "")) }
       expect(order).to all(be_present)
       expect(order).to eq(order.sort)
-      expect(order.last).to be < hero
     end
 
     it "replaces the warning with a connected label once connected" do

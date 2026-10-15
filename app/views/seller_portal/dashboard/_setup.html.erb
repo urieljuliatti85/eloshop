@@ -1,0 +1,77 @@
+<%# Tudo o que falta para começar a vender, num bloco só: antes eram até cinco
+    avisos empilhados (chave PIX, primeiros passos, passo obrigatório, conta do
+    Mercado Pago e cadastro em análise), cada um com botões próprios, acima do
+    trabalho do dia. Só as etapas pendentes aparecem, na ordem da página
+    Primeiros passos, e só a primeira delas tem o botão principal. A contagem
+    é a mesma da página (`Seller#getting_started_steps`). %>
+<% account_state = current_seller.mercado_pago_account_state
+   pending = steps.reject { |_, done| done }.keys
+   pending.unshift(:mercado_pago) if account_state == :not_accepted && !pending.include?(:mercado_pago)
+   pending = steps.keys & pending
+   first = pending.first
+   primary = "seller-button seller-button--primary px-5 py-2.5"
+   secondary = "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
+<section class="seller-card" aria-labelledby="setup-title">
+  <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+    <h2 id="setup-title" class="text-xl font-bold text-stone-950">Para começar a vender</h2>
+    <p class="text-sm text-stone-600"><%= steps.values.count(true) %> de <%= steps.size %> etapas concluídas · <%= link_to "Ver primeiros passos", seller_getting_started_path, class: "font-semibold text-stone-800 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %></p>
+  </div>
+
+  <ol class="mt-4 divide-y divide-brand-100">
+    <% pending.each do |step| %>
+      <li class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-w-0">
+          <% case step %>
+          <% when :address %>
+            <h3 class="font-semibold text-stone-950">Endereço do ateliê</h3>
+            <p class="mt-0.5 text-sm text-stone-600">Usado nas suas entregas.</p>
+          <% when :mercado_pago %>
+            <% if account_state == :not_accepted %>
+              <h3 class="font-semibold text-stone-950">Conta do Mercado Pago não aceita</h3>
+              <p class="mt-0.5 text-sm text-stone-600">Conta de teste ou não confirmada como real não pode ser aprovada. Conecte a sua Conta Vendedor real.</p>
+            <% else %>
+              <h3 class="flex flex-wrap items-center gap-2 font-semibold text-stone-950">Conta Vendedor no Mercado Pago <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-800">Obrigatório</span></h3>
+              <p class="mt-0.5 text-sm text-stone-600">Ela recebe o pagamento dos seus clientes. Sem ela, nada é publicado.</p>
+              <% if !@mercado_pago_oauth_configured %>
+                <p class="mt-1 text-sm text-amber-700">A conexão aguarda a configuração da plataforma.</p>
+              <% elsif @mercado_pago_oauth_sandbox %>
+                <p class="mt-1 text-sm text-amber-700"><strong>Ambiente de teste:</strong> conecte uma conta TESTUSER do tipo Vendedor.</p>
+              <% end %>
+            <% end %>
+          <% when :pix_key %>
+            <h3 class="font-semibold text-stone-950">Chave PIX no Mercado Pago</h3>
+            <p class="mt-0.5 text-sm text-stone-600">Sem ela, o PIX dos seus clientes é recusado. O cartão não depende disso.</p>
+          <% when :product %>
+            <h3 class="font-semibold text-stone-950">Primeira peça</h3>
+            <p class="mt-0.5 text-sm text-stone-600">Pode salvar como rascunho e publicar depois.</p>
+          <% when :approval %>
+            <h3 class="font-semibold text-stone-950">Aprovação da EloShop</h3>
+            <p class="mt-0.5 text-sm text-stone-600"><%= account_state == :ready ? "A plataforma está validando seu cadastro. Os produtos são publicados depois disso." : "Começa quando a conta do Mercado Pago for aceita." %></p>
+          <% end %>
+        </div>
+
+        <div class="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1">
+          <% action = step == first ? primary : secondary %>
+          <% case step %>
+          <% when :address %>
+            <%= link_to "Cadastrar endereço", edit_seller_atelier_path, class: action %>
+          <% when :mercado_pago %>
+            <% if account_state == :not_accepted %>
+              <%= link_to "Ver como corrigir", seller_mercado_pago_guide_path, class: action %>
+            <% else %>
+              <% if @mercado_pago_oauth_configured %>
+                <%= link_to "Já tenho conta: conectar", seller_mercado_pago_connect_path, class: action, data: { turbo: false } %>
+              <% end %>
+              <%= link_to "Ainda não tenho: ver passo a passo", seller_mercado_pago_guide_path, class: secondary %>
+            <% end %>
+          <% when :pix_key %>
+            <%= link_to "Ver o passo a passo", seller_pix_key_guide_path, class: action %>
+            <%= button_to "Já cadastrei minha chave PIX", seller_pix_key_confirmation_path, method: :post, class: "#{secondary} cursor-pointer" %>
+          <% when :product %>
+            <%= link_to "Novo produto", new_seller_product_path, class: action %>
+          <% end %>
+        </div>
+      </li>
+    <% end %>
+  </ol>
+</section>

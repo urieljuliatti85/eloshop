@@ -1,0 +1,22 @@
+  <%# O que pede ação hoje, em frases e não em números soltos: o artesão abre o
+      painel para saber se tem pedido para enviar. Só aparecem as linhas com algo. %>
+  <section class="seller-card" aria-labelledby="todo-title">
+    <h2 id="todo-title" class="text-xl font-bold text-stone-950">O que fazer agora</h2>
+    <% todo = [
+      ([ @to_prepare_count, @to_prepare_count == 1 ? "pedido pago para preparar e enviar" : "pedidos pagos para preparar e enviar", "Ver pedidos", seller_orders_path, true ] if @to_prepare_count.positive?),
+      ([ @low_stock_count, @low_stock_count == 1 ? "produto com estoque baixo" : "produtos com estoque baixo", "Ver produtos", seller_products_path, false ] if @low_stock_count.positive?),
+      ([ @awaiting_payment_count, @awaiting_payment_count == 1 ? "pedido aguardando o pagamento do cliente" : "pedidos aguardando o pagamento do cliente", "Acompanhar", seller_orders_path, false ] if @awaiting_payment_count.positive?)
+    ].compact %>
+    <% if todo.any? %>
+      <ul class="mt-4 divide-y divide-brand-100">
+        <% todo.each do |count, text, action, path, urgent| %>
+          <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
+            <p class="text-sm text-stone-700"><strong class="text-lg font-black <%= urgent ? 'text-brand-700' : 'text-stone-950' %>"><%= count %></strong> <%= text %></p>
+            <%= link_to action, path, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-600" %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="mt-2 text-sm leading-6 text-stone-600">Nada pendente agora. Quando um pedido for pago, ele aparece aqui para você preparar.</p>
+    <% end %>
+  </section>

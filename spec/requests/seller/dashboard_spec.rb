@@ -38,8 +38,10 @@ RSpec.describe "Seller dashboard", type: :request do
 
     get seller_root_path
 
-    expect(response.body).to include("precisa ter uma chave PIX cadastrada", "Ver o passo a passo com imagens", "Já cadastrei minha chave PIX", seller_pix_key_guide_path)
-    # No painel inicial o aviso é compacto: os passos ficam na página do guia.
+    setup = Nokogiri::HTML(response.body).at_css("[aria-labelledby='setup-title']")
+    expect(setup.text.squish).to include("Chave PIX no Mercado Pago", "o PIX dos seus clientes é recusado", "Já cadastrei minha chave PIX")
+    expect(setup.css("a").map { |link| link["href"] }).to include(seller_pix_key_guide_path)
+    # No painel inicial a etapa é uma linha: os passos ficam na página do guia.
     expect(response.body).not_to include("Gerenciar chaves Pix")
   end
 
@@ -57,7 +59,7 @@ RSpec.describe "Seller dashboard", type: :request do
     expect(todo).to include("1 pedido pago para preparar e enviar", "1 pedido aguardando o pagamento do cliente")
   end
 
-  it "opens with the page title, the tour invitation and the PIX key warning above every other box" do
+  it "opens with the page title, the tour invitation and a single setup block before the work summary" do
     sign_in_as(user)
 
     get seller_root_path
@@ -66,7 +68,19 @@ RSpec.describe "Seller dashboard", type: :request do
     boxes = doc.at_css(".seller-content > div").element_children
     expect(boxes.first.at_css("h1").text).to eq("Visão geral")
     expect(boxes[1]["aria-labelledby"]).to eq("tour-call-title")
-    expect(boxes[2]["aria-labelledby"]).to eq("pix-key-notice-title")
+    expect(boxes[2]["aria-labelledby"]).to eq("setup-title")
+    expect(boxes[3]["aria-labelledby"]).to eq("todo-title")
+  end
+
+  it "puts the work summary before the setup block once the seller has orders" do
+    product = Product.create!(seller: seller, name: "Cesto Ordem", sku: "ORDEM-1", price_cents: 8_000, stock_quantity: 3, status: :active)
+    create_seller_order(product)
+    sign_in_as(user)
+
+    get seller_root_path
+
+    labels = Nokogiri::HTML(response.body).css(".seller-content > div > section").map { |node| node["aria-labelledby"] }
+    expect(labels.index("todo-title")).to be < labels.index("setup-title")
   end
 
   it "hides the PIX key warning once the seller confirmed the key" do
@@ -98,8 +112,8 @@ RSpec.describe "Seller dashboard", type: :request do
 
       get seller_root_path
 
-      box = box_texts.find { |text| text.include?("Recebimentos e verificação") }
-      expect(box).to be_present
+      box = box_texts.find { |text| text.include?("Conta Vendedor no Mercado Pago") }
+      expect(box).to include("Já tenho conta: conectar")
       expect(Nokogiri::HTML(response.body).css("a").map { |node| node["href"] }).to include(seller_mercado_pago_connect_path)
     end
 
@@ -110,7 +124,7 @@ RSpec.describe "Seller dashboard", type: :request do
 
       get seller_root_path
 
-      expect(box_texts.join(" ")).to include("Recebimentos e verificação")
+      expect(box_texts.join(" ")).to include("Conta Vendedor no Mercado Pago")
       expect(Nokogiri::HTML(response.body).css("a").map { |node| node["href"] }).to include(seller_mercado_pago_connect_path)
     end
 
@@ -176,28 +190,27 @@ RSpec.describe "Seller dashboard", type: :request do
   describe "getting started box" do
     before { sign_in_as(user) }
 
-    it "comes right after the tour invitation, above the account warnings" do
+    it "lists only the pending steps, in the Primeiros passos order, with one primary action" do
       seller.update!(status: :pending, approved_at: nil)
 
       get seller_root_path
 
-      doc = Nokogiri::HTML(response.body)
-      blocks = doc.css(".seller-content > div > section").map { |node| node["aria-labelledby"] || node.text.squish.first(30) }
-      expect(blocks.first(2)).to eq(%w[tour-call-title getting-started-banner-title])
-      expect(blocks.size).to be > 2
+      setup = Nokogiri::HTML(response.body).at_css("section[aria-labelledby='setup-title']")
+      steps = setup.css("li h3").map { |title| title.text.squish }
+      expect(steps.map { |title| title.sub(" Obrigatório", "") }).to eq([ "Endereço do ateliê", "Conta Vendedor no Mercado Pago", "Chave PIX no Mercado Pago", "Primeira peça", "Aprovação da EloShop" ])
+      expect(setup.css(".seller-button--primary").size).to eq(1)
     end
 
     it "tells the seller what is left and links to the Primeiros passos page" do
       get seller_root_path
 
       doc = Nokogiri::HTML(response.body)
-      box = doc.at_css("section[aria-labelledby='getting-started-banner-title']")
+      box = doc.at_css("section[aria-labelledby='setup-title']")
       expect(box).to be_present
-      expect(box.text.squish).to include("Para começar a vender", "Primeiros passos")
+      expect(box.text.squish).to include("Para começar a vender")
       # A fixture do vendedor já nasce aprovado: só a etapa de aprovação está pronta.
       expect(box.text.squish).to include("1 de 5 etapas concluídas")
-      link = box.at_css("a")
-      expect(link.text.squish).to eq("Ver primeiros passos")
+      link = box.css("a").find { |node| node.text.squish == "Ver primeiros passos" }
       expect(link["href"]).to eq(seller_getting_started_path)
     end
 
@@ -214,12 +227,29 @@ RSpec.describe "Seller dashboard", type: :request do
       expect(dashboard_count).to eq(page_count)
     end
 
+    it "keeps a connected but not accepted account as a step to fix" do
+      seller.update!(
+        origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
+        origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP",
+        mercado_pago_user_id: "123456", mercado_pago_access_token_ciphertext: "access-token-cifrado",
+        mercado_pago_refresh_token_ciphertext: "refresh-token-cifrado", mercado_pago_connected_at: Time.current,
+        mercado_pago_live_mode: false, mercado_pago_test_account: true, pix_key_confirmed_at: Time.current
+      )
+      seller.products.create!(name: "Primeira peça", sku: "PRIMEIRA-NAO-ACEITA", price_cents: 5_000, stock_quantity: 1)
+
+      get seller_root_path
+
+      setup = Nokogiri::HTML(response.body).at_css("section[aria-labelledby='setup-title']")
+      expect(setup.text.squish).to include("Conta do Mercado Pago não aceita", "Ver como corrigir")
+    end
+
     it "disappears once the five steps are done" do
       seller.update!(
         origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
         origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP",
         mercado_pago_user_id: "123456", mercado_pago_access_token_ciphertext: "access-token-cifrado",
         mercado_pago_refresh_token_ciphertext: "refresh-token-cifrado", mercado_pago_connected_at: Time.current,
+        mercado_pago_live_mode: true, mercado_pago_test_account: false,
         pix_key_confirmed_at: Time.current
       )
       seller.products.create!(name: "Primeira peça", sku: "PRIMEIRA-DASH2", price_cents: 5_000, stock_quantity: 1)
@@ -228,7 +258,7 @@ RSpec.describe "Seller dashboard", type: :request do
 
       expect(response).to have_http_status(:ok)
       doc = Nokogiri::HTML(response.body)
-      expect(doc.at_css("section[aria-labelledby='getting-started-banner-title']")).to be_nil
+      expect(doc.at_css("section[aria-labelledby='setup-title']")).to be_nil
     end
   end
 
