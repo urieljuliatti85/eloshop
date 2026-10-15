@@ -9,8 +9,8 @@
     </div>
   <% end %>
 
-  <div><%= form.label :label, "Nome do campo" %><%= form.text_field :label, required: true, class: "mt-2 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %></div>
-  <div><%= form.label :max_length, "Máximo de caracteres" %><%= form.number_field :max_length, min: 1, class: "mt-2 w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-100" %></div>
+  <div><%= form.label :label, "Nome do campo" %><%= form.text_field :label, required: true, class: "seller-input mt-2" %></div>
+  <div><%= form.label :max_length, "Máximo de caracteres" %><%= form.number_field :max_length, min: 1, class: "seller-input mt-2" %></div>
   <label class="flex items-center gap-3"><%= form.checkbox :required, class: "rounded border-stone-300 text-brand-600 accent-brand-600" %><span>Preenchimento obrigatório</span></label>
   <%= form.submit "Salvar personalização", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-brand-600" %>
 <% end %>

@@ -75,7 +75,7 @@
       <% if shipment.local_pickup? %>
         <%= button_to "Marcar como pronto para retirada",
               ship_seller_order_path(@order), method: :patch,
-              class: "mt-5 inline-flex min-h-11 cursor-pointer items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white hover:bg-brand-600",
+              class: "seller-button seller-button--primary mt-5",
               form: { data: { turbo_confirm: "O pedido já está pronto para o cliente retirar?" } } %>
       <% else %>
         <%= form_with url: ship_seller_order_path(@order), method: :patch, class: "mt-5 rounded-2xl border border-brand-100 bg-brand-50/50 p-4 sm:p-5" do |form| %>
@@ -102,7 +102,7 @@
                   placeholder: "Ex.: AA123456789BR" %>
           </div>
           <%= form.submit "Marcar como enviado",
-                class: "mt-5 inline-flex min-h-11 cursor-pointer items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white hover:bg-brand-600" %>
+                class: "seller-button seller-button--primary mt-5" %>
         <% end %>
       <% end %>
     <% elsif shipment&.shipped? %>
@@ -113,17 +113,17 @@
       <% end %>
       <%= button_to(shipment.local_pickup? ? "Confirmar retirada" : "Confirmar entrega",
             deliver_seller_order_path(@order), method: :patch,
-            class: "mt-5 inline-flex min-h-11 cursor-pointer items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white hover:bg-brand-600",
+            class: "seller-button seller-button--primary mt-5",
             form: { data: { turbo_confirm: shipment.local_pickup? ? "Confirma que o cliente retirou o pedido?" : "Confirma que o pedido foi entregue?" } }) %>
     <% end %>
     <% if @seller_order.accepts_messages? %>
       <%= link_to "Fale com o cliente", seller_order_messages_path(@order),
-            class: "mt-5 inline-flex min-h-11 items-center rounded-full border border-brand-200 px-6 py-3 text-sm font-bold text-brand-700 hover:bg-brand-50" %>
+            class: "seller-button seller-button--secondary mt-5" %>
     <% end %>
   </section>
 
   <div class="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
-    <section class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
+    <section class="seller-card">
       <h2 class="text-xl font-bold">Itens do seu ateliê</h2>
       <ul class="mt-4 divide-y divide-brand-100">
         <% @order_items.each do |item| %>
@@ -148,7 +148,7 @@
       </dl>
     </section>
 
-    <aside class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
+    <aside class="seller-card">
       <h2 class="text-xl font-bold"><%= shipment&.local_pickup? ? "Dados para retirada" : "Endereço de entrega" %></h2>
       <address class="mt-4 not-italic text-sm leading-6 text-ink-muted">
         <p class="font-semibold text-ink"><%= @order.customer.name %></p>
