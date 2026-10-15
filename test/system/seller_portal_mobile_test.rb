@@ -42,6 +42,21 @@ class SellerPortalMobileTest < ApplicationSystemTestCase
     assert_no_horizontal_overflow
   end
 
+  # Ações em massa só aparecem com algo selecionado, na barra presa ao pé da
+  # tela (o polegar alcança), com a contagem anunciada.
+  test "shows the bulk actions only after selecting a product" do
+    sign_in_seller(users(:seller))
+    visit seller_products_path
+
+    assert_no_button "Descontinuar"
+    first("label", text: /Selecionar (?!todos)/, visible: true).click
+
+    assert_button "Descontinuar"
+    assert_button "Esconder"
+    assert_text "1 selecionado"
+    assert_no_horizontal_overflow
+  end
+
   test "navigates the panel through the hamburger menu instead of a sideways-scrolling strip" do
     sign_in_seller(users(:seller))
     visit seller_root_path
