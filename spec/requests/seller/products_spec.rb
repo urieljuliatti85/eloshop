@@ -41,7 +41,7 @@ RSpec.describe "Seller products", type: :request do
 
     get seller_products_path
 
-    expect(response.body).to include("R$ 50,00", "Estoque baixo: 2", "Selecionar Vaso próprio")
+    expect(response.body).to include("R$ 50,00", "Estoque baixo: 2", "Selecionar Vaso próprio", "Sem foto")
   end
 
   it "shows an empty state with the way to create the first product" do

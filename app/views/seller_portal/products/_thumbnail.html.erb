@@ -1,7 +1,13 @@
 <%# Miniatura da peça nas listas do painel: o artesão reconhece a peça pela
-    foto antes do nome. Sem foto, um bloco neutro do mesmo tamanho. %>
+    foto antes do nome. Sem foto, o bloco diz isso, porque peça sem foto é o
+    primeiro motivo de não vender. %>
 <span class="grid size-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#eee7da]">
   <% if product.main_image.attached? %>
     <%= image_tag product.main_image.variant(resize_to_fill: [ 112, 112 ]), alt: "", loading: "lazy", class: "size-full object-cover" %>
+  <% else %>
+    <span class="flex flex-col items-center gap-0.5 text-xs font-semibold leading-none text-stone-600">
+      <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      Sem foto
+    </span>
   <% end %>
 </span>

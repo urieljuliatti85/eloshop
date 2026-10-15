@@ -119,7 +119,7 @@
   .seller-input { @apply w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:bg-white focus:ring-3 focus:ring-brand-200; }
   .seller-badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
   .seller-button { @apply inline-flex min-h-11 cursor-pointer items-center rounded-full px-6 py-3 text-sm font-bold transition; }
-  .seller-button--primary { @apply bg-brand-500 text-white hover:bg-brand-600; }
+  .seller-button--primary { @apply bg-brand-600 text-white hover:bg-brand-700; }
   .seller-button--secondary { @apply border border-brand-200 text-brand-700 hover:bg-brand-50; }
 
   /* Campo obrigatório vazio (controller required-fields). O `!` vence o
