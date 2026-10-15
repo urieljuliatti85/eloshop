@@ -177,6 +177,16 @@ RSpec.describe "Orders", type: :request do
       expect(response).to redirect_to(cart_path)
     end
 
+    it "rate limits checkout attempts per customer even when the IP changes" do
+      sign_in_customer
+
+      5.times { |i| post orders_path, params: { address_id: 0 }, headers: { "X-Real-IP" => "203.0.113.#{i + 1}" } }
+      post orders_path, params: { address_id: 0 }, headers: { "X-Real-IP" => "203.0.113.99" }
+
+      follow_redirect!
+      expect(response.body).to include("Muitas tentativas")
+    end
+
     it "rate limits repeated checkout attempts" do
       sign_in_customer
 

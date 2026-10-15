@@ -72,7 +72,7 @@ Considerar sempre, em toda funcionalidade que recebe entrada externa:
 
 ## Rate limiting
 
-Decidido na Fase 18, usando o `rate_limit` nativo do Rails (sem gem como Rack::Attack — não se justifica com essa quantidade de regras). Todos os endpoints sensíveis a força bruta/abuso têm limite: login de admin e de cliente, cadastro de cliente, reset de senha, contato, aplicar cupom (adivinhação de código) e criar pedido (checkout). Webhook de pagamento é deliberadamente **não** limitado por IP — a autenticidade é garantida pelo segredo verificado (`Gateways::FakeGateway#verify_webhook`, comparação timing-safe), e um webhook real pode legitimamente vir sempre do mesmo IP do gateway com retries.
+Decidido na Fase 18, usando o `rate_limit` nativo do Rails (sem gem como Rack::Attack — não se justifica com essa quantidade de regras). Todos os endpoints sensíveis a força bruta/abuso têm limite: login de admin e de cliente, cadastro de cliente, reset de senha, contato, aplicar cupom (adivinhação de código) e criar pedido (checkout). Criar pedido e autorizar pagamento têm um **segundo limite por cliente** (5 em 30 minutos, `by: Current.customer.id`), além do de IP: carding distribuído troca de IP a cada tentativa e nunca chega ao limite por IP, mas a conta é uma só. Cada tentativa é uma cobrança real no Mercado Pago. Webhook de pagamento é deliberadamente **não** limitado por IP — a autenticidade é garantida pelo segredo verificado (`Gateways::FakeGateway#verify_webhook`, comparação timing-safe), e um webhook real pode legitimamente vir sempre do mesmo IP do gateway com retries.
 
 ## Sessões
 
@@ -117,4 +117,4 @@ Duas regras que não se deduzem do código:
 * **`Seller` usa lista permitida (`only:`), nunca `ignore:`.** A tabela guarda tokens OAuth cifrados, CPF e endereço; com `ignore:`, uma coluna sensível nova passaria a ser copiada para `versions` sem ninguém perceber. `test/models/auditing_test.rb` falha se um token, o CPF ou o endereço aparecerem lá.
 * **`Product#stock_quantity` e `Coupon#uses_count` não são versionados**: mudam a cada compra, dentro do `Checkout::CreateOrder`, e só gerariam ruído e escrita extra numa transação que já trava linhas.
 
-Ainda não há tela de histórico nem política de retenção; a consulta é pelo banco (`record.versions`).
+O histórico aparece para o admin em `/admin/auditoria` (`Admin::AuditLogsController`, só leitura, filtros por tipo e autor, paginado). Ainda não há política de retenção da tabela `versions`.

@@ -2,6 +2,9 @@ class OrdersController < StorefrontController
   before_action :ensure_cart_not_empty, only: :new
 
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to cart_path, alert: "Muitas tentativas. Tente novamente em alguns minutos." }
+  # Por cliente, além do IP: ver o comentário em `PaymentsController`.
+  rate_limit to: 5, within: 30.minutes, only: :create, by: -> { Current.customer.id }, name: "per-customer",
+    with: -> { redirect_to cart_path, alert: "Muitas tentativas. Tente novamente em alguns minutos." }
 
   def index
     @orders = Current.customer.orders.includes(:order_items).order(created_at: :desc)
