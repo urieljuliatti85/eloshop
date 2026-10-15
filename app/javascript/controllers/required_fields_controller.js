@@ -11,9 +11,10 @@ import { Controller } from "@hotwired/stimulus"
 //
 // Campos com `data-required-when="<valor>"` só são obrigatórios enquanto o
 // elemento `trigger` (um <select>) tiver esse valor; o asterisco do label
-// acompanha. O servidor continua sendo a fonte da verdade das regras.
+// acompanha, e um `group` com o mesmo `data-required-when` aparece e some.
+// O servidor continua sendo a fonte da verdade das regras.
 export default class extends Controller {
-  static targets = ["field", "trigger", "marker"]
+  static targets = ["field", "trigger", "marker", "group"]
 
   connect() {
     this.refresh()
@@ -58,6 +59,11 @@ export default class extends Controller {
       field.required = required
       this.markerFor(field)?.toggleAttribute("hidden", !required)
       if (!required) this.clear(field)
+    })
+
+    // Grupos que só fazem sentido numa disponibilidade (ex.: prazo de produção).
+    this.groupTargets.forEach((group) => {
+      group.hidden = current !== group.dataset.requiredWhen
     })
   }
 

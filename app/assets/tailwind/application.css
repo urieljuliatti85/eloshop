@@ -111,6 +111,17 @@
   .admin-flash { @apply mb-6 rounded-xl border px-4 py-3 text-sm font-medium shadow-sm; }
   .admin-flash--danger { @apply border-rose-200 bg-rose-50 text-rose-800; }
   .admin-empty-state { @apply rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center text-sm text-slate-500; }
+  /* Painel do artesão: componentes extraídos das views de seller_portal
+     (antes repetidos à mão). Mesmo visual de antes; mudar aqui muda o painel inteiro. */
+  .seller-card { @apply rounded-2xl border border-brand-100 bg-white p-6 shadow-sm; }
+  .seller-card-lg { @apply rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8; }
+  .seller-label { @apply mb-1 block text-sm font-semibold text-stone-700; }
+  .seller-input { @apply w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:bg-white focus:ring-3 focus:ring-brand-200; }
+  .seller-badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+  .seller-button { @apply inline-flex min-h-11 cursor-pointer items-center rounded-full px-6 py-3 text-sm font-bold transition; }
+  .seller-button--primary { @apply bg-brand-500 text-white hover:bg-brand-600; }
+  .seller-button--secondary { @apply border border-brand-200 text-brand-700 hover:bg-brand-50; }
+
   /* Campo obrigatório vazio (controller required-fields). O `!` vence o
      estilo de input do admin e o focus:border da vitrine. */
   input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { @apply border-red-500! focus:border-red-500! focus:ring-red-100!; }

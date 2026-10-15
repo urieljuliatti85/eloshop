@@ -21,6 +21,26 @@ RSpec.describe "Seller orders", type: :request do
     expect(response.body).not_to include("##{other_order.id}")
   end
 
+  it "keeps cancelling out of the list and offers it on the order page" do
+    order = create_order_for(own_product)
+
+    get seller_orders_path
+    expect(response.body).not_to include(cancel_seller_order_path(order))
+    expect(response.body).to include("Aguardando pagamento")
+
+    get seller_order_path(order)
+    expect(response.body).to include("Cancelar este pedido", cancel_seller_order_path(order))
+  end
+
+  it "does not offer cancelling an order that is already cancelled" do
+    order = create_order_for(own_product)
+    post cancel_seller_order_path(order)
+
+    get seller_order_path(order)
+
+    expect(response.body).not_to include(cancel_seller_order_path(order))
+  end
+
   it "does not expose another seller order by changing the id" do
     other_order = create_order_for(other_product)
 

@@ -170,23 +170,23 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
       expect(response.body).to include(seller_mercado_pago_guide_path)
     end
 
-    # O hero ocupa a primeira tela: abaixo dele o passo obrigatório passava
-    # despercebido sem rolar a página.
-    it "shows the mandatory banner above the hero" do
+    # Os avisos vêm antes do resumo de trabalho: abaixo dele o passo
+    # obrigatório passava despercebido sem rolar a página.
+    it "shows the mandatory banner above the work summary" do
       sign_in_as(user)
 
       get seller_root_path
 
-      expect(response.body.index("Passo obrigatório")).to be < response.body.index("Crie, publique e acompanhe cada venda")
+      expect(response.body.index("Passo obrigatório")).to be < response.body.index("O que fazer agora")
     end
 
-    it "keeps every notice above the hero, in reading order" do
+    it "keeps every notice above the work summary, in reading order" do
       sign_in_as(user)
 
       get seller_root_path
 
       body = response.body
-      hero = body.index("Crie, publique e acompanhe cada venda")
+      hero = body.index("O que fazer agora")
       order = [ "Passo obrigatório", "Cadastro em análise", "Recebimentos e verificação" ].map { |text| body.index(text) }
 
       expect(order).to all(be_present)

@@ -17,10 +17,44 @@ RSpec.describe "Seller panel navigation", type: :request do
     expect(current_labels).to eq([ "Visão geral" ])
   end
 
-  it "marks the sidebar item of the current area in the brand color" do
+  # A área atual usa tinta escura: o vermelho fica para o que pede ação
+  # (Mercado Pago obrigatório, chave PIX pendente).
+  it "marks the sidebar item of the current area in a non-alarm color" do
     get seller_products_path
     expect(current_labels).to eq([ "Produtos" ])
-    expect(Nokogiri::HTML(response.body).at_css("aside a[aria-current='page']")["class"]).to include("bg-brand-500")
+    expect(Nokogiri::HTML(response.body).at_css("aside a[aria-current='page']")["class"]).to include("bg-stone-900")
+  end
+
+  it "groups the menu into operation, catalog and setup" do
+    get seller_root_path
+    groups = Nokogiri::HTML(response.body).css("aside nav > p").map { |label| label.text.strip }
+    expect(groups).to eq([ "Operação", "Catálogo", "Configuração" ])
+  end
+
+  it "shows the PIX key item as pending until the seller confirms the key" do
+    get seller_root_path
+    pix_link = Nokogiri::HTML(response.body).at_css("aside a[href='#{seller_pix_key_guide_path}']")
+    expect(pix_link.text).to include("Pendente")
+    expect(pix_link["class"]).not_to include("bg-red")
+
+    seller.update_column(:pix_key_confirmed_at, Time.current)
+    get seller_root_path
+    pix_link = Nokogiri::HTML(response.body).at_css("aside a[href='#{seller_pix_key_guide_path}']")
+    expect(pix_link.text).to include("✓ Cadastrada")
+  end
+
+  it "names the icon-only header buttons for screen readers" do
+    get seller_root_path
+    doc = Nokogiri::HTML(response.body)
+    expect(doc.at_css("form[action='#{seller_logout_path}'] button")["aria-label"]).to eq("Sair")
+    expect(doc.at_css("button[aria-label='Notificações']")["class"]).to include("size-11")
+  end
+
+  it "shows the account status as readable text, not in alarm red when approved" do
+    seller.update!(status: :approved, approved_at: Time.current)
+    get seller_root_path
+    status = Nokogiri::HTML(response.body).css("header p").find { |p| p.text.strip == "Aprovado" }
+    expect(status["class"]).to include("text-emerald-700")
   end
 
   it "marks only the most specific area" do

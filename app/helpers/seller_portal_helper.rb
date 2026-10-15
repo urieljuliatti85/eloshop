@@ -18,4 +18,23 @@ module SellerPortalHelper
         body: "Cadastre sua primeira peça. Você pode salvar como rascunho e terminar depois." }
     ]
   end
+
+  # Selo de estoque da lista de produtos do painel: a disponibilidade dita o
+  # que contar. Sob encomenda não tem estoque físico; com variantes, o estoque
+  # mora nelas (ver Product#available_for_purchase?). Devolve [texto, classes].
+  def seller_stock_badge(product)
+    return [ "Sob encomenda", "bg-sky-100 text-sky-800" ] if product.availability_type_made_to_order?
+    return [ "Estoque nas variantes", "bg-stone-100 text-stone-700" ] if product.has_variants?
+
+    quantity = product.stock_quantity
+    if quantity.zero?
+      [ product.availability_type_one_of_a_kind? ? "Peça vendida" : "Sem estoque", "bg-amber-100 text-amber-800" ]
+    elsif product.availability_type_one_of_a_kind?
+      [ "Peça única", "bg-stone-100 text-stone-700" ]
+    elsif quantity <= Product::LOW_STOCK_THRESHOLD
+      [ "Estoque baixo: #{quantity}", "bg-amber-100 text-amber-800" ]
+    else
+      [ "#{quantity} em estoque", "bg-stone-100 text-stone-700" ]
+    end
+  end
 end

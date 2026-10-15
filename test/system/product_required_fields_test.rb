@@ -40,7 +40,9 @@ class ProductRequiredFieldsTest < ApplicationSystemTestCase
 
     # Prazo de produção só é obrigatório (e marcado) para sob encomenda.
     assert_no_selector "label[for='product_production_time_min_days'] [data-required-fields-target='marker']", visible: :visible
+    assert_no_field "Produção mínima (dias úteis)"
     select "Sob encomenda", from: "Disponibilidade"
+    assert_field "Produção mínima (dias úteis)"
     assert_selector "label[for='product_production_time_min_days'] [data-required-fields-target='marker']", visible: :visible
     assert_selector "label[for='product_production_time_max_days'] [data-required-fields-target='marker']", visible: :visible
 
@@ -50,8 +52,8 @@ class ProductRequiredFieldsTest < ApplicationSystemTestCase
     assert_selector "[aria-invalid='true']", count: 7
     assert_equal "product_production_time_min_days", page.evaluate_script("document.activeElement.id")
 
-    # Peso e dimensões têm asterisco, mas não impedem salvar como rascunho.
-    assert_selector "label[for='product_weight_grams'] [data-required-fields-target='marker']", visible: :visible
+    # Peso e dimensões são marcados "Para publicar", mas não impedem salvar como rascunho.
+    assert_selector "label[for='product_weight_grams'] [data-publish-marker]", visible: :visible
     select "Estoque padrão", from: "Disponibilidade"
     click_button "Salvar produto"
     assert_text "Produto criado com sucesso."

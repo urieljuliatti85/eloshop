@@ -6,7 +6,9 @@ module SellerPortal
     before_action :set_category_tree, only: %i[new create edit update]
 
     def index
-      @products = current_seller.products.includes(:category).order(created_at: :desc)
+      # `preload`, não `includes`, com anexo (ver CLAUDE.md, Fase 17): a lista
+      # mostra miniatura, preço "a partir de" e estoque por variante.
+      @products = current_seller.products.preload(:product_variants, main_image_attachment: :blob).order(created_at: :desc)
       @products = @products.matching_query(params[:q]) if params[:q].present?
     end
 

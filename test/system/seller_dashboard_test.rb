@@ -13,10 +13,11 @@ class SellerDashboardTest < ApplicationSystemTestCase
   test "seller reaches the redesigned dashboard and its main shortcuts" do
     visit seller_root_path
 
-    assert_selector "h1", text: "Crie, publique e acompanhe cada venda."
+    assert_selector "h1", text: "Visão geral"
     assert_field "Buscar no seu catálogo"
     assert_link "Adicionar nova peça", href: new_seller_product_path
-    assert_link "Acompanhar pedidos", href: seller_orders_path
+    assert_selector "h2", text: "O que fazer agora"
+    assert_link "Ver todos", href: seller_orders_path
   end
 
   test "dashboard remains usable without horizontal page overflow on mobile" do

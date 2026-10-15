@@ -37,6 +37,12 @@ class SellerOrderTest < ActiveSupport::TestCase
     assert_equal 1_350, fee
   end
 
+  test "net amount subtracts refunds and gives back the refunded commission" do
+    seller_order = SellerOrder.new(seller_amount_cents: 9_000, refunded_amount_cents: 2_000, platform_fee_refunded_cents: 300)
+
+    assert_equal 7_300, seller_order.seller_net_amount_cents
+  end
+
   test "rounds a fractional cent half up" do
     assert_equal 1_349, SellerOrder.platform_fee_cents_for(subtotal_cents: 8_990, discount_cents: 0)
   end

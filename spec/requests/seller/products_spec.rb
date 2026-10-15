@@ -36,6 +36,34 @@ RSpec.describe "Seller products", type: :request do
   # sobre o crescimento: o total muda quando a página muda, a inclinação não
   # pode voltar. Diferente do admin, este painel tem tráfego proporcional ao
   # número de artesãos.
+  it "lists each product with its price, stock badge and a labeled checkbox" do
+    own_product
+
+    get seller_products_path
+
+    expect(response.body).to include("R$ 50,00", "Estoque baixo: 2", "Selecionar Vaso próprio")
+  end
+
+  it "shows an empty state with the way to create the first product" do
+    get seller_products_path
+
+    expect(response.body).to include("Sua primeira peça começa aqui.", new_seller_product_path)
+    expect(response.body).not_to include("Selecionar todos")
+  end
+
+  it "does not issue more queries on the product list when products are added" do
+    own_product
+    get seller_products_path
+    before = count_queries { get seller_products_path }
+
+    3.times { |i| Product.create!(seller: seller, name: "Peça #{i}", sku: "MAIS-#{i}", price_cents: 4_000, stock_quantity: 5) }
+
+    get seller_products_path
+    after = count_queries { get seller_products_path }
+
+    expect(after).to eq(before)
+  end
+
   it "does not issue more queries on the product form when categories are added" do
     top = Category.create!(name: "Casa")
     child = Category.create!(name: "Decoração", parent: top)
@@ -335,16 +363,30 @@ RSpec.describe "Seller products", type: :request do
       end
     end
 
-    it "marks the category as required to publish, in red, and explains why" do
+    # "Para publicar" em texto, e não o asterisco de "obrigatório para salvar":
+    # o rascunho salva sem a categoria.
+    it "marks the category as required to publish, and explains why" do
       get new_seller_product_path
 
       doc = Nokogiri::HTML(response.body)
       expect(doc.at_css("label[for='product_category_id']").text).to start_with("Categoria")
-      expect(doc.at_css("label[for='product_category_id'] [data-required-fields-target='marker']")).to be_present
+      expect(doc.at_css("label[for='product_category_id'] [data-publish-marker]").text).to eq("Para publicar")
+      expect(doc.at_css("label[for='product_category_id'] [data-required-fields-target='marker']")).to be_nil
       expect(doc.at_css("#product_category_id")["data-required-fields-target"]).to eq("field")
       expect(doc.at_css("#product_category_id")["data-publish-required"]).to be_present
       expect(doc.at_css("#product_category_id")["required"]).to be_nil
-      expect(response.body).to include("para publicar, escolha uma categoria")
+      expect(response.body).to include("É como o cliente encontra o seu produto.")
+    end
+
+    it "hides the production time fields unless the product is made to order" do
+      get new_seller_product_path
+      group = Nokogiri::HTML(response.body).at_css("#product_production_time_min_days").ancestors("[data-required-fields-target='group']").first
+      expect(group.has_attribute?("hidden")).to be(true)
+
+      own_product.update!(availability_type: :made_to_order, production_time_min_days: 3, production_time_max_days: 7)
+      get edit_seller_product_path(own_product)
+      group = Nokogiri::HTML(response.body).at_css("#product_production_time_min_days").ancestors("[data-required-fields-target='group']").first
+      expect(group.has_attribute?("hidden")).to be(false)
     end
 
     it "does not mark the SKU as required" do
@@ -363,9 +405,9 @@ RSpec.describe "Seller products", type: :request do
         field = doc.at_css("##{id}")
         expect(field["required"]).to be_nil
         expect(field["data-publish-required"]).to eq("true")
-        expect(doc.at_css("label[for='#{id}'] [data-required-fields-target='marker']")["hidden"]).to be_nil
+        expect(doc.at_css("label[for='#{id}'] [data-publish-marker]")).to be_present
       end
-      expect(response.body).to include("obrigatórios para <strong>publicar</strong>")
+      expect(response.body).to include("pode salvar como rascunho sem ele")
     end
   end
 end

@@ -40,6 +40,13 @@ class SellerOrder < ApplicationRecord
     quotient + (remainder >= BASIS_POINTS / 2 ? 1 : 0)
   end
 
+  # O que o artesão recebe por este pedido depois de reembolsos: reembolso
+  # tira o valor devolvido ao cliente, mas devolve a parte proporcional da
+  # comissão. Mesma conta da conciliação do admin (Admin::FinancialsController).
+  def seller_net_amount_cents
+    seller_amount_cents - refunded_amount_cents + platform_fee_refunded_cents
+  end
+
   def commission_base_cents
     subtotal_cents - discount_cents
   end

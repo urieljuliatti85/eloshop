@@ -23,18 +23,28 @@
         painel do hambúrguer (celular). Antes era uma faixa horizontal com
         rolagem lateral, e "Novo produto" ficava fora da tela sem indício de
         arrastar. %>
-    <% nav_items = [
-         [ "Visão geral", seller_root_path ],
-         [ "Primeiros passos", seller_getting_started_path ],
-         [ "Conta Vendedor no Mercado Pago", seller_mercado_pago_guide_path ],
-         [ "Cadastro da Chave Pix", seller_pix_key_guide_path ],
-         [ "Produtos", seller_products_path ],
-         [ "Pedidos", seller_orders_path ],
-         [ "Mensagens", seller_messages_path ],
-         [ "Avaliações", seller_reviews_path ],
-         [ "Dados do Ateliê", seller_atelier_path ],
-         [ "Novo produto", new_seller_product_path ]
+    <%# Agrupada em três: o trabalho do dia, o catálogo e a configuração da
+        conta (que se faz uma vez). "Novo produto" continua item de menu porque
+        o tour guiado localiza seus passos pelos links daqui. %>
+    <% nav_groups = [
+         [ "Operação", [
+           [ "Visão geral", seller_root_path ],
+           [ "Pedidos", seller_orders_path ],
+           [ "Mensagens", seller_messages_path ],
+           [ "Avaliações", seller_reviews_path ]
+         ] ],
+         [ "Catálogo", [
+           [ "Produtos", seller_products_path ],
+           [ "Novo produto", new_seller_product_path ]
+         ] ],
+         [ "Configuração", [
+           [ "Primeiros passos", seller_getting_started_path ],
+           [ "Dados do Ateliê", seller_atelier_path ],
+           [ "Conta Vendedor no Mercado Pago", seller_mercado_pago_guide_path ],
+           [ "Cadastro da Chave Pix", seller_pix_key_guide_path ]
+         ] ]
        ] %>
+    <% nav_items = nav_groups.flat_map(&:last) %>
     <%# A área atual é o item de caminho mais longo que prefixa a URL (assim
         /painel/produtos/12/editar marca "Produtos" e /painel/produtos/novo
         marca "Novo produto"); a raiz só vale por igualdade. As mensagens de um
@@ -59,7 +69,7 @@
           <span class="hidden border-l border-brand-200 pl-3 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-brand-600 sm:block">Ateliê</span>
         <% end %>
 
-        <%= form_with url: seller_products_path, method: :get, class: "order-3 flex w-full min-w-0 items-center rounded-full border border-brand-200 bg-brand-50/60 px-4 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100 lg:order-none lg:mx-5 lg:flex-1" do %>
+        <%= form_with url: seller_products_path, method: :get, class: "order-3 flex w-full min-w-0 items-center rounded-full border border-brand-200 bg-brand-50/60 px-4 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-200 lg:order-none lg:mx-5 lg:flex-1" do %>
           <label for="seller-search" class="sr-only">Buscar no seu catálogo</label>
           <%= search_field_tag :q, params[:q], id: "seller-search", placeholder: "Buscar no seu catálogo", class: "min-h-10 w-full border-0 bg-transparent px-0 text-sm outline-none focus:ring-0" %>
           <button type="submit" class="grid size-11 shrink-0 cursor-pointer place-items-center text-brand-500" aria-label="Buscar">
@@ -75,7 +85,7 @@
           <div class="relative" data-controller="account-menu"
                data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
             <button type="button"
-                    class="relative grid size-9 cursor-pointer place-items-center rounded-full text-stone-600 transition hover:bg-brand-50 hover:text-brand-600"
+                    class="relative grid size-11 cursor-pointer place-items-center rounded-full text-stone-600 transition hover:bg-brand-50 hover:text-brand-600"
                     aria-expanded="false" aria-haspopup="true"
                     aria-label="Notificações"
                     data-account-menu-target="button"
@@ -136,10 +146,12 @@
           <div class="hidden h-7 w-px bg-brand-100 sm:block"></div>
           <div class="text-right">
             <p class="max-w-24 truncate sm:max-w-36 text-sm font-bold text-stone-900"><%= current_seller.name %></p>
-            <p class="text-[0.65rem] font-semibold uppercase tracking-wider text-brand-600"><%= t(current_seller.status, scope: "sellers.statuses") %></p>
+            <%# Estado da conta em texto legível: o vermelho fica para o que pede ação
+                (a conta suspensa), não para "Aprovado". %>
+            <p class="text-xs font-semibold <%= { "approved" => "text-emerald-700", "pending" => "text-amber-700", "suspended" => "text-red-700" }.fetch(current_seller.status, "text-stone-600") %>"><%= t(current_seller.status, scope: "sellers.statuses") %></p>
           </div>
           <span class="hidden size-9 place-items-center rounded-full bg-brand-600 text-sm font-bold text-white sm:grid" aria-hidden="true"><%= current_seller.name.first.upcase %></span>
-          <%= button_to seller_logout_path, method: :delete, class: "hidden size-11 cursor-pointer place-items-center rounded-full border border-brand-200 text-stone-600 transition hover:border-brand-400 hover:text-brand-600 sm:grid", form: { aria: { label: "Sair" } } do %>
+          <%= button_to seller_logout_path, method: :delete, class: "hidden size-11 cursor-pointer place-items-center rounded-full border border-brand-200 text-stone-600 transition hover:border-brand-400 hover:text-brand-600 sm:grid", aria: { label: "Sair" } do %>
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/></svg>
           <% end %>
 
@@ -163,8 +175,11 @@
             Ver a loja
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
           <% end %>
-          <% nav_items.each do |label, path| %>
-            <%= render "layouts/seller_nav_link", label: label, path: path, mobile: true, active: path == active_nav_path %>
+          <% nav_groups.each do |group, items| %>
+            <p class="pb-1 pt-4 text-xs font-semibold text-stone-500"><%= group %></p>
+            <% items.each do |label, path| %>
+              <%= render "layouts/seller_nav_link", label: label, path: path, mobile: true, active: path == active_nav_path %>
+            <% end %>
           <% end %>
         </nav>
         <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 pb-5 pt-3 sm:px-6">
@@ -181,8 +196,11 @@
     <div class="mx-auto flex w-full max-w-7xl gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <aside class="hidden w-60 shrink-0 lg:block">
         <nav class="sticky top-24 flex flex-col gap-1.5 text-sm font-semibold" aria-label="Navegação do painel">
-          <% nav_items.each do |label, path| %>
-            <%= render "layouts/seller_nav_link", label: label, path: path, mobile: false, active: path == active_nav_path %>
+          <% nav_groups.each_with_index do |(group, items), index| %>
+            <p class="px-4 pb-1 text-xs font-semibold text-stone-500 <%= index.zero? ? '' : 'pt-5' %>"><%= group %></p>
+            <% items.each do |label, path| %>
+              <%= render "layouts/seller_nav_link", label: label, path: path, mobile: false, active: path == active_nav_path %>
+            <% end %>
           <% end %>
         </nav>
       </aside>

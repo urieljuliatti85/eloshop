@@ -1,37 +1,40 @@
 <%# Um item da navegação do painel. Usado na barra lateral (lg+) e no painel
     do hambúrguer (celular), que só diferem no formato do alvo de toque.
     min-h-11: no celular estes são os alvos de toque principais do painel.
-    `active` vem do layout (área atual, na cor da marca). %>
-<%# A aba da chave PIX é toda vermelha, ativa ou não: sem a chave o PIX é recusado. %>
-<% pix_tab = path == seller_pix_key_guide_path %>
+    `active` vem do layout; a área atual usa tinta escura, não vermelho, para
+    o vermelho ficar reservado ao que pede ação. %>
 <%= link_to path,
-      class: (pix_tab ?
-        (mobile ?
-          "flex min-h-11 items-center justify-between gap-3 border-b border-red-200 bg-red-50 px-2 py-1 text-base font-bold #{active ? 'text-red-800' : 'text-red-700'}" :
-          "flex min-h-11 items-center gap-2 rounded-xl px-4 font-bold transition #{active ? 'bg-red-700 text-white shadow-sm' : 'bg-red-600 text-white hover:bg-red-700'}") :
-      mobile ?
-        "flex min-h-11 items-center justify-between gap-3 border-b border-brand-100 py-1 text-base font-medium #{active ? 'text-brand-600' : 'text-stone-900'}" :
-        "flex min-h-11 flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-xl px-4 py-2 transition #{active ? 'bg-brand-500 text-white shadow-sm' : 'text-stone-700 hover:bg-brand-50 hover:text-brand-700'}"),
+      class: (mobile ?
+        "flex min-h-11 items-center justify-between gap-3 border-b border-brand-100 py-1 text-base #{active ? 'font-bold text-stone-950' : 'font-medium text-stone-700'}" :
+        "flex min-h-11 flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-xl px-4 py-2 transition #{active ? 'bg-stone-900 text-white shadow-sm' : 'text-stone-700 hover:bg-brand-50 hover:text-brand-700'}"),
       aria: (active ? { current: "page" } : {}) do %>
-  <% if pix_tab %>
-    <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-4" %>
-  <% end %>
   <span><%= label %></span>
-  <%# Passo obrigatório: sem a conta conectada não há publicação. O texto
-      carrega o significado (não só a cor) para leitores de tela. %>
+  <%# Passos obrigatórios da conta: o selo carrega o significado em texto (não
+      só a cor) para leitores de tela, e some do vermelho quando está resolvido. %>
   <% if path == seller_mercado_pago_guide_path %>
     <% case current_seller.mercado_pago_account_state %>
     <% when :ready %>
-      <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-emerald-800">✓ Conectado</span>
+      <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">✓ Conectado</span>
     <% when :not_accepted %>
-      <span class="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-white">
+      <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-900">
         <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
         Conta não aceita
       </span>
     <% else %>
-      <span class="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-white">
+      <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-800">
         <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
         Obrigatório
+      </span>
+    <% end %>
+  <% elsif path == seller_pix_key_guide_path %>
+    <%# Sem a chave o PIX é recusado; a EloShop só sabe que ela existe quando o
+        vendedor declara (`pix_key_confirmed_at`). %>
+    <% if current_seller.pix_key_confirmed_at? %>
+      <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">✓ Cadastrada</span>
+    <% else %>
+      <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-800">
+        <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
+        Pendente
       </span>
     <% end %>
   <% end %>
