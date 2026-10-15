@@ -43,6 +43,20 @@ RSpec.describe "Seller panel navigation", type: :request do
     expect(pix_link.text).to include("✓ Cadastrada")
   end
 
+  it "names the icon-only header buttons for screen readers" do
+    get seller_root_path
+    doc = Nokogiri::HTML(response.body)
+    expect(doc.at_css("form[action='#{seller_logout_path}'] button")["aria-label"]).to eq("Sair")
+    expect(doc.at_css("button[aria-label='Notificações']")["class"]).to include("size-11")
+  end
+
+  it "shows the account status as readable text, not in alarm red when approved" do
+    seller.update!(status: :approved, approved_at: Time.current)
+    get seller_root_path
+    status = Nokogiri::HTML(response.body).css("header p").find { |p| p.text.strip == "Aprovado" }
+    expect(status["class"]).to include("text-emerald-700")
+  end
+
   it "marks only the most specific area" do
     get new_seller_product_path
     expect(current_labels).to eq([ "Novo produto" ])
