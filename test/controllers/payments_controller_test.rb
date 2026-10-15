@@ -114,6 +114,35 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     assert_match "Muitas tentativas", response.body
   end
 
+  # Carding distribuído: cada tentativa vem de um IP diferente, então o limite
+  # por IP nunca dispara. A conta, porém, é uma só.
+  test "payment attempts are rate limited per customer even when the IP changes" do
+    sign_in_customer(customers(:one))
+    order = build_order_without_payment
+
+    5.times do |i|
+      post order_payment_path(order), params: { payment_method: "pix" }, headers: { "X-Real-IP" => "203.0.113.#{i + 1}" }
+    end
+    post order_payment_path(order), params: { payment_method: "pix" }, headers: { "X-Real-IP" => "203.0.113.99" }
+
+    assert_redirected_to order_path(order)
+    follow_redirect!
+    assert_match "Muitas tentativas de pagamento", response.body
+  end
+
+  test "another customer is not affected by a customer who hit the limit" do
+    sign_in_customer(customers(:one))
+    order = build_order_without_payment
+    6.times { post order_payment_path(order), params: { payment_method: "pix" } }
+
+    sign_in_customer(customers(:two))
+    other_order = build_order_without_payment(customer: customers(:two))
+    post order_payment_path(other_order), params: { payment_method: "pix" }
+
+    follow_redirect!
+    assert_no_match "Muitas tentativas", response.body
+  end
+
   test "an invalid installments value shows the generic payment error instead of crashing" do
     sign_in_customer(customers(:one))
     order = build_order_without_payment
@@ -241,12 +270,11 @@ class PaymentsControllerTest < ActionDispatch::IntegrationTest
     post customer_session_path, params: { email: customer.email, password: "password123" }
   end
 
-  def build_order_without_payment
-    customer = customers(:one)
+  def build_order_without_payment(customer: customers(:one))
     address = customer.addresses.first || customer.addresses.create!(
       street: "Rua", number: "1", neighborhood: "B", city: "C", state: "SP", zip_code: "00000-000"
     )
-    product = Product.create!(seller: sellers(:approved), name: "Produto teste", sku: "SKU-#{SecureRandom.hex(4)}",
+    product = Product.create!(seller: sellers(:approved), name: "Produto teste #{SecureRandom.hex(3)}", sku: "SKU-#{SecureRandom.hex(4)}",
                                price_cents: 1000, stock_quantity: 5, status: "active")
     cart = Cart.create!(session_token: SecureRandom.hex(10))
     cart.cart_items.create!(product: product, quantity: 1)

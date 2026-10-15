@@ -72,7 +72,7 @@ Considerar sempre, em toda funcionalidade que recebe entrada externa:
 
 ## Rate limiting
 
-Decidido na Fase 18, usando o `rate_limit` nativo do Rails (sem gem como Rack::Attack — não se justifica com essa quantidade de regras). Todos os endpoints sensíveis a força bruta/abuso têm limite: login de admin e de cliente, cadastro de cliente, reset de senha, contato, aplicar cupom (adivinhação de código) e criar pedido (checkout). Webhook de pagamento é deliberadamente **não** limitado por IP — a autenticidade é garantida pelo segredo verificado (`Gateways::FakeGateway#verify_webhook`, comparação timing-safe), e um webhook real pode legitimamente vir sempre do mesmo IP do gateway com retries.
+Decidido na Fase 18, usando o `rate_limit` nativo do Rails (sem gem como Rack::Attack — não se justifica com essa quantidade de regras). Todos os endpoints sensíveis a força bruta/abuso têm limite: login de admin e de cliente, cadastro de cliente, reset de senha, contato, aplicar cupom (adivinhação de código) e criar pedido (checkout). Criar pedido e autorizar pagamento têm um **segundo limite por cliente** (5 em 30 minutos, `by: Current.customer.id`), além do de IP: carding distribuído troca de IP a cada tentativa e nunca chega ao limite por IP, mas a conta é uma só. Cada tentativa é uma cobrança real no Mercado Pago. Webhook de pagamento é deliberadamente **não** limitado por IP — a autenticidade é garantida pelo segredo verificado (`Gateways::FakeGateway#verify_webhook`, comparação timing-safe), e um webhook real pode legitimamente vir sempre do mesmo IP do gateway com retries.
 
 ## Sessões
 
