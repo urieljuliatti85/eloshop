@@ -1,0 +1,7 @@
+<% state = seller_order_fulfillment_state(seller_order) %>
+<% unless state == :closed %>
+  <span class="seller-badge <%= seller_order_fulfillment_badge_classes(seller_order) %>"><%= seller_order_fulfillment_label(seller_order) %></span>
+<% end %>
+<% if money_status_classes.key?(seller_order.status) %>
+  <span class="seller-badge <%= money_status_classes[seller_order.status] %>"><%= t(seller_order.status, scope: "seller_orders.statuses") %></span>
+<% end %>
