@@ -6,7 +6,7 @@
       <h1 class="text-3xl font-black tracking-tight text-stone-950">Visão geral</h1>
       <p class="mt-1 text-sm text-stone-600"><%= current_seller.name %></p>
     </div>
-    <%= link_to "Adicionar nova peça", new_seller_product_path, class: "seller-button seller-button--primary" %>
+    <%= link_to "Novo produto", new_seller_product_path, class: "seller-button seller-button--primary" %>
   </header>
 
   <%# Convite ao tour: no topo só para quem ainda não fez. Depois de concluído,
@@ -62,7 +62,7 @@
           <% end %>
         </div>
       <% else %>
-        <div class="mt-6 rounded-2xl border border-dashed border-stone-300 px-6 py-10 text-center"><p class="font-semibold">Sua primeira peça começa aqui.</p><%= link_to "Cadastrar produto", new_seller_product_path, class: "mt-3 inline-block text-sm font-bold text-brand-600 underline underline-offset-4" %></div>
+        <div class="mt-6 rounded-2xl border border-dashed border-stone-300 px-6 py-10 text-center"><p class="font-semibold">Sua primeira peça começa aqui.</p><%= link_to "Novo produto", new_seller_product_path, class: "mt-3 inline-block text-sm font-bold text-brand-600 underline underline-offset-4" %></div>
       <% end %>
     </div>
 

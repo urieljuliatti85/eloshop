@@ -15,7 +15,7 @@ class SellerDashboardTest < ApplicationSystemTestCase
 
     assert_selector "h1", text: "Visão geral"
     assert_field "Buscar no seu catálogo"
-    assert_link "Adicionar nova peça", href: new_seller_product_path
+    assert_link "Novo produto", href: new_seller_product_path
     assert_selector "h2", text: "O que fazer agora"
     assert_link "Ver todos", href: seller_orders_path
   end

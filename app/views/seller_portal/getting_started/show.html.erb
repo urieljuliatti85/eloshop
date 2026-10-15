@@ -122,7 +122,7 @@
               <li><strong class="text-stone-900">Cálculo padrão:</strong> deixe o frete fixo vazio para usar o cálculo da plataforma.</li>
             </ul>
 
-            <%= link_to(@steps[:product] ? "Gerenciar produtos" : "Cadastrar produto", @steps[:product] ? seller_products_path : new_seller_product_path, class: "seller-button seller-button--primary mt-5") %>
+            <%= link_to(@steps[:product] ? "Gerenciar produtos" : "Novo produto", @steps[:product] ? seller_products_path : new_seller_product_path, class: "seller-button seller-button--primary mt-5") %>
           </div>
         </div>
       </section>
