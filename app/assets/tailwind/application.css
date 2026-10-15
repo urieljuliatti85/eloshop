@@ -19,6 +19,36 @@
   --color-sand-50: #faf3ea;
   --color-sand-100: #f9f1e7;
   --color-mist-100: #f4f5f7;
+
+  /* Caderno de encomendas: o mundo do fluxo "Primeiros passos" do painel. */
+  /* Capa vermelha, da marca (decisão de 2026-10-15): brand-700, com texto
+     branco a ~6,6:1. */
+  --color-caderno-capa: #b81e0a;
+  --color-caderno-capa-escura: #8f1708;
+  --color-caderno-folha: #fbfaf6;
+  --color-caderno-pauta: #e7e3d6;
+  --color-caderno-tinta: #1d1d1b;
+  --color-caderno-carimbo: #b23a2a;
+
+  --font-caderno: "Karla", ui-sans-serif, system-ui, sans-serif;
+  --font-caderno-mao: "Caveat", "Karla", cursive;
+}
+
+/* Fontes servidas pelo app (a CSP só permite font-src 'self'); ver
+   app/assets/fonts/CREDITS.md. O Propshaft reescreve o url() com digest. */
+@font-face {
+  font-family: "Karla";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("karla-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Caveat";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("caveat-600-latin.woff2") format("woff2");
 }
 
 @layer components {
@@ -121,6 +151,33 @@
   .seller-button { @apply inline-flex min-h-11 cursor-pointer items-center rounded-full px-6 py-3 text-sm font-bold transition; }
   .seller-button--primary { @apply bg-brand-600 text-white hover:bg-brand-700; }
   .seller-button--secondary { @apply border border-brand-200 text-brand-700 hover:bg-brand-50; }
+
+  /* Caderno de encomendas (fluxo "Primeiros passos"): a capa envolve a
+     folha como um caderno aberto; a folha tem pauta fina (28px, o mesmo passo
+     do leading-7), etapas feitas riscadas e um carimbo escrito à mão. O mundo
+     entra por cor, letra, pauta e carimbo; os controles são os do painel. */
+  .caderno { @apply rounded-[1.75rem] bg-caderno-capa p-2 font-caderno text-caderno-tinta shadow-[0_1px_2px_rgba(29,29,27,0.06),0_16px_40px_rgba(29,29,27,0.10)] sm:p-3; }
+  .caderno ::selection { @apply bg-caderno-capa text-white; }
+  .caderno-capa { @apply flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-3 pb-4 pt-3 text-white sm:px-5; }
+  .caderno-folha { @apply rounded-[4px] bg-caderno-folha px-5 pb-6 pt-4 sm:px-8 sm:pb-8; }
+  /* flow-root segura a margem do primeiro parágrafo (mt-4) dentro do bloco:
+     sem isso ela escapava, e o deslocamento de 1rem caía duas vezes, pondo a
+     linha sobre a base do texto em vez de abaixo dela. */
+  .caderno-pauta { display: flow-root; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, var(--color-caderno-pauta) 27px, var(--color-caderno-pauta) 28px); background-position: 0 1rem; }
+  .caderno-texto { @apply max-w-[68ch] text-base leading-7 text-stone-700; }
+  .caderno-indice li + li { @apply border-t border-caderno-pauta; }
+  .caderno-indice a { @apply -mx-2 flex min-h-12 items-center justify-between gap-3 rounded px-2 py-2 no-underline transition-colors hover:bg-caderno-pauta/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-caderno-capa; }
+  .caderno-carimbo { @apply inline-block -rotate-3 rounded-md border-2 border-caderno-carimbo px-2 font-caderno-mao text-lg leading-tight text-caderno-carimbo; }
+  .caderno-carimbo--grande { @apply rotate-[-4deg] border-[3px] px-4 py-0.5 text-3xl; }
+  .caderno-botao { @apply inline-flex min-h-12 cursor-pointer items-center justify-center rounded-full bg-caderno-capa px-6 py-3 text-base font-bold text-white no-underline transition hover:bg-caderno-capa-escura focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-caderno-capa; }
+  .caderno-link { @apply inline-flex min-h-11 items-center text-sm font-bold text-caderno-tinta underline decoration-caderno-pauta decoration-2 underline-offset-4 hover:decoration-caderno-capa focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-caderno-capa; }
+  /* Ação da etapa presa ao pé da tela em qualquer largura: só a etapa atual
+     pede ação, e ela fica sempre à vista (no celular, ao alcance do polegar). */
+  .caderno-acoes { @apply sticky bottom-0 -mx-5 mt-6 flex flex-col gap-1 border-t border-caderno-pauta bg-caderno-folha px-5 py-3 sm:-mx-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:px-8; }
+  .caderno-nota { @apply max-w-[68ch] rounded-[4px] bg-caderno-pauta px-4 py-3 text-base leading-7; }
+  /* Estado que impede a etapa (ex.: conexão ainda não configurada): borda no
+     vermelho do carimbo, para não se confundir com a nota "Depois disso". */
+  .caderno-pendente { @apply w-full max-w-[68ch] rounded-[4px] border-2 border-caderno-carimbo bg-white px-4 py-3 text-base font-semibold leading-7 text-caderno-tinta; }
 
   /* Campo obrigatório vazio (controller required-fields). O `!` vence o
      estilo de input do admin e o focus:border da vitrine. */

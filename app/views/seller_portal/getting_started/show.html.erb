@@ -1,158 +1,81 @@
 <% content_for :title, "Primeiros passos | #{current_seller.name}" %>
+<%# Fluxo guiado no mundo do caderno de encomendas: a folha lista as cinco
+    etapas (as feitas riscadas e carimbadas) e abre uma etapa por vez. A
+    etapa vem da URL; sem ela, a próxima pendente. As ações continuam nas
+    telas de sempre (Dados do Ateliê, conexão do Mercado Pago, novo produto). %>
+<%
+  titles = {
+    address: "Preencha o endereço do ateliê",
+    mercado_pago: "Conecte sua conta do Mercado Pago",
+    pix_key: "Cadastre uma chave PIX no Mercado Pago",
+    product: "Cadastre seu primeiro produto",
+    approval: "Entenda como você recebe"
+  }
+  short_titles = {
+    address: "Endereço do ateliê",
+    mercado_pago: "Conta do Mercado Pago",
+    pix_key: "Chave PIX",
+    product: "Primeira peça",
+    approval: "Aprovação e recebimento"
+  }
+  slugs = SellerPortal::GettingStartedController::STEP_SLUGS
+%>
 
-<div class="space-y-8">
-  <%# Sem o bloco escuro de antes: o aviso de PIX aparecia nele, de novo na
-      etapa 3 e no painel, e o "N de 5" duas vezes. Fica o título, a ação do
-      tour e uma barra de progresso. %>
-  <header class="flex flex-wrap items-end justify-between gap-4">
-    <div>
-      <h1 class="text-3xl font-black tracking-tight text-stone-950">Primeiros passos</h1>
-      <p class="mt-1 max-w-2xl text-sm leading-6 text-stone-600">O que falta para publicar, receber e entregar, e por que cada etapa é necessária.</p>
+<div class="caderno max-w-3xl">
+  <header class="caderno-capa">
+    <h1 class="font-caderno-mao text-4xl leading-none">Primeiros passos</h1>
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <p class="text-sm font-bold"><%= @completed_steps_count %> de <%= @steps.size %> etapas concluídas</p>
+      <button type="button" data-action="tour#start" class="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-white/40 px-4 text-sm font-bold text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Fazer tour pelo painel</button>
     </div>
-    <button type="button" data-action="tour#start" class="seller-button seller-button--secondary px-5 py-2.5">Fazer tour pelo painel</button>
   </header>
 
-  <div class="max-w-xl">
-    <p class="text-sm font-semibold text-stone-800"><%= @completed_steps_count %> de <%= @steps.size %> etapas concluídas</p>
-    <div class="mt-2 h-2.5 overflow-hidden rounded-full bg-brand-100"
-         role="progressbar"
-         aria-label="Progresso dos primeiros passos"
-         aria-valuemin="0"
-         aria-valuemax="<%= @steps.size %>"
-         aria-valuenow="<%= @completed_steps_count %>">
-      <div class="h-full rounded-full bg-brand-600 transition-[width]" style="width: <%= @progress_percentage %>%"></div>
-    </div>
+  <div class="caderno-folha">
+    <ol class="caderno-indice" aria-label="Etapas para preparar o ateliê">
+      <% @steps.each_with_index do |(step, done), index| %>
+        <% current = step == @current_step %>
+        <li>
+          <%= link_to seller_getting_started_path(etapa: slugs[step]), aria: { current: (current ? "step" : nil) }, class: (current ? "font-bold" : "") do %>
+            <span class="flex min-w-0 items-baseline gap-3">
+              <span class="w-4 shrink-0 text-sm text-stone-500" aria-hidden="true"><%= index + 1 %></span>
+              <span class="<%= done ? 'text-stone-500 line-through decoration-caderno-carimbo decoration-2' : '' %>"><%= short_titles[step] %></span>
+              <% if done %><span class="sr-only">(feita)</span><% end %>
+            </span>
+            <% if done %>
+              <span class="caderno-carimbo" aria-hidden="true">Feito</span>
+            <% elsif current %>
+              <span class="font-caderno-mao text-xl leading-none text-caderno-capa">agora</span>
+            <% end %>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+
+    <% if @current_step %>
+      <% number = @steps.keys.index(@current_step) + 1 %>
+      <section class="mt-6 border-t-2 border-caderno-tinta pt-6" aria-labelledby="etapa-title">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <h2 id="etapa-title" class="text-2xl font-bold leading-tight sm:text-3xl"><span class="text-caderno-capa"><%= number %>.</span> <%= titles[@current_step] %></h2>
+          <% if @steps[@current_step] %><span class="caderno-carimbo caderno-carimbo--grande">Feito</span><% end %>
+        </div>
+        <%# A pauta começa abaixo do título da etapa, alinhada à primeira linha
+            do texto (passo de 28px, o leading-7). %>
+        <div class="caderno-pauta">
+          <%= render "seller_portal/getting_started/steps/#{@current_step}", done: @steps[@current_step] %>
+        </div>
+        <% if @steps[@current_step] && @next_pending_step %>
+          <p class="mt-6 border-t border-caderno-pauta pt-4">
+            <%= link_to "Próxima etapa: #{short_titles[@next_pending_step]}", seller_getting_started_path(etapa: slugs[@next_pending_step]), class: "caderno-botao" %>
+          </p>
+        <% end %>
+      </section>
+    <% else %>
+      <section class="mt-6 border-t-2 border-caderno-tinta pt-6 text-center" aria-labelledby="etapa-title">
+        <span class="caderno-carimbo caderno-carimbo--grande">Ateliê pronto</span>
+        <h2 id="etapa-title" class="mt-5 text-2xl font-bold">Todas as etapas estão feitas</h2>
+        <p class="mx-auto mt-2 max-w-md text-base leading-7 text-stone-700">Seus produtos podem ser publicados e vendidos. O dia a dia do ateliê fica na visão geral.</p>
+        <%= link_to "Ir para a visão geral", seller_root_path, class: "caderno-botao mt-5" %>
+      </section>
+    <% end %>
   </div>
-
-  <ol class="space-y-5" aria-label="Etapas para preparar o ateliê">
-    <li>
-      <section class="seller-card-lg" aria-labelledby="getting-started-address">
-        <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">1</span>
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 id="getting-started-address" class="text-2xl font-bold text-stone-950">Preencha o endereço do ateliê</h2>
-              <%= render "status", completed: @steps[:address] %>
-            </div>
-            <p class="mt-3 text-sm leading-6 text-stone-600">Esse é o endereço de origem das suas encomendas. Ele ajuda a EloShop a identificar de onde o produto será enviado e será usado nas integrações de frete quando elas estiverem disponíveis.</p>
-            <p class="mt-2 text-sm leading-6 text-stone-600">O endereço não substitui o endereço de entrega do cliente e não altera a página pública do produto.</p>
-            <%= link_to(@steps[:address] ? "Revisar endereço" : "Cadastrar endereço", edit_seller_atelier_path, class: "seller-button seller-button--primary mt-5") %>
-          </div>
-        </div>
-      </section>
-    </li>
-
-    <li>
-      <section class="seller-card-lg" aria-labelledby="getting-started-payment">
-        <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">2</span>
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 id="getting-started-payment" class="text-2xl font-bold text-stone-950">Conecte sua conta do Mercado Pago</h2>
-              <%= render "status", completed: @steps[:mercado_pago] %>
-            </div>
-            <p class="mt-3 text-sm leading-6 text-stone-600">A conta conectada é o destino dos seus recebimentos. O Mercado Pago processa o pagamento do cliente, separa automaticamente a comissão da EloShop e disponibiliza o restante na sua conta conforme o prazo do próprio provedor.</p>
-
-            <h3 class="mt-5 font-bold text-stone-950">Como a conexão funciona</h3>
-            <ol class="mt-2 list-decimal space-y-1 pl-5 text-sm leading-6 text-stone-600">
-              <li>Você abre o Mercado Pago a partir da EloShop.</li>
-              <li>Entra na conta que receberá suas vendas.</li>
-              <li>Autoriza a EloShop a processar os pagamentos.</li>
-              <li>Retorna automaticamente ao seu painel.</li>
-            </ol>
-
-            <p class="mt-4 text-sm leading-6 text-stone-600"><strong>A EloShop não recebe sua senha nem armazena seus documentos.</strong> A identificação e a análise da conta acontecem no Mercado Pago. Conectar a conta não aprova o ateliê automaticamente: a plataforma ainda confirma se ele está pronto para vender.</p>
-
-            <div class="mt-5">
-              <% if @steps[:mercado_pago] %>
-                <%= link_to "Ver conexão", seller_atelier_path, class: "inline-flex min-h-11 items-center rounded-full border border-brand-200 px-6 py-3 text-sm font-bold text-brand-700 transition hover:bg-brand-50" %>
-              <% elsif @mercado_pago_oauth_configured %>
-                <%= link_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, class: "seller-button seller-button--primary", data: { turbo: false } %>
-              <% else %>
-                <p class="inline-flex rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">A conexão aguarda a configuração do Mercado Pago pela plataforma.</p>
-              <% end %>
-            </div>
-          </div>
-        </div>
-      </section>
-    </li>
-
-    <%# Etapa por declaração: o Mercado Pago não permite consultar se há chave
-        PIX, então "concluído" é a palavra do vendedor (`pix_key_confirmed_at`). %>
-    <li>
-      <section class="seller-card-lg" aria-labelledby="getting-started-pix-key">
-        <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">3</span>
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 id="getting-started-pix-key" class="text-2xl font-bold text-stone-950">Cadastre uma chave PIX no Mercado Pago</h2>
-              <%= render "status", completed: @steps[:pix_key] %>
-            </div>
-            <p class="mt-3 text-sm leading-6 text-stone-600">Sem chave PIX na conta do Mercado Pago que você conectou, o pagamento por PIX dos seus clientes é recusado. O cartão não depende disso. Como cadastrar, em poucos minutos:</p>
-            <%= render "seller_portal/mercado_pago_connections/pix_key_steps", text_class: "text-stone-600" %>
-            <p class="mt-2 text-sm leading-6 text-stone-600">A EloShop não consegue consultar a sua conta: esta etapa fica concluída quando você nos avisa que cadastrou a chave.</p>
-            <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
-              <% if @steps[:pix_key] %>
-                <%= button_to "Ainda não cadastrei", seller_pix_key_confirmation_path, method: :delete, class: "seller-button seller-button--secondary" %>
-              <% else %>
-                <%= button_to "Já cadastrei minha chave PIX", seller_pix_key_confirmation_path, method: :post, class: "seller-button seller-button--primary" %>
-                <%= link_to "Ver o passo a passo com imagens", seller_pix_key_guide_path, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
-              <% end %>
-            </div>
-          </div>
-        </div>
-      </section>
-    </li>
-
-    <li>
-      <section class="seller-card-lg" aria-labelledby="getting-started-product">
-        <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">4</span>
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 id="getting-started-product" class="text-2xl font-bold text-stone-950">Cadastre seu primeiro produto</h2>
-              <%= render "status", completed: @steps[:product] %>
-            </div>
-            <p class="mt-3 text-sm leading-6 text-stone-600">Inclua fotos, descrição, preço, estoque, peso e dimensões. O produto pode ficar como rascunho enquanto você prepara os detalhes; para publicá-lo, o ateliê precisa estar aprovado e os dados de envio precisam estar completos.</p>
-
-            <h3 class="mt-5 font-bold text-stone-950">Três jeitos de cobrar o frete</h3>
-            <ul class="mt-2 space-y-1 text-sm leading-6 text-stone-600">
-              <li><strong class="text-stone-900">Frete fixo:</strong> valor por unidade e prazo máximo definidos por você.</li>
-              <li><strong class="text-stone-900">Retirada gratuita:</strong> o cliente combina a retirada diretamente com você.</li>
-              <li><strong class="text-stone-900">Cálculo padrão:</strong> deixe o frete fixo vazio para usar o cálculo da plataforma.</li>
-            </ul>
-
-            <%= link_to(@steps[:product] ? "Gerenciar produtos" : "Novo produto", @steps[:product] ? seller_products_path : new_seller_product_path, class: "seller-button seller-button--primary mt-5") %>
-          </div>
-        </div>
-      </section>
-    </li>
-
-    <li>
-      <section class="seller-card-lg" aria-labelledby="getting-started-money">
-        <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-50 text-lg font-black text-brand-700" aria-hidden="true">5</span>
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 id="getting-started-money" class="text-2xl font-bold text-stone-950">Entenda como você recebe</h2>
-              <%= render "status", completed: @steps[:approval] %>
-            </div>
-            <p class="mt-3 text-sm leading-6 text-stone-600">Quando o ateliê está aprovado, seus produtos podem ser publicados e vendidos. O repasse é automático pelo Mercado Pago; você não precisa solicitar uma transferência manual à EloShop.</p>
-
-            <h3 class="mt-5 font-bold text-stone-950">O caminho do dinheiro</h3>
-            <ol class="mt-2 list-decimal space-y-1 pl-5 text-sm leading-6 text-stone-600">
-              <li><strong class="text-stone-900">Compra:</strong> o cliente paga no checkout da EloShop.</li>
-              <li><strong class="text-stone-900">Processamento:</strong> o Mercado Pago autoriza e registra a transação.</li>
-              <li><strong class="text-stone-900">Comissão:</strong> a EloShop recebe <strong><%= seller_commission_text(current_seller) %></strong> sobre os produtos após descontos. O frete não entra nessa comissão.</li>
-              <li><strong class="text-stone-900">Saldo:</strong> o restante, incluindo o frete, segue para sua conta, descontadas as tarifas do Mercado Pago.</li>
-            </ol>
-
-            <p class="mt-4 text-sm leading-6 text-stone-600">O prazo de liberação e as tarifas são definidos pelo Mercado Pago. Nota fiscal e obrigações tributárias da venda são responsabilidade do artesão; cancelamentos e reembolsos são tratados pela plataforma.</p>
-
-            <%= link_to(@steps[:approval] ? "Acompanhar pedidos" : "Ver situação do ateliê", @steps[:approval] ? seller_orders_path : seller_atelier_path, class: "seller-button seller-button--secondary mt-5") %>
-          </div>
-        </div>
-      </section>
-    </li>
-  </ol>
 </div>

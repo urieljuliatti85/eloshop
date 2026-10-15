@@ -1,0 +1,15 @@
+<%# Etapa por declaração: o Mercado Pago não permite consultar se há chave
+    PIX, então "feito" é a palavra do vendedor (`pix_key_confirmed_at`). %>
+<p class="caderno-texto mt-4">Sem chave PIX na conta do Mercado Pago que você conectou, o pagamento por PIX dos seus clientes é recusado. O cartão não depende disso. Como cadastrar, em poucos minutos:</p>
+<%= render "seller_portal/mercado_pago_connections/pix_key_steps", text_class: "text-stone-700" %>
+<p class="caderno-texto mt-3">A EloShop não consegue consultar a sua conta: esta etapa fica feita quando você nos avisa que cadastrou a chave.</p>
+<p class="caderno-nota mt-4"><strong>Depois disso:</strong> seus clientes também podem pagar por PIX.</p>
+
+<div class="caderno-acoes">
+  <% if done %>
+    <%= button_to "Ainda não cadastrei", seller_pix_key_confirmation_path, method: :delete, class: "caderno-link cursor-pointer" %>
+  <% else %>
+    <%= button_to "Já cadastrei minha chave PIX", seller_pix_key_confirmation_path, method: :post, class: "caderno-botao w-full sm:w-auto" %>
+    <%= link_to "Ver o passo a passo com imagens", seller_pix_key_guide_path, class: "caderno-link" %>
+  <% end %>
+</div>

@@ -1,0 +1,23 @@
+<p class="caderno-texto mt-4">A conta conectada é o destino dos seus recebimentos. O Mercado Pago processa o pagamento do cliente, separa automaticamente a comissão da EloShop e disponibiliza o restante na sua conta conforme o prazo do próprio provedor.</p>
+
+<h3 class="mt-6 font-bold">Como a conexão funciona</h3>
+<ol class="caderno-texto mt-2 list-decimal pl-5">
+  <li>Você abre o Mercado Pago a partir da EloShop.</li>
+  <li>Entra na conta que receberá suas vendas.</li>
+  <li>Autoriza a EloShop a processar os pagamentos.</li>
+  <li>Retorna automaticamente ao seu painel.</li>
+</ol>
+
+<p class="caderno-texto mt-4"><strong>A EloShop não recebe sua senha nem armazena seus documentos.</strong> A identificação e a análise da conta acontecem no Mercado Pago. Conectar a conta não aprova o ateliê automaticamente: a plataforma ainda confirma se ele está pronto para vender.</p>
+<p class="caderno-nota mt-4"><strong>Depois disso:</strong> o pagamento das suas vendas cai direto nessa conta, já sem a comissão da EloShop.</p>
+
+<div class="caderno-acoes">
+  <% if done %>
+    <%= link_to "Ver conexão", seller_atelier_path, class: "caderno-link" %>
+  <% elsif @mercado_pago_oauth_configured %>
+    <%= link_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, class: "caderno-botao", data: { turbo: false } %>
+    <%= link_to "Ainda não tenho conta: ver passo a passo", seller_mercado_pago_guide_path, class: "caderno-link" %>
+  <% else %>
+    <p class="caderno-pendente">A conexão aguarda a configuração do Mercado Pago pela plataforma.</p>
+  <% end %>
+</div>

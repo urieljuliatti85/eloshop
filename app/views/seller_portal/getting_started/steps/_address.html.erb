@@ -1,0 +1,5 @@
+<p class="caderno-texto mt-4">Esse é o endereço de origem das suas encomendas. Ele ajuda a EloShop a identificar de onde o produto será enviado e será usado nas integrações de frete quando elas estiverem disponíveis.</p>
+<p class="caderno-texto mt-3">O endereço não substitui o endereço de entrega do cliente e não altera a página pública do produto.</p>
+<div class="caderno-acoes">
+  <%= link_to(done ? "Revisar endereço" : "Cadastrar endereço", edit_seller_atelier_path, class: (done ? "caderno-link" : "caderno-botao")) %>
+</div>
