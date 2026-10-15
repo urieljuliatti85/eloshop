@@ -39,3 +39,9 @@
 # SDK do Railway (railway/iac), necessário só para rodar `railway config
 # plan/apply` sobre .railway/railway.ts — não faz parte do runtime da aplicação.
 /node_modules/
+
+# Impeccable: esboços da decisão, logs e capturas da revisão são de trabalho;
+# o contrato de direção (surfaces/) e os tokens (design.json) ficam no repositório.
+/.impeccable/mocks/
+/.impeccable/questions/
+/.impeccable/review/

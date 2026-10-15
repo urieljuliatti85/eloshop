@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-15T00:00:00Z",
+  "title": "Design System: EloShop — Caderno de Encomendas",
+  "extensions": {
+    "scope": "Somente o fluxo 'Primeiros passos' do painel do artesão (/painel/primeiros-passos/:etapa). O restante do painel usa o sistema incumbente (brand-*, stone, seller-*); a vitrine tem identidade própria.",
+    "colorMeta": {
+      "caderno-capa": { "role": "primary", "displayName": "Vermelho de Capa", "canonical": "#b81e0a", "tonalRamp": ["#5c0f05", "#8f1708", "#b81e0a", "#df240c", "#f6604c", "#f88f81", "#fbbeb6", "#fef2f0"] },
+      "caderno-capa-escura": { "role": "primary", "displayName": "Capa Escurecida", "canonical": "#8f1708", "tonalRamp": ["#3d0a03", "#5c0f05", "#8f1708", "#b81e0a", "#df240c", "#f88f81", "#fbbeb6", "#fef2f0"] },
+      "caderno-carimbo": { "role": "secondary", "displayName": "Vermelho-Óxido de Carimbo", "canonical": "#b23a2a", "tonalRamp": ["#3f1510", "#64221a", "#8a2d21", "#b23a2a", "#cc5e4f", "#de8c80", "#edbdb5", "#f9e9e6"] },
+      "caderno-folha": { "role": "neutral", "displayName": "Folha", "canonical": "#fbfaf6", "tonalRamp": ["#2a2925", "#4a4842", "#6e6b62", "#959185", "#bbb6a8", "#e7e3d6", "#f4f2ea", "#fbfaf6"] },
+      "caderno-pauta": { "role": "neutral", "displayName": "Linha de Pauta", "canonical": "#e7e3d6", "tonalRamp": ["#2a2925", "#4a4842", "#6e6b62", "#959185", "#bbb6a8", "#d6d1c1", "#e7e3d6", "#f4f2ea"] },
+      "caderno-tinta": { "role": "neutral", "displayName": "Tinta Grafite", "canonical": "#1d1d1b", "tonalRamp": ["#1d1d1b", "#2f2f2c", "#46463f", "#5f5e57", "#7b7a72", "#9a9990", "#c4c3bb", "#ecebe5"] },
+      "texto-grafite": { "role": "neutral", "displayName": "Grafite de Texto (stone-700)", "canonical": "oklch(37.4% 0.01 67.558)", "tonalRamp": ["#1c1917", "#292524", "#44403c", "#57534e", "#78716c", "#a8a29e", "#d6d3d1", "#f5f5f4"] },
+      "lapis-apagado": { "role": "neutral", "displayName": "Lápis Apagado (stone-500)", "canonical": "oklch(55.3% 0.013 58.071)", "tonalRamp": ["#1c1917", "#292524", "#44403c", "#57534e", "#78716c", "#a8a29e", "#d6d3d1", "#f5f5f4"] },
+      "papel-branco": { "role": "neutral", "displayName": "Papel Branco", "canonical": "#ffffff", "tonalRamp": ["#1d1d1b", "#46463f", "#7b7a72", "#9a9990", "#c4c3bb", "#ecebe5", "#f8f8f6", "#ffffff"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Mão (título da capa)", "purpose": "Só o título 'Primeiros passos' na capa. Caveat 600 servida pelo app." },
+      "headline": { "displayName": "Título da etapa", "purpose": "Título da etapa aberta; 1.5rem no celular, 1.875rem a partir de 640px; numeral em vermelho de capa." },
+      "title": { "displayName": "Subtítulo", "purpose": "Subtítulos dentro da etapa e rótulo do botão principal." },
+      "body": { "displayName": "Corpo pautado", "purpose": "Parágrafos, listas e itens do índice; entrelinha de 28px igual à pauta; máx. 68ch." },
+      "label": { "displayName": "Rótulo", "purpose": "Contagem de etapas, botão fantasma da capa e links secundários." },
+      "carimbo": { "displayName": "Carimbo", "purpose": "Texto do carimbo 'Feito' no índice; o 'agora' usa a mesma letra a 1.25rem." },
+      "carimbo-grande": { "displayName": "Carimbo grande", "purpose": "Carimbo ao lado do título da etapa feita e 'Ateliê pronto'." }
+    },
+    "fonts": [
+      { "family": "Karla", "file": "app/assets/fonts/karla-latin.woff2", "weights": "200 800", "license": "OFL-1.1" },
+      { "family": "Caveat", "file": "app/assets/fonts/caveat-600-latin.woff2", "weights": "600", "license": "OFL-1.1" }
+    ],
+    "textures": [
+      { "name": "pauta", "value": "repeating-linear-gradient(to bottom, transparent 0, transparent 27px, var(--color-caderno-pauta) 27px, var(--color-caderno-pauta) 28px); background-position: 0 1rem; display: flow-root", "purpose": "Pauta da folha, passo de 28px alinhado ao leading-7 do corpo." }
+    ],
+    "shadows": [
+      { "name": "caderno-sobre-a-mesa", "value": "0 1px 2px rgba(29,29,27,0.06), 0 16px 40px rgba(29,29,27,0.10)", "purpose": "Única sombra do sistema, no contêiner do caderno." }
+    ],
+    "motion": [
+      { "name": "transicao-padrao", "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Transição de cor de botões, links e itens do índice (padrão do Tailwind)." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botão principal da etapa",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Uma ação principal por etapa, na barra fixa do pé.",
+      "html": "<button class=\"ds-caderno-botao\">Conectar Mercado Pago</button>",
+      "css": ".ds-caderno-botao { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 24px; border: 0; border-radius: 9999px; background: var(--color-caderno-capa, #b81e0a); color: #fff; font-family: Karla, ui-sans-serif, system-ui, sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background-color 150ms cubic-bezier(0.4,0,0.2,1); } .ds-caderno-botao:hover { background: var(--color-caderno-capa-escura, #8f1708); } .ds-caderno-botao:focus-visible { outline: 2px solid var(--color-caderno-capa, #b81e0a); outline-offset: 2px; }"
+    },
+    {
+      "name": "Link secundário",
+      "kind": "button",
+      "refersTo": "link",
+      "description": "Ação secundária ou de revisão da etapa.",
+      "html": "<a href=\"#\" class=\"ds-caderno-link\">Ver o passo a passo com imagens</a>",
+      "css": ".ds-caderno-link { display: inline-flex; align-items: center; min-height: 44px; font-family: Karla, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 700; color: var(--color-caderno-tinta, #1d1d1b); text-decoration: underline; text-decoration-color: var(--color-caderno-pauta, #e7e3d6); text-decoration-thickness: 2px; text-underline-offset: 4px; } .ds-caderno-link:hover { text-decoration-color: var(--color-caderno-capa, #b81e0a); } .ds-caderno-link:focus-visible { outline: 2px solid var(--color-caderno-capa, #b81e0a); outline-offset: 2px; }"
+    },
+    {
+      "name": "Botão fantasma da capa",
+      "kind": "button",
+      "refersTo": "button-capa-ghost",
+      "description": "Ação lateral na faixa da capa (tour do painel).",
+      "html": "<div style=\"background:#b81e0a;padding:16px\"><button class=\"ds-capa-ghost\">Fazer tour pelo painel</button></div>",
+      "css": ".ds-capa-ghost { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid rgba(255,255,255,0.4); border-radius: 9999px; background: transparent; color: #fff; font-family: Karla, ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: background-color 150ms; } .ds-capa-ghost:hover { background: rgba(255,255,255,0.1); }"
+    },
+    {
+      "name": "Caderno (capa + folha)",
+      "kind": "card",
+      "refersTo": "caderno-capa",
+      "description": "Contêiner do fluxo: capa vermelha envolvendo a folha clara, com a única sombra.",
+      "html": "<div class=\"ds-caderno\"><header class=\"ds-caderno-capa\"><h1>Primeiros passos</h1><p>2 de 5 etapas concluídas</p></header><div class=\"ds-caderno-folha\"><p>Folha do caderno.</p></div></div>",
+      "css": ".ds-caderno { max-width: 48rem; padding: 8px; border-radius: 1.75rem; background: var(--color-caderno-capa, #b81e0a); color: var(--color-caderno-tinta, #1d1d1b); font-family: Karla, ui-sans-serif, system-ui, sans-serif; box-shadow: 0 1px 2px rgba(29,29,27,0.06), 0 16px 40px rgba(29,29,27,0.10); } .ds-caderno-capa { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 12px 12px 16px; color: #fff; } .ds-caderno-capa h1 { margin: 0; font-family: Caveat, Karla, cursive; font-weight: 600; font-size: 2.25rem; line-height: 1; } .ds-caderno-capa p { margin: 0; font-size: 0.875rem; font-weight: 700; } .ds-caderno-folha { padding: 16px 20px 24px; border-radius: 4px; background: var(--color-caderno-folha, #fbfaf6); }"
+    },
+    {
+      "name": "Índice de etapas",
+      "kind": "nav",
+      "refersTo": "indice-item",
+      "description": "Lista das cinco etapas: feitas riscadas e carimbadas, atual marcada com 'agora'.",
+      "html": "<ol class=\"ds-indice\"><li><a href=\"#\"><span><span class=\"n\">1</span><span class=\"feita\">Endereço do ateliê</span></span><span class=\"ds-carimbo\">Feito</span></a></li><li><a href=\"#\" aria-current=\"step\" class=\"atual\"><span><span class=\"n\">2</span>Conta do Mercado Pago</span><span class=\"agora\">agora</span></a></li><li><a href=\"#\"><span><span class=\"n\">3</span>Chave PIX</span></a></li></ol>",
+      "css": ".ds-indice { list-style: none; margin: 0; padding: 0; background: #fbfaf6; font-family: Karla, ui-sans-serif, system-ui, sans-serif; color: #1d1d1b; } .ds-indice li + li { border-top: 1px solid #e7e3d6; } .ds-indice a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 8px; border-radius: 4px; color: inherit; text-decoration: none; transition: background-color 150ms; } .ds-indice a:hover { background: rgba(231,227,214,0.5); } .ds-indice a:focus-visible { outline: 2px solid #b81e0a; outline-offset: 2px; } .ds-indice a.atual { font-weight: 700; } .ds-indice .n { display: inline-block; width: 16px; margin-right: 12px; font-size: 0.875rem; color: #78716c; } .ds-indice .feita { color: #78716c; text-decoration: line-through; text-decoration-color: #b23a2a; text-decoration-thickness: 2px; } .ds-indice .agora { font-family: Caveat, Karla, cursive; font-weight: 600; font-size: 1.25rem; line-height: 1; color: #b81e0a; } .ds-carimbo { display: inline-block; transform: rotate(-3deg); padding: 0 8px; border: 2px solid #b23a2a; border-radius: 6px; font-family: Caveat, Karla, cursive; font-weight: 600; font-size: 1.125rem; line-height: 1.25; color: #b23a2a; }"
+    },
+    {
+      "name": "Carimbo grande",
+      "kind": "custom",
+      "refersTo": "carimbo-grande",
+      "description": "Conclusão de etapa ao lado do título e fechamento 'Ateliê pronto'.",
+      "html": "<span class=\"ds-carimbo-grande\">Ateliê pronto</span>",
+      "css": ".ds-carimbo-grande { display: inline-block; transform: rotate(-4deg); padding: 2px 16px; border: 3px solid var(--color-caderno-carimbo, #b23a2a); border-radius: 6px; font-family: Caveat, Karla, cursive; font-weight: 600; font-size: 1.875rem; line-height: 1.25; color: var(--color-caderno-carimbo, #b23a2a); }"
+    },
+    {
+      "name": "Bloco pautado com nota",
+      "kind": "custom",
+      "refersTo": "nota",
+      "description": "Texto da etapa sobre pauta de 28px e a nota 'Depois disso'.",
+      "html": "<div class=\"ds-pauta\"><p>A conta conectada é o destino dos seus recebimentos. O Mercado Pago processa o pagamento do cliente.</p><p class=\"ds-nota\"><strong>Depois disso:</strong> o pagamento das suas vendas cai direto nessa conta.</p></div>",
+      "css": ".ds-pauta { display: flow-root; padding: 0 20px; background-color: #fbfaf6; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, #e7e3d6 27px, #e7e3d6 28px); background-position: 0 1rem; font-family: Karla, ui-sans-serif, system-ui, sans-serif; } .ds-pauta p { max-width: 68ch; margin: 16px 0 0; font-size: 1rem; line-height: 28px; color: #44403c; } .ds-pauta .ds-nota { padding: 12px 16px; border-radius: 4px; background: #e7e3d6; color: #1d1d1b; }"
+    },
+    {
+      "name": "Aviso de pendência",
+      "kind": "custom",
+      "refersTo": "pendente",
+      "description": "Estado que impede a etapa; substitui a ação na barra fixa.",
+      "html": "<p class=\"ds-pendente\">A conexão aguarda a configuração do Mercado Pago pela plataforma.</p>",
+      "css": ".ds-pendente { max-width: 68ch; margin: 0; padding: 12px 16px; border: 2px solid var(--color-caderno-carimbo, #b23a2a); border-radius: 4px; background: #fff; font-family: Karla, ui-sans-serif, system-ui, sans-serif; font-size: 1rem; font-weight: 600; line-height: 28px; color: var(--color-caderno-tinta, #1d1d1b); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "O Caderno de Encomendas do Ateliê",
+    "overview": "Escopo, sem ambiguidade: este mundo vale somente para o fluxo guiado \"Primeiros passos\" do painel do artesão (/painel/primeiros-passos/:etapa). O restante do painel (/painel) continua no sistema incumbente do painel: fundo pêssego quente, escala de marca vermelho-laranja brand-* (#F33920 no 500), neutros stone e as classes seller-*. A vitrine tem identidade própria.\n\nO fluxo é a página do caderno onde o ateliê anota as encomendas: uma capa vermelha da marca envolve uma folha clara, como um caderno aberto; a folha tem pauta fina no passo exato da linha de texto (28px); as etapas feitas são riscadas e recebem um carimbo escrito à mão. Só a etapa atual pede ação, e essa ação fica presa ao pé da tela. O mundo entra por cor, letra, pauta e carimbo; os controles continuam sendo controles web comuns.\n\nA densidade é de leitura calma: uma coluna de no máximo 68ch, texto de corpo em 16px com entrelinha de 28px, alvos de toque de 44–48px pensados para o celular na oficina. O fluxo recusa o assistente de SaaS: bolinhas numeradas, barra de progresso azul e pares Voltar/Avançar.",
+    "keyCharacteristics": [
+      "Capa vermelha da marca (#b81e0a) envolvendo uma folha clara pautada.",
+      "Pauta de 28px alinhada à entrelinha do corpo.",
+      "Etapa concluída = texto riscado em vermelho-óxido + carimbo manuscrito \"Feito\".",
+      "Duas letras: Karla para trabalhar, Caveat só para a mão do artesão.",
+      "Uma ação principal por etapa, fixa no pé da folha."
+    ],
+    "rules": [
+      { "name": "The Capa Rule", "body": "O vermelho de capa emoldura e age: capa, botão principal, numeral da etapa, \"agora\" e foco. Não vira fundo de blocos de conteúdo dentro da folha.", "section": "colors" },
+      { "name": "The Carimbo Rule", "body": "O vermelho-óxido marca o que terminou (carimbo, risco) e, como borda, o único estado que impede a etapa. Nunca aparece em botões, links ou títulos.", "section": "colors" },
+      { "name": "The Mão Rule", "body": "Caveat só onde o artesão escreveria à mão: o título da capa, o carimbo e o \"agora\" do índice. Nunca em texto corrido, botões, rótulos ou títulos de etapa.", "section": "typography" },
+      { "name": "The Pauta Rule", "body": "O corpo dentro da pauta tem entrelinha de exatamente 28px (leading-7), o mesmo passo da pauta; mudar uma sem a outra desalinha a linha da base do texto.", "section": "typography" },
+      { "name": "The Uma Sombra Rule", "body": "Uma sombra, no caderno. Nada dentro da folha se eleva; separação interna é feita por pauta, fio e fundo.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do restringir os tokens caderno-* e as classes .caderno* ao fluxo \"Primeiros passos\"; o resto do painel segue brand-*/seller-*.",
+      "Do manter a entrelinha do corpo pautado em 28px, igual ao passo da pauta.",
+      "Do marcar etapa concluída com texto + risco + carimbo, nunca só por cor, e anunciar \"(feita)\" para leitores de tela.",
+      "Do dar a cada etapa uma única ação principal (caderno-botao), na barra fixa do pé.",
+      "Do usar o contorno de foco de 2px em vermelho de capa em todo controle do caderno.",
+      "Do servir fontes do próprio app (app/assets/fonts/), registrando origem e licença em CREDITS.md."
+    ],
+    "donts": [
+      "Don't usar bolinhas numeradas, barra de progresso ou pares Voltar/Avançar de assistente de SaaS neste fluxo.",
+      "Don't usar Caveat fora do título da capa, do carimbo e do \"agora\".",
+      "Don't usar o carimbo ou o vermelho-óxido para algo que não seja conclusão (carimbo, risco) ou o aviso que impede a etapa (borda).",
+      "Don't adicionar sombras dentro da folha; a única sombra é a do caderno.",
+      "Don't carregar fontes de CDN externo; a CSP só permite font-src 'self'."
+    ]
+  }
+}
