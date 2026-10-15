@@ -24,7 +24,7 @@ RSpec.describe "Seller dashboard", type: :request do
     get seller_root_path
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("Crie, publique e acompanhe cada venda")
+    expect(response.body).to include("Visão geral", "O que fazer agora")
     expect(response.body).to include("Buscar no seu catálogo")
     expect(response.body).to include("Primeiros passos", seller_getting_started_path)
     expect(response.body).to include("Cesto Horizonte")
@@ -38,18 +38,35 @@ RSpec.describe "Seller dashboard", type: :request do
 
     get seller_root_path
 
-    expect(response.body).to include("precisa ter uma chave PIX cadastrada", "Gerenciar chaves Pix", "Cadastrar chave", seller_pix_key_guide_path)
+    expect(response.body).to include("precisa ter uma chave PIX cadastrada", "Ver o passo a passo com imagens", "Já cadastrei minha chave PIX", seller_pix_key_guide_path)
+    # No painel inicial o aviso é compacto: os passos ficam na página do guia.
+    expect(response.body).not_to include("Gerenciar chaves Pix")
   end
 
-  it "opens with the tour invitation, followed by the PIX key warning above every other box" do
+  it "lists paid orders waiting to be prepared, not orders still awaiting payment" do
+    product = Product.create!(seller: seller, name: "Cesto Preparo", sku: "PREPARO-1", price_cents: 8_000, stock_quantity: 3, status: :active)
+    paid = create_seller_order(product)
+    paid.update!(status: :confirmed)
+    paid.create_shipment!(carrier: "EloShop", service: "Entrega", shipping_cents: 1_000, estimated_days: 5)
+    create_seller_order(product)
+    sign_in_as(user)
+
+    get seller_root_path
+
+    todo = Nokogiri::HTML(response.body).at_css("[aria-labelledby='todo-title']").text.squish
+    expect(todo).to include("1 pedido pago para preparar e enviar", "1 pedido aguardando o pagamento do cliente")
+  end
+
+  it "opens with the page title, the tour invitation and the PIX key warning above every other box" do
     sign_in_as(user)
 
     get seller_root_path
 
     doc = Nokogiri::HTML(response.body)
     boxes = doc.at_css(".seller-content > div").element_children
-    expect(boxes.first["aria-labelledby"]).to eq("tour-call-title")
-    expect(boxes[1]["aria-labelledby"]).to eq("pix-key-notice-title")
+    expect(boxes.first.at_css("h1").text).to eq("Visão geral")
+    expect(boxes[1]["aria-labelledby"]).to eq("tour-call-title")
+    expect(boxes[2]["aria-labelledby"]).to eq("pix-key-notice-title")
   end
 
   it "hides the PIX key warning once the seller confirmed the key" do
@@ -120,7 +137,7 @@ RSpec.describe "Seller dashboard", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(box_texts.join(" ")).not_to include("Recebimentos e verificação", "Para começar a vender", "Passo obrigatório", "Cadastro em análise")
-      expect(response.body).to include("Crie, publique e acompanhe cada venda")
+      expect(response.body).to include("O que fazer agora")
     end
   end
 

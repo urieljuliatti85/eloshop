@@ -1,23 +1,31 @@
 <% content_for :title, "Visão geral | #{current_seller.name}" %>
 
 <div class="space-y-8">
-  <%# Convite ao tour: o topo da página, antes de qualquer aviso. %>
-  <%= render "seller_portal/tours/call" %>
+  <header class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-black tracking-tight text-stone-950">Visão geral</h1>
+      <p class="mt-1 text-sm text-stone-600"><%= current_seller.name %></p>
+    </div>
+    <%= link_to "Adicionar nova peça", new_seller_product_path, class: "seller-button seller-button--primary" %>
+  </header>
 
-  <%# Primeiro aviso, acima de todos os outros boxes: sem chave PIX o pagamento
-      PIX é recusado. %>
-  <%= render "seller_portal/mercado_pago_connections/pix_key_notice" %>
+  <%# Convite ao tour: no topo só para quem ainda não fez. Depois de concluído,
+      "Refazer o tour" vai para o fim da página — continua à mão, sem disputar
+      espaço com o que precisa de ação. %>
+  <%= render "seller_portal/tours/call" unless current_seller.tour_completed_at? %>
 
-  <%# Primeiro de tudo: é o caminho para quem acabou de chegar. Some quando as
-      quatro etapas estão prontas — depois disso "Para começar a vender" seria
-      ruído, e a página segue na navegação. %>
+  <%# Os avisos vêm antes do resumo de trabalho, na mesma ordem de antes: sem
+      chave PIX o pagamento PIX é recusado, e sem a conta do Mercado Pago nada
+      pode ser publicado. %>
+  <%= render "seller_portal/mercado_pago_connections/pix_key_notice", compact: true %>
+
+  <%# Some quando as quatro etapas estão prontas — depois disso "Para começar a
+      vender" seria ruído, e a página segue na navegação. %>
   <% unless @getting_started_steps.values.all? %>
     <%= render "seller_portal/getting_started/banner", steps: @getting_started_steps %>
   <% end %>
 
-  <%# Logo abaixo, acima do hero: o hero ocupa a primeira tela inteira, e avisos
-      abaixo dele passavam despercebidos sem rolar a página. A ordem importa:
-      "Cadastro em análise" remete ao aviso da conta, que fica acima dele. %>
+  <%# A ordem importa: "Cadastro em análise" remete ao aviso da conta, que fica acima dele. %>
   <% unless current_seller.mercado_pago_account_state == :ready %>
     <%= render "seller_portal/mercado_pago_connections/required_banner" %>
   <% end %>
@@ -44,50 +52,33 @@
     <%= render "seller_portal/mercado_pago_connections/banner" %>
   <% end %>
 
-  <section class="grid min-h-[31rem] gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,0.78fr)]">
-    <article class="group relative isolate min-h-[25rem] overflow-hidden rounded-[2rem] bg-[#7a2410] text-white shadow-sm lg:min-h-full">
-      <% if @featured_product&.main_image&.attached? %>
-        <%= image_tag @featured_product.main_image.variant(resize_to_fill: [1200, 760]), alt: @featured_product.name, class: "absolute inset-0 -z-20 h-full w-full object-cover transition duration-700 group-hover:scale-[1.02]" %>
-        <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/75 via-black/35 to-transparent"></div>
-      <% else %>
-        <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,#fbbeb6_0,transparent_27%),radial-gradient(circle_at_75%_72%,#f6604c_0,transparent_28%),linear-gradient(135deg,#7a2410,#df240c)]"></div>
-        <div class="absolute right-[12%] top-[12%] -z-10 size-40 rotate-6 border-[1.25rem] border-white/15 sm:size-64"></div>
-        <div class="absolute bottom-[8%] right-[32%] -z-10 size-28 -rotate-12 border-[0.8rem] border-[#fbbeb6]/30 sm:size-44"></div>
-      <% end %>
-
-      <div class="flex h-full max-w-2xl flex-col justify-end p-7 sm:p-10 lg:p-12">
-        <p class="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[#fde1dd]">Seu ateliê na EloShop</p>
-        <h1 class="max-w-xl text-4xl font-black leading-[0.98] tracking-tight sm:text-5xl lg:text-6xl">Crie, publique e acompanhe cada venda.</h1>
-        <p class="mt-5 max-w-lg text-sm leading-6 text-white/80 sm:text-base">Tudo que você precisa para transformar peças autorais em uma vitrine viva — sem perder de vista estoque, pedidos e recebimentos.</p>
-        <div class="mt-7 flex flex-wrap gap-3">
-          <%= link_to "Adicionar nova peça", new_seller_product_path, class: "rounded-full bg-white px-6 py-3 text-sm font-bold text-[#7a2410] transition hover:bg-[#fef2f0]" %>
-          <%= link_to "Gerenciar catálogo", seller_products_path, class: "rounded-full border border-white/40 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10" %>
-        </div>
-      </div>
-    </article>
-
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-      <%= link_to seller_products_path, class: "group relative min-h-56 overflow-hidden rounded-[2rem] bg-[#ead9b8] p-7 text-[#7a2410] shadow-sm" do %>
-        <span class="text-xs font-bold uppercase tracking-[0.18em]">Catálogo</span>
-        <strong class="mt-4 block max-w-56 text-3xl leading-none">Dê destaque às suas histórias.</strong>
-        <span class="mt-6 inline-flex border-b-2 border-current pb-1 text-sm font-bold">Ver produtos</span>
-        <span class="absolute -bottom-12 -right-8 size-44 rounded-full bg-[#d09a63] transition duration-500 group-hover:scale-110"></span>
-        <span class="absolute bottom-8 right-10 grid size-20 rotate-6 place-items-center border-8 border-white/65 text-3xl">✦</span>
-      <% end %>
-
-      <%= link_to seller_orders_path, class: "group relative min-h-56 overflow-hidden rounded-[2rem] bg-[#fde1dd] p-7 text-[#7a2410] shadow-sm" do %>
-        <span class="text-xs font-bold uppercase tracking-[0.18em]">Operação</span>
-        <strong class="mt-4 block text-3xl leading-none"><%= @pending_orders_count %> <%= @pending_orders_count == 1 ? "pedido espera" : "pedidos esperam" %> por você.</strong>
-        <span class="mt-6 inline-flex border-b-2 border-current pb-1 text-sm font-bold">Acompanhar pedidos</span>
-        <svg viewBox="0 0 120 120" class="absolute -bottom-7 -right-5 size-36 text-[#f88f81] transition duration-500 group-hover:-translate-y-2" fill="none" stroke="currentColor" stroke-width="12" aria-hidden="true"><path d="M25 42h70l-8 58H33L25 42Z"/><path d="M42 44V30a18 18 0 0 1 36 0v14"/></svg>
-      <% end %>
-    </div>
+  <%# O que pede ação hoje, em frases e não em números soltos: o artesão abre o
+      painel para saber se tem pedido para enviar. Só aparecem as linhas com algo. %>
+  <section class="seller-card" aria-labelledby="todo-title">
+    <h2 id="todo-title" class="text-xl font-bold text-stone-950">O que fazer agora</h2>
+    <% todo = [
+      ([ @to_prepare_count, @to_prepare_count == 1 ? "pedido pago para preparar e enviar" : "pedidos pagos para preparar e enviar", "Ver pedidos", seller_orders_path, true ] if @to_prepare_count.positive?),
+      ([ @low_stock_count, @low_stock_count == 1 ? "produto com estoque baixo" : "produtos com estoque baixo", "Ver produtos", seller_products_path, false ] if @low_stock_count.positive?),
+      ([ @awaiting_payment_count, @awaiting_payment_count == 1 ? "pedido aguardando o pagamento do cliente" : "pedidos aguardando o pagamento do cliente", "Acompanhar", seller_orders_path, false ] if @awaiting_payment_count.positive?)
+    ].compact %>
+    <% if todo.any? %>
+      <ul class="mt-4 divide-y divide-brand-100">
+        <% todo.each do |count, text, action, path, urgent| %>
+          <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
+            <p class="text-sm text-stone-700"><strong class="text-lg font-black <%= urgent ? 'text-brand-700' : 'text-stone-950' %>"><%= count %></strong> <%= text %></p>
+            <%= link_to action, path, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-600" %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="mt-2 text-sm leading-6 text-stone-600">Nada pendente agora. Quando um pedido for pago, ele aparece aqui para você preparar.</p>
+    <% end %>
   </section>
 
   <section aria-labelledby="numbers-title">
     <div class="mb-4 flex items-end justify-between gap-4">
-      <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Hoje no ateliê</p><h2 id="numbers-title" class="mt-1 text-2xl font-bold">Seus números</h2></div>
-      <p class="hidden text-sm text-stone-500 sm:block">Visão acumulada da operação</p>
+      <h2 id="numbers-title" class="text-2xl font-bold">Seus números</h2>
+      <p class="text-sm text-stone-500">Desde a abertura do ateliê</p>
     </div>
     <div class="grid gap-px overflow-hidden rounded-2xl border border-brand-100 bg-brand-100 sm:grid-cols-2 lg:grid-cols-5">
       <% [
@@ -95,9 +86,9 @@
         ["Publicados", @active_products_count],
         ["Estoque baixo", @low_stock_count],
         ["Pedidos", @orders_count],
-        ["Líquido em vendas", format_price(@seller_revenue_cents)]
-      ].each do |label, value| %>
-        <div class="bg-white px-5 py-6"><p class="text-xs font-semibold uppercase tracking-wider text-stone-500"><%= label %></p><p class="mt-2 text-2xl font-black tracking-tight text-stone-950"><%= value %></p></div>
+        ["Líquido em vendas", format_price(@seller_revenue_cents), "Já sem a comissão da EloShop"]
+      ].each do |label, value, note| %>
+        <div class="bg-white px-5 py-6"><p class="text-xs font-semibold uppercase tracking-wider text-stone-500"><%= label %></p><p class="mt-2 text-2xl font-black tracking-tight text-stone-950"><%= value %></p><% if note %><p class="mt-1 text-xs text-stone-500"><%= note %></p><% end %></div>
       <% end %>
     </div>
   </section>
@@ -105,7 +96,7 @@
   <section class="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
     <div class="seller-card-lg">
       <div class="flex items-center justify-between gap-4">
-        <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Sua coleção</p><h2 class="mt-1 text-2xl font-bold">Produtos recentes</h2></div>
+        <h2 class="text-2xl font-bold">Produtos recentes</h2>
         <%= link_to "Ver todos", seller_products_path, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-600" %>
       </div>
 
@@ -114,7 +105,7 @@
           <% @recent_products.each do |product| %>
             <%= link_to seller_product_path(product), class: "group flex min-w-0 items-center gap-4 rounded-2xl border border-brand-100 p-3 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md" do %>
               <span class="grid size-20 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#eee7da] text-2xl text-stone-400">
-                <% if product.main_image.attached? %><%= image_tag product.main_image.variant(resize_to_fill: [240, 240]), alt: product.name, class: "h-full w-full object-cover" %><% else %>✦<% end %>
+                <% if product.main_image.attached? %><%= image_tag product.main_image.variant(resize_to_fill: [240, 240]), alt: product.name, class: "h-full w-full object-cover" %><% else %><span aria-hidden="true">✦</span><% end %>
               </span>
               <span class="min-w-0"><strong class="block truncate text-sm text-stone-950"><%= product.name %></strong><span class="mt-1 block text-xs text-stone-500"><%= t(product.status, scope: "products.statuses") %> · <%= product.stock_quantity %> em estoque</span><span class="mt-2 block text-sm font-bold"><%= format_price(product.price_cents) %></span></span>
             <% end %>
@@ -126,7 +117,7 @@
     </div>
 
     <div class="rounded-[2rem] bg-[#5c1a0b] p-6 text-white shadow-sm sm:p-8">
-      <div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#d8bd8d]">Últimas vendas</p><h2 class="mt-1 text-2xl font-bold">Pedidos</h2></div><%= link_to "Ver todos", seller_orders_path, class: "inline-flex min-h-11 items-center text-sm font-bold text-white/80 underline underline-offset-4 hover:text-white" %></div>
+      <div class="flex items-center justify-between gap-4"><h2 class="text-2xl font-bold">Últimos pedidos</h2><%= link_to "Ver todos", seller_orders_path, class: "inline-flex min-h-11 items-center text-sm font-bold text-white/80 underline underline-offset-4 hover:text-white" %></div>
       <% if @recent_seller_orders.any? %>
         <ol class="mt-5 divide-y divide-white/15">
           <% @recent_seller_orders.each do |seller_order| %>
@@ -138,4 +129,6 @@
       <% end %>
     </div>
   </section>
+
+  <%= render "seller_portal/tours/call" if current_seller.tour_completed_at? %>
 </div>
