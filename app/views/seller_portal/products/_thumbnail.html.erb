@@ -1,0 +1,7 @@
+<%# Miniatura da peça nas listas do painel: o artesão reconhece a peça pela
+    foto antes do nome. Sem foto, um bloco neutro do mesmo tamanho. %>
+<span class="grid size-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#eee7da]">
+  <% if product.main_image.attached? %>
+    <%= image_tag product.main_image.variant(resize_to_fill: [ 112, 112 ]), alt: "", loading: "lazy", class: "size-full object-cover" %>
+  <% end %>
+</span>

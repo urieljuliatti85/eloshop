@@ -36,6 +36,34 @@ RSpec.describe "Seller products", type: :request do
   # sobre o crescimento: o total muda quando a página muda, a inclinação não
   # pode voltar. Diferente do admin, este painel tem tráfego proporcional ao
   # número de artesãos.
+  it "lists each product with its price, stock badge and a labeled checkbox" do
+    own_product
+
+    get seller_products_path
+
+    expect(response.body).to include("R$ 50,00", "Estoque baixo: 2", "Selecionar Vaso próprio")
+  end
+
+  it "shows an empty state with the way to create the first product" do
+    get seller_products_path
+
+    expect(response.body).to include("Sua primeira peça começa aqui.", new_seller_product_path)
+    expect(response.body).not_to include("Selecionar todos")
+  end
+
+  it "does not issue more queries on the product list when products are added" do
+    own_product
+    get seller_products_path
+    before = count_queries { get seller_products_path }
+
+    3.times { |i| Product.create!(seller: seller, name: "Peça #{i}", sku: "MAIS-#{i}", price_cents: 4_000, stock_quantity: 5) }
+
+    get seller_products_path
+    after = count_queries { get seller_products_path }
+
+    expect(after).to eq(before)
+  end
+
   it "does not issue more queries on the product form when categories are added" do
     top = Category.create!(name: "Casa")
     child = Category.create!(name: "Decoração", parent: top)
