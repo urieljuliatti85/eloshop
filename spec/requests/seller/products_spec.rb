@@ -363,16 +363,30 @@ RSpec.describe "Seller products", type: :request do
       end
     end
 
-    it "marks the category as required to publish, in red, and explains why" do
+    # "Para publicar" em texto, e não o asterisco de "obrigatório para salvar":
+    # o rascunho salva sem a categoria.
+    it "marks the category as required to publish, and explains why" do
       get new_seller_product_path
 
       doc = Nokogiri::HTML(response.body)
       expect(doc.at_css("label[for='product_category_id']").text).to start_with("Categoria")
-      expect(doc.at_css("label[for='product_category_id'] [data-required-fields-target='marker']")).to be_present
+      expect(doc.at_css("label[for='product_category_id'] [data-publish-marker]").text).to eq("Para publicar")
+      expect(doc.at_css("label[for='product_category_id'] [data-required-fields-target='marker']")).to be_nil
       expect(doc.at_css("#product_category_id")["data-required-fields-target"]).to eq("field")
       expect(doc.at_css("#product_category_id")["data-publish-required"]).to be_present
       expect(doc.at_css("#product_category_id")["required"]).to be_nil
-      expect(response.body).to include("para publicar, escolha uma categoria")
+      expect(response.body).to include("É como o cliente encontra o seu produto.")
+    end
+
+    it "hides the production time fields unless the product is made to order" do
+      get new_seller_product_path
+      group = Nokogiri::HTML(response.body).at_css("#product_production_time_min_days").ancestors("[data-required-fields-target='group']").first
+      expect(group.has_attribute?("hidden")).to be(true)
+
+      own_product.update!(availability_type: :made_to_order, production_time_min_days: 3, production_time_max_days: 7)
+      get edit_seller_product_path(own_product)
+      group = Nokogiri::HTML(response.body).at_css("#product_production_time_min_days").ancestors("[data-required-fields-target='group']").first
+      expect(group.has_attribute?("hidden")).to be(false)
     end
 
     it "does not mark the SKU as required" do
@@ -391,9 +405,9 @@ RSpec.describe "Seller products", type: :request do
         field = doc.at_css("##{id}")
         expect(field["required"]).to be_nil
         expect(field["data-publish-required"]).to eq("true")
-        expect(doc.at_css("label[for='#{id}'] [data-required-fields-target='marker']")["hidden"]).to be_nil
+        expect(doc.at_css("label[for='#{id}'] [data-publish-marker]")).to be_present
       end
-      expect(response.body).to include("obrigatórios para <strong>publicar</strong>")
+      expect(response.body).to include("pode salvar como rascunho sem ele")
     end
   end
 end

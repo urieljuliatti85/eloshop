@@ -2,36 +2,61 @@
   label_class = "text-sm font-semibold text-stone-700"
   made_to_order = product.availability_type_made_to_order?
   field_class = "seller-input mt-2"
+  file_class = "mt-2 block w-full rounded-xl border border-dashed border-stone-300 bg-brand-50/30 p-3 text-sm file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-stone-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
+  section_class = "grid gap-5 border-t border-brand-100 pt-6"
 %>
-<%= form_with model: [ :seller, product ], class: "grid gap-5 rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8", html: { novalidate: true }, data: { controller: "required-fields", action: "submit->required-fields#validate focusout->required-fields#touch input->required-fields#touch change->required-fields#touch" } do |form| %>
-  <p class="text-xs text-stone-500"><span class="text-red-600" aria-hidden="true">*</span> Campo obrigatório</p>
+<%# Seções na ordem em que o artesão pensa a peça: o que ela é (com a foto
+    logo depois do nome — para o artesão a foto é o produto), quanto custa e
+    quando sai, e como chega. Campos, ids e regras de obrigatoriedade são os
+    mesmos de antes (required-fields e o servidor). %>
+<%= form_with model: [ :seller, product ], class: "seller-card-lg grid gap-6", html: { novalidate: true }, data: { controller: "required-fields", action: "submit->required-fields#validate focusout->required-fields#touch input->required-fields#touch change->required-fields#touch" } do |form| %>
+  <p class="text-xs text-stone-500"><span class="text-red-600" aria-hidden="true">*</span> Campo obrigatório · <span class="font-semibold text-stone-700">Para publicar</span>: pode salvar como rascunho sem ele</p>
   <% if product.errors.any? %><div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"><ul class="list-disc pl-5"><% product.errors.full_messages.each do |message| %><li><%= message %></li><% end %></ul></div><% end %>
-  <div><%= form.label :name, class: label_class do %>Nome<%= required_marker %><% end %><%= form.text_field :name, required: true, data: { required_fields_target: "field" }, class: field_class %></div>
-  <div><%= form.label :description, "Descrição", class: "text-sm font-semibold text-stone-700" %><%= form.text_area :description, rows: 6, class: field_class %></div>
-  <div class="grid gap-5 sm:grid-cols-2"><div><%= form.label :sku, "SKU (opcional)", class: label_class %><%= form.text_field :sku, placeholder: "Em branco, a EloShop gera", class: field_class %></div><div><%= form.label :price, class: label_class do %>Preço (R$)<%= required_marker %><% end %><%= form.text_field :price, value: price_field_value(form.object.price_cents), inputmode: "decimal", placeholder: "0,00", data: { controller: "price-input", action: "input->price-input#format", required_fields_target: "field" }, required: true, class: field_class %></div></div>
-  <div class="grid gap-5 sm:grid-cols-2"><div><%= form.label :availability_type, "Disponibilidade", class: "text-sm font-semibold text-stone-700" %><%= form.select :availability_type, [["Estoque padrão", "standard"], ["Peça única", "one_of_a_kind"], ["Sob encomenda", "made_to_order"]], {}, data: { required_fields_target: "trigger", action: "change->required-fields#refresh" }, class: field_class %></div><div><%= form.label :stock_quantity, "Estoque", class: "text-sm font-semibold text-stone-700" %><%= form.number_field :stock_quantity, min: 0, class: field_class %></div></div>
-  <div class="grid gap-5 sm:grid-cols-2"><div><%= form.label :production_time_min_days, class: label_class do %>Produção mínima (dias úteis)<%= required_marker(visible: made_to_order) %><% end %><%= form.number_field :production_time_min_days, min: 1, required: made_to_order, data: { required_fields_target: "field", required_when: "made_to_order" }, class: field_class %></div><div><%= form.label :production_time_max_days, class: label_class do %>Produção máxima (dias úteis)<%= required_marker(visible: made_to_order) %><% end %><%= form.number_field :production_time_max_days, min: 1, required: made_to_order, data: { required_fields_target: "field", required_when: "made_to_order" }, class: field_class %></div></div>
-  <div class="grid gap-5 sm:grid-cols-4"><div><%= form.label :weight_grams, class: label_class do %>Peso (g)<%= required_marker %><% end %><%= form.number_field :weight_grams, min: 1, data: { required_fields_target: "field", publish_required: true }, class: field_class %></div><div><%= form.label :length_cm, class: label_class do %>Comprimento (cm)<%= required_marker %><% end %><%= form.number_field :length_cm, min: 1, data: { required_fields_target: "field", publish_required: true }, class: field_class %></div><div><%= form.label :width_cm, class: label_class do %>Largura (cm)<%= required_marker %><% end %><%= form.number_field :width_cm, min: 1, data: { required_fields_target: "field", publish_required: true }, class: field_class %></div><div><%= form.label :height_cm, class: label_class do %>Altura (cm)<%= required_marker %><% end %><%= form.number_field :height_cm, min: 1, data: { required_fields_target: "field", publish_required: true }, class: field_class %></div></div>
-  <p class="-mt-2 text-xs text-stone-500"><span class="text-red-600" aria-hidden="true">*</span> Peso e dimensões são obrigatórios para <strong>publicar</strong>. Sem eles você ainda pode salvar o produto como rascunho.</p>
-  <fieldset class="rounded-2xl border border-brand-100 bg-brand-50/40 p-5">
-    <legend class="px-2 text-sm font-semibold text-stone-700">Frete deste produto</legend>
-    <p class="mb-4 text-xs leading-5 text-stone-500">O valor é aplicado a cada unidade. Deixe valor e prazo vazios para usar o cálculo estimado da EloShop.</p>
-    <div class="grid gap-5 sm:grid-cols-2">
-      <div><%= form.label :fixed_shipping, "Valor fixo por unidade (R$)", class: "text-sm font-semibold text-stone-700" %><%= form.text_field :fixed_shipping, value: price_field_value(form.object.fixed_shipping_cents), inputmode: "decimal", placeholder: "20,00", data: { controller: "price-input", action: "input->price-input#format" }, class: field_class %></div>
-      <div><%= form.label :fixed_shipping_estimated_days, "Prazo máximo (dias úteis)", class: "text-sm font-semibold text-stone-700" %><%= form.number_field :fixed_shipping_estimated_days, min: 1, step: 1, placeholder: "8", class: field_class %></div>
+
+  <section class="grid gap-5" aria-labelledby="product-section-piece">
+    <h2 id="product-section-piece" class="text-lg font-bold text-stone-950">A peça</h2>
+    <div><%= form.label :name, class: label_class do %>Nome<%= required_marker %><% end %><%= form.text_field :name, required: true, data: { required_fields_target: "field" }, class: field_class %></div>
+    <div><%= form.label :main_image, "Foto principal", class: label_class %><%= form.file_field :main_image, accept: "image/png,image/jpeg,image/webp", class: file_class %><p class="mt-1 text-xs text-stone-500">Pode enviar a foto direto do celular: ela é reduzida automaticamente e mantém a qualidade para ampliar.</p></div>
+    <div><%= form.label :images, "Mais fotos", class: label_class %><%= form.file_field :images, multiple: true, accept: "image/png,image/jpeg,image/webp", class: file_class %><p class="mt-1 text-xs text-stone-500">PNG, JPEG ou WEBP, até 5 MB por foto e <%= Product::IMAGES_MAX_COUNT %> fotos no total.</p></div>
+    <div><%= form.label :description, "Descrição", class: label_class %><%= form.text_area :description, rows: 6, class: field_class %></div>
+    <div><%= form.label :category_id, class: label_class do %>Categoria <%= publish_marker %><% end %><%= form.select :category_id, options_for_select(category_tree.breadcrumb_options, product.category_id), { include_blank: "Selecione uma categoria" }, data: { required_fields_target: "field", publish_required: true }, class: field_class %><p class="mt-1 text-xs text-stone-500">É como o cliente encontra o seu produto.</p></div>
+  </section>
+
+  <section class="<%= section_class %>" aria-labelledby="product-section-price">
+    <h2 id="product-section-price" class="text-lg font-bold text-stone-950">Preço e disponibilidade</h2>
+    <div class="grid gap-5 sm:grid-cols-2"><div><%= form.label :price, class: label_class do %>Preço (R$)<%= required_marker %><% end %><%= form.text_field :price, value: price_field_value(form.object.price_cents), inputmode: "decimal", placeholder: "0,00", data: { controller: "price-input", action: "input->price-input#format", required_fields_target: "field" }, required: true, class: field_class %></div><div><%= form.label :sku, "Código da peça (SKU, opcional)", class: label_class %><%= form.text_field :sku, placeholder: "Em branco, a EloShop gera", class: field_class %></div></div>
+    <div class="grid gap-5 sm:grid-cols-2"><div><%= form.label :availability_type, "Disponibilidade", class: label_class %><%= form.select :availability_type, [["Estoque padrão", "standard"], ["Peça única", "one_of_a_kind"], ["Sob encomenda", "made_to_order"]], {}, data: { required_fields_target: "trigger", action: "change->required-fields#refresh" }, class: field_class %></div><div><%= form.label :stock_quantity, "Estoque", class: label_class %><%= form.number_field :stock_quantity, min: 0, class: field_class %></div></div>
+    <%# Prazo de produção só existe para sob encomenda: o grupo aparece e some
+        com a disponibilidade (required-fields#refresh). %>
+    <div class="grid gap-5 sm:grid-cols-2" data-required-fields-target="group" data-required-when="made_to_order" <%= "hidden" unless made_to_order %>><div><%= form.label :production_time_min_days, class: label_class do %>Produção mínima (dias úteis)<%= required_marker(visible: made_to_order) %><% end %><%= form.number_field :production_time_min_days, min: 1, required: made_to_order, data: { required_fields_target: "field", required_when: "made_to_order" }, class: field_class %></div><div><%= form.label :production_time_max_days, class: label_class do %>Produção máxima (dias úteis)<%= required_marker(visible: made_to_order) %><% end %><%= form.number_field :production_time_max_days, min: 1, required: made_to_order, data: { required_fields_target: "field", required_when: "made_to_order" }, class: field_class %></div></div>
+  </section>
+
+  <section class="<%= section_class %>" aria-labelledby="product-section-shipping">
+    <h2 id="product-section-shipping" class="text-lg font-bold text-stone-950">Envio</h2>
+    <div class="grid gap-5 sm:grid-cols-2"><div><%= form.label :weight_grams, class: label_class do %>Peso (g) <%= publish_marker %><% end %><%= form.number_field :weight_grams, min: 1, data: { required_fields_target: "field", publish_required: true }, class: field_class %></div><div><%= form.label :length_cm, class: label_class do %>Comprimento (cm) <%= publish_marker %><% end %><%= form.number_field :length_cm, min: 1, data: { required_fields_target: "field", publish_required: true }, class: field_class %></div><div><%= form.label :width_cm, class: label_class do %>Largura (cm) <%= publish_marker %><% end %><%= form.number_field :width_cm, min: 1, data: { required_fields_target: "field", publish_required: true }, class: field_class %></div><div><%= form.label :height_cm, class: label_class do %>Altura (cm) <%= publish_marker %><% end %><%= form.number_field :height_cm, min: 1, data: { required_fields_target: "field", publish_required: true }, class: field_class %></div></div>
+    <div>
+      <p class="text-sm font-semibold text-stone-700">Frete deste produto</p>
+      <p class="mt-1 text-xs leading-5 text-stone-500">O valor é aplicado a cada unidade. Deixe valor e prazo vazios para usar o cálculo estimado da EloShop.</p>
     </div>
-    <label class="mt-5 flex cursor-pointer items-start gap-3">
+    <div class="grid gap-5 sm:grid-cols-2">
+      <div><%= form.label :fixed_shipping, "Valor fixo por unidade (R$)", class: label_class %><%= form.text_field :fixed_shipping, value: price_field_value(form.object.fixed_shipping_cents), inputmode: "decimal", placeholder: "20,00", data: { controller: "price-input", action: "input->price-input#format" }, class: field_class %></div>
+      <div><%= form.label :fixed_shipping_estimated_days, "Prazo máximo (dias úteis)", class: label_class %><%= form.number_field :fixed_shipping_estimated_days, min: 1, step: 1, placeholder: "8", class: field_class %></div>
+    </div>
+    <label class="flex cursor-pointer items-start gap-3">
       <%= form.check_box :local_pickup_enabled, class: "mt-1 size-4 rounded border-stone-300 text-brand-500 focus:ring-brand-400" %>
       <span><span class="block text-sm font-semibold text-stone-800">Permitir retirada gratuita deste produto</span><span class="mt-1 block text-xs leading-5 text-stone-500">A retirada aparece no checkout somente quando todos os produtos do carrinho permitirem.</span></span>
     </label>
-    <label class="mt-3 flex cursor-pointer items-start gap-3" data-controller="confirm-check" data-confirm-check-message-value="Ao ativar o frete grátis, você assume o custo do envio deste produto: o valor será descontado do seu repasse, não da comissão da EloShop. Confirmar?">
+    <label class="flex cursor-pointer items-start gap-3" data-controller="confirm-check" data-confirm-check-message-value="Ao ativar o frete grátis, você assume o custo do envio deste produto: o valor será descontado do seu repasse, não da comissão da EloShop. Confirmar?">
       <%= form.check_box :free_shipping, class: "mt-1 size-4 rounded border-stone-300 text-brand-500 focus:ring-brand-400", data: { action: "change->confirm-check#confirm" } %>
       <span><span class="block text-sm font-semibold text-stone-800">Frete grátis para este produto</span><span class="mt-1 block text-xs leading-5 text-stone-500">O cliente não paga frete. <strong>Você assume o custo do envio</strong>: o valor é descontado do seu repasse, não da comissão da EloShop.</span></span>
     </label>
-  </fieldset>
-  <div><%= form.label :category_id, class: label_class do %>Categoria<%= required_marker %><% end %><%= form.select :category_id, options_for_select(category_tree.breadcrumb_options, product.category_id), { include_blank: "Selecione uma categoria" }, data: { required_fields_target: "field", publish_required: true }, class: field_class %><p class="mt-1 text-xs text-stone-500">Em rascunho pode ficar em branco; para publicar, escolha uma categoria — é como o cliente encontra o seu produto.</p></div>
-  <div><%= form.label :main_image, "Imagem principal", class: "text-sm font-semibold text-stone-700" %><%= form.file_field :main_image, accept: "image/png,image/jpeg,image/webp", class: "mt-2 block w-full text-sm" %><p class="mt-1 text-xs text-stone-500">Pode enviar a foto direto do celular: ela é reduzida automaticamente e mantém a qualidade para ampliar.</p></div>
-  <div><%= form.label :images, "Galeria de imagens", class: "text-sm font-semibold text-stone-700" %><%= form.file_field :images, multiple: true, accept: "image/png,image/jpeg,image/webp", class: "mt-2 block w-full text-sm" %><p class="mt-2 text-sm text-stone-500">PNG, JPEG ou WEBP, até 5 MB por foto e <%= Product::IMAGES_MAX_COUNT %> fotos no total.</p></div>
+  </section>
+
   <%= form.hidden_field :currency, value: product.currency.presence || "BRL" %>
-  <%= form.submit "Salvar produto", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-brand-600" %>
+  <div class="flex flex-col gap-3 border-t border-brand-100 pt-6 sm:flex-row sm:items-center">
+    <%= form.submit "Salvar produto", class: "seller-button seller-button--primary justify-center" %>
+    <% if product.new_record? %>
+      <p class="text-sm text-stone-600">O produto é salvo como rascunho. Você publica na página dele.</p>
+    <% end %>
+  </div>
 <% end %>

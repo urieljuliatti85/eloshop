@@ -108,6 +108,12 @@ module ApplicationHelper
     tag.span("*", class: "ml-0.5 text-red-600", aria: { hidden: true }, hidden: !visible, data: { required_fields_target: "marker" })
   end
 
+  # Campo exigido só para publicar (o rascunho salva sem ele): texto em vez de
+  # asterisco, para não se confundir com "obrigatório para salvar".
+  def publish_marker
+    tag.span("Para publicar", data: { publish_marker: true }, class: "ml-1 inline-block whitespace-nowrap rounded-full bg-stone-100 px-2 py-0.5 align-middle text-xs font-semibold text-stone-600")
+  end
+
   def shipping_estimate_label(shipping)
     return "Retirada combinada com o ateliê" if shipping.local_pickup?
 
