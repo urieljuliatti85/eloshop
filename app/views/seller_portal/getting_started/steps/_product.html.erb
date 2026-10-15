@@ -1,0 +1,12 @@
+<p class="caderno-texto mt-4">Inclua fotos, descrição, preço, estoque, peso e dimensões. O produto pode ficar como rascunho enquanto você prepara os detalhes; para publicá-lo, o ateliê precisa estar aprovado e os dados de envio precisam estar completos.</p>
+
+<h3 class="mt-6 font-bold">Três jeitos de cobrar o frete</h3>
+<ul class="caderno-texto mt-2">
+  <li><strong class="text-caderno-tinta">Frete fixo:</strong> valor por unidade e prazo máximo definidos por você.</li>
+  <li><strong class="text-caderno-tinta">Retirada gratuita:</strong> o cliente combina a retirada diretamente com você.</li>
+  <li><strong class="text-caderno-tinta">Cálculo padrão:</strong> deixe o frete fixo vazio para usar o cálculo da plataforma.</li>
+</ul>
+
+<div class="caderno-acoes">
+  <%= link_to(done ? "Gerenciar produtos" : "Novo produto", done ? seller_products_path : new_seller_product_path, class: (done ? "caderno-link" : "caderno-botao")) %>
+</div>

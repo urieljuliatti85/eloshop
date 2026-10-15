@@ -3,22 +3,21 @@
 <div class="space-y-8">
   <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Seu ateliê</p>
-      <h1 class="mt-1 text-3xl font-black tracking-tight">Dados do ateliê</h1>
+      <h1 class="text-3xl font-black tracking-tight">Dados do ateliê</h1>
       <p class="mt-2 text-sm text-stone-500">Como o seu ateliê aparece na loja e como você recebe pelas vendas.</p>
     </div>
-    <%= link_to "Editar dados", edit_seller_atelier_path, class: "rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-600" %>
+    <%= link_to "Editar dados", edit_seller_atelier_path, class: "seller-button seller-button--primary w-fit" %>
   </header>
 
   <section class="seller-card-lg">
     <dl class="grid gap-6 sm:grid-cols-2">
       <div>
-        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">Nome</dt>
+        <dt class="text-sm text-stone-500">Nome</dt>
         <dd class="mt-1 text-lg font-bold text-stone-950"><%= current_seller.name %></dd>
       </div>
 
       <div>
-        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">Situação</dt>
+        <dt class="text-sm text-stone-500">Situação</dt>
         <dd class="mt-2">
           <% seller_status_classes = { "pending" => "bg-amber-100 text-amber-800", "approved" => "bg-emerald-100 text-emerald-800", "suspended" => "bg-rose-100 text-rose-800" } %>
           <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-bold <%= seller_status_classes[current_seller.status] %>"><%= t(current_seller.status, scope: "sellers.statuses") %></span>
@@ -30,7 +29,7 @@
           últimos dígitos, o suficiente para o vendedor reconhecer o próprio
           cadastro sem reexpor o documento inteiro (ver Seller#masked_cpf). %>
       <div>
-        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">Nome do proprietário</dt>
+        <dt class="text-sm text-stone-500">Nome do proprietário</dt>
         <dd class="mt-1 text-lg font-bold text-stone-950">
           <% if current_seller.owner_full_name.present? %>
             <%= current_seller.owner_full_name %>
@@ -41,7 +40,7 @@
       </div>
 
       <div>
-        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">CPF</dt>
+        <dt class="text-sm text-stone-500">CPF</dt>
         <dd class="mt-1 text-lg font-bold text-stone-950">
           <% if current_seller.masked_cpf.present? %>
             <%= current_seller.masked_cpf %>
@@ -54,7 +53,7 @@
       <%# Sem endereço o frete real não tem origem — o aviso é para o vendedor
           saber o que falta antes de a plataforma ligar o cálculo. %>
       <div class="sm:col-span-2">
-        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">De onde você envia</dt>
+        <dt class="text-sm text-stone-500">De onde você envia</dt>
         <dd class="mt-1">
           <% if current_seller.origin_address_complete? %>
             <p class="text-stone-950">
@@ -66,7 +65,7 @@
             </p>
           <% else %>
             <p class="text-stone-500">Ainda não informado. É o endereço usado para calcular o frete das suas vendas.</p>
-            <%= link_to "Cadastrar endereço", edit_seller_atelier_path, class: "mt-3 inline-flex min-h-11 items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-600" %>
+            <%= link_to "Cadastrar endereço", edit_seller_atelier_path, class: "mt-3 inline-flex min-h-11 items-center rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700" %>
           <% end %>
         </dd>
       </div>
@@ -74,7 +73,7 @@
       <%# O slug não é editável: ele já está nas URLs públicas dos produtos, e
           trocá-lo quebraria links que alguém compartilhou. %>
       <div class="sm:col-span-2">
-        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">Endereço na loja</dt>
+        <dt class="text-sm text-stone-500">Endereço na loja</dt>
         <dd class="mt-1">
           <% if current_seller.approved? %>
             <%# break-all porque a URL é uma palavra só: sem isso ela estoura

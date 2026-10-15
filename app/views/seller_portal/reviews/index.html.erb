@@ -27,13 +27,16 @@
               <%= form.label :seller_reply, "Responder", class: "text-sm font-medium text-stone-700" %>
               <%= form.text_area :seller_reply, rows: 3, required: true,
                     class: "w-full rounded-xl border border-brand-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none" %>
-              <%= form.submit "Publicar resposta", class: "w-fit cursor-pointer rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-600" %>
+              <%= form.submit "Publicar resposta", class: "w-fit cursor-pointer rounded-full bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700" %>
             <% end %>
           <% end %>
         </li>
       <% end %>
     </ul>
   <% else %>
-    <p class="mt-8 text-stone-500">Você ainda não recebeu avaliações.</p>
+    <div class="seller-card mt-8 text-center">
+      <p class="font-semibold text-stone-950">Você ainda não recebeu avaliações.</p>
+      <p class="mt-1 text-sm text-stone-600">Depois da entrega, o cliente pode avaliar a peça, e você responde por aqui.</p>
+    </div>
   <% end %>
 </div>

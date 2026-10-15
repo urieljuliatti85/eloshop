@@ -41,7 +41,7 @@ RSpec.describe "Seller PIX key confirmation", type: :request do
     sign_in_as(user)
 
     post seller_pix_key_confirmation_path
-    get seller_getting_started_path
+    get seller_getting_started_path(etapa: "chave-pix")
     expect(response.body).to include("Ainda não cadastrei")
 
     delete seller_pix_key_confirmation_path
