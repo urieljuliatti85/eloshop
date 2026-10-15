@@ -9,10 +9,9 @@
     <%= link_to "Novo produto", new_seller_product_path, class: "seller-button seller-button--primary" %>
   </header>
 
-  <%# Convite ao tour: no topo só para quem ainda não fez. Depois de concluído,
-      "Refazer o tour" vai para o fim da página — continua à mão, sem disputar
-      espaço com o que precisa de ação. %>
-  <%= render "seller_portal/tours/call" unless current_seller.tour_completed_at? %>
+  <%# Convite ao tour sempre no topo: "Fazer o tour" para quem ainda não fez,
+      "Refazer o tour" para quem já concluiu. %>
+  <%= render "seller_portal/tours/call" %>
 
   <%# Com pedidos, o trabalho do dia vem antes do que falta configurar; sem
       nenhum pedido ainda, o cadastro é o trabalho do dia. %>
@@ -82,5 +81,4 @@
     </div>
   </section>
 
-  <%= render "seller_portal/tours/call" if current_seller.tour_completed_at? %>
 </div>
