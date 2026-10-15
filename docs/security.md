@@ -107,3 +107,14 @@ O formulário de contato é aberto, e o e-mail do destinatário é só o que a p
 
 Admin e vendedor usam `PasswordsController` (`/passwords`) e o comprador usa `CustomerPasswordsController` (`/recuperar-senha`), com o mesmo desenho: o link leva o token assinado do `has_secure_password` (`password_reset_token`, 15 minutos) e carrega o hash da senha atual, então **deixa de valer assim que a senha muda**. O token de uma conta não serve na tela da outra (cada modelo assina com o seu escopo). O pedido sempre responde o mesmo texto, exista ou não a conta, e só enfileira o e-mail quando existe (`PasswordsMailer#customer_reset`), com `rate_limit` de 5 pedidos em 10 minutos por IP. Redefinir a senha encerra todas as sessões abertas do comprador, e uma senha em branco é recusada, porque o `has_secure_password` a ignora em silêncio e a tela diria "redefinida" sem ter mudado nada.
 
+
+## Auditoria de ações (PaperTrail)
+
+A tabela `versions` (gem `paper_trail`, só `object_changes` em `jsonb`) registra **quem mudou o quê e quando** nas entidades sensíveis: `Seller`, `Product`, `Coupon`, `Order`, `SellerOrder` e `PaymentRefund`. `whodunnit` é o id do `User` da sessão (admin ou vendedor), definido por `set_paper_trail_whodunnit` em `Admin::BaseController` e `SellerPortal::BaseController` a partir de `ApplicationController#user_for_paper_trail`. Mudanças feitas por webhook, job ou checkout ficam com `whodunnit` vazio — foi o sistema.
+
+Duas regras que não se deduzem do código:
+
+* **`Seller` usa lista permitida (`only:`), nunca `ignore:`.** A tabela guarda tokens OAuth cifrados, CPF e endereço; com `ignore:`, uma coluna sensível nova passaria a ser copiada para `versions` sem ninguém perceber. `test/models/auditing_test.rb` falha se um token, o CPF ou o endereço aparecerem lá.
+* **`Product#stock_quantity` e `Coupon#uses_count` não são versionados**: mudam a cada compra, dentro do `Checkout::CreateOrder`, e só gerariam ruído e escrita extra numa transação que já trava linhas.
+
+Ainda não há tela de histórico nem política de retenção; a consulta é pelo banco (`record.versions`).

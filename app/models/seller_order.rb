@@ -1,4 +1,6 @@
 class SellerOrder < ApplicationRecord
+  has_paper_trail only: %i[status refunded_amount_cents platform_fee_refunded_cents]
+
   PLATFORM_FEE_RATE_BPS = 1_500
   # Comissão de lançamento: vale nos primeiros meses depois da aprovação do
   # vendedor (ver `Seller::LAUNCH_FEE_PERIOD`). O pedido grava a taxa que

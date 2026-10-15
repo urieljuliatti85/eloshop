@@ -9,6 +9,12 @@ class ApplicationController < ActionController::Base
 
   private
 
+  # Autor das versões do PaperTrail: o `User` da sessão (admin ou vendedor).
+  # Fora de uma sessão de `User` (cliente, webhook, job) fica vazio — foi o sistema.
+  def user_for_paper_trail
+    Current.user&.id
+  end
+
   def set_observability_context
     Rails.event.set_context(
       request_id: request.request_id,

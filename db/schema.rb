@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_15_111933) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -593,6 +593,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_230000) do
     t.index ["customer_id", "product_id"], name: "index_wishlist_items_on_customer_id_and_product_id", unique: true
     t.index ["customer_id"], name: "index_wishlist_items_on_customer_id"
     t.index ["product_id"], name: "index_wishlist_items_on_product_id"
+  end
+
+  create_table "versions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "event", null: false
+    t.bigint "item_id", null: false
+    t.string "item_type", null: false
+    t.jsonb "object_changes"
+    t.string "whodunnit"
+    t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
+    t.index ["whodunnit"], name: "index_versions_on_whodunnit"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

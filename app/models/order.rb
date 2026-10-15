@@ -1,4 +1,6 @@
 class Order < ApplicationRecord
+  has_paper_trail only: %i[status]
+
   class InvalidStatusTransition < StandardError; end
 
   ALLOWED_STATUS_TRANSITIONS = {

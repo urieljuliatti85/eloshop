@@ -318,6 +318,9 @@ GEM
       racc (~> 1.4)
     os (1.1.4)
     ostruct (0.6.3)
+    paper_trail (17.0.0)
+      activerecord (>= 7.1)
+      request_store (~> 1.4)
     parallel (2.1.0)
     parser (3.3.12.0)
       ast (~> 2.4.1)
@@ -400,6 +403,8 @@ GEM
     regexp_parser (2.12.0)
     reline (0.7.0)
       io-console (~> 0.5)
+    request_store (1.7.0)
+      rack (>= 1.4)
     resend (1.17.0)
       base64
       httparty (>= 0.22.0)
@@ -575,6 +580,7 @@ DEPENDENCIES
   jbuilder
   kamal
   mercadopago-sdk
+  paper_trail (~> 17.0)
   pg (~> 1.7)
   propshaft
   puma (>= 5.0)

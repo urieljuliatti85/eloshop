@@ -286,6 +286,21 @@ RSpec.describe "Admin sellers", type: :request do
     expect(seller.reload).not_to be_hidden
   end
 
+  it "records which admin approved, suspended and hid a seller" do
+    sign_in_as(admin)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    before = seller.versions.count
+
+    patch approve_admin_seller_path(seller), params: { kyc_level_6_confirmed: "1" }
+    patch hide_admin_seller_path(seller)
+    patch suspend_admin_seller_path(seller)
+
+    versions = seller.versions.offset(before)
+    expect(versions.map(&:whodunnit).uniq).to eq([ admin.id.to_s ])
+    expect(versions.flat_map { |v| v.object_changes.keys }).to include("status", "hidden_at")
+    expect(versions.map { |v| v.object_changes.to_json }.join).not_to match(/ciphertext|access-token/)
+  end
+
   def mercado_pago_credentials(test_account: false, live_mode: true)
     Marketplace::MercadoPagoOauth::Credentials.new(
       user_id: "admin-spec-seller",

@@ -1,4 +1,8 @@
 class Seller < ApplicationRecord
+  # Lista permitida (`only`), nunca `ignore`: a tabela tem tokens cifrados, CPF e
+  # endereço, que não podem ir parar em `versions` se alguém criar uma coluna nova.
+  has_paper_trail only: %i[name slug status approved_at hidden_at mercado_pago_user_id mercado_pago_connected_at mercado_pago_live_mode]
+
   class VerificationRequired < StandardError; end
 
   enum :status, {
