@@ -37,4 +37,18 @@ module SellerPortalHelper
       [ "#{quantity} em estoque", "bg-stone-100 text-stone-700" ]
     end
   end
+
+  # Cores do status do produto no painel: publicado em verde (o que está à
+  # venda), esgotado em âmbar (atenção), rascunho e descontinuado neutros. O
+  # vermelho da marca fica para as ações. Sempre com o texto do status.
+  PRODUCT_STATUS_CLASSES = {
+    "draft" => "bg-stone-100 text-stone-600",
+    "active" => "bg-emerald-100 text-emerald-800",
+    "sold_out" => "bg-amber-100 text-amber-800",
+    "discontinued" => "bg-stone-200 text-stone-600"
+  }.freeze
+
+  def seller_product_status_badge(product)
+    tag.span(t(product.status, scope: "products.statuses"), class: "seller-badge #{PRODUCT_STATUS_CLASSES.fetch(product.status)}")
+  end
 end
