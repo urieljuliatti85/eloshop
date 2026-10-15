@@ -41,6 +41,22 @@ RSpec.describe "Seller orders", type: :request do
     expect(response.body).not_to include(cancel_seller_order_path(order))
   end
 
+  it "shows the same amount to receive on the dashboard, the list and the order page after a refund" do
+    order = create_order_for(own_product)
+    seller_order = order.seller_orders.first
+    # 5.000 + 1.000 de frete − 750 de comissão = 5.250; reembolso de 2.000
+    # devolve 300 de comissão: 5.250 − 2.000 + 300 = 3.550.
+    seller_order.update_columns(status: "partially_refunded", refunded_amount_cents: 2_000, platform_fee_refunded_cents: 300)
+
+    [ seller_root_path, seller_orders_path, seller_order_path(order) ].each do |path|
+      get path
+      expect(response.body).to include("R$ 35,50"), "#{path} não mostra o valor líquido"
+    end
+
+    get seller_order_path(order)
+    expect(response.body).to include("Reembolsado ao cliente", "Comissão devolvida", "A receber")
+  end
+
   it "does not expose another seller order by changing the id" do
     other_order = create_order_for(other_product)
 

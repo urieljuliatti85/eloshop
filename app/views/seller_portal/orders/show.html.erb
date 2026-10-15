@@ -143,7 +143,15 @@
         <div class="flex justify-between"><dt>Subtotal após descontos</dt><dd><%= format_price(@seller_order.commission_base_cents) %></dd></div>
         <div class="flex justify-between"><dt>Comissão EloShop (<%= fee_rate_label(@seller_order.platform_fee_rate_bps) %>)</dt><dd>− <%= format_price(@seller_order.platform_fee_cents) %></dd></div>
         <div class="flex justify-between"><dt>Frete</dt><dd><%= format_price(@seller_order.shipping_cents) %></dd></div>
-        <div class="flex justify-between border-t border-brand-100 pt-2 font-bold"><dt>Valor do artesão</dt><dd><%= format_price(@seller_order.seller_amount_cents) %></dd></div>
+        <%# Com reembolso, a conta segue até o mesmo "A receber" da lista de pedidos
+            (SellerOrder#seller_net_amount_cents): sai o valor devolvido ao
+            cliente, volta a parte proporcional da comissão. %>
+        <% if @seller_order.refunded_amount_cents.positive? %>
+          <div class="flex justify-between border-t border-brand-100 pt-2"><dt>Valor da venda</dt><dd><%= format_price(@seller_order.seller_amount_cents) %></dd></div>
+          <div class="flex justify-between"><dt>Reembolsado ao cliente</dt><dd>− <%= format_price(@seller_order.refunded_amount_cents) %></dd></div>
+          <div class="flex justify-between"><dt>Comissão devolvida</dt><dd>+ <%= format_price(@seller_order.platform_fee_refunded_cents) %></dd></div>
+        <% end %>
+        <div class="flex justify-between border-t border-brand-100 pt-2 font-bold"><dt>A receber</dt><dd><%= format_price(@seller_order.seller_net_amount_cents) %></dd></div>
       </dl>
     </section>
 
