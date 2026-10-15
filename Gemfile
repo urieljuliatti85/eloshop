@@ -118,3 +118,5 @@ end
 gem "resend", "~> 1.17"
 
 gem "rails-i18n", "~> 8.1"
+
+gem "paper_trail", "~> 17.0"

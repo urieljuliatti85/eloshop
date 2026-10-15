@@ -3,6 +3,7 @@ module SellerPortal
     layout "seller"
 
     before_action :require_seller!
+    before_action :set_paper_trail_whodunnit
     before_action :require_current_terms!
 
     helper_method :current_seller

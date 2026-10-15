@@ -1,6 +1,9 @@
 class Product < ApplicationRecord
   include MoneyAttribute
 
+  # `stock_quantity` muda a cada compra, dentro do checkout: seria só ruído.
+  has_paper_trail ignore: %i[stock_quantity updated_at]
+
   money_attribute :price
   money_attribute :fixed_shipping
 

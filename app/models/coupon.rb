@@ -1,6 +1,9 @@
 class Coupon < ApplicationRecord
   include MoneyAttribute
 
+  # `uses_count` muda a cada compra: seria só ruído.
+  has_paper_trail ignore: %i[uses_count updated_at]
+
   money_attribute :amount
   money_attribute :minimum_subtotal
 
