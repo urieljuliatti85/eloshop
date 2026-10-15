@@ -117,4 +117,4 @@ Duas regras que não se deduzem do código:
 * **`Seller` usa lista permitida (`only:`), nunca `ignore:`.** A tabela guarda tokens OAuth cifrados, CPF e endereço; com `ignore:`, uma coluna sensível nova passaria a ser copiada para `versions` sem ninguém perceber. `test/models/auditing_test.rb` falha se um token, o CPF ou o endereço aparecerem lá.
 * **`Product#stock_quantity` e `Coupon#uses_count` não são versionados**: mudam a cada compra, dentro do `Checkout::CreateOrder`, e só gerariam ruído e escrita extra numa transação que já trava linhas.
 
-Ainda não há tela de histórico nem política de retenção; a consulta é pelo banco (`record.versions`).
+O histórico aparece para o admin em `/admin/auditoria` (`Admin::AuditLogsController`, só leitura, filtros por tipo e autor, paginado). Ainda não há política de retenção da tabela `versions`.

@@ -127,4 +127,17 @@ module AdminHelper
       stroke: "currentColor", stroke_width: "1.8", stroke_linecap: "round",
       stroke_linejoin: "round", aria: { hidden: true })
   end
+
+  AUDIT_EVENT_LABELS = { "create" => "Criado", "update" => "Alterado", "destroy" => "Removido" }.freeze
+
+  def audit_event_label(event)
+    AUDIT_EVENT_LABELS.fetch(event, event)
+  end
+
+  # Valor de uma mudança da auditoria, curto o bastante para caber na tabela.
+  def audit_value(value)
+    return tag.span("vazio", class: "text-slate-400") if value.nil? || value == ""
+
+    truncate(value.to_s, length: 60)
+  end
 end

@@ -16,6 +16,8 @@ Rails.application.routes.draw do
       member { patch :resolve }
     end
 
+    get "auditoria", to: "audit_logs#index", as: :audit_logs
+
     resources :sellers, only: %i[index show] do
       member do
         patch :approve
