@@ -183,6 +183,24 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(response.body).to include(product.name)
     end
 
+    it "shows the atelier theme: logo, cover and footer text" do
+      approved_seller.logo.attach(fixture_file_upload("sample.png", "image/png"))
+      approved_seller.cover_image.attach(fixture_file_upload("sample.png", "image/png"))
+      approved_seller.update!(footer_text: "Produzimos sob encomenda às terças.")
+
+      get seller_path(approved_seller.slug)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Logo do ateliê #{approved_seller.name}")
+      expect(response.body).to include("Produzimos sob encomenda às terças.")
+    end
+
+    it "renders without theme when the atelier has none" do
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).not_to include("Logo do ateliê")
+    end
+
     it "publishes breadcrumb structured data for the atelier" do
       get seller_path(approved_seller.slug)
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_15_111933) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -495,6 +495,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_15_111933) do
     t.text "cpf_ciphertext"
     t.string "cpf_hash"
     t.datetime "created_at", null: false
+    t.string "footer_text", limit: 300
     t.datetime "hidden_at"
     t.text "melhor_envio_access_token_ciphertext"
     t.datetime "melhor_envio_connected_at"

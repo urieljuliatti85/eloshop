@@ -21,11 +21,12 @@
   <div class="mt-8 space-y-12">
     <%# O hero repete a linguagem do painel do artesão — fundo terracota,
         cantos de 2rem, tipografia pesada — mas fala com quem compra, não com
-        quem vende. A capa é a foto da peça mais recente: o ateliê não tem
-        imagem própria, e não vale pedir mais um upload sem necessidade (§5). %>
+        quem vende. A capa é a que o ateliê enviou; sem ela, a foto da peça
+        mais recente, e sem nenhuma das duas o fundo geométrico (§5). %>
     <section class="relative isolate overflow-hidden rounded-[2rem] bg-[#7a2410] text-white shadow-sm">
-      <% if (cover = @products.find { |product| product.main_image.attached? }) %>
-        <%= image_tag cover.main_image, alt: "", loading: "lazy",
+      <% cover_photo = @seller.cover_image.attached? ? @seller.cover_image.variant(resize_to_limit: [ 1600, 700 ]) : @products.find { |product| product.main_image.attached? }&.main_image %>
+      <% if cover_photo %>
+        <%= image_tag cover_photo, alt: "", loading: "lazy",
               class: "absolute inset-0 -z-20 h-full w-full object-cover" %>
         <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/80 via-black/45 to-black/20"></div>
       <% else %>
@@ -35,6 +36,10 @@
       <% end %>
 
       <div class="flex max-w-2xl flex-col justify-end p-7 sm:p-10 lg:p-12">
+        <% if @seller.logo.attached? %>
+          <%= image_tag @seller.logo.variant(resize_to_fill: [ 160, 160 ]), alt: "Logo do ateliê #{@seller.name}",
+                class: "mb-5 size-20 rounded-full border-2 border-white/60 object-cover sm:size-24" %>
+        <% end %>
         <p class="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[#fde1dd]">Ateliê na EloShop</p>
         <h1 class="text-4xl font-black leading-[0.98] tracking-tight sm:text-5xl lg:text-6xl"><%= @seller.name %></h1>
         <p class="mt-5 max-w-lg text-sm leading-6 text-white/80 sm:text-base">
@@ -66,6 +71,12 @@
         </p>
       <% end %>
     </section>
+
+    <% if @seller.footer_text.present? %>
+      <section class="border-t border-sand-200 pt-8">
+        <p class="max-w-2xl whitespace-pre-line text-sm leading-6 text-ink-muted"><%= @seller.footer_text %></p>
+      </section>
+    <% end %>
 
     <%# Denúncia: fica discreta no rodapé — não é uma ação que se quer em
         destaque, mas precisa existir e ser fácil de achar para quem procura.

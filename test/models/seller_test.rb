@@ -548,4 +548,34 @@ class SellerTest < ActiveSupport::TestCase
     seller.update!(status: :suspended)
     assert_not seller.public_page_available?, "suspenso tem página de indisponível"
   end
+
+  test "theme images accept png, jpeg and webp up to 5MB" do
+    seller = sellers(:approved)
+    seller.logo.attach(io: StringIO.new("img"), filename: "logo.png", content_type: "image/png")
+    seller.cover_image.attach(io: StringIO.new("img"), filename: "capa.webp", content_type: "image/webp")
+
+    assert_predicate seller, :valid?
+  end
+
+  test "theme images reject other content types and files over 5MB" do
+    seller = sellers(:approved)
+    seller.logo.attach(io: StringIO.new("<svg/>"), filename: "logo.svg", content_type: "image/svg+xml")
+    seller.cover_image.attach(io: StringIO.new("x" * (Seller::THEME_IMAGE_MAX_BYTES + 1)), filename: "capa.png", content_type: "image/png")
+
+    assert_not_predicate seller, :valid?
+    assert_includes seller.errors[:logo].join, "PNG, JPEG ou WEBP"
+    assert_includes seller.errors[:cover_image].join, "5MB"
+  end
+
+  test "footer_text is stripped, blank becomes nil and is capped" do
+    seller = sellers(:approved)
+    seller.footer_text = "  Feito à mão.  "
+    assert_equal "Feito à mão.", seller.footer_text
+
+    seller.footer_text = "   "
+    assert_nil seller.footer_text
+
+    seller.footer_text = "a" * (Seller::FOOTER_TEXT_MAX_LENGTH + 1)
+    assert_not_predicate seller, :valid?
+  end
 end
