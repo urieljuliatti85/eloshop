@@ -70,6 +70,27 @@
         </dd>
       </div>
 
+      <div class="sm:col-span-2">
+        <dt class="text-sm text-stone-500">Aparência da vitrine</dt>
+        <dd class="mt-2 space-y-3">
+          <% if current_seller.cover_image.attached? %>
+            <%= image_tag current_seller.cover_image.variant(resize_to_fill: [ 640, 240 ]), alt: "Capa do ateliê", class: "h-24 w-full max-w-sm rounded-xl object-cover" %>
+          <% end %>
+          <div class="flex items-center gap-3">
+            <% if current_seller.logo.attached? %>
+              <%= image_tag current_seller.logo.variant(resize_to_fill: [ 96, 96 ]), alt: "Logo do ateliê", class: "size-12 rounded-full object-cover" %>
+            <% end %>
+            <p class="text-sm text-stone-600">
+              <%= current_seller.footer_text.presence || "Sem mensagem de rodapé." %>
+            </p>
+          </div>
+          <% unless current_seller.logo.attached? || current_seller.cover_image.attached? %>
+            <p class="text-sm text-stone-500">Sem logo nem capa: a vitrine usa a foto da sua peça mais recente.</p>
+          <% end %>
+          <%= link_to "Personalizar vitrine", edit_seller_atelier_path, class: "inline-flex min-h-11 items-center text-sm font-medium text-brand-600 underline underline-offset-4 hover:text-brand-700" %>
+        </dd>
+      </div>
+
       <%# O slug não é editável: ele já está nas URLs públicas dos produtos, e
           trocá-lo quebraria links que alguém compartilhou. %>
       <div class="sm:col-span-2">

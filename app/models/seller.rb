@@ -15,6 +15,15 @@ class Seller < ApplicationRecord
     origin_zip_code origin_street origin_number origin_neighborhood origin_city origin_state
   ].freeze
 
+  # Tema da vitrine pública: logo, capa e uma mensagem de rodapé. Tudo
+  # opcional — sem capa a vitrine usa a foto da peça mais recente.
+  THEME_IMAGE_CONTENT_TYPES = %w[image/png image/jpeg image/webp].freeze
+  THEME_IMAGE_MAX_BYTES = 5.megabytes
+  FOOTER_TEXT_MAX_LENGTH = 300
+
+  has_one_attached :logo
+  has_one_attached :cover_image
+
   has_many :users, dependent: :restrict_with_error
   has_many :seller_terms_acceptances, dependent: :restrict_with_error
   has_many :products, dependent: :restrict_with_error
@@ -54,6 +63,8 @@ class Seller < ApplicationRecord
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true
   validates :mercado_pago_user_id, uniqueness: true, allow_blank: true
+  validates :footer_text, length: { maximum: FOOTER_TEXT_MAX_LENGTH }
+  validate :theme_images_allowed
   # Só exigido na criação: vendedores cadastrados antes deste campo existir
   # não têm o dado, e bloquear todo update (approve!, connect_mercado_pago!
   # etc.) até eles preencherem derrubaria o painel para quem já opera.
@@ -67,6 +78,7 @@ class Seller < ApplicationRecord
 
   # O CEP é guardado só com dígitos: o vendedor digita com traço ou sem, e o
   # cálculo de frete compara com o CEP de destino, que já chega assim.
+  normalizes :footer_text, with: ->(text) { text.to_s.strip.presence }
   normalizes :origin_zip_code, with: ->(zip) { zip.to_s.gsub(/\D/, "").presence }
 
   # Endereço opcional enquanto o frete real não está ligado: os vendedores já
@@ -416,5 +428,15 @@ class Seller < ApplicationRecord
 
   def assign_slug
     self.slug = name.parameterize
+  end
+
+  def theme_images_allowed
+    %i[logo cover_image].each do |name|
+      image = public_send(name)
+      next unless image.attached?
+
+      errors.add(name, "deve ser um arquivo PNG, JPEG ou WEBP") unless THEME_IMAGE_CONTENT_TYPES.include?(image.content_type)
+      errors.add(name, "deve ter no máximo 5MB") if image.byte_size > THEME_IMAGE_MAX_BYTES
+    end
   end
 end
