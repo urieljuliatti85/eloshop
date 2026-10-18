@@ -40,13 +40,7 @@ class SellersController < StorefrontController
       return
     end
 
-    @products = @seller.products.publicly_visible
-      .order(created_at: :desc)
-      # preload, e não includes: a capa arrasta as tabelas do Active Storage
-      # e o plano estourava o jit_above_cost no catálogo (ver Fase 17).
-      .preload(:seller, :product_variants, category: :parent)
-      .preload(main_image_attachment: :blob)
-      .load
+    @products = @seller.storefront_products
   end
 
   private

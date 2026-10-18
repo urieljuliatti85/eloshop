@@ -124,7 +124,10 @@ Rails.application.routes.draw do
     resource :atelier, only: %i[show edit update], controller: "ateliers", path: "atelie"
 
     # Tema da vitrine pública (logo, capa, rodapé, paleta, fonte e layout).
-    resource :theme, only: %i[edit update], controller: "themes", path: "atelie/tema"
+    resource :theme, only: %i[edit update], controller: "themes", path: "atelie/tema" do
+      # A vitrine real com o rascunho aplicado, para o iframe do editor.
+      get :preview
+    end
 
     get "atelie/cep/:cep", to: "postal_codes#show", as: :atelier_postal_code, constraints: { cep: /\d{5}-?\d{3}/ }
     get "atelie/enderecos", to: "postal_codes#index", as: :atelier_postal_codes

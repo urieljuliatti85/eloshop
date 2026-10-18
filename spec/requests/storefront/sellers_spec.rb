@@ -206,6 +206,60 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(response.body).to include("lg:grid-cols-3")
     end
 
+    it "renders sections in the chosen order, hiding the disabled ones" do
+      approved_seller.update!(theme_sections: %w[about catalog], about_text: "Minha história única.", footer_text: "Rodapé oculto")
+      create_product(seller: approved_seller, name: "Peça qualquer")
+
+      get seller_path(approved_seller.slug)
+
+      body = response.body
+      expect(body.index("Minha história única.")).to be < body.index("Peças deste ateliê")
+      expect(body).not_to include("Rodapé oculto")
+    end
+
+    it "shows the notice bar, social links and custom color" do
+      approved_seller.update!(notice_text: "Prazo: 7 dias úteis", instagram_handle: "meuatelie", whatsapp_number: "5548999999999", theme_accent_color: "#7a2410")
+
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).to include("Prazo: 7 dias úteis", "https://instagram.com/meuatelie", "https://wa.me/5548999999999", "--atelier-accent:#7a2410")
+    end
+
+    it "applies corners and card style to the catalog" do
+      approved_seller.update!(theme_corners: "retos", theme_card_style: "borda")
+      create_product(seller: approved_seller, name: "Peça com borda")
+
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).to include("rounded-none", "[&amp;_article]:border")
+    end
+
+    # O topo está acima da dobra (costuma ser o LCP): não pode ser lazy, e o
+    # fallback sem capa usa uma variante, não o original da peça.
+    it "loads the hero photo eagerly and resized" do
+      product = create_product(seller: approved_seller, name: "Peça do topo")
+      product.main_image.attach(fixture_file_upload("sample.png", "image/png"))
+
+      get seller_path(approved_seller.slug)
+
+      hero = response.body[/<img[^>]*fetchpriority="high"[^>]*>/]
+      expect(hero).to be_present
+      expect(hero).to include('loading="eager"')
+      expect(hero).to include("/representations/")
+    end
+
+    it "does not query personalization options once per product card" do
+      3.times { |i| create_product(seller: approved_seller, name: "Peça #{i}") }
+      queries = []
+      callback = ->(*, payload) { queries << payload[:sql] if payload[:sql].include?('FROM "personalization_options"') }
+
+      ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+        ActiveRecord::Base.uncached { get seller_path(approved_seller.slug) }
+      end
+
+      expect(queries.size).to be <= 1
+    end
+
     it "drops the cover photo with the compact hero" do
       approved_seller.cover_image.attach(fixture_file_upload("sample.png", "image/png"))
       approved_seller.update!(theme_hero: "compacto")

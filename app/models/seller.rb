@@ -20,15 +20,28 @@ class Seller < ApplicationRecord
   THEME_IMAGE_CONTENT_TYPES = %w[image/png image/jpeg image/webp].freeze
   THEME_IMAGE_MAX_BYTES = 5.megabytes
   FOOTER_TEXT_MAX_LENGTH = 300
+  ABOUT_TEXT_MAX_LENGTH = 1000
+  NOTICE_TEXT_MAX_LENGTH = 140
 
   # Opções visuais (paleta, fonte, layout, topo): chaves de SellerTheme.
   validates :theme_palette, inclusion: { in: SellerTheme::PALETTES.keys }
   validates :theme_font, inclusion: { in: SellerTheme::FONTS.keys }
   validates :theme_layout, inclusion: { in: SellerTheme::LAYOUTS.keys }
   validates :theme_hero, inclusion: { in: SellerTheme::HEROES.keys }
+  validates :theme_corners, inclusion: { in: SellerTheme::CORNERS.keys }
+  validates :theme_card_style, inclusion: { in: SellerTheme::CARD_STYLES.keys }
+  validate :theme_accent_color_readable
+  validates :theme_sections, presence: true
+  validate :theme_sections_known
+  validates :about_text, length: { maximum: ABOUT_TEXT_MAX_LENGTH }
+  validates :notice_text, length: { maximum: NOTICE_TEXT_MAX_LENGTH }
+  validates :instagram_handle, format: { with: /\A[A-Za-z0-9._]{1,30}\z/, message: "é inválido" }, allow_nil: true
+  validates :whatsapp_number, format: { with: /\A\d{10,13}\z/, message: "deve ter DDD e número (10 a 13 dígitos)" }, allow_nil: true
+  before_validation :ensure_catalog_section
 
   has_one_attached :logo
   has_one_attached :cover_image
+  has_one_attached :about_image
 
   has_many :users, dependent: :restrict_with_error
   has_many :seller_terms_acceptances, dependent: :restrict_with_error
@@ -85,6 +98,13 @@ class Seller < ApplicationRecord
   # O CEP é guardado só com dígitos: o vendedor digita com traço ou sem, e o
   # cálculo de frete compara com o CEP de destino, que já chega assim.
   normalizes :footer_text, with: ->(text) { text.to_s.strip.presence }
+  normalizes :about_text, with: ->(text) { text.to_s.strip.presence }
+  normalizes :notice_text, with: ->(text) { text.to_s.squish.presence }
+  normalizes :theme_accent_color, with: ->(color) { color.to_s.strip.downcase.presence }
+  # Aceita "@loja", "loja" ou a URL do perfil: guarda só o usuário.
+  normalizes :instagram_handle, with: ->(handle) { handle.to_s.strip.sub(%r{\A(https?://)?(www\.)?instagram\.com/}i, "").delete_prefix("@").chomp("/").presence }
+  normalizes :whatsapp_number, with: ->(number) { number.to_s.gsub(/\D/, "").presence }
+  normalizes :theme_sections, with: ->(sections) { Array(sections).map(&:to_s).reject(&:blank?).uniq }
   normalizes :origin_zip_code, with: ->(zip) { zip.to_s.gsub(/\D/, "").presence }
 
   # Endereço opcional enquanto o frete real não está ligado: os vendedores já
@@ -384,6 +404,19 @@ class Seller < ApplicationRecord
     seller_terms_acceptances.order(accepted_at: :desc).first
   end
 
+  # As peças da vitrine pública (e da pré-visualização do tema), já com o que
+  # os cards usam carregado. preload, e não includes: a capa arrasta as
+  # tabelas do Active Storage e o plano estourava o jit_above_cost no
+  # catálogo (ver Fase 17). `personalization_options` entra porque o card
+  # pergunta se a peça aceita compra rápida e isso era 1 query por card.
+  def storefront_products
+    products.publicly_visible
+      .order(created_at: :desc)
+      .preload(:seller, :product_variants, :personalization_options, category: :parent)
+      .preload(main_image_attachment: :blob)
+      .load
+  end
+
   private
 
   CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO = "seller-mercado-pago-oauth".freeze
@@ -436,8 +469,29 @@ class Seller < ApplicationRecord
     self.slug = name.parameterize
   end
 
+  # Sem o catálogo a vitrine não tem sentido; mantê-lo aqui evita que um
+  # formulário adulterado (ou lista vazia) esconda as peças.
+  def ensure_catalog_section
+    self.theme_sections = theme_sections + [ "catalog" ] unless theme_sections.include?("catalog")
+  end
+
+  def theme_sections_known
+    unknown = theme_sections - SellerTheme::SECTIONS.keys
+    errors.add(:theme_sections, "tem seção desconhecida") if unknown.any?
+  end
+
+  def theme_accent_color_readable
+    return if theme_accent_color.blank?
+
+    if !theme_accent_color.match?(SellerTheme::HEX_COLOR)
+      errors.add(:theme_accent_color, "deve ser uma cor no formato #rrggbb")
+    elsif SellerTheme.contrast_ratio(theme_accent_color) < SellerTheme::MIN_ACCENT_CONTRAST
+      errors.add(:theme_accent_color, "é clara demais: o texto sobre ela ficaria difícil de ler. Escolha uma cor mais escura")
+    end
+  end
+
   def theme_images_allowed
-    %i[logo cover_image].each do |name|
+    %i[logo cover_image about_image].each do |name|
       image = public_send(name)
       next unless image.attached?
 

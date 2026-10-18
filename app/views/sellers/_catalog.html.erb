@@ -1,0 +1,25 @@
+<section class="<%= seller_cards_class(seller.theme_corners, seller.theme_card_style) %>">
+  <div class="flex items-end justify-between gap-4">
+    <div>
+      <p class="text-sm font-semibold uppercase tracking-wider text-[var(--atelier-accent)]">Catálogo</p>
+      <h2 class="mt-2 text-3xl font-bold text-ink">Peças deste ateliê</h2>
+    </div>
+    <%= link_to "Ver toda a loja", products_path, class: "hidden text-sm font-semibold text-brand-600 underline underline-offset-4 sm:block" %>
+  </div>
+
+  <% if products.any? %>
+    <div class="<%= seller_catalog_grid_class(seller.theme_layout) %>">
+      <% products.each_with_index do |product, index| %>
+        <div class="<%= seller_catalog_item_class(seller.theme_layout, index) %>">
+          <%= render "products/product_card", product: product %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <%# Um ateliê aprovado pode não ter nenhuma peça publicada ainda — a
+        página existe, mas não finge um catálogo. %>
+    <p class="mt-8 rounded-2xl bg-sand-50 px-6 py-8 text-center text-ink-muted">
+      Este ateliê ainda não tem peças publicadas.
+    </p>
+  <% end %>
+</section>
