@@ -100,5 +100,63 @@ RSpec.describe "Seller theme", type: :request do
       expect(other.theme_palette).to eq("terracota")
       expect(seller.reload.theme_palette).to eq("ameixa")
     end
+
+    describe "opções avançadas" do
+      it "saves sections order, corners, card style, texts and contacts" do
+        sign_in_as(user)
+
+        patch seller_theme_path, params: { use_custom_color: "0", seller: {
+          theme_sections: [ "", "about", "catalog" ], theme_corners: "retos", theme_card_style: "borda",
+          about_text: "Nossa história.", notice_text: "Prazo: 7 dias", instagram_handle: "@meuatelie", whatsapp_number: "+55 (48) 99999-9999"
+        } }
+
+        expect(response).to redirect_to(edit_seller_theme_path)
+        seller.reload
+        expect(seller.theme_sections).to eq(%w[about catalog])
+        expect([ seller.theme_corners, seller.theme_card_style ]).to eq(%w[retos borda])
+        expect(seller.instagram_handle).to eq("meuatelie")
+        expect(seller.whatsapp_number).to eq("5548999999999")
+        expect(seller.notice_text).to eq("Prazo: 7 dias")
+      end
+
+      it "never lets the catalog section disappear" do
+        sign_in_as(user)
+
+        patch seller_theme_path, params: { seller: { theme_sections: [ "" ] } }
+
+        expect(seller.reload.theme_sections).to include("catalog")
+      end
+
+      it "accepts a readable custom color and clears it without the checkbox" do
+        sign_in_as(user)
+
+        patch seller_theme_path, params: { use_custom_color: "1", seller: { theme_accent_color: "#7a2410" } }
+        expect(seller.reload.theme_accent_color).to eq("#7a2410")
+
+        patch seller_theme_path, params: { seller: { theme_accent_color: "#7a2410" } }
+        expect(seller.reload.theme_accent_color).to be_nil
+      end
+
+      it "rejects a custom color with poor contrast or bad format" do
+        sign_in_as(user)
+
+        patch seller_theme_path, params: { use_custom_color: "1", seller: { theme_accent_color: "#ffee99" } }
+        expect(response).to have_http_status(:unprocessable_entity)
+
+        patch seller_theme_path, params: { use_custom_color: "1", seller: { theme_accent_color: "red;x" } }
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(seller.reload.theme_accent_color).to be_nil
+      end
+
+      it "rejects unknown sections and invalid contacts" do
+        sign_in_as(user)
+
+        patch seller_theme_path, params: { seller: { theme_sections: %w[catalog hack] } }
+        expect(response).to have_http_status(:unprocessable_entity)
+
+        patch seller_theme_path, params: { seller: { instagram_handle: "a b<script>", whatsapp_number: "123" } }
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
   end
 end

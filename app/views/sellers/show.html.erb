@@ -25,7 +25,11 @@
         cantos de 2rem, tipografia pesada — mas fala com quem compra, não com
         quem vende. A capa é a que o ateliê enviou; sem ela, a foto da peça
         mais recente, e sem nenhuma das duas o fundo geométrico (§5). %>
-    <section class="relative isolate overflow-hidden rounded-[2rem] bg-[var(--atelier-from)] text-white shadow-sm">
+    <% if @seller.notice_text.present? %>
+      <p class="-mb-6 rounded-full bg-[var(--atelier-accent)] px-5 py-2.5 text-center text-sm font-semibold text-white" role="status"><%= @seller.notice_text %></p>
+    <% end %>
+
+    <section class="relative isolate overflow-hidden <%= seller_hero_radius_class(@seller.theme_corners) %> bg-[var(--atelier-from)] text-white shadow-sm">
       <% compact = @seller.theme_hero == "compacto" %>
       <% cover_photo = compact ? nil : @seller.cover_image.attached? ? @seller.cover_image.variant(resize_to_limit: [ 1600, 700 ]) : @products.find { |product| product.main_image.attached? }&.main_image %>
       <% if cover_photo %>
@@ -50,40 +54,27 @@
         <p class="mt-5 max-w-lg text-sm leading-6 text-white/80 sm:text-base">
           <%= pluralize(@products.size, "peça disponível", plural: "peças disponíveis") %>, <%= @products.any? ? "feitas à mão e prontas para conhecer" : "por enquanto" %>.
         </p>
+        <% if @seller.instagram_handle.present? || @seller.whatsapp_number.present? %>
+          <div class="mt-5 flex flex-wrap gap-2">
+            <% if @seller.instagram_handle.present? %>
+              <%= link_to "Instagram", seller_instagram_url(@seller), target: "_blank", rel: "noopener nofollow", class: "inline-flex min-h-11 items-center rounded-full border border-white/50 px-4 text-sm font-semibold hover:bg-white/15" %>
+            <% end %>
+            <% if @seller.whatsapp_number.present? %>
+              <%= link_to "WhatsApp", seller_whatsapp_url(@seller), target: "_blank", rel: "noopener nofollow", class: "inline-flex min-h-11 items-center rounded-full border border-white/50 px-4 text-sm font-semibold hover:bg-white/15" %>
+            <% end %>
+          </div>
+        <% end %>
       </div>
     </section>
 
-    <section>
-      <div class="flex items-end justify-between gap-4">
-        <div>
-          <p class="text-sm font-semibold uppercase tracking-wider text-[var(--atelier-accent)]">Catálogo</p>
-          <h2 class="mt-2 text-3xl font-bold text-ink">Peças deste ateliê</h2>
-        </div>
-        <%= link_to "Ver toda a loja", products_path, class: "hidden text-sm font-semibold text-brand-600 underline underline-offset-4 sm:block" %>
-      </div>
-
-      <% if @products.any? %>
-        <div class="<%= seller_catalog_grid_class(@seller.theme_layout) %>">
-          <% @products.each_with_index do |product, index| %>
-            <div class="<%= seller_catalog_item_class(@seller.theme_layout, index) %>">
-              <%= render "products/product_card", product: product %>
-            </div>
-          <% end %>
-        </div>
-      <% else %>
-        <%# Um ateliê aprovado pode não ter nenhuma peça publicada ainda — a
-            página existe, mas não finge um catálogo. %>
-        <p class="mt-8 rounded-2xl bg-sand-50 px-6 py-8 text-center text-ink-muted">
-          Este ateliê ainda não tem peças publicadas.
-        </p>
-      <% end %>
-    </section>
-
-    <% if @seller.footer_text.present? %>
-      <section class="border-t border-sand-200 pt-8">
-        <p class="max-w-2xl whitespace-pre-line text-sm leading-6 text-ink-muted"><%= @seller.footer_text %></p>
-      </section>
+    <% @seller.theme_sections.each do |section| %>
+      <%= case section
+          when "catalog" then render("sellers/catalog", seller: @seller, products: @products)
+          when "about" then render("sellers/about", seller: @seller)
+          when "footer" then render("sellers/footer_message", seller: @seller)
+          end %>
     <% end %>
+
 
     <%# Denúncia: fica discreta no rodapé — não é uma ação que se quer em
         destaque, mas precisa existir e ser fácil de achar para quem procura.

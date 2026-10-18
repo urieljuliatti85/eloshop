@@ -1,0 +1,13 @@
+<% if seller.about_text.present? || seller.about_image.attached? %>
+  <section class="grid items-center gap-8 border-t border-sand-200 pt-8 <%= "md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" if seller.about_image.attached? %>">
+    <% if seller.about_image.attached? %>
+      <%= image_tag seller.about_image.variant(resize_to_limit: [ 900, 900 ]), alt: "Foto do ateliê #{seller.name}", loading: "lazy",
+            class: "w-full rounded-2xl object-cover" %>
+    <% end %>
+    <div>
+      <p class="text-sm font-semibold uppercase tracking-wider text-[var(--atelier-accent)]">Sobre</p>
+      <h2 class="mt-2 text-3xl font-bold text-ink">O ateliê</h2>
+      <p class="mt-4 max-w-2xl whitespace-pre-line text-base leading-7 text-ink-muted"><%= seller.about_text %></p>
+    </div>
+  </section>
+<% end %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_18_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -528,6 +528,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
     t.string "theme_font", default: "moderna", null: false
     t.string "theme_layout", default: "grade", null: false
     t.string "theme_hero", default: "capa", null: false
+    t.string "theme_sections", default: ["catalog", "about", "footer"], null: false, array: true
+    t.string "theme_accent_color"
+    t.string "theme_corners", default: "suaves", null: false
+    t.string "theme_card_style", default: "limpo", null: false
+    t.string "about_text", limit: 1000
+    t.string "notice_text", limit: 140
+    t.string "instagram_handle", limit: 30
+    t.string "whatsapp_number", limit: 13
     t.index ["cpf_hash"], name: "index_sellers_on_cpf_hash", unique: true, where: "(cpf_hash IS NOT NULL)"
     t.index ["mercado_pago_user_id"], name: "index_sellers_on_mercado_pago_user_id", unique: true, where: "(mercado_pago_user_id IS NOT NULL)"
     t.index ["slug"], name: "index_sellers_on_slug", unique: true

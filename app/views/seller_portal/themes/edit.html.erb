@@ -10,7 +10,8 @@
      data-controller="theme-preview"
      data-theme-preview-palettes-value="<%= SellerTheme::PALETTES.to_json %>"
      data-theme-preview-fonts-value="<%= SellerTheme::FONTS.transform_values { |font| font[:stack] }.to_json %>"
-     data-theme-preview-presets-value="<%= SellerTheme::PRESETS.to_json %>">
+     data-theme-preview-presets-value="<%= SellerTheme::PRESETS.to_json %>"
+     data-theme-preview-min-contrast-value="<%= SellerTheme::MIN_ACCENT_CONTRAST %>">
   <header>
     <h1 class="text-3xl font-black tracking-tight">Tema e visual do ateliê</h1>
     <p class="mt-2 text-sm text-stone-500">Escolha como a página pública do seu ateliê aparece. A pré-visualização muda na hora; nada vai ao ar até você salvar.</p>
@@ -90,6 +91,111 @@
             <% end %>
           </div>
         </fieldset>
+
+        <fieldset>
+          <legend class="text-sm font-semibold text-stone-700">Cantos</legend>
+          <div class="mt-3 grid gap-2 sm:grid-cols-3">
+            <% SellerTheme::CORNERS.each do |key, label| %>
+              <label class="<%= choice_class %>">
+                <%= form.radio_button :theme_corners, key, data: { action: "theme-preview#update", theme_preview_target: "corners" }, class: "sr-only" %>
+                <%= label %>
+              </label>
+            <% end %>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend class="text-sm font-semibold text-stone-700">Estilo dos cards de peça</legend>
+          <div class="mt-3 grid gap-2 sm:grid-cols-3">
+            <% SellerTheme::CARD_STYLES.each do |key, label| %>
+              <label class="<%= choice_class %>">
+                <%= form.radio_button :theme_card_style, key, data: { action: "theme-preview#update", theme_preview_target: "cardStyle" }, class: "sr-only" %>
+                <%= label %>
+              </label>
+            <% end %>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend class="text-sm font-semibold text-stone-700">Cor própria</legend>
+          <label class="mt-3 flex min-h-11 items-center gap-2 text-sm text-stone-700">
+            <%= check_box_tag :use_custom_color, "1", current_seller.theme_accent_color.present?, data: { action: "theme-preview#update", theme_preview_target: "useCustomColor" }, class: "size-4" %>
+            Usar uma cor minha no lugar da paleta
+          </label>
+          <div class="mt-2 flex items-center gap-3">
+            <%= form.color_field :theme_accent_color, value: current_seller.theme_accent_color || SellerTheme::PALETTES.dig(current_seller.theme_palette, :accent),
+                  data: { action: "input->theme-preview#update", theme_preview_target: "customColor" }, class: "h-11 w-16 cursor-pointer rounded-lg border border-stone-300 bg-white p-1" %>
+            <p data-theme-preview-target="contrastHint" aria-live="polite" class="text-xs text-stone-500"></p>
+          </div>
+          <p class="mt-1 text-xs text-stone-500">Precisa ser escura o bastante para o texto continuar legível (contraste mínimo de 4,5:1).</p>
+        </fieldset>
+      </section>
+
+      <section class="<%= card_class %> space-y-4">
+        <h2 class="text-sm font-semibold text-stone-700">Seções da vitrine</h2>
+        <p class="text-xs text-stone-500">Marque o que aparece e use as setas para mudar a ordem. O catálogo sempre aparece. "Sobre" e "rodapé" só aparecem se tiverem conteúdo.</p>
+        <%= hidden_field_tag "seller[theme_sections][]", "", id: nil %>
+        <% ordered = current_seller.theme_sections + (SellerTheme::SECTIONS.keys - current_seller.theme_sections) %>
+        <ul data-theme-preview-target="sectionList" class="space-y-2">
+          <% ordered.each do |key| %>
+            <li class="flex items-center gap-3 rounded-xl border border-stone-200 px-3 py-2">
+              <% if key == "catalog" %>
+                <%= hidden_field_tag "seller[theme_sections][]", key, id: nil, data: { theme_preview_target: "section" } %>
+                <span class="min-h-6 flex-1 text-sm"><%= SellerTheme::SECTIONS[key] %> <span class="text-xs text-stone-500">(sempre visível)</span></span>
+              <% else %>
+                <label class="flex min-h-11 flex-1 items-center gap-2 text-sm">
+                  <%= check_box_tag "seller[theme_sections][]", key, current_seller.theme_sections.include?(key), id: "section_#{key}", data: { action: "theme-preview#update", theme_preview_target: "section" }, class: "size-4" %>
+                  <%= SellerTheme::SECTIONS[key] %>
+                </label>
+              <% end %>
+              <button type="button" data-action="theme-preview#moveUp" aria-label="Subir <%= SellerTheme::SECTIONS[key] %>" class="size-11 cursor-pointer rounded-full border border-stone-300 text-sm hover:bg-brand-50">↑</button>
+              <button type="button" data-action="theme-preview#moveDown" aria-label="Descer <%= SellerTheme::SECTIONS[key] %>" class="size-11 cursor-pointer rounded-full border border-stone-300 text-sm hover:bg-brand-50">↓</button>
+            </li>
+          <% end %>
+        </ul>
+      </section>
+
+      <section class="<%= card_class %> space-y-5">
+        <h2 class="text-sm font-semibold text-stone-700">Textos e contato</h2>
+
+        <div>
+          <%= form.label :notice_text, "Faixa de aviso (topo da vitrine)", class: "seller-label" %>
+          <%= form.text_field :notice_text, maxlength: Seller::NOTICE_TEXT_MAX_LENGTH, placeholder: "Ex.: Prazo de produção atual: 7 dias úteis",
+                data: { action: "input->theme-preview#update", theme_preview_target: "noticeInput" }, class: "seller-input min-h-11" %>
+          <p class="mt-1 text-xs text-stone-500">Opcional. Até <%= Seller::NOTICE_TEXT_MAX_LENGTH %> caracteres.</p>
+        </div>
+
+        <div>
+          <%= form.label :about_text, "Sobre o ateliê", class: "seller-label" %>
+          <%= form.text_area :about_text, rows: 5, maxlength: Seller::ABOUT_TEXT_MAX_LENGTH,
+                data: { action: "input->theme-preview#update", theme_preview_target: "aboutInput" }, class: "seller-input" %>
+          <p class="mt-1 text-xs text-stone-500">Sua história e seu processo. Até <%= Seller::ABOUT_TEXT_MAX_LENGTH %> caracteres.</p>
+        </div>
+
+        <div>
+          <%= form.label :about_image, "Foto do ateliê (seção Sobre)", class: "seller-label" %>
+          <% if current_seller.about_image.attached? && current_seller.about_image.blob.persisted? %>
+            <div class="mt-2 space-y-2">
+              <%= image_tag current_seller.about_image.variant(resize_to_fill: [ 320, 240 ]), alt: "Foto atual do ateliê", class: "h-24 rounded-xl border border-stone-200 object-cover" %>
+              <label class="flex items-center gap-2 text-sm text-stone-600">
+                <%= check_box_tag :remove_about_image, "1", false, class: "size-4" %> Remover foto
+              </label>
+            </div>
+          <% end %>
+          <%= form.file_field :about_image, accept: "image/png,image/jpeg,image/webp", class: file_class %>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <%= form.label :instagram_handle, "Instagram", class: "seller-label" %>
+            <%= form.text_field :instagram_handle, placeholder: "@seuatelie", data: { action: "input->theme-preview#update", theme_preview_target: "instagramInput" }, class: "seller-input min-h-11" %>
+          </div>
+          <div>
+            <%= form.label :whatsapp_number, "WhatsApp", class: "seller-label" %>
+            <%= form.text_field :whatsapp_number, inputmode: "numeric", placeholder: "5548999999999", data: { action: "input->theme-preview#update", theme_preview_target: "whatsappInput" }, class: "seller-input min-h-11" %>
+          </div>
+        </div>
+        <p class="-mt-3 text-xs text-stone-500">Opcionais. Se preencher, o link aparece publicamente na sua vitrine; o número do WhatsApp fica visível para qualquer visitante. Use DDI + DDD + número.</p>
       </section>
 
       <%# Só mostra o que já foi gravado (um envio recusado volta anexado, mas
@@ -147,7 +253,8 @@
       <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-stone-500">Pré-visualização</p>
       <div data-theme-preview-target="stage" class="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white p-3"
            style="<%= seller_theme_style(current_seller) %>; font-family: var(--atelier-font)">
-        <div class="relative overflow-hidden rounded-2xl p-4 text-white"
+        <p data-theme-preview-target="noticePreview" hidden class="mb-2 rounded-full px-3 py-1.5 text-center text-[0.65rem] font-semibold text-white" style="background: var(--atelier-accent)"></p>
+        <div data-theme-preview-target="heroBlock" class="relative overflow-hidden rounded-2xl p-4 text-white"
              style="background: radial-gradient(circle at 75% 25%, var(--atelier-soft) 0, transparent 27%), radial-gradient(circle at 75% 72%, var(--atelier-glow) 0, transparent 28%), linear-gradient(135deg, var(--atelier-from), var(--atelier-to))">
           <% if current_seller.cover_image.attached? && current_seller.cover_image.blob.persisted? %>
             <%= image_tag current_seller.cover_image.variant(resize_to_limit: [ 640, 280 ]), alt: "", data: { theme_preview_target: "cover" },
@@ -160,17 +267,27 @@
             <% end %>
             <p class="text-[0.6rem] font-bold uppercase tracking-[0.2em]" style="color: var(--atelier-soft)">Ateliê na EloShop</p>
             <p class="mt-1 text-xl font-black leading-tight"><%= current_seller.name %></p>
+            <p data-theme-preview-target="linksPreview" hidden class="mt-2 text-[0.65rem] font-semibold text-white/90"></p>
           </div>
         </div>
 
-        <p class="mt-4 text-[0.6rem] font-semibold uppercase tracking-wider" style="color: var(--atelier-accent)">Catálogo</p>
-        <div data-theme-preview-target="grid" class="mt-2 grid gap-2">
-          <% 4.times do %>
-            <div data-theme-preview-target="tile" class="aspect-square rounded-lg bg-stone-100"></div>
-          <% end %>
+        <div class="mt-4 flex flex-col gap-4">
+          <div data-section="catalog" data-theme-preview-target="block">
+            <p class="text-[0.6rem] font-semibold uppercase tracking-wider" style="color: var(--atelier-accent)">Catálogo</p>
+            <div data-theme-preview-target="grid" class="mt-2 grid gap-2">
+              <% 4.times do %>
+                <div data-theme-preview-target="tile" class="aspect-square bg-stone-100"></div>
+              <% end %>
+            </div>
+          </div>
+          <div data-section="about" data-theme-preview-target="block" hidden>
+            <p class="text-[0.6rem] font-semibold uppercase tracking-wider" style="color: var(--atelier-accent)">Sobre</p>
+            <p data-theme-preview-target="aboutPreview" class="mt-1 line-clamp-3 whitespace-pre-line text-xs text-stone-600"></p>
+          </div>
+          <div data-section="footer" data-theme-preview-target="block" hidden>
+            <p data-theme-preview-target="footerPreview" class="whitespace-pre-line border-t border-stone-200 pt-3 text-xs text-stone-500"></p>
+          </div>
         </div>
-
-        <p data-theme-preview-target="footerPreview" class="mt-4 whitespace-pre-line border-t border-stone-200 pt-3 text-xs text-stone-500"></p>
       </div>
     </aside>
   <% end %>
