@@ -1,0 +1,20 @@
+  <p class="text-sm text-stone-500">Marque o que aparece e use as setas para mudar a ordem. O catálogo sempre aparece; "Sobre" e "rodapé" só aparecem se tiverem conteúdo.</p>
+  <%= hidden_field_tag "seller[theme_sections][]", "", id: nil %>
+  <% ordered = current_seller.theme_sections + (SellerTheme::SECTIONS.keys - current_seller.theme_sections) %>
+  <ul class="space-y-2">
+    <% ordered.each do |key| %>
+      <li class="flex items-center gap-2 rounded-2xl border border-stone-200 bg-white px-3 py-1.5">
+        <% if key == "catalog" %>
+          <%= hidden_field_tag "seller[theme_sections][]", key, id: nil %>
+          <span class="min-h-11 flex-1 content-center text-sm font-semibold"><%= SellerTheme::SECTIONS[key] %> <span class="text-xs font-normal text-stone-500">(sempre visível)</span></span>
+        <% else %>
+          <label class="flex min-h-11 flex-1 cursor-pointer items-center gap-3 text-sm font-semibold">
+            <%= check_box_tag "seller[theme_sections][]", key, current_seller.theme_sections.include?(key), id: "section_#{key}", class: "size-5" %>
+            <%= SellerTheme::SECTIONS[key] %>
+          </label>
+        <% end %>
+        <button type="button" data-action="theme-editor#moveUp" aria-label="Subir <%= SellerTheme::SECTIONS[key] %>" class="size-11 cursor-pointer rounded-full border border-stone-300 text-stone-700 hover:bg-brand-50"><svg viewBox="0 0 20 20" class="mx-auto size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l5-5 5 5"/></svg></button>
+        <button type="button" data-action="theme-editor#moveDown" aria-label="Descer <%= SellerTheme::SECTIONS[key] %>" class="size-11 cursor-pointer rounded-full border border-stone-300 text-stone-700 hover:bg-brand-50"><svg viewBox="0 0 20 20" class="mx-auto size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7.5l5 5 5-5"/></svg></button>
+      </li>
+    <% end %>
+  </ul>

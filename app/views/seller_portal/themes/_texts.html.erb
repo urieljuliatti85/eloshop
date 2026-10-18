@@ -1,0 +1,29 @@
+  <div>
+    <%= form.label :notice_text, "Faixa de aviso (acima do topo)", class: "seller-label" %>
+    <%= form.text_field :notice_text, maxlength: Seller::NOTICE_TEXT_MAX_LENGTH, placeholder: "Ex.: Prazo de produção atual: 7 dias úteis", class: "seller-input min-h-11" %>
+    <p class="mt-1 text-xs text-stone-500">Opcional. Até <%= Seller::NOTICE_TEXT_MAX_LENGTH %> caracteres.</p>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <%= form.label :instagram_handle, "Instagram", class: "seller-label" %>
+      <%= form.text_field :instagram_handle, placeholder: "@seuatelie", class: "seller-input min-h-11" %>
+    </div>
+    <div>
+      <%= form.label :whatsapp_number, "WhatsApp", class: "seller-label" %>
+      <%= form.text_field :whatsapp_number, inputmode: "numeric", placeholder: "5548999999999", class: "seller-input min-h-11" %>
+    </div>
+  </div>
+  <p class="-mt-4 text-xs text-stone-500">Opcionais. Se preencher, o link aparece publicamente na vitrine; o número do WhatsApp fica visível a qualquer visitante. Use DDI + DDD + número.</p>
+  <div>
+    <%= form.label :about_text, "Sobre o ateliê", class: "seller-label" %>
+    <%= form.text_area :about_text, rows: 5, maxlength: Seller::ABOUT_TEXT_MAX_LENGTH, class: "seller-input" %>
+    <p class="mt-1 text-xs text-stone-500">Sua história e seu processo. Até <%= Seller::ABOUT_TEXT_MAX_LENGTH %> caracteres.</p>
+  </div>
+
+  <div>
+    <%= form.label :footer_text, "Mensagem do rodapé", class: "seller-label" %>
+    <%= form.text_area :footer_text, rows: 3, maxlength: Seller::FOOTER_TEXT_MAX_LENGTH, class: "seller-input" %>
+    <p class="mt-1 text-xs text-stone-500">Aparece no fim da vitrine. Até <%= Seller::FOOTER_TEXT_MAX_LENGTH %> caracteres.</p>
+  </div>
+

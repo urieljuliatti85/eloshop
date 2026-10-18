@@ -21,12 +21,16 @@ export default class extends Controller {
     this.resize = () => this.fit()
     window.addEventListener("resize", this.resize)
     this.frameTarget.addEventListener("load", () => this.loaded())
+    // Um layout oculto (ou redimensionado) só ganha tamanho depois do connect.
+    this.observer = new ResizeObserver(() => this.fit())
+    this.observer.observe(this.viewportTarget)
     this.syncColor()
     this.refresh()
     this.fit()
   }
 
   disconnect() {
+    this.observer?.disconnect()
     window.removeEventListener("resize", this.resize)
     window.removeEventListener("beforeunload", this.beforeUnload)
     document.removeEventListener("keydown", this.keydown)
@@ -140,7 +144,9 @@ export default class extends Controller {
     const index = this.tabTargets.indexOf(event.currentTarget)
     const target = {
       ArrowRight: index === last ? 0 : index + 1,
+      ArrowDown: index === last ? 0 : index + 1,
       ArrowLeft: index === 0 ? last : index - 1,
+      ArrowUp: index === 0 ? last : index - 1,
       Home: 0,
       End: last
     }[event.key]

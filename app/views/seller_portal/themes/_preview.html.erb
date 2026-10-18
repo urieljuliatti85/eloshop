@@ -1,0 +1,18 @@
+<section data-theme-editor-target="stage" aria-label="Pré-visualização da vitrine"
+         class="hidden lg:sticky lg:top-6 lg:flex lg:h-[calc(100vh-3rem)] lg:flex-col">
+  <div class="mb-2 flex items-center gap-2">
+    <p class="whitespace-nowrap text-xs font-semibold uppercase tracking-wider text-stone-500">Sua vitrine</p>
+    <p data-theme-editor-target="status" aria-live="polite" class="min-w-0 truncate text-xs text-stone-500"></p>
+    <div class="ml-auto hidden items-center gap-1 rounded-full bg-white p-1 ring-1 ring-stone-200 lg:flex" role="group" aria-label="Tamanho da tela">
+      <button type="button" data-action="theme-editor#setDevice" data-device="phone" data-theme-editor-target="device" aria-pressed="true"
+              class="min-h-9 cursor-pointer rounded-full px-3 text-xs font-semibold text-stone-600 aria-pressed:bg-stone-900 aria-pressed:text-white">Celular</button>
+      <button type="button" data-action="theme-editor#setDevice" data-device="desktop" data-theme-editor-target="device" aria-pressed="false"
+              class="min-h-9 cursor-pointer rounded-full px-3 text-xs font-semibold text-stone-600 aria-pressed:bg-stone-900 aria-pressed:text-white">Computador</button>
+    </div>
+    <button type="button" data-theme-editor-target="closeButton" data-action="theme-editor#closePreview" class="ml-auto min-h-11 cursor-pointer rounded-full bg-stone-900 px-5 text-sm font-semibold text-white lg:hidden">Fechar</button>
+  </div>
+  <div data-theme-editor-target="viewport" class="relative min-h-0 flex-1 overflow-hidden rounded-[1.5rem] bg-stone-200 ring-1 ring-stone-300">
+    <iframe data-theme-editor-target="frame" title="Pré-visualização da vitrine do ateliê" tabindex="-1"
+            class="absolute top-0 left-0 origin-top-left border-0 bg-white"></iframe>
+  </div>
+</section>
