@@ -79,7 +79,7 @@ bin/bundler-audit   # vulnerabilidades conhecidas em gems
 ```
 
 CI (GitHub Actions, `.github/workflows/`) roda lint, testes, testes de
-sistema, Brakeman/bundler-audit e CodeQL a cada push/PR em `main`.
+sistema e Brakeman/bundler-audit a cada push/PR em `main`.
 
 ## Error tracking (Sentry)
 
