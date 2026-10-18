@@ -27,7 +27,90 @@ RSpec.describe "Seller theme", type: :request do
       get edit_seller_theme_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Oliva", "Clássica", "Destaque", "Minimalista", "Pré-visualização")
+      expect(response.body).to include("Oliva", "Clássica", "Destaque", "Minimalista", "Sua vitrine")
+    end
+  end
+
+  describe "abas do editor" do
+    it "lists the six tabs in the order things appear on the storefront" do
+      sign_in_as(user)
+
+      get edit_seller_theme_path
+
+      labels = Nokogiri::HTML(response.body).css('[role="tab"]').map { |tab| tab.text.strip }
+      expect(labels).to eq(%w[Temas Estilo Layout Seções Imagens Textos])
+    end
+
+    it "opens on the tab of the first field with an error" do
+      sign_in_as(user)
+
+      patch seller_theme_path, params: { seller: { whatsapp_number: "123" } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include('data-theme-editor-initial-tab-value="textos"')
+      expect(response.body).to match(/id="tab-textos"[^>]*aria-selected="true"/)
+    end
+  end
+
+  describe "GET /painel/atelie/tema/preview" do
+    it "requires a signed-in seller" do
+      get preview_seller_theme_path
+
+      expect(response).to redirect_to(seller_login_path)
+    end
+
+    it "renders the real storefront with the draft applied, without saving it" do
+      sign_in_as(user)
+
+      get preview_seller_theme_path, params: { seller: {
+        theme_palette: "oliva", theme_layout: "ampla", notice_text: "Rascunho no ar",
+        theme_sections: [ "", "about", "catalog" ], about_text: "História em rascunho"
+      } }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("--atelier-from:#{SellerTheme::PALETTES.dig("oliva", :from)}", "Rascunho no ar", "História em rascunho")
+      expect(response.body).to include("<body", "inert")
+      seller.reload
+      expect([ seller.theme_palette, seller.notice_text, seller.about_text ]).to eq([ "terracota", nil, nil ])
+    end
+
+    # Os cards usam helpers da loja (favoritos, carrinho): sem peças o
+    # preview passava, e com peças dava 500.
+    it "renders the product cards of the seller's catalog" do
+      Product.create!(seller: seller, name: "Vaso do preview", sku: "PRV-1", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+      sign_in_as(user)
+
+      get preview_seller_theme_path, params: { seller: { theme_card_style: "borda" } }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Vaso do preview")
+    end
+
+    it "shows what is saved when there is no draft" do
+      seller.update!(theme_palette: "ameixa")
+      sign_in_as(user)
+
+      get preview_seller_theme_path
+
+      expect(response.body).to include("--atelier-from:#{SellerTheme::PALETTES.dig("ameixa", :from)}")
+    end
+
+    it "never previews another seller's storefront" do
+      other = Seller.create!(name: "Ateliê Alheio", owner_full_name: "Proprietário Teste", cpf: "11666675539", status: :approved, approved_at: Time.current)
+      sign_in_as(user)
+
+      get preview_seller_theme_path, params: { seller_id: other.id, seller_slug: other.slug }
+
+      expect(response.body).to include(seller.name)
+      expect(response.body).not_to include(other.name)
+    end
+
+    it "keeps an admin out" do
+      sign_in_as(User.create!(email_address: "admin-preview@eloshop.test", password: "password123"))
+
+      get preview_seller_theme_path
+
+      expect(response).to redirect_to(seller_login_path)
     end
   end
 

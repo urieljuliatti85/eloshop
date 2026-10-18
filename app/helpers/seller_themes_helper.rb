@@ -40,4 +40,20 @@ module SellerThemesHelper
   def seller_whatsapp_url(seller)
     "https://wa.me/#{seller.whatsapp_number}"
   end
+
+  THEME_CHOICE_CLASS = "group flex cursor-pointer flex-col items-stretch gap-2 rounded-2xl border border-stone-200 bg-white p-2.5 " \
+                       "transition hover:border-stone-400 has-[:checked]:border-stone-900 has-[:checked]:ring-2 " \
+                       "has-[:checked]:ring-stone-900 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-400".freeze
+
+  # Cartão de escolha do editor de tema: um rádio escondido, uma miniatura
+  # (o bloco) e o rótulo. A seleção aparece pelo `:checked` do próprio rádio.
+  def theme_choice(form, attribute, value, label, &visual)
+    tag.label(class: THEME_CHOICE_CLASS) do
+      safe_join([
+        form.radio_button(attribute, value, class: "sr-only"),
+        tag.span(capture(&visual), class: "flex h-14 items-center justify-center overflow-hidden rounded-xl bg-stone-50"),
+        tag.span(label, class: "text-center text-xs font-semibold leading-tight text-stone-700")
+      ])
+    end
+  end
 end
