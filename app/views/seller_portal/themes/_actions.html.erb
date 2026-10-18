@@ -1,6 +1,6 @@
 <%# Barra de ações: fixa no rodapé no celular, junto do painel no desktop. %>
 <div class="<%= local_assigns.fetch(:bar_class, "fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-stone-200 bg-white/95 px-4 py-3 backdrop-blur lg:sticky lg:bottom-4 lg:col-start-1 lg:z-auto lg:justify-end lg:rounded-[1.5rem] lg:border lg:border-brand-100 lg:bg-white lg:p-3 lg:shadow-[0_8px_30px_rgba(120,40,10,0.12)] lg:backdrop-blur-none") %>">
-  <button type="button" data-action="theme-editor#openPreview" class="min-h-12 cursor-pointer whitespace-nowrap rounded-full border border-stone-300 bg-white px-4 text-sm font-bold text-stone-800 lg:hidden">Ver vitrine</button>
+  <%= link_to "Ver vitrine", seller_path(current_seller.slug), target: "_blank", rel: "noopener", class: "flex min-h-12 items-center whitespace-nowrap rounded-full border border-stone-300 bg-white px-4 text-sm font-bold text-stone-800 lg:hidden" %>
   <%= link_to "Descartar", edit_seller_theme_path, data: { action: "theme-editor#discard" }, class: "ml-auto flex min-h-12 items-center rounded-full border border-brand-200 px-5 text-sm font-bold text-stone-700 transition hover:bg-brand-50 lg:ml-0 lg:mr-0" %>
   <%= form.submit "Salvar tema", data: { turbo_submits_with: "Salvando…" }, class: "min-h-12 cursor-pointer rounded-full bg-brand-600 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700" %>
 </div>

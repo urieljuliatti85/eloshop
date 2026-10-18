@@ -129,14 +129,8 @@ export default class extends Controller {
       tab.setAttribute("aria-selected", selected)
       tab.tabIndex = selected ? 0 : -1
       if (selected && focus) tab.focus()
-      // A faixa de abas rola no celular: a aba escolhida precisa ficar à vista.
-      if (selected) tab.scrollIntoView({ inline: "center", block: "nearest", behavior: this.reducedMotion ? "auto" : "smooth" })
     })
     this.panelTargets.forEach((panel) => { panel.hidden = panel.dataset.key !== key })
-  }
-
-  get reducedMotion() {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches
   }
 
   tabKey(event) {
