@@ -1,27 +1,51 @@
 <% content_for :title, "Tema da vitrine | #{current_seller.name}" %>
 
 <%
+  card = "rounded-[2rem] border border-brand-100 bg-white shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)]"
   file_class = "mt-2 block w-full rounded-xl border border-dashed border-stone-300 bg-brand-50/30 p-3 text-sm file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-stone-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
-  card_class = "rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8"
-  choice_class = "flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-stone-200 px-3 py-2 text-sm has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-brand-100"
+  short = ->(label) { label.split(" (").first }
+  tabs = [
+    [ "temas", "Temas" ],
+    [ "estilo", "Estilo" ],
+    [ "layout", "Layout" ],
+    [ "secoes", "Seções" ],
+    [ "imagens", "Imagens" ],
+    [ "textos", "Textos" ]
+  ]
+  # Salvamento recusado: abre a aba do primeiro campo com erro.
+  tab_of = {
+    logo: "imagens", cover_image: "imagens", about_image: "imagens",
+    notice_text: "textos", about_text: "textos", footer_text: "textos", instagram_handle: "textos", whatsapp_number: "textos",
+    theme_palette: "estilo", theme_font: "estilo", theme_accent_color: "estilo",
+    theme_layout: "layout", theme_hero: "layout", theme_corners: "layout", theme_card_style: "layout",
+    theme_sections: "secoes"
+  }
+  initial_tab = tab_of[current_seller.errors.attribute_names.first] || "temas"
 %>
 
-<div class="max-w-5xl space-y-8"
-     data-controller="theme-preview"
-     data-theme-preview-palettes-value="<%= SellerTheme::PALETTES.to_json %>"
-     data-theme-preview-fonts-value="<%= SellerTheme::FONTS.transform_values { |font| font[:stack] }.to_json %>"
-     data-theme-preview-presets-value="<%= SellerTheme::PRESETS.to_json %>"
-     data-theme-preview-min-contrast-value="<%= SellerTheme::MIN_ACCENT_CONTRAST %>">
-  <header>
-    <h1 class="text-3xl font-black tracking-tight">Tema e visual do ateliê</h1>
-    <p class="mt-2 text-sm text-stone-500">Escolha como a página pública do seu ateliê aparece. A pré-visualização muda na hora; nada vai ao ar até você salvar.</p>
+<div data-controller="theme-editor"
+     data-theme-editor-preview-url-value="<%= preview_seller_theme_path %>"
+     data-theme-editor-presets-value="<%= SellerTheme::PRESETS.to_json %>"
+     data-theme-editor-min-contrast-value="<%= SellerTheme::MIN_ACCENT_CONTRAST %>"
+     data-theme-editor-initial-tab-value="<%= initial_tab %>"
+     data-theme-editor-open-class="fixed inset-0 z-50 flex flex-col bg-stone-100 p-3"
+     class="pb-28 lg:pb-0">
+  <header class="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-3xl font-black tracking-tight">Tema da vitrine</h1>
+      <p class="mt-1 max-w-xl text-sm text-stone-500">Mude o visual da página pública do seu ateliê e veja o resultado ao lado, na vitrine de verdade. Nada vai ao ar até você salvar.</p>
+    </div>
+    <p data-theme-editor-target="dirty" hidden class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900" role="status">Alterações não salvas</p>
   </header>
 
-  <%= form_with model: current_seller, url: seller_theme_path, method: :patch, class: "grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]" do |form| %>
-    <div class="space-y-6">
+  <%= form_with model: current_seller, url: seller_theme_path, method: :patch, id: "theme-form",
+        data: { theme_editor_target: "form", action: "input->theme-editor#changed change->theme-editor#changed" },
+        class: "grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,29rem)_minmax(0,1fr)]" do |form| %>
+    <div class="space-y-4">
       <% if current_seller.errors.any? %>
-        <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-          <ul class="list-inside list-disc">
+        <div class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
+          <p class="font-semibold">Não foi possível salvar:</p>
+          <ul class="mt-1 list-inside list-disc">
             <% current_seller.errors.full_messages.each do |message| %>
               <li><%= message %></li>
             <% end %>
@@ -29,266 +53,265 @@
         </div>
       <% end %>
 
-      <section class="<%= card_class %> space-y-3">
-        <h2 class="text-sm font-semibold text-stone-700">Temas prontos</h2>
-        <p class="text-xs text-stone-500">Um ponto de partida: aplica paleta, fonte, layout e topo de uma vez. Você pode ajustar depois.</p>
-        <div class="flex flex-wrap gap-2">
-          <% SellerTheme::PRESETS.each do |key, preset| %>
-            <button type="button" data-action="theme-preview#applyPreset" data-preset="<%= key %>"
-                    class="min-h-11 cursor-pointer rounded-full border border-stone-300 px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-brand-50">
-              <%= preset[:label] %>
+      <div class="<%= card %> overflow-hidden">
+        <div role="tablist" aria-label="Seções do editor" class="flex gap-1 overflow-x-auto border-b border-stone-200 bg-brand-50/40 px-4 py-2 [mask-image:linear-gradient(to_right,transparent,black_1rem,black_calc(100%-1.5rem),transparent)] lg:gap-0.5 lg:px-2 lg:[mask-image:none]">
+          <% tabs.each_with_index do |(key, label), index| %>
+            <button type="button" role="tab" id="tab-<%= key %>" aria-controls="panel-<%= key %>" aria-selected="<%= key == initial_tab %>" tabindex="<%= key == initial_tab ? 0 : -1 %>"
+                    data-theme-editor-target="tab" data-key="<%= key %>" data-action="theme-editor#selectTab keydown->theme-editor#tabKey"
+                    class="min-h-11 shrink-0 cursor-pointer rounded-full px-3.5 text-sm font-semibold text-stone-600 lg:px-2.5 transition hover:bg-white aria-selected:bg-stone-900 aria-selected:text-white">
+              <%= label %>
             </button>
           <% end %>
         </div>
-      </section>
 
-      <section class="<%= card_class %> space-y-6">
-        <fieldset>
-          <legend class="text-sm font-semibold text-stone-700">Paleta de cores</legend>
-          <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <% SellerTheme::PALETTES.each do |key, palette| %>
-              <label class="<%= choice_class %>">
-                <%= form.radio_button :theme_palette, key, data: { action: "theme-preview#update", theme_preview_target: "palette" }, class: "sr-only" %>
-                <span class="size-5 shrink-0 rounded-full border border-stone-200" style="background: linear-gradient(135deg, <%= palette[:from] %>, <%= palette[:to] %>)"></span>
-                <%= palette[:label] %>
-              </label>
+        <%# Temas prontos: aplicam paleta, fonte, layout, topo, cantos e cards de uma vez. %>
+        <section role="tabpanel" id="panel-temas" aria-labelledby="tab-temas" data-theme-editor-target="panel" data-key="temas" <%= "hidden" unless initial_tab == "temas" %> class="space-y-3 p-5">
+          <p class="text-sm text-stone-500">Um ponto de partida. Aplique um e ajuste o que quiser nas outras abas.</p>
+          <div class="grid grid-cols-2 gap-3">
+            <% SellerTheme::PRESETS.each do |key, preset| %>
+              <% palette = SellerTheme::PALETTES.fetch(preset[:palette]) %>
+              <button type="button" data-action="theme-editor#applyPreset" data-preset="<%= key %>"
+                      class="flex min-h-11 cursor-pointer flex-col gap-2 rounded-2xl border border-stone-200 bg-white p-2.5 text-left transition hover:border-stone-400 focus-visible:ring-3 focus-visible:ring-brand-300">
+                <span class="block h-14 rounded-xl" style="background: linear-gradient(135deg, <%= palette[:from] %>, <%= palette[:to] %>)">
+                  <span class="block p-2 text-lg font-black text-white/90" style="font-family: <%= SellerTheme::FONTS.dig(preset[:font], :stack) %>">Aa</span>
+                </span>
+                <span class="text-sm font-bold text-stone-800"><%= preset[:label] %></span>
+                <span class="text-xs leading-tight text-stone-500"><%= palette[:label] %> · <%= SellerTheme::FONTS.dig(preset[:font], :label) %></span>
+              </button>
             <% end %>
           </div>
-        </fieldset>
+        </section>
 
-        <fieldset>
-          <legend class="text-sm font-semibold text-stone-700">Fonte</legend>
-          <div class="mt-3 grid gap-2 sm:grid-cols-3">
-            <% SellerTheme::FONTS.each do |key, font| %>
-              <label class="<%= choice_class %>" style="font-family: <%= font[:stack] %>">
-                <%= form.radio_button :theme_font, key, data: { action: "theme-preview#update", theme_preview_target: "font" }, class: "sr-only" %>
-                <%= font[:label] %>
-              </label>
-            <% end %>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend class="text-sm font-semibold text-stone-700">Layout do catálogo</legend>
-          <div class="mt-3 grid gap-2">
-            <% SellerTheme::LAYOUTS.each do |key, label| %>
-              <label class="<%= choice_class %>">
-                <%= form.radio_button :theme_layout, key, data: { action: "theme-preview#update", theme_preview_target: "layout" }, class: "sr-only" %>
-                <%= label %>
-              </label>
-            <% end %>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend class="text-sm font-semibold text-stone-700">Topo da vitrine</legend>
-          <div class="mt-3 grid gap-2">
-            <% SellerTheme::HEROES.each do |key, label| %>
-              <label class="<%= choice_class %>">
-                <%= form.radio_button :theme_hero, key, data: { action: "theme-preview#update", theme_preview_target: "hero" }, class: "sr-only" %>
-                <%= label %>
-              </label>
-            <% end %>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend class="text-sm font-semibold text-stone-700">Cantos</legend>
-          <div class="mt-3 grid gap-2 sm:grid-cols-3">
-            <% SellerTheme::CORNERS.each do |key, label| %>
-              <label class="<%= choice_class %>">
-                <%= form.radio_button :theme_corners, key, data: { action: "theme-preview#update", theme_preview_target: "corners" }, class: "sr-only" %>
-                <%= label %>
-              </label>
-            <% end %>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend class="text-sm font-semibold text-stone-700">Estilo dos cards de peça</legend>
-          <div class="mt-3 grid gap-2 sm:grid-cols-3">
-            <% SellerTheme::CARD_STYLES.each do |key, label| %>
-              <label class="<%= choice_class %>">
-                <%= form.radio_button :theme_card_style, key, data: { action: "theme-preview#update", theme_preview_target: "cardStyle" }, class: "sr-only" %>
-                <%= label %>
-              </label>
-            <% end %>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend class="text-sm font-semibold text-stone-700">Cor própria</legend>
-          <label class="mt-3 flex min-h-11 items-center gap-2 text-sm text-stone-700">
-            <%= check_box_tag :use_custom_color, "1", current_seller.theme_accent_color.present?, data: { action: "theme-preview#update", theme_preview_target: "useCustomColor" }, class: "size-4" %>
-            Usar uma cor minha no lugar da paleta
-          </label>
-          <div class="mt-2 flex items-center gap-3">
-            <%= form.color_field :theme_accent_color, value: current_seller.theme_accent_color || SellerTheme::PALETTES.dig(current_seller.theme_palette, :accent),
-                  data: { action: "input->theme-preview#update", theme_preview_target: "customColor" }, class: "h-11 w-16 cursor-pointer rounded-lg border border-stone-300 bg-white p-1" %>
-            <p data-theme-preview-target="contrastHint" aria-live="polite" class="text-xs text-stone-500"></p>
-          </div>
-          <p class="mt-1 text-xs text-stone-500">Precisa ser escura o bastante para o texto continuar legível (contraste mínimo de 4,5:1).</p>
-        </fieldset>
-      </section>
-
-      <section class="<%= card_class %> space-y-4">
-        <h2 class="text-sm font-semibold text-stone-700">Seções da vitrine</h2>
-        <p class="text-xs text-stone-500">Marque o que aparece e use as setas para mudar a ordem. O catálogo sempre aparece. "Sobre" e "rodapé" só aparecem se tiverem conteúdo.</p>
-        <%= hidden_field_tag "seller[theme_sections][]", "", id: nil %>
-        <% ordered = current_seller.theme_sections + (SellerTheme::SECTIONS.keys - current_seller.theme_sections) %>
-        <ul data-theme-preview-target="sectionList" class="space-y-2">
-          <% ordered.each do |key| %>
-            <li class="flex items-center gap-3 rounded-xl border border-stone-200 px-3 py-2">
-              <% if key == "catalog" %>
-                <%= hidden_field_tag "seller[theme_sections][]", key, id: nil, data: { theme_preview_target: "section" } %>
-                <span class="min-h-6 flex-1 text-sm"><%= SellerTheme::SECTIONS[key] %> <span class="text-xs text-stone-500">(sempre visível)</span></span>
-              <% else %>
-                <label class="flex min-h-11 flex-1 items-center gap-2 text-sm">
-                  <%= check_box_tag "seller[theme_sections][]", key, current_seller.theme_sections.include?(key), id: "section_#{key}", data: { action: "theme-preview#update", theme_preview_target: "section" }, class: "size-4" %>
-                  <%= SellerTheme::SECTIONS[key] %>
-                </label>
+        <section role="tabpanel" id="panel-estilo" aria-labelledby="tab-estilo" data-theme-editor-target="panel" data-key="estilo" <%= "hidden" unless initial_tab == "estilo" %> class="space-y-6 p-5">
+          <fieldset>
+            <legend class="text-sm font-semibold text-stone-700">Paleta</legend>
+            <div class="mt-3 grid grid-cols-3 gap-2">
+              <% SellerTheme::PALETTES.each do |key, palette| %>
+                <%= theme_choice(form, :theme_palette, key, palette[:label]) do %>
+                  <span class="block h-full w-full" style="background: linear-gradient(135deg, <%= palette[:from] %>, <%= palette[:to] %>)"></span>
+                <% end %>
               <% end %>
-              <button type="button" data-action="theme-preview#moveUp" aria-label="Subir <%= SellerTheme::SECTIONS[key] %>" class="size-11 cursor-pointer rounded-full border border-stone-300 text-sm hover:bg-brand-50">↑</button>
-              <button type="button" data-action="theme-preview#moveDown" aria-label="Descer <%= SellerTheme::SECTIONS[key] %>" class="size-11 cursor-pointer rounded-full border border-stone-300 text-sm hover:bg-brand-50">↓</button>
-            </li>
-          <% end %>
-        </ul>
-      </section>
-
-      <section class="<%= card_class %> space-y-5">
-        <h2 class="text-sm font-semibold text-stone-700">Textos e contato</h2>
-
-        <div>
-          <%= form.label :notice_text, "Faixa de aviso (topo da vitrine)", class: "seller-label" %>
-          <%= form.text_field :notice_text, maxlength: Seller::NOTICE_TEXT_MAX_LENGTH, placeholder: "Ex.: Prazo de produção atual: 7 dias úteis",
-                data: { action: "input->theme-preview#update", theme_preview_target: "noticeInput" }, class: "seller-input min-h-11" %>
-          <p class="mt-1 text-xs text-stone-500">Opcional. Até <%= Seller::NOTICE_TEXT_MAX_LENGTH %> caracteres.</p>
-        </div>
-
-        <div>
-          <%= form.label :about_text, "Sobre o ateliê", class: "seller-label" %>
-          <%= form.text_area :about_text, rows: 5, maxlength: Seller::ABOUT_TEXT_MAX_LENGTH,
-                data: { action: "input->theme-preview#update", theme_preview_target: "aboutInput" }, class: "seller-input" %>
-          <p class="mt-1 text-xs text-stone-500">Sua história e seu processo. Até <%= Seller::ABOUT_TEXT_MAX_LENGTH %> caracteres.</p>
-        </div>
-
-        <div>
-          <%= form.label :about_image, "Foto do ateliê (seção Sobre)", class: "seller-label" %>
-          <% if current_seller.about_image.attached? && current_seller.about_image.blob.persisted? %>
-            <div class="mt-2 space-y-2">
-              <%= image_tag current_seller.about_image.variant(resize_to_fill: [ 320, 240 ]), alt: "Foto atual do ateliê", class: "h-24 rounded-xl border border-stone-200 object-cover" %>
-              <label class="flex items-center gap-2 text-sm text-stone-600">
-                <%= check_box_tag :remove_about_image, "1", false, class: "size-4" %> Remover foto
-              </label>
             </div>
-          <% end %>
-          <%= form.file_field :about_image, accept: "image/png,image/jpeg,image/webp", class: file_class %>
-        </div>
+          </fieldset>
 
-        <div class="grid gap-4 sm:grid-cols-2">
+          <fieldset>
+            <legend class="text-sm font-semibold text-stone-700">Fonte</legend>
+            <div class="mt-3 grid grid-cols-3 gap-2">
+              <% SellerTheme::FONTS.each do |key, font| %>
+                <%= theme_choice(form, :theme_font, key, font[:label]) do %>
+                  <span class="text-3xl text-stone-800" style="font-family: <%= font[:stack] %>">Aa</span>
+                <% end %>
+              <% end %>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend class="text-sm font-semibold text-stone-700">Cor própria</legend>
+            <label class="mt-3 flex min-h-11 cursor-pointer items-center gap-3 text-sm text-stone-700">
+              <%= check_box_tag :use_custom_color, "1", current_seller.theme_accent_color.present?, data: { theme_editor_target: "useCustomColor" }, class: "size-5" %>
+              Usar uma cor minha no lugar da paleta
+            </label>
+            <div class="mt-2 flex items-center gap-3">
+              <%= form.color_field :theme_accent_color, value: current_seller.theme_accent_color || SellerTheme::PALETTES.dig(current_seller.theme_palette, :accent),
+                    data: { theme_editor_target: "customColor" }, class: "h-12 w-20 cursor-pointer rounded-xl border border-stone-300 bg-white p-1" %>
+              <p data-theme-editor-target="contrastHint" aria-live="polite" class="text-xs text-stone-500"></p>
+            </div>
+            <p class="mt-1 text-xs text-stone-500">Precisa ser escura o bastante para o texto continuar legível (contraste mínimo de 4,5:1).</p>
+          </fieldset>
+        </section>
+
+        <section role="tabpanel" id="panel-layout" aria-labelledby="tab-layout" data-theme-editor-target="panel" data-key="layout" <%= "hidden" unless initial_tab == "layout" %> class="space-y-6 p-5">
+          <fieldset>
+            <legend class="text-sm font-semibold text-stone-700">Catálogo</legend>
+            <div class="mt-3 grid grid-cols-3 gap-2">
+              <% SellerTheme::LAYOUTS.each do |key, label| %>
+                <%= theme_choice(form, :theme_layout, key, short.(label)) do %>
+                  <% if key == "destaque" %>
+                    <span class="grid w-14 grid-cols-4 gap-0.5">
+                      <span class="col-span-2 row-span-2 aspect-square rounded-[2px] bg-stone-400"></span>
+                      <% 4.times do %><span class="aspect-square rounded-[2px] bg-stone-300"></span><% end %>
+                    </span>
+                  <% else %>
+                    <% columns = key == "ampla" ? 3 : 4 %>
+                    <span class="grid w-14 gap-0.5 <%= columns == 3 ? "grid-cols-3" : "grid-cols-4" %>">
+                      <% (columns * 2).times do %><span class="aspect-square rounded-[2px] bg-stone-300"></span><% end %>
+                    </span>
+                  <% end %>
+                <% end %>
+              <% end %>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend class="text-sm font-semibold text-stone-700">Topo</legend>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <% SellerTheme::HEROES.each do |key, label| %>
+                <%= theme_choice(form, :theme_hero, key, short.(label)) do %>
+                  <span class="block w-20 rounded-md bg-stone-700 <%= key == "capa" ? "h-11 bg-gradient-to-br from-stone-500 to-stone-800" : "h-5" %>"></span>
+                <% end %>
+              <% end %>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend class="text-sm font-semibold text-stone-700">Cantos</legend>
+            <div class="mt-3 grid grid-cols-3 gap-2">
+              <% { "retos" => "rounded-none", "suaves" => "rounded-lg", "arredondados" => "rounded-3xl" }.each do |key, radius| %>
+                <%= theme_choice(form, :theme_corners, key, SellerTheme::CORNERS[key]) do %>
+                  <span class="block size-9 border-2 border-stone-500 bg-white <%= radius %>"></span>
+                <% end %>
+              <% end %>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend class="text-sm font-semibold text-stone-700">Cards de peça</legend>
+            <div class="mt-3 grid grid-cols-3 gap-2">
+              <% { "limpo" => "", "borda" => "border border-stone-400", "sombra" => "shadow-[0_3px_8px_rgba(0,0,0,0.25)]" }.each do |key, frame| %>
+                <%= theme_choice(form, :theme_card_style, key, short.(SellerTheme::CARD_STYLES[key])) do %>
+                  <span class="flex h-11 w-9 flex-col gap-1 rounded-md bg-white p-1 <%= frame %>">
+                    <span class="block flex-1 rounded-[3px] bg-stone-300"></span>
+                    <span class="block h-1 rounded bg-stone-400"></span>
+                  </span>
+                <% end %>
+              <% end %>
+            </div>
+          </fieldset>
+        </section>
+
+        <section role="tabpanel" id="panel-secoes" aria-labelledby="tab-secoes" data-theme-editor-target="panel" data-key="secoes" <%= "hidden" unless initial_tab == "secoes" %> class="space-y-3 p-5">
+          <p class="text-sm text-stone-500">Marque o que aparece e use as setas para mudar a ordem. O catálogo sempre aparece; "Sobre" e "rodapé" só aparecem se tiverem conteúdo.</p>
+          <%= hidden_field_tag "seller[theme_sections][]", "", id: nil %>
+          <% ordered = current_seller.theme_sections + (SellerTheme::SECTIONS.keys - current_seller.theme_sections) %>
+          <ul class="space-y-2">
+            <% ordered.each do |key| %>
+              <li class="flex items-center gap-2 rounded-2xl border border-stone-200 bg-white px-3 py-1.5">
+                <% if key == "catalog" %>
+                  <%= hidden_field_tag "seller[theme_sections][]", key, id: nil %>
+                  <span class="min-h-11 flex-1 content-center text-sm font-semibold"><%= SellerTheme::SECTIONS[key] %> <span class="text-xs font-normal text-stone-500">(sempre visível)</span></span>
+                <% else %>
+                  <label class="flex min-h-11 flex-1 cursor-pointer items-center gap-3 text-sm font-semibold">
+                    <%= check_box_tag "seller[theme_sections][]", key, current_seller.theme_sections.include?(key), id: "section_#{key}", class: "size-5" %>
+                    <%= SellerTheme::SECTIONS[key] %>
+                  </label>
+                <% end %>
+                <button type="button" data-action="theme-editor#moveUp" aria-label="Subir <%= SellerTheme::SECTIONS[key] %>" class="size-11 cursor-pointer rounded-full border border-stone-300 text-stone-700 hover:bg-brand-50"><svg viewBox="0 0 20 20" class="mx-auto size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l5-5 5 5"/></svg></button>
+                <button type="button" data-action="theme-editor#moveDown" aria-label="Descer <%= SellerTheme::SECTIONS[key] %>" class="size-11 cursor-pointer rounded-full border border-stone-300 text-stone-700 hover:bg-brand-50"><svg viewBox="0 0 20 20" class="mx-auto size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7.5l5 5 5-5"/></svg></button>
+              </li>
+            <% end %>
+          </ul>
+        </section>
+
+        <%# Só mostra o que já foi gravado (um envio recusado volta anexado, mas
+            sem blob). Remover é um checkbox porque um campo de arquivo vazio não
+            diz se o vendedor quer manter ou apagar a imagem atual. %>
+        <section role="tabpanel" id="panel-imagens" aria-labelledby="tab-imagens" data-theme-editor-target="panel" data-key="imagens" <%= "hidden" unless initial_tab == "imagens" %> class="space-y-6 p-5">
           <div>
-            <%= form.label :instagram_handle, "Instagram", class: "seller-label" %>
-            <%= form.text_field :instagram_handle, placeholder: "@seuatelie", data: { action: "input->theme-preview#update", theme_preview_target: "instagramInput" }, class: "seller-input min-h-11" %>
+            <%= form.label :logo, "Logo", class: "seller-label" %>
+            <% if current_seller.logo.attached? && current_seller.logo.blob.persisted? %>
+              <div class="mt-2 flex items-center gap-4">
+                <%= image_tag current_seller.logo.variant(resize_to_fill: [ 96, 96 ]), alt: "Logo atual do ateliê", class: "size-16 rounded-full border border-stone-200 object-cover" %>
+                <label class="flex min-h-11 items-center gap-2 text-sm text-stone-600">
+                  <%= check_box_tag :remove_logo, "1", false, class: "size-5" %> Remover logo
+                </label>
+              </div>
+            <% end %>
+            <%= form.file_field :logo, accept: "image/png,image/jpeg,image/webp", class: file_class %>
+            <p class="mt-1 text-xs text-stone-500">PNG, JPEG ou WEBP, até 5 MB. Imagem quadrada funciona melhor.</p>
           </div>
+
           <div>
-            <%= form.label :whatsapp_number, "WhatsApp", class: "seller-label" %>
-            <%= form.text_field :whatsapp_number, inputmode: "numeric", placeholder: "5548999999999", data: { action: "input->theme-preview#update", theme_preview_target: "whatsappInput" }, class: "seller-input min-h-11" %>
+            <%= form.label :cover_image, "Capa (topo da vitrine)", class: "seller-label" %>
+            <% if current_seller.cover_image.attached? && current_seller.cover_image.blob.persisted? %>
+              <div class="mt-2 space-y-2">
+                <%= image_tag current_seller.cover_image.variant(resize_to_fill: [ 640, 240 ]), alt: "Capa atual do ateliê", class: "h-24 w-full max-w-sm rounded-xl border border-stone-200 object-cover" %>
+                <label class="flex min-h-11 items-center gap-2 text-sm text-stone-600">
+                  <%= check_box_tag :remove_cover_image, "1", false, class: "size-5" %> Remover capa
+                </label>
+              </div>
+            <% end %>
+            <%= form.file_field :cover_image, accept: "image/png,image/jpeg,image/webp", class: file_class %>
+            <p class="mt-1 text-xs text-stone-500">Imagem larga. Sem capa, usamos a foto da peça mais recente. Só aparece no topo "Com capa".</p>
           </div>
-        </div>
-        <p class="-mt-3 text-xs text-stone-500">Opcionais. Se preencher, o link aparece publicamente na sua vitrine; o número do WhatsApp fica visível para qualquer visitante. Use DDI + DDD + número.</p>
-      </section>
 
-      <%# Só mostra o que já foi gravado (um envio recusado volta anexado, mas
-          sem blob). Remover é um checkbox porque um campo de arquivo vazio não
-          diz se o vendedor quer manter ou apagar a imagem atual. %>
-      <section class="<%= card_class %> space-y-5">
-        <h2 class="text-sm font-semibold text-stone-700">Logo, capa e rodapé</h2>
-        <p class="-mt-3 text-xs text-stone-500">PNG, JPEG ou WEBP, até 5 MB. Sem capa, a vitrine usa a foto da peça mais recente.</p>
+          <div>
+            <%= form.label :about_image, "Foto do ateliê (seção Sobre)", class: "seller-label" %>
+            <% if current_seller.about_image.attached? && current_seller.about_image.blob.persisted? %>
+              <div class="mt-2 space-y-2">
+                <%= image_tag current_seller.about_image.variant(resize_to_fill: [ 320, 240 ]), alt: "Foto atual do ateliê", class: "h-24 rounded-xl border border-stone-200 object-cover" %>
+                <label class="flex min-h-11 items-center gap-2 text-sm text-stone-600">
+                  <%= check_box_tag :remove_about_image, "1", false, class: "size-5" %> Remover foto
+                </label>
+              </div>
+            <% end %>
+            <%= form.file_field :about_image, accept: "image/png,image/jpeg,image/webp", class: file_class %>
+          </div>
 
-        <div>
-          <%= form.label :logo, "Logo", class: "seller-label" %>
-          <% if current_seller.logo.attached? && current_seller.logo.blob.persisted? %>
-            <div class="mt-2 flex items-center gap-4">
-              <%= image_tag current_seller.logo.variant(resize_to_fill: [ 96, 96 ]), alt: "Logo atual do ateliê", class: "size-16 rounded-full border border-stone-200 object-cover" %>
-              <label class="flex items-center gap-2 text-sm text-stone-600">
-                <%= check_box_tag :remove_logo, "1", false, class: "size-4" %> Remover logo
-              </label>
+        </section>
+
+        <section role="tabpanel" id="panel-textos" aria-labelledby="tab-textos" data-theme-editor-target="panel" data-key="textos" <%= "hidden" unless initial_tab == "textos" %> class="space-y-6 p-5">
+          <div>
+            <%= form.label :notice_text, "Faixa de aviso (acima do topo)", class: "seller-label" %>
+            <%= form.text_field :notice_text, maxlength: Seller::NOTICE_TEXT_MAX_LENGTH, placeholder: "Ex.: Prazo de produção atual: 7 dias úteis", class: "seller-input min-h-11" %>
+            <p class="mt-1 text-xs text-stone-500">Opcional. Até <%= Seller::NOTICE_TEXT_MAX_LENGTH %> caracteres.</p>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <%= form.label :instagram_handle, "Instagram", class: "seller-label" %>
+              <%= form.text_field :instagram_handle, placeholder: "@seuatelie", class: "seller-input min-h-11" %>
             </div>
-          <% end %>
-          <%= form.file_field :logo, accept: "image/png,image/jpeg,image/webp", class: file_class %>
-          <p class="mt-1 text-xs text-stone-500">Imagem quadrada funciona melhor.</p>
-        </div>
-
-        <div>
-          <%= form.label :cover_image, "Capa (topo da vitrine)", class: "seller-label" %>
-          <% if current_seller.cover_image.attached? && current_seller.cover_image.blob.persisted? %>
-            <div class="mt-2 space-y-2">
-              <%= image_tag current_seller.cover_image.variant(resize_to_fill: [ 640, 240 ]), alt: "Capa atual do ateliê", class: "h-24 w-full max-w-sm rounded-xl border border-stone-200 object-cover" %>
-              <label class="flex items-center gap-2 text-sm text-stone-600">
-                <%= check_box_tag :remove_cover_image, "1", false, class: "size-4" %> Remover capa
-              </label>
+            <div>
+              <%= form.label :whatsapp_number, "WhatsApp", class: "seller-label" %>
+              <%= form.text_field :whatsapp_number, inputmode: "numeric", placeholder: "5548999999999", class: "seller-input min-h-11" %>
             </div>
-          <% end %>
-          <%= form.file_field :cover_image, accept: "image/png,image/jpeg,image/webp", class: file_class %>
-          <p class="mt-1 text-xs text-stone-500">Imagem larga (paisagem). Usada só no topo "Com capa".</p>
-        </div>
+          </div>
+          <p class="-mt-4 text-xs text-stone-500">Opcionais. Se preencher, o link aparece publicamente na vitrine; o número do WhatsApp fica visível a qualquer visitante. Use DDI + DDD + número.</p>
+          <div>
+            <%= form.label :about_text, "Sobre o ateliê", class: "seller-label" %>
+            <%= form.text_area :about_text, rows: 5, maxlength: Seller::ABOUT_TEXT_MAX_LENGTH, class: "seller-input" %>
+            <p class="mt-1 text-xs text-stone-500">Sua história e seu processo. Até <%= Seller::ABOUT_TEXT_MAX_LENGTH %> caracteres.</p>
+          </div>
 
-        <div>
-          <%= form.label :footer_text, "Mensagem do rodapé", class: "seller-label" %>
-          <%= form.text_area :footer_text, rows: 3, maxlength: Seller::FOOTER_TEXT_MAX_LENGTH,
-                data: { action: "input->theme-preview#update", theme_preview_target: "footerInput" }, class: "seller-input" %>
-          <p class="mt-1 text-xs text-stone-500">Aparece no fim da sua vitrine. Até <%= Seller::FOOTER_TEXT_MAX_LENGTH %> caracteres.</p>
-        </div>
-      </section>
+          <div>
+            <%= form.label :footer_text, "Mensagem do rodapé", class: "seller-label" %>
+            <%= form.text_area :footer_text, rows: 3, maxlength: Seller::FOOTER_TEXT_MAX_LENGTH, class: "seller-input" %>
+            <p class="mt-1 text-xs text-stone-500">Aparece no fim da vitrine. Até <%= Seller::FOOTER_TEXT_MAX_LENGTH %> caracteres.</p>
+          </div>
 
-      <div class="flex gap-3">
-        <%= form.submit "Salvar tema", class: "cursor-pointer rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700" %>
-        <%= link_to "Ver minha vitrine", seller_path(current_seller.slug), target: "_blank", rel: "noopener", class: "rounded-full border border-brand-200 px-6 py-3 text-sm font-bold text-stone-700 transition hover:bg-brand-50" %>
+        </section>
       </div>
     </div>
 
-    <%# Pré-visualização: uma maquete estática da vitrine, atualizada pelo
-        Stimulus a cada escolha. Não consulta o servidor. %>
-    <aside class="lg:sticky lg:top-6 lg:self-start" aria-label="Pré-visualização da vitrine">
-      <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-stone-500">Pré-visualização</p>
-      <div data-theme-preview-target="stage" class="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white p-3"
-           style="<%= seller_theme_style(current_seller) %>; font-family: var(--atelier-font)">
-        <p data-theme-preview-target="noticePreview" hidden class="mb-2 rounded-full px-3 py-1.5 text-center text-[0.65rem] font-semibold text-white" style="background: var(--atelier-accent)"></p>
-        <div data-theme-preview-target="heroBlock" class="relative overflow-hidden rounded-2xl p-4 text-white"
-             style="background: radial-gradient(circle at 75% 25%, var(--atelier-soft) 0, transparent 27%), radial-gradient(circle at 75% 72%, var(--atelier-glow) 0, transparent 28%), linear-gradient(135deg, var(--atelier-from), var(--atelier-to))">
-          <% if current_seller.cover_image.attached? && current_seller.cover_image.blob.persisted? %>
-            <%= image_tag current_seller.cover_image.variant(resize_to_limit: [ 640, 280 ]), alt: "", data: { theme_preview_target: "cover" },
-                  class: "absolute inset-0 h-full w-full object-cover" %>
-            <div data-theme-preview-target="cover" class="absolute inset-0 bg-black/55"></div>
-          <% end %>
-          <div class="relative">
-            <% if current_seller.logo.attached? && current_seller.logo.blob.persisted? %>
-              <%= image_tag current_seller.logo.variant(resize_to_fill: [ 64, 64 ]), alt: "", class: "mb-2 size-10 rounded-full border-2 border-white/60 object-cover" %>
-            <% end %>
-            <p class="text-[0.6rem] font-bold uppercase tracking-[0.2em]" style="color: var(--atelier-soft)">Ateliê na EloShop</p>
-            <p class="mt-1 text-xl font-black leading-tight"><%= current_seller.name %></p>
-            <p data-theme-preview-target="linksPreview" hidden class="mt-2 text-[0.65rem] font-semibold text-white/90"></p>
-          </div>
+    <%# Pré-visualização: a vitrine real num iframe inerte, com o rascunho do
+        formulário. No celular fica numa folha em tela cheia (botão "Ver
+        vitrine"); no desktop fica ao lado, fixa. %>
+    <section data-theme-editor-target="stage" aria-label="Pré-visualização da vitrine"
+             class="hidden lg:sticky lg:top-6 lg:flex lg:h-[calc(100vh-3rem)] lg:flex-col">
+      <div class="mb-2 flex items-center gap-2">
+        <p class="text-xs font-semibold uppercase tracking-wider text-stone-500">Sua vitrine</p>
+        <p data-theme-editor-target="status" aria-live="polite" class="text-xs text-stone-500"></p>
+        <div class="ml-auto hidden items-center gap-1 rounded-full bg-white p-1 ring-1 ring-stone-200 lg:flex" role="group" aria-label="Tamanho da tela">
+          <button type="button" data-action="theme-editor#setDevice" data-device="phone" data-theme-editor-target="device" aria-pressed="true"
+                  class="min-h-9 cursor-pointer rounded-full px-3 text-xs font-semibold text-stone-600 aria-pressed:bg-stone-900 aria-pressed:text-white">Celular</button>
+          <button type="button" data-action="theme-editor#setDevice" data-device="desktop" data-theme-editor-target="device" aria-pressed="false"
+                  class="min-h-9 cursor-pointer rounded-full px-3 text-xs font-semibold text-stone-600 aria-pressed:bg-stone-900 aria-pressed:text-white">Computador</button>
         </div>
-
-        <div class="mt-4 flex flex-col gap-4">
-          <div data-section="catalog" data-theme-preview-target="block">
-            <p class="text-[0.6rem] font-semibold uppercase tracking-wider" style="color: var(--atelier-accent)">Catálogo</p>
-            <div data-theme-preview-target="grid" class="mt-2 grid gap-2">
-              <% 4.times do %>
-                <div data-theme-preview-target="tile" class="aspect-square bg-stone-100"></div>
-              <% end %>
-            </div>
-          </div>
-          <div data-section="about" data-theme-preview-target="block" hidden>
-            <p class="text-[0.6rem] font-semibold uppercase tracking-wider" style="color: var(--atelier-accent)">Sobre</p>
-            <p data-theme-preview-target="aboutPreview" class="mt-1 line-clamp-3 whitespace-pre-line text-xs text-stone-600"></p>
-          </div>
-          <div data-section="footer" data-theme-preview-target="block" hidden>
-            <p data-theme-preview-target="footerPreview" class="whitespace-pre-line border-t border-stone-200 pt-3 text-xs text-stone-500"></p>
-          </div>
-        </div>
+        <%= link_to "Abrir vitrine", seller_path(current_seller.slug), target: "_blank", rel: "noopener",
+              class: "hidden min-h-9 content-center text-xs font-semibold text-brand-700 underline underline-offset-4 lg:block" %>
+        <button type="button" data-action="theme-editor#closePreview" class="ml-auto min-h-11 cursor-pointer rounded-full bg-stone-900 px-5 text-sm font-semibold text-white lg:hidden">Fechar</button>
       </div>
-    </aside>
+      <div data-theme-editor-target="viewport" class="relative min-h-0 flex-1 overflow-hidden rounded-[1.5rem] bg-stone-200 ring-1 ring-stone-300">
+        <iframe data-theme-editor-target="frame" title="Pré-visualização da vitrine do ateliê" tabindex="-1"
+                class="absolute top-0 left-0 origin-top-left border-0 bg-white"></iframe>
+      </div>
+    </section>
+
+    <%# Barra de ações: fixa no rodapé no celular, junto do painel no desktop. %>
+    <div class="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-stone-200 bg-white/95 px-4 py-3 backdrop-blur lg:sticky lg:bottom-4 lg:col-start-1 lg:z-auto lg:justify-end lg:rounded-[1.5rem] lg:border lg:border-brand-100 lg:bg-white lg:p-3 lg:shadow-[0_8px_30px_rgba(120,40,10,0.12)] lg:backdrop-blur-none">
+      <button type="button" data-action="theme-editor#openPreview" class="min-h-12 cursor-pointer whitespace-nowrap rounded-full border border-stone-300 bg-white px-4 text-sm font-bold text-stone-800 lg:hidden">Ver vitrine</button>
+      <%= link_to "Descartar", edit_seller_theme_path, class: "ml-auto flex min-h-12 items-center rounded-full border border-brand-200 px-5 text-sm font-bold text-stone-700 transition hover:bg-brand-50 lg:ml-0 lg:mr-0" %>
+      <%= form.submit "Salvar tema", class: "min-h-12 cursor-pointer rounded-full bg-brand-600 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700" %>
+    </div>
   <% end %>
 </div>

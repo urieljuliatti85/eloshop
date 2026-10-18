@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pré-visualização da vitrine</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex">
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag :app %>
+  </head>
+
+  <%# Pré-visualização dentro do iframe do editor: é a vitrine real, mas
+      inerte (sem cliques, foco ou formulários) — quem edita não deve sair
+      daqui nem disparar um "adicionar ao carrinho" sem querer. %>
+  <body class="overflow-x-clip bg-white text-ink antialiased" inert>
+    <main class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+      <%= yield %>
+    </main>
+  </body>
+</html>

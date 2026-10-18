@@ -404,6 +404,19 @@ class Seller < ApplicationRecord
     seller_terms_acceptances.order(accepted_at: :desc).first
   end
 
+  # As peças da vitrine pública (e da pré-visualização do tema), já com o que
+  # os cards usam carregado. preload, e não includes: a capa arrasta as
+  # tabelas do Active Storage e o plano estourava o jit_above_cost no
+  # catálogo (ver Fase 17). `personalization_options` entra porque o card
+  # pergunta se a peça aceita compra rápida e isso era 1 query por card.
+  def storefront_products
+    products.publicly_visible
+      .order(created_at: :desc)
+      .preload(:seller, :product_variants, :personalization_options, category: :parent)
+      .preload(main_image_attachment: :blob)
+      .load
+  end
+
   private
 
   CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO = "seller-mercado-pago-oauth".freeze
