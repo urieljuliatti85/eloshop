@@ -195,6 +195,26 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(response.body).to include("Produzimos sob encomenda às terças.")
     end
 
+    it "applies the chosen palette, font and layout" do
+      approved_seller.update!(theme_palette: "oliva", theme_font: "classica", theme_layout: "ampla")
+      create_product(seller: approved_seller, name: "Peça do tema")
+
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).to include("--atelier-from:#{SellerTheme::PALETTES.dig("oliva", :from)}")
+      expect(response.body).to include("Georgia")
+      expect(response.body).to include("lg:grid-cols-3")
+    end
+
+    it "drops the cover photo with the compact hero" do
+      approved_seller.cover_image.attach(fixture_file_upload("sample.png", "image/png"))
+      approved_seller.update!(theme_hero: "compacto")
+
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).not_to include("object-cover")
+    end
+
     it "renders without theme when the atelier has none" do
       get seller_path(approved_seller.slug)
 

@@ -6,7 +6,9 @@
   <%= tag.script seller_breadcrumb_structured_data(@seller), type: "application/ld+json" %>
 <% end %>
 
-<div class="w-full">
+<%# Tema do ateliê: paleta e fonte viram variáveis CSS (valores do catálogo
+    fechado SellerTheme, nunca texto livre do artesão). %>
+<div class="w-full" style="<%= seller_theme_style(@seller) %>; font-family: var(--atelier-font)">
   <%# Mesmo breadcrumb da PDP: o ateliê é alcançado a partir de um produto, e
       sem ele a página vira um beco — não há como voltar à loja pela própria
       página. %>
@@ -23,24 +25,27 @@
         cantos de 2rem, tipografia pesada — mas fala com quem compra, não com
         quem vende. A capa é a que o ateliê enviou; sem ela, a foto da peça
         mais recente, e sem nenhuma das duas o fundo geométrico (§5). %>
-    <section class="relative isolate overflow-hidden rounded-[2rem] bg-[#7a2410] text-white shadow-sm">
-      <% cover_photo = @seller.cover_image.attached? ? @seller.cover_image.variant(resize_to_limit: [ 1600, 700 ]) : @products.find { |product| product.main_image.attached? }&.main_image %>
+    <section class="relative isolate overflow-hidden rounded-[2rem] bg-[var(--atelier-from)] text-white shadow-sm">
+      <% compact = @seller.theme_hero == "compacto" %>
+      <% cover_photo = compact ? nil : @seller.cover_image.attached? ? @seller.cover_image.variant(resize_to_limit: [ 1600, 700 ]) : @products.find { |product| product.main_image.attached? }&.main_image %>
       <% if cover_photo %>
         <%= image_tag cover_photo, alt: "", loading: "lazy",
               class: "absolute inset-0 -z-20 h-full w-full object-cover" %>
         <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/80 via-black/45 to-black/20"></div>
       <% else %>
         <%# Mesmo fundo geométrico que o painel usa quando ainda não há foto. %>
-        <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,#fbbeb6_0,transparent_27%),radial-gradient(circle_at_75%_72%,#f6604c_0,transparent_28%),linear-gradient(135deg,#7a2410,#df240c)]"></div>
-        <div class="absolute right-[12%] top-[12%] -z-10 size-40 rotate-6 border-[1.25rem] border-white/15 sm:size-64"></div>
+        <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,var(--atelier-soft)_0,transparent_27%),radial-gradient(circle_at_75%_72%,var(--atelier-glow)_0,transparent_28%),linear-gradient(135deg,var(--atelier-from),var(--atelier-to))]"></div>
+        <% unless compact %>
+          <div class="absolute right-[12%] top-[12%] -z-10 size-40 rotate-6 border-[1.25rem] border-white/15 sm:size-64"></div>
+        <% end %>
       <% end %>
 
-      <div class="flex max-w-2xl flex-col justify-end p-7 sm:p-10 lg:p-12">
+      <div class="flex max-w-2xl flex-col justify-end <%= compact ? "p-6 sm:p-8" : "p-7 sm:p-10 lg:p-12" %>">
         <% if @seller.logo.attached? %>
           <%= image_tag @seller.logo.variant(resize_to_fill: [ 160, 160 ]), alt: "Logo do ateliê #{@seller.name}",
                 class: "mb-5 size-20 rounded-full border-2 border-white/60 object-cover sm:size-24" %>
         <% end %>
-        <p class="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[#fde1dd]">Ateliê na EloShop</p>
+        <p class="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[var(--atelier-soft)]">Ateliê na EloShop</p>
         <h1 class="text-4xl font-black leading-[0.98] tracking-tight sm:text-5xl lg:text-6xl"><%= @seller.name %></h1>
         <p class="mt-5 max-w-lg text-sm leading-6 text-white/80 sm:text-base">
           <%= pluralize(@products.size, "peça disponível", plural: "peças disponíveis") %>, <%= @products.any? ? "feitas à mão e prontas para conhecer" : "por enquanto" %>.
@@ -51,16 +56,18 @@
     <section>
       <div class="flex items-end justify-between gap-4">
         <div>
-          <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Catálogo</p>
+          <p class="text-sm font-semibold uppercase tracking-wider text-[var(--atelier-accent)]">Catálogo</p>
           <h2 class="mt-2 text-3xl font-bold text-ink">Peças deste ateliê</h2>
         </div>
         <%= link_to "Ver toda a loja", products_path, class: "hidden text-sm font-semibold text-brand-600 underline underline-offset-4 sm:block" %>
       </div>
 
       <% if @products.any? %>
-        <div class="mt-8 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
-          <% @products.each do |product| %>
-            <%= render "products/product_card", product: product %>
+        <div class="<%= seller_catalog_grid_class(@seller.theme_layout) %>">
+          <% @products.each_with_index do |product, index| %>
+            <div class="<%= seller_catalog_item_class(@seller.theme_layout, index) %>">
+              <%= render "products/product_card", product: product %>
+            </div>
           <% end %>
         </div>
       <% else %>

@@ -21,6 +21,12 @@ class Seller < ApplicationRecord
   THEME_IMAGE_MAX_BYTES = 5.megabytes
   FOOTER_TEXT_MAX_LENGTH = 300
 
+  # Opções visuais (paleta, fonte, layout, topo): chaves de SellerTheme.
+  validates :theme_palette, inclusion: { in: SellerTheme::PALETTES.keys }
+  validates :theme_font, inclusion: { in: SellerTheme::FONTS.keys }
+  validates :theme_layout, inclusion: { in: SellerTheme::LAYOUTS.keys }
+  validates :theme_hero, inclusion: { in: SellerTheme::HEROES.keys }
+
   has_one_attached :logo
   has_one_attached :cover_image
 

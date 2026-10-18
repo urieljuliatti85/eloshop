@@ -1,0 +1,177 @@
+<% content_for :title, "Tema da vitrine | #{current_seller.name}" %>
+
+<%
+  file_class = "mt-2 block w-full rounded-xl border border-dashed border-stone-300 bg-brand-50/30 p-3 text-sm file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-stone-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
+  card_class = "rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8"
+  choice_class = "flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-stone-200 px-3 py-2 text-sm has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-brand-100"
+%>
+
+<div class="max-w-5xl space-y-8"
+     data-controller="theme-preview"
+     data-theme-preview-palettes-value="<%= SellerTheme::PALETTES.to_json %>"
+     data-theme-preview-fonts-value="<%= SellerTheme::FONTS.transform_values { |font| font[:stack] }.to_json %>"
+     data-theme-preview-presets-value="<%= SellerTheme::PRESETS.to_json %>">
+  <header>
+    <h1 class="text-3xl font-black tracking-tight">Tema e visual do ateliê</h1>
+    <p class="mt-2 text-sm text-stone-500">Escolha como a página pública do seu ateliê aparece. A pré-visualização muda na hora; nada vai ao ar até você salvar.</p>
+  </header>
+
+  <%= form_with model: current_seller, url: seller_theme_path, method: :patch, class: "grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]" do |form| %>
+    <div class="space-y-6">
+      <% if current_seller.errors.any? %>
+        <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <ul class="list-inside list-disc">
+            <% current_seller.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <section class="<%= card_class %> space-y-3">
+        <h2 class="text-sm font-semibold text-stone-700">Temas prontos</h2>
+        <p class="text-xs text-stone-500">Um ponto de partida: aplica paleta, fonte, layout e topo de uma vez. Você pode ajustar depois.</p>
+        <div class="flex flex-wrap gap-2">
+          <% SellerTheme::PRESETS.each do |key, preset| %>
+            <button type="button" data-action="theme-preview#applyPreset" data-preset="<%= key %>"
+                    class="min-h-11 cursor-pointer rounded-full border border-stone-300 px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-brand-50">
+              <%= preset[:label] %>
+            </button>
+          <% end %>
+        </div>
+      </section>
+
+      <section class="<%= card_class %> space-y-6">
+        <fieldset>
+          <legend class="text-sm font-semibold text-stone-700">Paleta de cores</legend>
+          <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <% SellerTheme::PALETTES.each do |key, palette| %>
+              <label class="<%= choice_class %>">
+                <%= form.radio_button :theme_palette, key, data: { action: "theme-preview#update", theme_preview_target: "palette" }, class: "sr-only" %>
+                <span class="size-5 shrink-0 rounded-full border border-stone-200" style="background: linear-gradient(135deg, <%= palette[:from] %>, <%= palette[:to] %>)"></span>
+                <%= palette[:label] %>
+              </label>
+            <% end %>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend class="text-sm font-semibold text-stone-700">Fonte</legend>
+          <div class="mt-3 grid gap-2 sm:grid-cols-3">
+            <% SellerTheme::FONTS.each do |key, font| %>
+              <label class="<%= choice_class %>" style="font-family: <%= font[:stack] %>">
+                <%= form.radio_button :theme_font, key, data: { action: "theme-preview#update", theme_preview_target: "font" }, class: "sr-only" %>
+                <%= font[:label] %>
+              </label>
+            <% end %>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend class="text-sm font-semibold text-stone-700">Layout do catálogo</legend>
+          <div class="mt-3 grid gap-2">
+            <% SellerTheme::LAYOUTS.each do |key, label| %>
+              <label class="<%= choice_class %>">
+                <%= form.radio_button :theme_layout, key, data: { action: "theme-preview#update", theme_preview_target: "layout" }, class: "sr-only" %>
+                <%= label %>
+              </label>
+            <% end %>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend class="text-sm font-semibold text-stone-700">Topo da vitrine</legend>
+          <div class="mt-3 grid gap-2">
+            <% SellerTheme::HEROES.each do |key, label| %>
+              <label class="<%= choice_class %>">
+                <%= form.radio_button :theme_hero, key, data: { action: "theme-preview#update", theme_preview_target: "hero" }, class: "sr-only" %>
+                <%= label %>
+              </label>
+            <% end %>
+          </div>
+        </fieldset>
+      </section>
+
+      <%# Só mostra o que já foi gravado (um envio recusado volta anexado, mas
+          sem blob). Remover é um checkbox porque um campo de arquivo vazio não
+          diz se o vendedor quer manter ou apagar a imagem atual. %>
+      <section class="<%= card_class %> space-y-5">
+        <h2 class="text-sm font-semibold text-stone-700">Logo, capa e rodapé</h2>
+        <p class="-mt-3 text-xs text-stone-500">PNG, JPEG ou WEBP, até 5 MB. Sem capa, a vitrine usa a foto da peça mais recente.</p>
+
+        <div>
+          <%= form.label :logo, "Logo", class: "seller-label" %>
+          <% if current_seller.logo.attached? && current_seller.logo.blob.persisted? %>
+            <div class="mt-2 flex items-center gap-4">
+              <%= image_tag current_seller.logo.variant(resize_to_fill: [ 96, 96 ]), alt: "Logo atual do ateliê", class: "size-16 rounded-full border border-stone-200 object-cover" %>
+              <label class="flex items-center gap-2 text-sm text-stone-600">
+                <%= check_box_tag :remove_logo, "1", false, class: "size-4" %> Remover logo
+              </label>
+            </div>
+          <% end %>
+          <%= form.file_field :logo, accept: "image/png,image/jpeg,image/webp", class: file_class %>
+          <p class="mt-1 text-xs text-stone-500">Imagem quadrada funciona melhor.</p>
+        </div>
+
+        <div>
+          <%= form.label :cover_image, "Capa (topo da vitrine)", class: "seller-label" %>
+          <% if current_seller.cover_image.attached? && current_seller.cover_image.blob.persisted? %>
+            <div class="mt-2 space-y-2">
+              <%= image_tag current_seller.cover_image.variant(resize_to_fill: [ 640, 240 ]), alt: "Capa atual do ateliê", class: "h-24 w-full max-w-sm rounded-xl border border-stone-200 object-cover" %>
+              <label class="flex items-center gap-2 text-sm text-stone-600">
+                <%= check_box_tag :remove_cover_image, "1", false, class: "size-4" %> Remover capa
+              </label>
+            </div>
+          <% end %>
+          <%= form.file_field :cover_image, accept: "image/png,image/jpeg,image/webp", class: file_class %>
+          <p class="mt-1 text-xs text-stone-500">Imagem larga (paisagem). Usada só no topo "Com capa".</p>
+        </div>
+
+        <div>
+          <%= form.label :footer_text, "Mensagem do rodapé", class: "seller-label" %>
+          <%= form.text_area :footer_text, rows: 3, maxlength: Seller::FOOTER_TEXT_MAX_LENGTH,
+                data: { action: "input->theme-preview#update", theme_preview_target: "footerInput" }, class: "seller-input" %>
+          <p class="mt-1 text-xs text-stone-500">Aparece no fim da sua vitrine. Até <%= Seller::FOOTER_TEXT_MAX_LENGTH %> caracteres.</p>
+        </div>
+      </section>
+
+      <div class="flex gap-3">
+        <%= form.submit "Salvar tema", class: "cursor-pointer rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700" %>
+        <%= link_to "Ver minha vitrine", seller_path(current_seller.slug), target: "_blank", rel: "noopener", class: "rounded-full border border-brand-200 px-6 py-3 text-sm font-bold text-stone-700 transition hover:bg-brand-50" %>
+      </div>
+    </div>
+
+    <%# Pré-visualização: uma maquete estática da vitrine, atualizada pelo
+        Stimulus a cada escolha. Não consulta o servidor. %>
+    <aside class="lg:sticky lg:top-6 lg:self-start" aria-label="Pré-visualização da vitrine">
+      <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-stone-500">Pré-visualização</p>
+      <div data-theme-preview-target="stage" class="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white p-3"
+           style="<%= seller_theme_style(current_seller) %>; font-family: var(--atelier-font)">
+        <div class="relative overflow-hidden rounded-2xl p-4 text-white"
+             style="background: radial-gradient(circle at 75% 25%, var(--atelier-soft) 0, transparent 27%), radial-gradient(circle at 75% 72%, var(--atelier-glow) 0, transparent 28%), linear-gradient(135deg, var(--atelier-from), var(--atelier-to))">
+          <% if current_seller.cover_image.attached? && current_seller.cover_image.blob.persisted? %>
+            <%= image_tag current_seller.cover_image.variant(resize_to_limit: [ 640, 280 ]), alt: "", data: { theme_preview_target: "cover" },
+                  class: "absolute inset-0 h-full w-full object-cover" %>
+            <div data-theme-preview-target="cover" class="absolute inset-0 bg-black/55"></div>
+          <% end %>
+          <div class="relative">
+            <% if current_seller.logo.attached? && current_seller.logo.blob.persisted? %>
+              <%= image_tag current_seller.logo.variant(resize_to_fill: [ 64, 64 ]), alt: "", class: "mb-2 size-10 rounded-full border-2 border-white/60 object-cover" %>
+            <% end %>
+            <p class="text-[0.6rem] font-bold uppercase tracking-[0.2em]" style="color: var(--atelier-soft)">Ateliê na EloShop</p>
+            <p class="mt-1 text-xl font-black leading-tight"><%= current_seller.name %></p>
+          </div>
+        </div>
+
+        <p class="mt-4 text-[0.6rem] font-semibold uppercase tracking-wider" style="color: var(--atelier-accent)">Catálogo</p>
+        <div data-theme-preview-target="grid" class="mt-2 grid gap-2">
+          <% 4.times do %>
+            <div data-theme-preview-target="tile" class="aspect-square rounded-lg bg-stone-100"></div>
+          <% end %>
+        </div>
+
+        <p data-theme-preview-target="footerPreview" class="mt-4 whitespace-pre-line border-t border-stone-200 pt-3 text-xs text-stone-500"></p>
+      </div>
+    </aside>
+  <% end %>
+</div>
