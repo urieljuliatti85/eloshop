@@ -5,13 +5,19 @@ import { Controller } from "@hotwired/stimulus"
 // `/painel/atelie/tema/preview`, que renderiza a página real em memória (nada
 // é gravado). Arquivos não vão no rascunho: o preview mostra os já salvos.
 export default class extends Controller {
-  static targets = ["form", "tab", "panel", "stage", "frame", "viewport", "status", "device", "dirty", "useCustomColor", "customColor", "contrastHint"]
+  static targets = ["form", "tab", "panel", "stage", "frame", "viewport", "status", "device", "dirty", "closeButton", "useCustomColor", "customColor", "contrastHint"]
   static values = { previewUrl: String, presets: Object, minContrast: Number, initialTab: String }
   static classes = ["open"]
 
   connect() {
     this.device = "phone"
     this.timer = null
+    this.dirty = false
+    this.leaving = false
+    this.keydown = (event) => { if (event.key === "Escape" && this.sheetOpen) this.closePreview() }
+    this.beforeUnload = (event) => { if (this.dirty && !this.leaving) event.preventDefault() }
+    document.addEventListener("keydown", this.keydown)
+    window.addEventListener("beforeunload", this.beforeUnload)
     this.resize = () => this.fit()
     window.addEventListener("resize", this.resize)
     this.frameTarget.addEventListener("load", () => this.loaded())
@@ -22,15 +28,30 @@ export default class extends Controller {
 
   disconnect() {
     window.removeEventListener("resize", this.resize)
+    window.removeEventListener("beforeunload", this.beforeUnload)
+    document.removeEventListener("keydown", this.keydown)
+    document.body.classList.remove("overflow-hidden")
     clearTimeout(this.timer)
   }
 
   // --- formulário -------------------------------------------------------
 
   changed() {
+    this.dirty = true
     this.dirtyTarget.hidden = false
     this.syncColor()
     this.schedule()
+  }
+
+  // Salvar não é "sair sem salvar": o aviso do navegador não deve aparecer.
+  submitted() {
+    this.leaving = true
+  }
+
+  // Descartar apaga o rascunho; com alterações pendentes, confirma antes.
+  discard(event) {
+    if (this.dirty && !window.confirm("Descartar as alterações não salvas?")) event.preventDefault()
+    else this.leaving = true
   }
 
   applyPreset(event) {
@@ -53,14 +74,18 @@ export default class extends Controller {
   }
 
   moveUp(event) {
-    const item = event.currentTarget.closest("li")
+    const button = event.currentTarget
+    const item = button.closest("li")
     if (item.previousElementSibling) item.previousElementSibling.before(item)
+    button.focus()
     this.changed()
   }
 
   moveDown(event) {
-    const item = event.currentTarget.closest("li")
+    const button = event.currentTarget
+    const item = button.closest("li")
     if (item.nextElementSibling) item.nextElementSibling.after(item)
+    button.focus()
     this.changed()
   }
 
@@ -101,18 +126,27 @@ export default class extends Controller {
       tab.tabIndex = selected ? 0 : -1
       if (selected && focus) tab.focus()
       // A faixa de abas rola no celular: a aba escolhida precisa ficar à vista.
-      if (selected) tab.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" })
+      if (selected) tab.scrollIntoView({ inline: "center", block: "nearest", behavior: this.reducedMotion ? "auto" : "smooth" })
     })
     this.panelTargets.forEach((panel) => { panel.hidden = panel.dataset.key !== key })
   }
 
+  get reducedMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  }
+
   tabKey(event) {
-    const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key]
-    if (!step) return
-    event.preventDefault()
+    const last = this.tabTargets.length - 1
     const index = this.tabTargets.indexOf(event.currentTarget)
-    const next = this.tabTargets[(index + step + this.tabTargets.length) % this.tabTargets.length]
-    this.showTab(next.dataset.key, true)
+    const target = {
+      ArrowRight: index === last ? 0 : index + 1,
+      ArrowLeft: index === 0 ? last : index - 1,
+      Home: 0,
+      End: last
+    }[event.key]
+    if (target === undefined) return
+    event.preventDefault()
+    this.showTab(this.tabTargets[target].dataset.key, true)
   }
 
   // --- preview ----------------------------------------------------------
@@ -162,17 +196,28 @@ export default class extends Controller {
     frame.left = `${Math.max(0, (width - logical * scale) / 2)}px`
   }
 
-  openPreview() {
+  // No celular o preview é uma folha em tela cheia: vira diálogo (foco entra
+  // em "Fechar", Esc fecha, e o foco volta ao botão que a abriu).
+  openPreview(event) {
+    this.opener = event.currentTarget
+    this.sheetOpen = true
     this.stageTarget.classList.remove("hidden")
     this.stageTarget.classList.add(...this.openClasses)
+    this.stageTarget.setAttribute("role", "dialog")
+    this.stageTarget.setAttribute("aria-modal", "true")
     document.body.classList.add("overflow-hidden")
     this.refresh()
+    this.closeButtonTarget.focus()
     requestAnimationFrame(() => this.fit())
   }
 
   closePreview() {
+    this.sheetOpen = false
     this.stageTarget.classList.remove(...this.openClasses)
     this.stageTarget.classList.add("hidden")
+    this.stageTarget.removeAttribute("role")
+    this.stageTarget.removeAttribute("aria-modal")
     document.body.classList.remove("overflow-hidden")
+    this.opener?.focus()
   }
 }
