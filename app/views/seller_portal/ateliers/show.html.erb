@@ -87,7 +87,7 @@
           <% unless current_seller.logo.attached? || current_seller.cover_image.attached? %>
             <p class="text-sm text-stone-500">Sem logo nem capa: a vitrine usa a foto da sua peça mais recente.</p>
           <% end %>
-          <%= link_to "Personalizar vitrine", edit_seller_atelier_path, class: "inline-flex min-h-11 items-center text-sm font-medium text-brand-600 underline underline-offset-4 hover:text-brand-700" %>
+          <%= link_to "Personalizar vitrine", edit_seller_theme_path, class: "inline-flex min-h-11 items-center text-sm font-medium text-brand-600 underline underline-offset-4 hover:text-brand-700" %>
         </dd>
       </div>
 

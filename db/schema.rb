@@ -10,29 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.bigint "record_id", null: false
-    t.string "record_type", null: false
     t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
     t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
   end
 
   create_table "active_storage_blobs", force: :cascade do |t|
-    t.bigint "byte_size", null: false
-    t.string "checksum"
-    t.string "content_type"
-    t.datetime "created_at", null: false
-    t.string "filename", null: false
     t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
     t.text "metadata"
     t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
     t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
   end
 
@@ -43,28 +43,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "addresses", force: :cascade do |t|
-    t.string "city"
-    t.string "complement"
-    t.datetime "created_at", null: false
     t.bigint "customer_id", null: false
-    t.string "neighborhood"
-    t.string "number"
-    t.string "state"
     t.string "street"
-    t.datetime "updated_at", null: false
+    t.string "number"
+    t.string "complement"
+    t.string "neighborhood"
+    t.string "city"
+    t.string "state"
     t.string "zip_code"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["customer_id"], name: "index_addresses_on_customer_id"
   end
 
   create_table "cart_items", force: :cascade do |t|
     t.bigint "cart_id", null: false
-    t.datetime "created_at", null: false
-    t.string "personalization_digest", default: "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945", null: false
-    t.jsonb "personalizations", default: [], null: false
     t.bigint "product_id", null: false
-    t.bigint "product_variant_id"
     t.integer "quantity", default: 1, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "product_variant_id"
+    t.jsonb "personalizations", default: [], null: false
+    t.string "personalization_digest", default: "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945", null: false
     t.index "cart_id, product_id, COALESCE(product_variant_id, (0)::bigint), personalization_digest", name: "index_cart_items_on_cart_product_variant_and_personalization", unique: true
     t.index ["cart_id"], name: "index_cart_items_on_cart_id"
     t.index ["product_id"], name: "index_cart_items_on_product_id"
@@ -72,69 +72,69 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "carts", force: :cascade do |t|
-    t.bigint "coupon_id"
-    t.datetime "created_at", null: false
-    t.bigint "customer_id"
     t.string "session_token", null: false
+    t.bigint "customer_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "coupon_id"
     t.index ["coupon_id"], name: "index_carts_on_coupon_id"
     t.index ["customer_id"], name: "index_carts_on_customer_id"
     t.index ["session_token"], name: "index_carts_on_session_token", unique: true
   end
 
   create_table "categories", force: :cascade do |t|
-    t.boolean "active", default: true, null: false
-    t.datetime "created_at", null: false
     t.string "name", null: false
-    t.bigint "parent_id"
     t.string "slug", null: false
+    t.bigint "parent_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "active", default: true, null: false
     t.index ["parent_id", "name"], name: "index_categories_on_parent_id_and_name", unique: true
     t.index ["parent_id"], name: "index_categories_on_parent_id"
     t.index ["slug"], name: "index_categories_on_slug", unique: true
   end
 
   create_table "coupons", force: :cascade do |t|
-    t.boolean "active", default: true, null: false
-    t.integer "amount_cents"
     t.string "code", null: false
-    t.datetime "created_at", null: false
     t.string "discount_type", null: false
-    t.datetime "expires_at"
-    t.integer "max_uses"
-    t.integer "minimum_subtotal_cents"
     t.integer "percentage"
-    t.datetime "starts_at"
-    t.datetime "updated_at", null: false
+    t.integer "amount_cents"
+    t.integer "minimum_subtotal_cents"
+    t.integer "max_uses"
     t.integer "uses_count", default: 0, null: false
+    t.datetime "starts_at"
+    t.datetime "expires_at"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["code"], name: "index_coupons_on_code", unique: true
   end
 
   create_table "customer_sessions", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "customer_id", null: false
     t.string "ip_address"
-    t.datetime "updated_at", null: false
     t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["customer_id"], name: "index_customer_sessions_on_customer_id"
   end
 
   create_table "customers", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "email", null: false
     t.string "name", null: false
+    t.string "email", null: false
     t.string "password_digest", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_customers_on_email", unique: true
   end
 
   create_table "fraud_alerts", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "seller_id", null: false
+    t.string "rule", null: false
     t.jsonb "detail", default: {}, null: false
     t.datetime "detected_at", null: false
     t.datetime "resolved_at"
-    t.string "rule", null: false
-    t.bigint "seller_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["resolved_at"], name: "index_fraud_alerts_on_resolved_at"
     t.index ["seller_id", "rule"], name: "index_fraud_alerts_one_open_per_seller_rule", unique: true, where: "(resolved_at IS NULL)"
@@ -142,13 +142,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "funnel_events", force: :cascade do |t|
-    t.integer "amount_cents", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.integer "event_count", default: 0, null: false
     t.string "event_name", null: false
     t.date "occurred_on", null: false
     t.bigint "product_id"
     t.bigint "seller_id"
+    t.integer "event_count", default: 0, null: false
+    t.integer "amount_cents", default: 0, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["event_name", "occurred_on", "product_id", "seller_id"], name: "index_funnel_events_on_dimensions", unique: true, nulls_not_distinct: true
     t.index ["occurred_on", "event_name"], name: "index_funnel_events_on_occurred_on_and_event_name"
@@ -157,9 +157,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "materials", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "name", null: false
     t.string "slug", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index "lower((name)::text)", name: "index_materials_on_lower_name", unique: true
     t.index ["slug"], name: "index_materials_on_slug", unique: true
@@ -167,60 +167,60 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
 
   create_table "mercado_pago_test_accounts", force: :cascade do |t|
     t.string "account_type", null: false
-    t.datetime "created_at", null: false
-    t.string "email"
     t.string "label", null: false
+    t.string "email"
     t.string "mercado_pago_user_id"
-    t.text "password_ciphertext"
-    t.datetime "updated_at", null: false
     t.string "username"
+    t.text "password_ciphertext"
     t.string "verification_code"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["account_type"], name: "index_mercado_pago_test_accounts_on_account_type"
   end
 
   create_table "notifications", force: :cascade do |t|
-    t.text "body", null: false
-    t.datetime "created_at", null: false
-    t.string "kind", null: false
-    t.datetime "read_at"
-    t.bigint "recipient_id", null: false
     t.string "recipient_type", null: false
+    t.bigint "recipient_id", null: false
+    t.string "kind", null: false
     t.string "title", null: false
-    t.datetime "updated_at", null: false
+    t.text "body", null: false
     t.string "url"
+    t.datetime "read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["recipient_type", "recipient_id", "read_at"], name: "idx_on_recipient_type_recipient_id_read_at_50191a301d"
   end
 
   create_table "order_events", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "order_id", null: false
+    t.string "kind", null: false
+    t.string "status"
     t.string "error_class"
     t.text "error_message"
-    t.string "kind", null: false
     t.jsonb "metadata", default: {}, null: false
-    t.bigint "order_id", null: false
-    t.string "status"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["order_id", "created_at"], name: "index_order_events_on_order_id_and_created_at"
     t.index ["order_id"], name: "index_order_events_on_order_id"
   end
 
   create_table "order_items", force: :cascade do |t|
-    t.string "color_snapshot"
-    t.datetime "created_at", null: false
-    t.string "material_snapshot"
     t.bigint "order_id", null: false
-    t.jsonb "personalizations", default: [], null: false
     t.bigint "product_id", null: false
     t.string "product_name", null: false
-    t.bigint "product_variant_id"
-    t.string "production_time_snapshot"
-    t.integer "quantity", null: false
-    t.bigint "seller_order_id", null: false
-    t.string "size_snapshot"
     t.string "sku", null: false
     t.integer "unit_price_cents", null: false
+    t.integer "quantity", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "production_time_snapshot"
+    t.bigint "product_variant_id"
     t.string "variant_sku"
+    t.string "size_snapshot"
+    t.string "color_snapshot"
+    t.string "material_snapshot"
+    t.jsonb "personalizations", default: [], null: false
+    t.bigint "seller_order_id", null: false
     t.index ["order_id"], name: "index_order_items_on_order_id"
     t.index ["product_id"], name: "index_order_items_on_product_id"
     t.index ["product_variant_id"], name: "index_order_items_on_product_variant_id"
@@ -228,11 +228,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "order_messages", force: :cascade do |t|
+    t.bigint "seller_order_id", null: false
+    t.string "sender_type", null: false
+    t.bigint "sender_id", null: false
     t.text "body", null: false
     t.datetime "created_at", null: false
-    t.bigint "seller_order_id", null: false
-    t.bigint "sender_id", null: false
-    t.string "sender_type", null: false
     t.datetime "updated_at", null: false
     t.index ["seller_order_id", "created_at", "id"], name: "index_order_messages_on_conversation_order"
     t.index ["seller_order_id"], name: "index_order_messages_on_seller_order_id"
@@ -242,41 +242,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "orders", force: :cascade do |t|
-    t.bigint "coupon_id"
-    t.datetime "created_at", null: false
     t.bigint "customer_id", null: false
-    t.integer "discount_cents", default: 0, null: false
-    t.string "idempotency_key", null: false
-    t.jsonb "shipping_address_snapshot", null: false
-    t.integer "shipping_cents", null: false
     t.string "status", default: "pending", null: false
     t.integer "subtotal_cents", null: false
+    t.integer "shipping_cents", null: false
     t.integer "total_cents", null: false
+    t.jsonb "shipping_address_snapshot", null: false
+    t.string "idempotency_key", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "coupon_id"
+    t.integer "discount_cents", default: 0, null: false
     t.index ["coupon_id"], name: "index_orders_on_coupon_id"
     t.index ["customer_id"], name: "index_orders_on_customer_id"
     t.index ["idempotency_key"], name: "index_orders_on_idempotency_key", unique: true
   end
 
   create_table "payment_events", force: :cascade do |t|
-    t.datetime "created_at", null: false
+    t.bigint "payment_id", null: false
     t.string "gateway_event_id", null: false
     t.jsonb "payload"
-    t.bigint "payment_id", null: false
     t.datetime "processed_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["gateway_event_id"], name: "index_payment_events_on_gateway_event_id", unique: true
     t.index ["payment_id"], name: "index_payment_events_on_payment_id"
   end
 
   create_table "payment_refunds", force: :cascade do |t|
+    t.bigint "payment_id", null: false
+    t.string "external_id"
+    t.string "idempotency_key", null: false
+    t.string "status", default: "processing", null: false
     t.integer "amount_cents", null: false
     t.integer "application_fee_amount_cents", null: false
     t.datetime "created_at", null: false
-    t.string "external_id"
-    t.string "idempotency_key", null: false
-    t.bigint "payment_id", null: false
-    t.string "status", default: "processing", null: false
     t.datetime "updated_at", null: false
     t.index ["idempotency_key"], name: "index_payment_refunds_on_idempotency_key", unique: true
     t.index ["payment_id"], name: "index_payment_refunds_on_payment_id"
@@ -286,25 +286,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "payments", force: :cascade do |t|
-    t.integer "amount_cents", null: false
-    t.integer "application_fee_cents", default: 0, null: false
-    t.integer "application_fee_refunded_cents", default: 0, null: false
-    t.string "card_brand"
-    t.string "card_last_four"
-    t.datetime "created_at", null: false
-    t.datetime "expires_at"
-    t.string "external_id"
-    t.string "gateway", null: false
-    t.string "idempotency_key", null: false
-    t.integer "installments", default: 1, null: false
     t.bigint "order_id", null: false
-    t.string "payment_method", default: "pix", null: false
+    t.string "gateway", null: false
+    t.string "external_id"
+    t.string "status", default: "pending", null: false
+    t.integer "amount_cents", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.text "pix_qr_code"
     t.text "pix_qr_code_base64"
+    t.datetime "expires_at"
+    t.string "idempotency_key", null: false
+    t.integer "application_fee_cents", default: 0, null: false
     t.integer "processor_fee_cents"
     t.integer "refunded_amount_cents", default: 0, null: false
-    t.string "status", default: "pending", null: false
-    t.datetime "updated_at", null: false
+    t.integer "application_fee_refunded_cents", default: 0, null: false
+    t.string "payment_method", default: "pix", null: false
+    t.integer "installments", default: 1, null: false
+    t.string "card_last_four"
+    t.string "card_brand"
     t.index ["idempotency_key"], name: "index_payments_on_idempotency_key", unique: true
     t.index ["order_id"], name: "index_payments_on_order_id"
     t.check_constraint "application_fee_cents >= 0 AND application_fee_cents <= amount_cents", name: "payments_application_fee_check"
@@ -316,11 +316,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "personalization_options", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "label", null: false
-    t.integer "max_length", default: 100, null: false
     t.bigint "product_id", null: false
+    t.string "label", null: false
     t.boolean "required", default: false, null: false
+    t.integer "max_length", default: 100, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["product_id", "label"], name: "index_personalization_options_on_product_id_and_label", unique: true
     t.index ["product_id"], name: "index_personalization_options_on_product_id"
@@ -328,9 +328,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "product_materials", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "material_id", null: false
     t.bigint "product_id", null: false
+    t.bigint "material_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["material_id"], name: "index_product_materials_on_material_id"
     t.index ["product_id", "material_id"], name: "index_product_materials_on_product_id_and_material_id", unique: true
@@ -338,9 +338,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "product_tags", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "product_id", null: false
     t.bigint "tag_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["product_id", "tag_id"], name: "index_product_tags_on_product_id_and_tag_id", unique: true
     t.index ["product_id"], name: "index_product_tags_on_product_id"
@@ -348,9 +348,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "product_techniques", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "product_id", null: false
     t.bigint "technique_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["product_id", "technique_id"], name: "index_product_techniques_on_product_id_and_technique_id", unique: true
     t.index ["product_id"], name: "index_product_techniques_on_product_id"
@@ -358,15 +358,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "product_variants", force: :cascade do |t|
-    t.boolean "active", default: true, null: false
-    t.string "color"
-    t.datetime "created_at", null: false
-    t.string "material"
-    t.integer "price_cents", null: false
     t.bigint "product_id", null: false
-    t.string "size"
     t.string "sku", null: false
+    t.integer "price_cents", null: false
     t.integer "stock_quantity", default: 0, null: false
+    t.string "size"
+    t.string "color"
+    t.string "material"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index "product_id, COALESCE(size, ''::character varying), COALESCE(color, ''::character varying), COALESCE(material, ''::character varying)", name: "index_product_variants_on_product_and_combination", unique: true
     t.index ["product_id"], name: "index_product_variants_on_product_id"
@@ -376,29 +376,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "products", force: :cascade do |t|
-    t.string "availability_type", default: "standard", null: false
-    t.bigint "category_id"
-    t.datetime "created_at", null: false
-    t.string "currency", default: "BRL", null: false
+    t.string "name", null: false
+    t.string "slug", null: false
     t.text "description"
+    t.integer "price_cents", null: false
+    t.string "currency", default: "BRL", null: false
+    t.string "sku", null: false
+    t.integer "stock_quantity", default: 0, null: false
+    t.string "status", default: "draft", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "availability_type", default: "standard", null: false
+    t.integer "production_time_min_days"
+    t.integer "production_time_max_days"
+    t.bigint "category_id"
+    t.integer "weight_grams"
+    t.integer "length_cm"
+    t.integer "width_cm"
+    t.integer "height_cm"
+    t.bigint "seller_id", null: false
     t.integer "fixed_shipping_cents"
     t.integer "fixed_shipping_estimated_days"
-    t.boolean "free_shipping", default: false, null: false
-    t.integer "height_cm"
-    t.integer "length_cm"
     t.boolean "local_pickup_enabled", default: false, null: false
-    t.string "name", null: false
-    t.integer "price_cents", null: false
-    t.integer "production_time_max_days"
-    t.integer "production_time_min_days"
-    t.bigint "seller_id", null: false
-    t.string "sku", null: false
-    t.string "slug", null: false
-    t.string "status", default: "draft", null: false
-    t.integer "stock_quantity", default: 0, null: false
-    t.datetime "updated_at", null: false
-    t.integer "weight_grams"
-    t.integer "width_cm"
+    t.boolean "free_shipping", default: false, null: false
     t.index ["availability_type"], name: "index_products_on_availability_type"
     t.index ["category_id"], name: "index_products_on_category_id"
     t.index ["seller_id", "sku"], name: "index_products_on_seller_id_and_sku", unique: true
@@ -412,16 +412,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "reviews", force: :cascade do |t|
-    t.text "comment", null: false
-    t.datetime "created_at", null: false
     t.bigint "customer_id", null: false
     t.bigint "product_id", null: false
     t.integer "rating", null: false
-    t.datetime "seller_replied_at"
-    t.text "seller_reply"
+    t.text "comment", null: false
     t.string "status", default: "pending", null: false
-    t.datetime "updated_at", null: false
     t.boolean "verified_purchase", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "seller_reply"
+    t.datetime "seller_replied_at"
     t.index ["customer_id", "product_id"], name: "index_reviews_on_customer_id_and_product_id", unique: true
     t.index ["customer_id"], name: "index_reviews_on_customer_id"
     t.index ["product_id"], name: "index_reviews_on_product_id"
@@ -430,22 +430,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "seller_orders", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "currency", default: "BRL", null: false
-    t.integer "discount_cents", default: 0, null: false
     t.bigint "order_id", null: false
-    t.integer "platform_fee_cents", null: false
-    t.integer "platform_fee_rate_bps", default: 1500, null: false
-    t.integer "platform_fee_refunded_cents", default: 0, null: false
-    t.datetime "production_started_at"
-    t.integer "refunded_amount_cents", default: 0, null: false
-    t.integer "seller_amount_cents", null: false
     t.bigint "seller_id", null: false
-    t.integer "shipping_cents", null: false
     t.string "status", default: "pending", null: false
+    t.string "currency", default: "BRL", null: false
     t.integer "subtotal_cents", null: false
+    t.integer "discount_cents", default: 0, null: false
+    t.integer "shipping_cents", null: false
     t.integer "total_cents", null: false
+    t.integer "platform_fee_rate_bps", default: 1500, null: false
+    t.integer "platform_fee_cents", null: false
+    t.integer "seller_amount_cents", null: false
+    t.integer "refunded_amount_cents", default: 0, null: false
+    t.integer "platform_fee_refunded_cents", default: 0, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "production_started_at"
     t.index ["order_id", "seller_id"], name: "index_seller_orders_on_order_id_and_seller_id", unique: true
     t.index ["order_id"], name: "index_seller_orders_on_order_id"
     t.index ["seller_id"], name: "index_seller_orders_on_seller_id"
@@ -462,12 +462,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "seller_reports", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.bigint "customer_id", null: false
-    t.text "details"
-    t.string "reason", null: false
     t.bigint "seller_id", null: false
+    t.string "reason", null: false
+    t.text "details"
     t.string "status", default: "pending", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["customer_id", "seller_id"], name: "index_seller_reports_on_customer_id_and_seller_id", unique: true
     t.index ["customer_id"], name: "index_seller_reports_on_customer_id"
@@ -476,54 +476,58 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "seller_terms_acceptances", force: :cascade do |t|
-    t.datetime "accepted_at", null: false
-    t.datetime "created_at", null: false
-    t.string "ip_address", null: false
-    t.bigint "seller_id", null: false
-    t.string "terms_digest", null: false
-    t.text "terms_text", null: false
-    t.string "terms_version", null: false
-    t.datetime "updated_at", null: false
-    t.text "user_agent"
     t.bigint "user_id", null: false
+    t.bigint "seller_id", null: false
+    t.string "terms_version", null: false
+    t.text "terms_text", null: false
+    t.string "terms_digest", null: false
+    t.datetime "accepted_at", null: false
+    t.string "ip_address", null: false
+    t.text "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["seller_id"], name: "index_seller_terms_acceptances_on_seller_id"
     t.index ["user_id", "terms_version"], name: "index_seller_terms_acceptances_on_user_id_and_terms_version", unique: true
   end
 
   create_table "sellers", force: :cascade do |t|
-    t.datetime "approved_at"
-    t.text "cpf_ciphertext"
-    t.string "cpf_hash"
-    t.datetime "created_at", null: false
-    t.string "footer_text", limit: 300
-    t.datetime "hidden_at"
-    t.text "melhor_envio_access_token_ciphertext"
-    t.datetime "melhor_envio_connected_at"
-    t.text "melhor_envio_refresh_token_ciphertext"
-    t.boolean "melhor_envio_sandbox", default: false, null: false
-    t.datetime "melhor_envio_token_expires_at"
-    t.text "mercado_pago_access_token_ciphertext"
-    t.datetime "mercado_pago_connected_at"
-    t.boolean "mercado_pago_live_mode", default: false, null: false
-    t.string "mercado_pago_public_key"
-    t.text "mercado_pago_refresh_token_ciphertext"
-    t.boolean "mercado_pago_test_account"
-    t.datetime "mercado_pago_token_expires_at"
-    t.string "mercado_pago_user_id"
     t.string "name", null: false
-    t.string "origin_city"
-    t.string "origin_complement"
-    t.string "origin_neighborhood"
-    t.string "origin_number"
-    t.string "origin_state"
-    t.string "origin_street"
-    t.string "origin_zip_code"
-    t.string "owner_full_name"
-    t.datetime "pix_key_confirmed_at"
     t.string "slug", null: false
     t.string "status", default: "pending", null: false
-    t.datetime "tour_completed_at"
+    t.datetime "approved_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "mercado_pago_user_id"
+    t.text "mercado_pago_access_token_ciphertext"
+    t.text "mercado_pago_refresh_token_ciphertext"
+    t.datetime "mercado_pago_token_expires_at"
+    t.datetime "mercado_pago_connected_at"
+    t.boolean "mercado_pago_live_mode", default: false, null: false
+    t.string "origin_zip_code"
+    t.string "origin_street"
+    t.string "origin_number"
+    t.string "origin_complement"
+    t.string "origin_neighborhood"
+    t.string "origin_city"
+    t.string "origin_state"
+    t.boolean "mercado_pago_test_account"
+    t.string "mercado_pago_public_key"
+    t.text "melhor_envio_access_token_ciphertext"
+    t.text "melhor_envio_refresh_token_ciphertext"
+    t.datetime "melhor_envio_token_expires_at"
+    t.datetime "melhor_envio_connected_at"
+    t.boolean "melhor_envio_sandbox", default: false, null: false
+    t.string "owner_full_name"
+    t.text "cpf_ciphertext"
+    t.string "cpf_hash"
+    t.datetime "hidden_at"
+    t.datetime "tour_completed_at"
+    t.datetime "pix_key_confirmed_at"
+    t.string "footer_text", limit: 300
+    t.string "theme_palette", default: "terracota", null: false
+    t.string "theme_font", default: "moderna", null: false
+    t.string "theme_layout", default: "grade", null: false
+    t.string "theme_hero", default: "capa", null: false
     t.index ["cpf_hash"], name: "index_sellers_on_cpf_hash", unique: true, where: "(cpf_hash IS NOT NULL)"
     t.index ["mercado_pago_user_id"], name: "index_sellers_on_mercado_pago_user_id", unique: true, where: "(mercado_pago_user_id IS NOT NULL)"
     t.index ["slug"], name: "index_sellers_on_slug", unique: true
@@ -531,80 +535,80 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_120000) do
   end
 
   create_table "sessions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "ip_address"
-    t.datetime "updated_at", null: false
-    t.string "user_agent"
     t.bigint "user_id", null: false
+    t.string "ip_address"
+    t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
   create_table "shipments", force: :cascade do |t|
     t.string "carrier", null: false
-    t.datetime "created_at", null: false
-    t.datetime "customer_reported_delivered_at"
-    t.datetime "delivered_at"
-    t.integer "estimated_days", null: false
-    t.bigint "seller_order_id", null: false
     t.string "service", null: false
-    t.datetime "shipped_at"
-    t.integer "shipping_cents", null: false
     t.string "status", default: "pending", null: false
     t.string "tracking_code"
+    t.integer "shipping_cents", null: false
+    t.integer "estimated_days", null: false
+    t.datetime "shipped_at"
+    t.datetime "delivered_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "seller_order_id", null: false
+    t.datetime "customer_reported_delivered_at"
     t.index ["seller_order_id"], name: "index_shipments_on_seller_order_id"
     t.index ["tracking_code"], name: "index_shipments_on_tracking_code", unique: true
   end
 
   create_table "tags", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "name", null: false
     t.string "slug", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index "lower((name)::text)", name: "index_tags_on_lower_name", unique: true
     t.index ["slug"], name: "index_tags_on_slug", unique: true
   end
 
   create_table "techniques", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "name", null: false
     t.string "slug", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index "lower((name)::text)", name: "index_techniques_on_lower_name", unique: true
     t.index ["slug"], name: "index_techniques_on_slug", unique: true
   end
 
   create_table "users", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "email_address", null: false
     t.string "password_digest", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.string "role", default: "admin", null: false
     t.bigint "seller_id"
-    t.datetime "updated_at", null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
     t.index ["seller_id"], name: "index_users_on_seller_id"
     t.check_constraint "role::text = 'admin'::text AND seller_id IS NULL OR role::text = 'seller'::text AND seller_id IS NOT NULL", name: "users_role_seller_check"
   end
 
-  create_table "wishlist_items", force: :cascade do |t|
+  create_table "versions", force: :cascade do |t|
+    t.string "item_type", null: false
+    t.bigint "item_id", null: false
+    t.string "event", null: false
+    t.string "whodunnit"
+    t.jsonb "object_changes"
     t.datetime "created_at", null: false
+    t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
+    t.index ["whodunnit"], name: "index_versions_on_whodunnit"
+  end
+
+  create_table "wishlist_items", force: :cascade do |t|
     t.bigint "customer_id", null: false
     t.bigint "product_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["customer_id", "product_id"], name: "index_wishlist_items_on_customer_id_and_product_id", unique: true
     t.index ["customer_id"], name: "index_wishlist_items_on_customer_id"
     t.index ["product_id"], name: "index_wishlist_items_on_product_id"
-  end
-
-  create_table "versions", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "event", null: false
-    t.bigint "item_id", null: false
-    t.string "item_type", null: false
-    t.jsonb "object_changes"
-    t.string "whodunnit"
-    t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
-    t.index ["whodunnit"], name: "index_versions_on_whodunnit"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

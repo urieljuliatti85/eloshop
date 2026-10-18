@@ -156,57 +156,5 @@ RSpec.describe "Seller atelier", type: :request do
       expect(response).to have_http_status(:unprocessable_entity)
       expect(seller.reload.masked_cpf).to eq(original_masked_cpf)
     end
-
-    describe "tema da vitrine" do
-      it "saves logo, cover and footer text" do
-        sign_in_as(user)
-
-        patch seller_atelier_path, params: { seller: {
-          name: seller.name, footer_text: "Produção às terças.",
-          logo: fixture_file_upload("sample.png", "image/png"),
-          cover_image: fixture_file_upload("sample.png", "image/png")
-        } }
-
-        expect(response).to redirect_to(seller_atelier_path)
-        seller.reload
-        expect(seller.logo).to be_attached
-        expect(seller.cover_image).to be_attached
-        expect(seller.footer_text).to eq("Produção às terças.")
-      end
-
-      it "rejects a non-image logo" do
-        sign_in_as(user)
-
-        patch seller_atelier_path, params: { seller: {
-          name: seller.name,
-          logo: Rack::Test::UploadedFile.new(StringIO.new("<svg/>"), "image/svg+xml", original_filename: "logo.svg")
-        } }
-
-        expect(response).to have_http_status(:unprocessable_entity)
-        expect(seller.reload.logo).not_to be_attached
-      end
-
-      it "removes the current images on request" do
-        sign_in_as(user)
-        seller.logo.attach(fixture_file_upload("sample.png", "image/png"))
-        seller.cover_image.attach(fixture_file_upload("sample.png", "image/png"))
-
-        patch seller_atelier_path, params: { seller: { name: seller.name }, remove_logo: "1" }
-
-        seller.reload
-        expect(seller.logo).not_to be_attached
-        expect(seller.cover_image).to be_attached
-      end
-
-      it "ignores a seller_id param and only touches the signed-in seller" do
-        other = Seller.create!(name: "Ateliê Alheio", owner_full_name: "Proprietário Teste", cpf: "11666675539", status: :approved, approved_at: Time.current)
-        sign_in_as(user)
-
-        patch seller_atelier_path, params: { seller_id: other.id, seller: { name: seller.name, footer_text: "Meu rodapé" } }
-
-        expect(other.reload.footer_text).to be_nil
-        expect(seller.reload.footer_text).to eq("Meu rodapé")
-      end
-    end
   end
 end

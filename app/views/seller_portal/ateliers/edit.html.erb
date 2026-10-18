@@ -22,53 +22,6 @@
       <p class="mt-1 text-xs text-stone-500">É o nome que aparece nas suas peças e na sua vitrine.</p>
     </div>
 
-    <%# Tema da vitrine pública. Tudo opcional: sem capa, a vitrine usa a foto
-        da peça mais recente. Só mostra o que já foi gravado (um envio recusado
-        volta anexado, mas sem blob). Remover é um checkbox porque um campo de arquivo
-        vazio não diz se o vendedor quer manter ou apagar a imagem atual. %>
-    <% file_class = "mt-2 block w-full rounded-xl border border-dashed border-stone-300 bg-brand-50/30 p-3 text-sm file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-stone-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white" %>
-    <fieldset class="border-t border-stone-200 pt-6">
-      <legend class="sr-only">Aparência da vitrine</legend>
-      <p class="text-sm font-semibold text-stone-700">Aparência da vitrine</p>
-      <p class="mt-1 mb-4 text-xs text-stone-500">Logo, capa e rodapé da página pública do seu ateliê. PNG, JPEG ou WEBP, até 5 MB.</p>
-
-      <div class="space-y-5">
-        <div>
-          <%= form.label :logo, "Logo", class: "seller-label" %>
-          <% if current_seller.logo.attached? && current_seller.logo.blob.persisted? %>
-            <div class="mt-2 flex items-center gap-4">
-              <%= image_tag current_seller.logo.variant(resize_to_fill: [ 96, 96 ]), alt: "Logo atual do ateliê", class: "size-16 rounded-full border border-stone-200 object-cover" %>
-              <label class="flex items-center gap-2 text-sm text-stone-600">
-                <%= check_box_tag :remove_logo, "1", false, class: "size-4" %> Remover logo
-              </label>
-            </div>
-          <% end %>
-          <%= form.file_field :logo, accept: "image/png,image/jpeg,image/webp", class: file_class %>
-          <p class="mt-1 text-xs text-stone-500">Imagem quadrada funciona melhor.</p>
-        </div>
-
-        <div>
-          <%= form.label :cover_image, "Capa (topo da vitrine)", class: "seller-label" %>
-          <% if current_seller.cover_image.attached? && current_seller.cover_image.blob.persisted? %>
-            <div class="mt-2 space-y-2">
-              <%= image_tag current_seller.cover_image.variant(resize_to_fill: [ 640, 240 ]), alt: "Capa atual do ateliê", class: "h-24 w-full max-w-sm rounded-xl border border-stone-200 object-cover" %>
-              <label class="flex items-center gap-2 text-sm text-stone-600">
-                <%= check_box_tag :remove_cover_image, "1", false, class: "size-4" %> Remover capa
-              </label>
-            </div>
-          <% end %>
-          <%= form.file_field :cover_image, accept: "image/png,image/jpeg,image/webp", class: file_class %>
-          <p class="mt-1 text-xs text-stone-500">Imagem larga (paisagem). Sem capa, usamos a foto da sua peça mais recente.</p>
-        </div>
-
-        <div>
-          <%= form.label :footer_text, "Mensagem do rodapé", class: "seller-label" %>
-          <%= form.text_area :footer_text, rows: 3, maxlength: Seller::FOOTER_TEXT_MAX_LENGTH, class: "seller-input" %>
-          <p class="mt-1 text-xs text-stone-500">Aparece no fim da sua vitrine. Ex.: horários de produção, uma frase sobre o seu processo. Até <%= Seller::FOOTER_TEXT_MAX_LENGTH %> caracteres.</p>
-        </div>
-      </div>
-    </fieldset>
-
     <%# Dados do proprietário: opcionais para quem já opera sem eles (ver
         Seller#owner_full_name/cpf, validados só na criação). O CPF nunca é
         reexibido em texto pleno — o campo fica em branco mesmo quando já

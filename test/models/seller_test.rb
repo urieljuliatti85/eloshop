@@ -578,4 +578,27 @@ class SellerTest < ActiveSupport::TestCase
     seller.footer_text = "a" * (Seller::FOOTER_TEXT_MAX_LENGTH + 1)
     assert_not_predicate seller, :valid?
   end
+
+  test "theme options default to the original storefront look and accept only catalog keys" do
+    seller = sellers(:approved)
+    assert_equal SellerTheme::DEFAULTS[:palette], seller.theme_palette
+    assert_equal SellerTheme::DEFAULTS[:layout], seller.theme_layout
+
+    seller.theme_palette = "neon"
+    assert_not seller.valid?
+    assert seller.errors[:theme_palette].any?
+
+    seller.theme_palette = "oceano"
+    seller.valid?
+    assert_empty seller.errors[:theme_palette]
+  end
+
+  test "every preset only references existing palettes, fonts, layouts and heroes" do
+    SellerTheme::PRESETS.each_value do |preset|
+      assert SellerTheme::PALETTES.key?(preset[:palette])
+      assert SellerTheme::FONTS.key?(preset[:font])
+      assert SellerTheme::LAYOUTS.key?(preset[:layout])
+      assert SellerTheme::HEROES.key?(preset[:hero])
+    end
+  end
 end
