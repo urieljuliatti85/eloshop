@@ -44,7 +44,9 @@ class SellersController < StorefrontController
       .order(created_at: :desc)
       # preload, e não includes: a capa arrasta as tabelas do Active Storage
       # e o plano estourava o jit_above_cost no catálogo (ver Fase 17).
-      .preload(:seller, :product_variants, category: :parent)
+      # `personalization_options` entra porque o card pergunta se o produto
+      # aceita compra rápida (Product#quick_addable?) e isso era 1 query por card.
+      .preload(:seller, :product_variants, :personalization_options, category: :parent)
       .preload(main_image_attachment: :blob)
       .load
   end

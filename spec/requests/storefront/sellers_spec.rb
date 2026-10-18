@@ -234,6 +234,32 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(response.body).to include("rounded-none", "[&amp;_article]:border")
     end
 
+    # O topo está acima da dobra (costuma ser o LCP): não pode ser lazy, e o
+    # fallback sem capa usa uma variante, não o original da peça.
+    it "loads the hero photo eagerly and resized" do
+      product = create_product(seller: approved_seller, name: "Peça do topo")
+      product.main_image.attach(fixture_file_upload("sample.png", "image/png"))
+
+      get seller_path(approved_seller.slug)
+
+      hero = response.body[/<img[^>]*fetchpriority="high"[^>]*>/]
+      expect(hero).to be_present
+      expect(hero).to include('loading="eager"')
+      expect(hero).to include("/representations/")
+    end
+
+    it "does not query personalization options once per product card" do
+      3.times { |i| create_product(seller: approved_seller, name: "Peça #{i}") }
+      queries = []
+      callback = ->(*, payload) { queries << payload[:sql] if payload[:sql].include?('FROM "personalization_options"') }
+
+      ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+        ActiveRecord::Base.uncached { get seller_path(approved_seller.slug) }
+      end
+
+      expect(queries.size).to be <= 1
+    end
+
     it "drops the cover photo with the compact hero" do
       approved_seller.cover_image.attach(fixture_file_upload("sample.png", "image/png"))
       approved_seller.update!(theme_hero: "compacto")

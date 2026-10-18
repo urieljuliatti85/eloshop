@@ -31,9 +31,15 @@
 
     <section class="relative isolate overflow-hidden <%= seller_hero_radius_class(@seller.theme_corners) %> bg-[var(--atelier-from)] text-white shadow-sm">
       <% compact = @seller.theme_hero == "compacto" %>
-      <% cover_photo = compact ? nil : @seller.cover_image.attached? ? @seller.cover_image.variant(resize_to_limit: [ 1600, 700 ]) : @products.find { |product| product.main_image.attached? }&.main_image %>
+      <%# O fallback usa uma variante, não o original: o topo é o elemento
+          mais pesado da página e o original da peça pode ter vários MB. %>
+      <% cover_photo = if compact then nil
+           elsif @seller.cover_image.attached? then @seller.cover_image.variant(resize_to_limit: [ 1600, 700 ])
+           else @products.find { |product| product.main_image.attached? }&.main_image&.variant(resize_to_limit: [ 1600, 700 ])
+           end %>
       <% if cover_photo %>
-        <%= image_tag cover_photo, alt: "", loading: "lazy",
+        <%# Está acima da dobra e costuma ser o LCP: nada de lazy aqui. %>
+        <%= image_tag cover_photo, alt: "", loading: "eager", fetchpriority: "high", decoding: "async",
               class: "absolute inset-0 -z-20 h-full w-full object-cover" %>
         <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/80 via-black/45 to-black/20"></div>
       <% else %>
