@@ -1,0 +1,42 @@
+<% file_class = "mt-2 block w-full rounded-xl border border-dashed border-stone-300 bg-brand-50/30 p-3 text-sm file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-stone-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white" %>
+  <div>
+    <%= form.label :logo, "Logo", class: "seller-label" %>
+    <% if current_seller.logo.attached? && current_seller.logo.blob.persisted? %>
+      <div class="mt-2 flex items-center gap-4">
+        <%= image_tag current_seller.logo.variant(resize_to_fill: [ 96, 96 ]), alt: "Logo atual do ateliê", class: "size-16 rounded-full border border-stone-200 object-cover" %>
+        <label class="flex min-h-11 items-center gap-2 text-sm text-stone-600">
+          <%= check_box_tag :remove_logo, "1", false, class: "size-5" %> Remover logo
+        </label>
+      </div>
+    <% end %>
+    <%= form.file_field :logo, accept: "image/png,image/jpeg,image/webp", class: file_class %>
+    <p class="mt-1 text-xs text-stone-500">PNG, JPEG ou WEBP, até 5 MB. Imagem quadrada funciona melhor.</p>
+  </div>
+
+  <div>
+    <%= form.label :cover_image, "Capa (topo da vitrine)", class: "seller-label" %>
+    <% if current_seller.cover_image.attached? && current_seller.cover_image.blob.persisted? %>
+      <div class="mt-2 space-y-2">
+        <%= image_tag current_seller.cover_image.variant(resize_to_fill: [ 640, 240 ]), alt: "Capa atual do ateliê", class: "h-24 w-full max-w-sm rounded-xl border border-stone-200 object-cover" %>
+        <label class="flex min-h-11 items-center gap-2 text-sm text-stone-600">
+          <%= check_box_tag :remove_cover_image, "1", false, class: "size-5" %> Remover capa
+        </label>
+      </div>
+    <% end %>
+    <%= form.file_field :cover_image, accept: "image/png,image/jpeg,image/webp", class: file_class %>
+    <p class="mt-1 text-xs text-stone-500">Imagem larga. Sem capa, usamos a foto da peça mais recente. Só aparece no topo "Com capa".</p>
+  </div>
+
+  <div>
+    <%= form.label :about_image, "Foto do ateliê (seção Sobre)", class: "seller-label" %>
+    <% if current_seller.about_image.attached? && current_seller.about_image.blob.persisted? %>
+      <div class="mt-2 space-y-2">
+        <%= image_tag current_seller.about_image.variant(resize_to_fill: [ 320, 240 ]), alt: "Foto atual do ateliê", class: "h-24 rounded-xl border border-stone-200 object-cover" %>
+        <label class="flex min-h-11 items-center gap-2 text-sm text-stone-600">
+          <%= check_box_tag :remove_about_image, "1", false, class: "size-5" %> Remover foto
+        </label>
+      </div>
+    <% end %>
+    <%= form.file_field :about_image, accept: "image/png,image/jpeg,image/webp", class: file_class %>
+  </div>
+
