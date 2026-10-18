@@ -4,7 +4,7 @@
   <%# Título num cartão sólido, como as seções da home: sobre a paisagem
       direta o texto escuro perderia contraste em algumas regiões da foto. %>
   <div class="inline-block rounded-2xl bg-white/90 px-5 py-3 shadow-sm backdrop-blur-sm">
-    <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Sacola</p>
+    <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Sua compra</p>
     <h1 class="mt-1 text-4xl font-bold text-ink">Carrinho</h1>
   </div>
 
@@ -37,7 +37,7 @@
 
                 <%= button_to "×", cart_item_path(item), method: :delete,
                       class: "absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-ink shadow hover:bg-red-50 hover:text-red-700",
-                      form: { aria: { label: "Remover #{item.product.name}" } } %>
+                      aria: { label: "Remover #{item.product.name} do carrinho" } %>
               </div>
 
               <div>
@@ -60,6 +60,7 @@
               <div class="flex items-center gap-3 sm:justify-center">
                 <% if item.quantity > 1 %>
                   <%= button_to "−", cart_item_path(item), method: :patch, params: { quantity: item.quantity - 1 },
+                        aria: { label: "Diminuir a quantidade de #{item.product.name}" },
                         class: "flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-gray-300 text-ink hover:border-brand-500 hover:text-brand-600" %>
                 <% else %>
                   <span class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-100 text-gray-300">−</span>
@@ -68,6 +69,7 @@
                 <span class="w-6 text-center text-sm font-medium text-ink"><%= item.quantity %></span>
 
                 <%= button_to "+", cart_item_path(item), method: :patch, params: { quantity: item.quantity + 1 },
+                      aria: { label: "Aumentar a quantidade de #{item.product.name}" },
                       class: "flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-gray-300 text-ink hover:border-brand-500 hover:text-brand-600" %>
               </div>
 
@@ -93,7 +95,7 @@
             </p>
           <% else %>
             <%= form_with url: apply_coupon_cart_path, method: :post, class: "flex gap-2" do %>
-              <%= text_field_tag :code, nil, placeholder: "Cupom de desconto", class: "min-w-0 flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm" %>
+              <%= text_field_tag :code, nil, placeholder: "Cupom de desconto", aria: { label: "Código do cupom de desconto" }, class: "min-w-0 flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm" %>
               <%= submit_tag "Aplicar", class: "rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold hover:border-brand-500" %>
             <% end %>
           <% end %>
