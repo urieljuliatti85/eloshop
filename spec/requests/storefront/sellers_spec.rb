@@ -225,6 +225,15 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(response.body).to include("Prazo: 7 dias úteis", "https://instagram.com/meuatelie", "https://wa.me/5548999999999", "--atelier-accent:#7a2410")
     end
 
+    it "applies the tinted card style" do
+      approved_seller.update!(theme_card_style: "fundo")
+      create_product(seller: approved_seller, name: "Peça com fundo")
+
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).to include("var(--atelier-soft)_45%")
+    end
+
     it "applies corners and card style to the catalog" do
       approved_seller.update!(theme_corners: "retos", theme_card_style: "borda")
       create_product(seller: approved_seller, name: "Peça com borda")

@@ -28,7 +28,8 @@ module SellerThemesHelper
     radius = { "retos" => "[&_article_.aspect-square]:rounded-none", "arredondados" => "[&_article_.aspect-square]:rounded-[2rem]" }[corners]
     frame = {
       "borda" => "[&_article]:rounded-2xl [&_article]:border [&_article]:border-sand-200 [&_article]:p-3",
-      "sombra" => "[&_article]:rounded-2xl [&_article]:p-3 [&_article]:shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+      "sombra" => "[&_article]:rounded-2xl [&_article]:p-3 [&_article]:shadow-[0_8px_30px_rgba(0,0,0,0.08)]",
+      "fundo" => "[&_article]:rounded-2xl [&_article]:p-3 [&_article]:bg-[color-mix(in_srgb,var(--atelier-soft)_45%,white)]"
     }[card_style]
     [ radius, frame ].compact.join(" ")
   end

@@ -5,17 +5,29 @@
 module SellerTheme
   PALETTES = {
     "terracota" => { label: "Terracota", from: "#7a2410", to: "#df240c", glow: "#f6604c", soft: "#fbbeb6", accent: "#c2300c" },
-    "oliva"     => { label: "Oliva",     from: "#2f3a1c", to: "#6b7f2a", glow: "#9bb04a", soft: "#dfe8b8", accent: "#4d5f1c" },
+    "oliva"     => { label: "Oliva",     from: "#2f3a1c", to: "#687c29", glow: "#9bb04a", soft: "#dfe8b8", accent: "#4d5f1c" },
     "oceano"    => { label: "Oceano",    from: "#0b3a4a", to: "#1c7c93", glow: "#4fb3c8", soft: "#c4e8f0", accent: "#0e6479" },
     "ameixa"    => { label: "Ameixa",    from: "#3d1a3f", to: "#8a3a8f", glow: "#c27ac7", soft: "#ecd0ee", accent: "#7a2e80" },
-    "grafite"   => { label: "Grafite",   from: "#1f2326", to: "#4b5358", glow: "#8a949a", soft: "#d9dee1", accent: "#333b40" }
+    "grafite"   => { label: "Grafite",   from: "#1f2326", to: "#4b5358", glow: "#8a949a", soft: "#d9dee1", accent: "#333b40" },
+    "mostarda"  => { label: "Mostarda",  from: "#4a3505", to: "#8a6206", glow: "#d9a72b", soft: "#f5e3b3", accent: "#7a5604" },
+    "floresta"  => { label: "Floresta",  from: "#0f2e22", to: "#1f6b4a", glow: "#4fae84", soft: "#c8ecd9", accent: "#19573c" },
+    "vinho"     => { label: "Vinho",     from: "#3b0a1a", to: "#8c1c3c", glow: "#d4567a", soft: "#f5cdd8", accent: "#7d1834" },
+    "argila"    => { label: "Argila",    from: "#4a2420", to: "#9a4d45", glow: "#d98c7f", soft: "#f6d9d3", accent: "#8a4038" },
+    "indigo"    => { label: "Índigo",    from: "#141a3d", to: "#3a43a0", glow: "#7b84e0", soft: "#d6d9f7", accent: "#333c96" },
+    "lavanda"   => { label: "Lavanda",   from: "#2e2450", to: "#6a55b0", glow: "#a594e6", soft: "#e4def9", accent: "#5a46a0" },
+    "caramelo"  => { label: "Caramelo",  from: "#3f2412", to: "#8f5426", glow: "#d4935a", soft: "#f4dcc4", accent: "#7e4920" },
+    "cacau"     => { label: "Cacau",     from: "#2a1a14", to: "#5e3a2c", glow: "#a0705a", soft: "#ead8cf", accent: "#5a3729" }
   }.freeze
 
   # Só pilhas de fontes do sistema: a CSP não admite fonte externa.
   FONTS = {
     "moderna"   => { label: "Moderna",   stack: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" },
     "classica"  => { label: "Clássica",  stack: "Georgia, 'Times New Roman', serif" },
-    "artesanal" => { label: "Artesanal", stack: "'Trebuchet MS', ui-rounded, 'Segoe UI', sans-serif" }
+    "artesanal" => { label: "Artesanal", stack: "'Trebuchet MS', ui-rounded, 'Segoe UI', sans-serif" },
+    "elegante"  => { label: "Elegante",  stack: "Didot, 'Bodoni 72', 'Bodoni MT', 'Times New Roman', serif" },
+    "geometrica" => { label: "Geométrica", stack: "'Avenir Next', Avenir, 'Century Gothic', 'Segoe UI', sans-serif" },
+    "humanista" => { label: "Humanista", stack: "Optima, Candara, 'Segoe UI', sans-serif" },
+    "maquina"   => { label: "Datilografada", stack: "'American Typewriter', 'Courier New', ui-monospace, monospace" }
   }.freeze
 
   LAYOUTS = {
@@ -38,7 +50,8 @@ module SellerTheme
   CARD_STYLES = {
     "limpo"  => "Limpo (sem moldura)",
     "borda"  => "Com borda",
-    "sombra" => "Com sombra"
+    "sombra" => "Com sombra",
+    "fundo"  => "Fundo (tom da paleta)"
   }.freeze
 
   # Seções reordenáveis da vitrine. O catálogo é a razão de a página existir:
@@ -57,7 +70,15 @@ module SellerTheme
     "minimalista" => { label: "Minimalista", palette: "grafite", font: "moderna",   layout: "ampla",    hero: "compacto", corners: "retos",        card_style: "borda" },
     "boho"        => { label: "Boho",        palette: "terracota", font: "artesanal", layout: "destaque", hero: "capa",     corners: "arredondados", card_style: "sombra" },
     "marinho"     => { label: "Marinho",     palette: "oceano",  font: "moderna",   layout: "grade",    hero: "capa",     corners: "suaves",       card_style: "borda" },
-    "floral"      => { label: "Floral",      palette: "ameixa",  font: "classica",  layout: "destaque", hero: "compacto", corners: "arredondados", card_style: "limpo" }
+    "floral"      => { label: "Floral",      palette: "ameixa",  font: "classica",  layout: "destaque", hero: "compacto", corners: "arredondados", card_style: "limpo" },
+    "cafe"        => { label: "Café",        palette: "cacau",   font: "maquina",   layout: "grade",    hero: "capa",     corners: "retos",        card_style: "borda" },
+    "campo"       => { label: "Campo",       palette: "floresta", font: "humanista", layout: "ampla",   hero: "capa",     corners: "suaves",       card_style: "limpo" },
+    "solar"       => { label: "Solar",       palette: "mostarda", font: "geometrica", layout: "destaque", hero: "compacto", corners: "arredondados", card_style: "fundo" },
+    "noturno"     => { label: "Noturno",     palette: "indigo",  font: "elegante",  layout: "ampla",    hero: "capa",     corners: "retos",        card_style: "sombra" },
+    "romantico"   => { label: "Romântico",   palette: "argila",  font: "elegante",  layout: "grade",    hero: "capa",     corners: "arredondados", card_style: "limpo" },
+    "provence"    => { label: "Provence",    palette: "lavanda", font: "humanista", layout: "destaque", hero: "compacto", corners: "suaves",       card_style: "fundo" },
+    "vinhedo"     => { label: "Vinhedo",     palette: "vinho",   font: "classica",  layout: "ampla",    hero: "capa",     corners: "suaves",       card_style: "sombra" },
+    "couro"       => { label: "Couro",       palette: "caramelo", font: "geometrica", layout: "grade",  hero: "compacto", corners: "retos",        card_style: "borda" }
   }.freeze
 
   # Variáveis CSS da vitrine. Só valores do catálogo acima (ou um hex já

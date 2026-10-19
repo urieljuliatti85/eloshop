@@ -599,6 +599,22 @@ class SellerTest < ActiveSupport::TestCase
       assert SellerTheme::FONTS.key?(preset[:font])
       assert SellerTheme::LAYOUTS.key?(preset[:layout])
       assert SellerTheme::HEROES.key?(preset[:hero])
+      assert SellerTheme::CORNERS.key?(preset[:corners])
+      assert SellerTheme::CARD_STYLES.key?(preset[:card_style])
+    end
+  end
+
+  test "presets have distinct names" do
+    labels = SellerTheme::PRESETS.values.pluck(:label)
+    assert_equal labels.uniq, labels
+  end
+
+  # O texto branco do topo cai sobre o fim do degradê (`to`) e o da faixa de
+  # aviso sobre o `accent`: as duas cores seguem a mesma regra da cor própria.
+  test "every palette keeps white text readable on its accent and gradient end" do
+    SellerTheme::PALETTES.each do |key, palette|
+      assert_operator SellerTheme.contrast_ratio(palette[:accent]), :>=, SellerTheme::MIN_ACCENT_CONTRAST, "#{key}: accent"
+      assert_operator SellerTheme.contrast_ratio(palette[:to]), :>=, SellerTheme::MIN_ACCENT_CONTRAST, "#{key}: to"
     end
   end
 end

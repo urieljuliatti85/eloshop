@@ -44,10 +44,10 @@
 
   <fieldset>
     <legend class="text-sm font-semibold text-stone-700">Cards de peça</legend>
-    <div class="mt-3 grid grid-cols-3 gap-2">
-      <% { "limpo" => "", "borda" => "border border-stone-400", "sombra" => "shadow-[0_3px_8px_rgba(0,0,0,0.25)]" }.each do |key, frame| %>
+    <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <% { "limpo" => "bg-white", "borda" => "bg-white border border-stone-400", "sombra" => "bg-white shadow-[0_3px_8px_rgba(0,0,0,0.25)]", "fundo" => "bg-stone-200" }.each do |key, frame| %>
         <%= theme_choice(form, :theme_card_style, key, short.(SellerTheme::CARD_STYLES[key])) do %>
-          <span class="flex h-11 w-9 flex-col gap-1 rounded-md bg-white p-1 <%= frame %>">
+          <span class="flex h-11 w-9 flex-col gap-1 rounded-md p-1 <%= frame %>">
             <span class="block flex-1 rounded-[3px] bg-stone-300"></span>
             <span class="block h-1 rounded bg-stone-400"></span>
           </span>
