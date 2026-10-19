@@ -25,53 +25,59 @@
         cantos de 2rem, tipografia pesada — mas fala com quem compra, não com
         quem vende. A capa é a que o ateliê enviou; sem ela, a foto da peça
         mais recente, e sem nenhuma das duas o fundo geométrico (§5). %>
-    <% if @seller.notice_text.present? %>
-      <p class="-mb-6 rounded-full bg-[var(--atelier-accent)] px-5 py-2.5 text-center text-sm font-semibold text-white" role="status"><%= @seller.notice_text %></p>
-    <% end %>
-
-    <section class="relative isolate overflow-hidden <%= seller_hero_radius_class(@seller.theme_corners) %> bg-[var(--atelier-from)] text-white shadow-sm">
-      <% compact = @seller.theme_hero == "compacto" %>
-      <%# O fallback usa uma variante, não o original: o topo é o elemento
-          mais pesado da página e o original da peça pode ter vários MB. %>
-      <% cover_photo = if compact then nil
-           elsif @seller.cover_image.attached? then @seller.cover_image.variant(resize_to_limit: [ 1600, 700 ])
-           else @products.find { |product| product.main_image.attached? }&.main_image&.variant(resize_to_limit: [ 1600, 700 ])
-           end %>
-      <% if cover_photo %>
-        <%# Está acima da dobra e costuma ser o LCP: nada de lazy aqui. %>
-        <%= image_tag cover_photo, alt: "", loading: "eager", fetchpriority: "high", decoding: "async",
-              class: "absolute inset-0 -z-20 h-full w-full object-cover" %>
-        <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/80 via-black/45 to-black/20"></div>
-      <% else %>
-        <%# Mesmo fundo geométrico que o painel usa quando ainda não há foto. %>
-        <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,var(--atelier-soft)_0,transparent_27%),radial-gradient(circle_at_75%_72%,var(--atelier-glow)_0,transparent_28%),linear-gradient(135deg,var(--atelier-from),var(--atelier-to))]"></div>
-        <% unless compact %>
-          <div class="absolute right-[12%] top-[12%] -z-10 size-40 rotate-6 border-[1.25rem] border-white/15 sm:size-64"></div>
-        <% end %>
+    <%# Faixa e topo num bloco só: soltos no `space-y-12` ficavam distantes, e
+        a margem negativa que os aproximava punha o topo por cima da faixa. A
+        faixa tem cantos próprios (não pílula) porque o aviso quebra em duas
+        linhas no celular. %>
+    <div class="space-y-3">
+      <% if @seller.notice_text.present? %>
+        <p class="<%= @seller.theme_corners == "retos" ? "rounded-none" : "rounded-2xl" %> bg-[var(--atelier-accent)] px-5 py-3 text-center text-sm font-semibold leading-snug text-balance text-white" role="status"><%= @seller.notice_text %></p>
       <% end %>
 
-      <div class="flex max-w-2xl flex-col justify-end <%= compact ? "p-6 sm:p-8" : "p-7 sm:p-10 lg:p-12" %>">
-        <% if @seller.logo.attached? %>
-          <%= image_tag @seller.logo.variant(resize_to_fill: [ 160, 160 ]), alt: "Logo do ateliê #{@seller.name}",
-                class: "mb-5 size-20 rounded-full border-2 border-white/60 object-cover sm:size-24" %>
+      <section class="relative isolate overflow-hidden <%= seller_hero_radius_class(@seller.theme_corners) %> bg-[var(--atelier-from)] text-white shadow-sm">
+        <% compact = @seller.theme_hero == "compacto" %>
+        <%# O fallback usa uma variante, não o original: o topo é o elemento
+            mais pesado da página e o original da peça pode ter vários MB. %>
+        <% cover_photo = if compact then nil
+             elsif @seller.cover_image.attached? then @seller.cover_image.variant(resize_to_limit: [ 1600, 700 ])
+             else @products.find { |product| product.main_image.attached? }&.main_image&.variant(resize_to_limit: [ 1600, 700 ])
+             end %>
+        <% if cover_photo %>
+          <%# Está acima da dobra e costuma ser o LCP: nada de lazy aqui. %>
+          <%= image_tag cover_photo, alt: "", loading: "eager", fetchpriority: "high", decoding: "async",
+                class: "absolute inset-0 -z-20 h-full w-full object-cover" %>
+          <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/80 via-black/45 to-black/20"></div>
+        <% else %>
+          <%# Mesmo fundo geométrico que o painel usa quando ainda não há foto. %>
+          <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,var(--atelier-soft)_0,transparent_27%),radial-gradient(circle_at_75%_72%,var(--atelier-glow)_0,transparent_28%),linear-gradient(135deg,var(--atelier-from),var(--atelier-to))]"></div>
+          <% unless compact %>
+            <div class="absolute right-[12%] top-[12%] -z-10 size-40 rotate-6 border-[1.25rem] border-white/15 sm:size-64"></div>
+          <% end %>
         <% end %>
-        <p class="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[var(--atelier-soft)]">Ateliê na EloShop</p>
-        <h1 class="text-4xl font-black leading-[0.98] tracking-tight sm:text-5xl lg:text-6xl"><%= @seller.name %></h1>
-        <p class="mt-5 max-w-lg text-sm leading-6 text-white/80 sm:text-base">
-          <%= pluralize(@products.size, "peça disponível", plural: "peças disponíveis") %>, <%= @products.any? ? "feitas à mão e prontas para conhecer" : "por enquanto" %>.
-        </p>
-        <% if @seller.instagram_handle.present? || @seller.whatsapp_number.present? %>
-          <div class="mt-5 flex flex-wrap gap-2">
-            <% if @seller.instagram_handle.present? %>
-              <%= link_to "Instagram", seller_instagram_url(@seller), target: "_blank", rel: "noopener nofollow", class: "inline-flex min-h-11 items-center rounded-full border border-white/50 px-4 text-sm font-semibold hover:bg-white/15" %>
-            <% end %>
-            <% if @seller.whatsapp_number.present? %>
-              <%= link_to "WhatsApp", seller_whatsapp_url(@seller), target: "_blank", rel: "noopener nofollow", class: "inline-flex min-h-11 items-center rounded-full border border-white/50 px-4 text-sm font-semibold hover:bg-white/15" %>
-            <% end %>
-          </div>
-        <% end %>
-      </div>
-    </section>
+
+        <div class="flex max-w-2xl flex-col justify-end <%= compact ? "p-6 sm:p-8" : "p-7 sm:p-10 lg:p-12" %>">
+          <% if @seller.logo.attached? %>
+            <%= image_tag @seller.logo.variant(resize_to_fill: [ 160, 160 ]), alt: "Logo do ateliê #{@seller.name}",
+                  class: "mb-5 size-20 rounded-full border-2 border-white/60 object-cover sm:size-24" %>
+          <% end %>
+          <p class="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[var(--atelier-soft)]">Ateliê na EloShop</p>
+          <h1 class="text-4xl font-black leading-[0.98] tracking-tight sm:text-5xl lg:text-6xl"><%= @seller.name %></h1>
+          <p class="mt-5 max-w-lg text-sm leading-6 text-white/80 sm:text-base">
+            <%= pluralize(@products.size, "peça disponível", plural: "peças disponíveis") %>, <%= @products.any? ? "feitas à mão e prontas para conhecer" : "por enquanto" %>.
+          </p>
+          <% if @seller.instagram_handle.present? || @seller.whatsapp_number.present? %>
+            <div class="mt-5 flex flex-wrap gap-2">
+              <% if @seller.instagram_handle.present? %>
+                <%= link_to "Instagram", seller_instagram_url(@seller), target: "_blank", rel: "noopener nofollow", class: "inline-flex min-h-11 items-center rounded-full border border-white/50 px-4 text-sm font-semibold hover:bg-white/15" %>
+              <% end %>
+              <% if @seller.whatsapp_number.present? %>
+                <%= link_to "WhatsApp", seller_whatsapp_url(@seller), target: "_blank", rel: "noopener nofollow", class: "inline-flex min-h-11 items-center rounded-full border border-white/50 px-4 text-sm font-semibold hover:bg-white/15" %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    </div>
 
     <% @seller.theme_sections.each do |section| %>
       <%= case section
