@@ -225,6 +225,19 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(response.body).to include("Prazo: 7 dias úteis", "https://instagram.com/meuatelie", "https://wa.me/5548999999999", "--atelier-accent:#7a2410")
     end
 
+    # A margem negativa antiga punha o topo por cima da faixa: ela agora vive
+    # no mesmo bloco do topo, sem margem negativa.
+    it "keeps the notice bar beside the hero instead of under it" do
+      approved_seller.update!(notice_text: "Férias coletivas até dia 10")
+
+      get seller_path(approved_seller.slug)
+
+      notice = Nokogiri::HTML(response.body).at_css('p[role="status"]')
+      expect(notice.text).to eq("Férias coletivas até dia 10")
+      expect(notice["class"]).not_to include("-mb-")
+      expect(notice.next_element.name).to eq("section")
+    end
+
     it "applies the tinted card style" do
       approved_seller.update!(theme_card_style: "fundo")
       create_product(seller: approved_seller, name: "Peça com fundo")
