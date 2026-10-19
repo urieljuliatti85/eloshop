@@ -27,7 +27,9 @@
      data-theme-editor-presets-value="<%= SellerTheme::PRESETS.to_json %>"
      data-theme-editor-min-contrast-value="<%= SellerTheme::MIN_ACCENT_CONTRAST %>"
      data-theme-editor-initial-tab-value="<%= initial_tab %>"
-     data-theme-editor-open-class="fixed inset-0 z-50 flex flex-col bg-stone-100 p-3">
+     data-theme-editor-max-image-bytes-value="<%= Seller::THEME_IMAGE_MAX_BYTES %>"
+     data-theme-editor-image-types-value="<%= Seller::THEME_IMAGE_CONTENT_TYPES.to_json %>"
+     data-theme-editor-open-class="fixed inset-0 z-50 flex flex-col bg-stone-100 p-3 lg:p-6">
   <header class="mb-6 flex flex-wrap items-end justify-between gap-3">
     <div>
       <h1 class="text-3xl font-black tracking-tight">Tema da vitrine</h1>

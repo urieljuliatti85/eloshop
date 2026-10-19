@@ -5,8 +5,8 @@ import { Controller } from "@hotwired/stimulus"
 // `/painel/atelie/tema/preview`, que renderiza a página real em memória (nada
 // é gravado). Arquivos não vão no rascunho: o preview mostra os já salvos.
 export default class extends Controller {
-  static targets = ["form", "tab", "panel", "stage", "frame", "viewport", "status", "device", "dirty", "closeButton", "useCustomColor", "customColor", "contrastHint"]
-  static values = { previewUrl: String, presets: Object, minContrast: Number, initialTab: String }
+  static targets = ["form", "tab", "panel", "stage", "frame", "viewport", "status", "device", "dirty", "closeButton", "expandButton", "imageNote", "preset", "useCustomColor", "customColor", "contrastHint"]
+  static values = { previewUrl: String, presets: Object, minContrast: Number, initialTab: String, maxImageBytes: Number, imageTypes: Array }
   static classes = ["open"]
 
   connect() {
@@ -24,7 +24,9 @@ export default class extends Controller {
     // Um layout oculto (ou redimensionado) só ganha tamanho depois do connect.
     this.observer = new ResizeObserver(() => this.fit())
     this.observer.observe(this.viewportTarget)
+    this.stageClass = this.stageTarget.className
     this.syncColor()
+    this.syncPresets()
     this.refresh()
     this.fit()
   }
@@ -40,10 +42,12 @@ export default class extends Controller {
 
   // --- formulário -------------------------------------------------------
 
-  changed() {
+  changed(event) {
     this.dirty = true
     this.dirtyTarget.hidden = false
     this.syncColor()
+    this.syncPresets()
+    this.count(event?.target)
     this.schedule()
   }
 
@@ -77,20 +81,88 @@ export default class extends Controller {
     if (input) input.checked = true
   }
 
+  // Marca o tema pronto que coincide com o formulário (nenhum, se algo foi
+  // ajustado depois de aplicar ou se há cor própria).
+  syncPresets() {
+    const value = (attribute) => this.formTarget.querySelector(`input[name="seller[${attribute}]"]:checked`)?.value
+    const current = {
+      palette: value("theme_palette"), font: value("theme_font"), layout: value("theme_layout"),
+      hero: value("theme_hero"), corners: value("theme_corners"), card_style: value("theme_card_style")
+    }
+    const custom = this.useCustomColorTarget.checked
+    this.presetTargets.forEach((button) => {
+      const preset = this.presetsValue[button.dataset.preset]
+      const match = !custom && Object.keys(current).every((key) => preset[key] === current[key])
+      button.setAttribute("aria-pressed", match)
+    })
+  }
+
   moveUp(event) {
-    const button = event.currentTarget
-    const item = button.closest("li")
+    const item = event.currentTarget.closest("li")
     if (item.previousElementSibling) item.previousElementSibling.before(item)
-    button.focus()
-    this.changed()
+    this.moved(item, "up")
   }
 
   moveDown(event) {
-    const button = event.currentTarget
-    const item = button.closest("li")
+    const item = event.currentTarget.closest("li")
     if (item.nextElementSibling) item.nextElementSibling.after(item)
-    button.focus()
+    this.moved(item, "down")
+  }
+
+  // Seta sem destino fica desabilitada; se foi a que recebeu o clique, o foco
+  // passa para a outra seta do mesmo item, em vez de se perder.
+  moved(item, direction) {
+    const items = [...item.parentElement.children]
+    items.forEach((li, index) => {
+      li.querySelector("[data-direction=up]").disabled = index === 0
+      li.querySelector("[data-direction=down]").disabled = index === items.length - 1
+    })
+    const pressed = item.querySelector(`[data-direction=${direction}]`)
+    const other = item.querySelector(`[data-direction=${direction === "up" ? "down" : "up"}]`)
+    ;(pressed.disabled ? other : pressed).focus()
     this.changed()
+  }
+
+  // --- imagens e textos -------------------------------------------------
+
+  // O arquivo só sobe ao salvar: aqui mostra uma miniatura local e recusa
+  // tipo/tamanho fora do limite antes do envio (o servidor valida de novo).
+  pickImage(event) {
+    const input = event.currentTarget
+    const field = input.closest("[data-image-field]")
+    const picked = field.querySelector("[data-role=picked]")
+    const error = field.querySelector("[data-role=image-error]")
+    const file = input.files[0]
+
+    let message = ""
+    if (file && !this.imageTypesValue.includes(file.type)) message = "Formato não aceito. Use PNG, JPEG ou WEBP."
+    else if (file && file.size > this.maxImageBytesValue) message = `Arquivo de ${(file.size / 1048576).toFixed(1).replace(".", ",")} MB: o limite é ${Math.round(this.maxImageBytesValue / 1048576)} MB.`
+    input.setCustomValidity(message)
+    error.textContent = message
+    error.hidden = !message
+    picked.hidden = true
+
+    if (file && !message) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        picked.querySelector("img").src = reader.result
+        picked.hidden = false
+      }
+      reader.readAsDataURL(file)
+    }
+    this.imageNoteTarget.hidden = ![...this.formTarget.querySelectorAll("input[type=file]")].some((each) => each.files.length)
+  }
+
+  // Um campo inválido numa aba oculta não recebe foco e o envio falha calado:
+  // abre a aba dele antes de o navegador mostrar a mensagem.
+  revealInvalid(event) {
+    const panel = event.currentTarget.closest("[role=tabpanel]")
+    if (panel?.hidden) this.showTab(panel.dataset.key)
+  }
+
+  count(input) {
+    const counter = input?.closest("[data-counted]")?.querySelector("[data-role=count]")
+    if (counter) counter.textContent = `${input.value.length}/${input.maxLength}`
   }
 
   // Cor própria: o input só vale com o checkbox ligado; mostra o contraste
@@ -198,11 +270,15 @@ export default class extends Controller {
 
   // No celular o preview é uma folha em tela cheia: vira diálogo (foco entra
   // em "Fechar", Esc fecha, e o foco volta ao botão que a abriu).
+  // No desktop, "Ampliar" abre a mesma folha: a coluna da prévia é estreita
+  // demais para julgar o layout de computador. As classes da coluna são
+  // trocadas inteiras (as `lg:` dela venceriam o `fixed` da folha).
   openPreview(event) {
     this.opener = event.currentTarget
     this.sheetOpen = true
-    this.stageTarget.classList.remove("hidden")
-    this.stageTarget.classList.add(...this.openClasses)
+    this.stageTarget.className = this.openClasses.join(" ")
+    this.closeButtonTarget.hidden = false
+    this.expandButtonTarget.hidden = true
     this.stageTarget.setAttribute("role", "dialog")
     this.stageTarget.setAttribute("aria-modal", "true")
     document.body.classList.add("overflow-hidden")
@@ -213,8 +289,9 @@ export default class extends Controller {
 
   closePreview() {
     this.sheetOpen = false
-    this.stageTarget.classList.remove(...this.openClasses)
-    this.stageTarget.classList.add("hidden")
+    this.stageTarget.className = this.stageClass
+    this.closeButtonTarget.hidden = true
+    this.expandButtonTarget.hidden = false
     this.stageTarget.removeAttribute("role")
     this.stageTarget.removeAttribute("aria-modal")
     document.body.classList.remove("overflow-hidden")

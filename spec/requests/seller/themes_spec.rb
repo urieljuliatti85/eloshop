@@ -50,6 +50,46 @@ RSpec.describe "Seller theme", type: :request do
       expect(response.body).to include('data-theme-editor-initial-tab-value="textos"')
       expect(response.body).to match(/id="tab-textos"[^>]*aria-selected="true"/)
     end
+
+    it "offers the draft preview on the phone bar instead of a link to the published storefront" do
+      sign_in_as(user)
+
+      get edit_seller_theme_path
+
+      html = Nokogiri::HTML(response.body)
+      expect(html.at_css('button[data-action="theme-editor#openPreview"]').text.strip).to eq("Prévia")
+      expect(html.at_css('[data-theme-editor-target="expandButton"]').text.strip).to eq("Ampliar")
+      expect(html.css("a").map { |link| link.text.strip }).not_to include("Ver vitrine")
+    end
+
+    it "summarizes each preset with layout and hero, not only palette and font" do
+      sign_in_as(user)
+
+      get edit_seller_theme_path
+
+      minimalista = Nokogiri::HTML(response.body).at_css('button[data-preset="minimalista"]').text.squish
+      expect(minimalista).to include("Grafite · Moderna", "Ampla · topo compacto")
+    end
+
+    it "shows the character count of each limited text" do
+      seller.update!(notice_text: "Férias até dia 10")
+      sign_in_as(user)
+
+      get edit_seller_theme_path
+
+      expect(Nokogiri::HTML(response.body).at_css("#notice_text_count").text).to eq("17/#{Seller::NOTICE_TEXT_MAX_LENGTH}")
+    end
+
+    it "disables the arrows that have nowhere to go" do
+      sign_in_as(user)
+
+      get edit_seller_theme_path
+
+      html = Nokogiri::HTML(response.body)
+      expect(html.css("[data-direction=up]").first["disabled"]).not_to be_nil
+      expect(html.css("[data-direction=down]").last["disabled"]).not_to be_nil
+      expect(html.css("[data-direction=up]")[1]["disabled"]).to be_nil
+    end
   end
 
   describe "GET /painel/atelie/tema/preview" do

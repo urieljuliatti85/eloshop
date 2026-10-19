@@ -1,14 +1,21 @@
   <p class="text-sm text-stone-500">Um ponto de partida. Aplique um e ajuste o que quiser nas outras abas.</p>
+  <% short = ->(label) { label.split(" (").first } %>
   <div class="grid grid-cols-2 gap-3">
     <% SellerTheme::PRESETS.each do |key, preset| %>
       <% palette = SellerTheme::PALETTES.fetch(preset[:palette]) %>
-      <button type="button" data-action="theme-editor#applyPreset" data-preset="<%= key %>"
-              class="flex min-h-11 cursor-pointer flex-col gap-2 rounded-2xl border border-stone-200 bg-white p-2.5 text-left transition hover:border-stone-400 focus-visible:ring-3 focus-visible:ring-brand-300">
-        <span class="block h-14 rounded-xl" style="background: linear-gradient(135deg, <%= palette[:from] %>, <%= palette[:to] %>)">
+      <%# `aria-pressed` diz se o formulário está exatamente neste tema; o
+          editor recalcula a cada mudança. %>
+      <button type="button" data-action="theme-editor#applyPreset" data-preset="<%= key %>" data-theme-editor-target="preset" aria-pressed="false"
+              class="group flex min-h-11 cursor-pointer flex-col gap-2 rounded-2xl border border-stone-200 bg-white p-2.5 text-left transition hover:border-stone-400 focus-visible:ring-3 focus-visible:ring-brand-300 aria-pressed:border-stone-900 aria-pressed:ring-2 aria-pressed:ring-stone-900">
+        <span class="relative block h-14 rounded-xl" style="background: linear-gradient(135deg, <%= palette[:from] %>, <%= palette[:to] %>)">
           <span class="block p-2 text-lg font-black text-white/90" style="font-family: <%= SellerTheme::FONTS.dig(preset[:font], :stack) %>">Aa</span>
+          <span class="absolute right-1.5 top-1.5 hidden rounded-full bg-white px-2 py-0.5 text-[0.6875rem] font-bold text-stone-900 group-aria-pressed:inline">Aplicado</span>
         </span>
         <span class="text-sm font-bold text-stone-800"><%= preset[:label] %></span>
-        <span class="text-xs leading-tight text-stone-500"><%= palette[:label] %> · <%= SellerTheme::FONTS.dig(preset[:font], :label) %></span>
+        <span class="text-xs leading-tight text-stone-500">
+          <%= palette[:label] %> · <%= SellerTheme::FONTS.dig(preset[:font], :label) %><br>
+          <%= short.(SellerTheme::LAYOUTS[preset[:layout]]) %> · topo <%= short.(SellerTheme::HEROES[preset[:hero]]).downcase %>
+        </span>
       </button>
     <% end %>
   </div>
