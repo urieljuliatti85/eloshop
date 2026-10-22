@@ -8,7 +8,7 @@
   <%= link_to product_path(product.seller, product.slug), class: "flex flex-1 flex-col" do %>
     <div class="relative aspect-square overflow-hidden rounded-2xl bg-mist-100">
       <% if product.main_image.attached? %>
-        <%= image_tag product.main_image, class: "h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]", alt: product.name, loading: "lazy", width: 400, height: 400 %>
+        <%= image_tag product.main_image.variant(Product::CARD_IMAGE_VARIANT), class: "h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]", alt: product.name, loading: "lazy", width: 400, height: 400 %>
       <% end %>
 
       <% unless available %>
@@ -18,7 +18,7 @@
       <% end %>
 
       <% if product.availability_type_one_of_a_kind? %>
-        <span class="pointer-events-none absolute left-3 top-3 rounded-full bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white">Peça única</span>
+        <span class="pointer-events-none absolute left-3 top-3 rounded-full bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white">Peça única</span>
       <% elsif product.availability_type_made_to_order? %>
         <span class="pointer-events-none absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-ink">Sob encomenda</span>
       <% end %>

@@ -25,65 +25,65 @@
     <%= form.hidden_field :product_variant_id, data: { "variant-selector-target": "variantId" } %>
 
     <% if sizes.any? %>
-      <div>
-        <p class="mb-2 text-sm font-medium text-ink">Tamanho</p>
+      <fieldset>
+        <legend class="mb-2 text-sm font-medium text-ink">Tamanho</legend>
         <div class="flex flex-wrap gap-2">
           <% sizes.each_with_index do |size, index| %>
             <label class="cursor-pointer">
               <input type="radio" name="variant_size" value="<%= size %>" <%= "checked" if index.zero? %>
                      data-variant-selector-target="size" data-action="change->variant-selector#update" class="peer sr-only">
-              <span class="flex h-11 min-w-11 items-center justify-center rounded-full border border-gray-300 px-4 text-sm font-medium text-ink peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white">
+              <span class="flex h-11 min-w-11 items-center justify-center rounded-full border border-gray-300 px-4 text-sm font-medium text-ink peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-600 peer-focus-visible:ring-offset-2">
                 <%= size %>
               </span>
             </label>
           <% end %>
         </div>
-      </div>
+      </fieldset>
     <% end %>
 
     <% if colors.any? %>
-      <div>
-        <p class="mb-2 text-sm font-medium text-ink">Cor</p>
+      <fieldset>
+        <legend class="mb-2 text-sm font-medium text-ink">Cor</legend>
         <div class="flex flex-wrap gap-2">
           <% colors.each_with_index do |color, index| %>
             <label class="cursor-pointer">
               <input type="radio" name="variant_color" value="<%= color %>" <%= "checked" if index.zero? %>
                      data-variant-selector-target="color" data-action="change->variant-selector#update" class="peer sr-only">
-              <span class="flex h-11 items-center justify-center rounded-full border border-gray-300 px-4 text-sm font-medium text-ink peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white">
+              <span class="flex h-11 items-center justify-center rounded-full border border-gray-300 px-4 text-sm font-medium text-ink peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-600 peer-focus-visible:ring-offset-2">
                 <%= color %>
               </span>
             </label>
           <% end %>
         </div>
-      </div>
+      </fieldset>
     <% end %>
 
     <% if materials.any? %>
-      <div>
-        <p class="mb-2 text-sm font-medium text-ink">Material</p>
+      <fieldset>
+        <legend class="mb-2 text-sm font-medium text-ink">Material</legend>
         <div class="flex flex-wrap gap-2">
           <% materials.each_with_index do |material, index| %>
             <label class="cursor-pointer">
               <input type="radio" name="variant_material" value="<%= material %>" <%= "checked" if index.zero? %>
                      data-variant-selector-target="material" data-action="change->variant-selector#update" class="peer sr-only">
-              <span class="flex h-11 items-center justify-center rounded-full border border-gray-300 px-4 text-sm font-medium text-ink peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white">
+              <span class="flex h-11 items-center justify-center rounded-full border border-gray-300 px-4 text-sm font-medium text-ink peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand-600 peer-focus-visible:ring-offset-2">
                 <%= material %>
               </span>
             </label>
           <% end %>
         </div>
-      </div>
+      </fieldset>
     <% end %>
 
     <%= render "personalization_fields", product: product %>
 
     <div class="flex items-center gap-4">
       <div class="flex items-center rounded-full border border-gray-300">
-        <%= form.number_field :quantity, value: 1, min: 1, class: "w-16 rounded-full px-3 py-2 text-center focus:outline-none" %>
+        <%= form.number_field :quantity, value: 1, min: 1, aria: { label: "Quantidade" }, class: "min-h-11 w-16 rounded-full px-3 py-2 text-center focus:outline-2 focus:outline-offset-2 focus:outline-brand-600" %>
       </div>
 
       <%= form.submit "Adicionar ao carrinho", data: { "variant-selector-target": "submit" },
-            class: "flex-1 rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50" %>
+            class: "flex-1 rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-700 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50" %>
     </div>
 
     <p class="text-sm text-red-700" data-variant-selector-target="stockNotice"></p>

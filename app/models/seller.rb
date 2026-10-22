@@ -413,7 +413,7 @@ class Seller < ApplicationRecord
     products.publicly_visible
       .order(created_at: :desc)
       .preload(:seller, :product_variants, :personalization_options, category: :parent)
-      .preload(main_image_attachment: :blob)
+      .preload_main_image
       .load
   end
 

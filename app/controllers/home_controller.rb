@@ -19,7 +19,7 @@ class HomeController < StorefrontController
       .order(created_at: :desc)
       .limit(6)
       .preload(:seller, :product_variants)
-      .preload(main_image_attachment: :blob)
+      .preload_main_image
   end
 
   private
