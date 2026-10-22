@@ -1,8 +1,8 @@
-<section class="<%= seller_cards_class(seller.theme_corners, seller.theme_card_style) %>">
+<section class="<%= seller_cards_class(seller) %>">
   <div class="flex items-end justify-between gap-4">
     <div>
-      <p class="text-sm font-semibold uppercase tracking-wider text-[var(--atelier-accent)]">Catálogo</p>
-      <h2 class="mt-2 text-3xl font-bold text-ink">Peças deste ateliê</h2>
+      <p class="text-sm font-semibold uppercase tracking-wider text-[var(--atelier-accent-on-page)]">Catálogo</p>
+      <h2 class="atelier-heading mt-2 text-3xl font-bold text-ink">Peças deste ateliê</h2>
     </div>
     <%= link_to "Ver toda a loja", products_path, class: "hidden text-sm font-semibold text-brand-600 underline underline-offset-4 sm:block" %>
   </div>

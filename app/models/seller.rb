@@ -23,13 +23,17 @@ class Seller < ApplicationRecord
   ABOUT_TEXT_MAX_LENGTH = 1000
   NOTICE_TEXT_MAX_LENGTH = 140
 
-  # Opções visuais (paleta, fonte, layout, topo): chaves de SellerTheme.
+  # Opções visuais (paleta, fonte, layout, topo, fundo...): chaves de SellerTheme.
   validates :theme_palette, inclusion: { in: SellerTheme::PALETTES.keys }
   validates :theme_font, inclusion: { in: SellerTheme::FONTS.keys }
   validates :theme_layout, inclusion: { in: SellerTheme::LAYOUTS.keys }
   validates :theme_hero, inclusion: { in: SellerTheme::HEROES.keys }
   validates :theme_corners, inclusion: { in: SellerTheme::CORNERS.keys }
   validates :theme_card_style, inclusion: { in: SellerTheme::CARD_STYLES.keys }
+  validates :theme_background, inclusion: { in: SellerTheme::BACKGROUNDS.keys }
+  validates :theme_ornament, inclusion: { in: SellerTheme::ORNAMENTS.keys }
+  validates :theme_image_ratio, inclusion: { in: SellerTheme::IMAGE_RATIOS.keys }
+  validates :theme_heading_font, inclusion: { in: SellerTheme::HEADING_FONTS.keys }
   validate :theme_accent_color_readable
   validates :theme_sections, presence: true
   validate :theme_sections_known

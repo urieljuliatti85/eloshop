@@ -1,0 +1,88 @@
+<%# Topo da vitrine. Os formatos "capa" e "compacto" repetem a linguagem do
+    painel do artesão — fundo terracota, cantos de 2rem, tipografia pesada —
+    mas falam com quem compra, não com quem vende. "Dividido" põe a foto ao
+    lado do nome, "editorial" dispensa o bloco de cor (o nome fica sobre o
+    fundo da página e a foto vem embaixo) e "faixa" encolhe o topo para o
+    catálogo aparecer logo. Sem capa, a foto é a da peça mais recente; sem
+    nenhuma das duas, o fundo geométrico da paleta (§5). %>
+<%
+  hero = seller.theme_hero
+  radius = seller_hero_radius_class(seller.theme_corners)
+  photo = seller_cover_photo(seller, products) if hero.in?(%w[capa dividido editorial])
+  count = "#{pluralize(products.size, "peça disponível", plural: "peças disponíveis")}, #{products.any? ? "feitas à mão e prontas para conhecer" : "por enquanto"}."
+  geometric = "bg-[radial-gradient(circle_at_75%_25%,var(--atelier-soft)_0,transparent_27%),radial-gradient(circle_at_75%_72%,var(--atelier-glow)_0,transparent_28%),linear-gradient(135deg,var(--atelier-from),var(--atelier-to))]"
+  # Está acima da dobra e costuma ser o LCP: nada de lazy aqui.
+  photo_options = { alt: "", loading: "eager", fetchpriority: "high", decoding: "async" }
+%>
+
+<% case hero %>
+<% when "editorial" %>
+  <section class="space-y-8">
+    <div class="max-w-3xl">
+      <% if seller.logo.attached? %>
+        <%= image_tag seller.logo.variant(resize_to_fill: [ 160, 160 ]), alt: "Logo do ateliê #{seller.name}",
+              class: "mb-6 size-20 rounded-full border border-black/10 object-cover sm:size-24" %>
+      <% end %>
+      <p class="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[var(--atelier-accent-on-page)]">Ateliê na EloShop</p>
+      <h1 class="atelier-heading text-5xl font-black leading-[0.95] tracking-tight text-ink sm:text-6xl lg:text-7xl"><%= seller.name %></h1>
+      <p class="mt-5 max-w-lg text-base leading-7 text-ink-muted"><%= count %></p>
+      <%= render "sellers/social_links", seller: seller, link_class: "border-ink/25 text-ink hover:bg-ink/5" %>
+    </div>
+    <% if photo %>
+      <%= image_tag photo, **photo_options, class: "aspect-[4/3] w-full object-cover sm:aspect-[21/9] #{radius}" %>
+    <% end %>
+  </section>
+
+<% when "dividido" %>
+  <section class="grid overflow-hidden <%= radius %> bg-[var(--atelier-from)] text-white shadow-sm md:grid-cols-2">
+    <div class="relative isolate flex flex-col justify-end p-7 sm:p-10 lg:p-12">
+      <div class="absolute inset-0 -z-10 bg-gradient-to-br from-[var(--atelier-from)] to-[var(--atelier-to)]"></div>
+      <%= render "sellers/hero_text", seller: seller, count: count %>
+    </div>
+    <%# No celular a foto vem antes do nome, como numa capa de revista. %>
+    <div class="relative order-first min-h-56 md:order-none md:min-h-[26rem]">
+      <% if photo %>
+        <%= image_tag photo, **photo_options, class: "absolute inset-0 h-full w-full object-cover" %>
+      <% else %>
+        <div class="absolute inset-0 <%= geometric %>"></div>
+      <% end %>
+    </div>
+  </section>
+
+<% when "faixa" %>
+  <section class="relative isolate overflow-hidden <%= radius %> bg-[var(--atelier-from)] text-white shadow-sm">
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-[var(--atelier-from)] to-[var(--atelier-to)]"></div>
+    <div class="flex flex-wrap items-center gap-x-6 gap-y-3 px-6 py-5 sm:px-8">
+      <% if seller.logo.attached? %>
+        <%= image_tag seller.logo.variant(resize_to_fill: [ 96, 96 ]), alt: "Logo do ateliê #{seller.name}",
+              class: "size-12 shrink-0 rounded-full border-2 border-white/60 object-cover" %>
+      <% end %>
+      <%# No celular o nome ocupa a linha toda; contagem e contatos descem. %>
+      <div class="min-w-0 basis-full sm:basis-auto sm:flex-1">
+        <p class="text-[0.6875rem] font-bold uppercase tracking-[0.22em] text-[var(--atelier-soft)]">Ateliê na EloShop</p>
+        <h1 class="atelier-heading text-2xl font-black leading-tight tracking-tight sm:text-3xl"><%= seller.name %></h1>
+      </div>
+      <p class="text-sm text-white/80"><%= pluralize(products.size, "peça disponível", plural: "peças disponíveis") %></p>
+      <%= render "sellers/social_links", seller: seller, link_class: "border-white/50 hover:bg-white/15", wrapper_class: "flex flex-wrap gap-2" %>
+    </div>
+  </section>
+
+<% else %>
+  <% compact = hero == "compacto" %>
+  <section class="relative isolate overflow-hidden <%= radius %> bg-[var(--atelier-from)] text-white shadow-sm">
+    <% if photo %>
+      <%= image_tag photo, **photo_options, class: "absolute inset-0 -z-20 h-full w-full object-cover" %>
+      <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/80 via-black/45 to-black/20"></div>
+    <% else %>
+      <%# Mesmo fundo geométrico que o painel usa quando ainda não há foto. %>
+      <div class="absolute inset-0 -z-20 <%= geometric %>"></div>
+      <% unless compact %>
+        <div class="absolute right-[12%] top-[12%] -z-10 size-40 rotate-6 border-[1.25rem] border-white/15 sm:size-64"></div>
+      <% end %>
+    <% end %>
+
+    <div class="flex max-w-2xl flex-col justify-end <%= compact ? "p-6 sm:p-8" : "p-7 sm:p-10 lg:p-12" %>">
+      <%= render "sellers/hero_text", seller: seller, count: count %>
+    </div>
+  </section>
+<% end %>

@@ -5,6 +5,7 @@ module SellerPortal
     THEME_FIELDS = %i[
       footer_text about_text notice_text instagram_handle whatsapp_number
       theme_palette theme_font theme_layout theme_hero theme_corners theme_card_style theme_accent_color
+      theme_background theme_ornament theme_image_ratio theme_heading_font
     ].freeze
     THEME_IMAGES = %i[logo cover_image about_image].freeze
 
