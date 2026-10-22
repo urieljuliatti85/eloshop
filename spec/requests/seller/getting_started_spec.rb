@@ -115,7 +115,8 @@ RSpec.describe "Seller getting started", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("5 de 5 etapas concluídas", "Ateliê pronto", seller_root_path)
-    expect(Nokogiri::HTML(response.body).css(".caderno-indice .caderno-carimbo").size).to eq(5)
+    steps = Nokogiri::HTML(response.body).css("ol[aria-label='Etapas para preparar o ateliê'] li")
+    expect(steps.count { |step| step.text.include?("(feita)") }).to eq(5)
 
     { "endereco" => "Revisar endereço", "mercado-pago" => "Ver conexão", "primeira-peca" => "Gerenciar produtos", "aprovacao" => "Acompanhar pedidos" }.each do |slug, action|
       get seller_getting_started_path(etapa: slug)
