@@ -3,7 +3,7 @@
         data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
   <div class="container mx-auto flex items-center justify-between gap-6 px-5 py-4">
     <%= link_to root_path, class: "flex items-center" do %>
-      <%= image_tag "logo.png", alt: "EloShop", class: "h-9" %>
+      <%= image_tag "logo-header.png", alt: "EloShop", class: "h-9 w-auto", width: 108, height: 36 %>
     <% end %>
 
     <nav class="hidden items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-medium text-ink md:flex">
@@ -14,6 +14,9 @@
           área de quem tem direito a ela. O rótulo de cada item repete o
           título da página de destino. %>
       <% signed_in_user = authenticated? ? Current.user : nil
+         # O topo também é renderizado fora da vitrine (login da administração,
+         # cadastro de ateliê), onde o helper de cliente não existe.
+         shopping_customer = respond_to?(:customer_authenticated?) && customer_authenticated?
 
          items = [ [ "Início", root_path, "home" ],
                    [ "Loja", products_path, "products" ],
@@ -23,7 +26,9 @@
            items << [ "Administração", admin_root_path, "admin/dashboard" ]
          elsif signed_in_user&.seller?
            items << [ "Painel do Artesão", seller_root_path, "seller_portal/dashboard" ]
-         else
+         # Cliente logado está comprando: os convites de artesão saem do topo
+         # (continuam no rodapé) para não disputar atenção com a compra.
+         elsif !shopping_customer
            items << [ "Entrar no Ateliê", seller_login_path, "seller_portal/sessions" ]
            items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations" ]
          end %>
@@ -156,7 +161,7 @@
               <path d="M9.5 16a2.5 2.5 0 0 0 5 0" stroke-linecap="round" />
             </svg>
             <% if unread_count.positive? %>
-              <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-semibold text-white">
+              <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-xs font-semibold text-white">
                 <%= unread_count %>
               </span>
             <% end %>
@@ -197,7 +202,7 @@
             <path d="M9.5 16a2.5 2.5 0 0 0 5 0" stroke-linecap="round" />
           </svg>
           <% if unread_count.positive? %>
-            <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-semibold text-white">
+            <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-xs font-semibold text-white">
               <%= unread_count %>
             </span>
           <% end %>
@@ -212,7 +217,7 @@
         </svg>
         <% if Current.cart&.cart_items&.any? %>
           <%# Sobre o ícone o badge flutua no canto; ao lado do rótulo, fica em linha. %>
-          <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-semibold text-white md:static">
+          <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-xs font-semibold text-white md:static">
             <%= Current.cart.cart_items.sum(:quantity) %>
           </span>
         <% end %>
@@ -238,7 +243,7 @@
             <%= form.search_field :q, value: params[:q], placeholder: "Buscar produtos", id: nil,
                   class: "w-full rounded-full border border-gray-200 bg-sand-50 px-4 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-brand-500 focus:outline-none",
                   data: { header_search_target: "input" } %>
-            <%= form.submit "Buscar", class: "cursor-pointer rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600" %>
+            <%= form.submit "Buscar", class: "cursor-pointer rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700" %>
           <% end %>
         </div>
       </div>
@@ -270,7 +275,7 @@
                           [ "Loja", products_path, "products" ],
                           [ "Ateliês", sellers_path, "sellers" ],
                           [ "Como funciona", how_it_works_path, "how_it_works" ] ]
-         unless mobile_user
+         unless mobile_user || (respond_to?(:customer_authenticated?) && customer_authenticated?)
            mobile_items << [ "Entrar no Ateliê", seller_login_path, "seller_portal/sessions" ]
            mobile_items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations" ]
          end %>

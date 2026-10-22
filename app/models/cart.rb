@@ -15,4 +15,11 @@ class Cart < ApplicationRecord
 
     coupon.discount_cents_for(subtotal_cents)
   end
+
+  # O pedido só é enviado quando a peça mais demorada fica pronta: é o maior
+  # prazo de produção entre as peças sob encomenda que define a espera antes
+  # do transporte. Nil quando nada no carrinho é sob encomenda.
+  def production_time_max_days
+    cart_items.includes(:product).filter_map { |item| item.product.production_time_max_days if item.product.availability_type_made_to_order? }.max
+  end
 end
