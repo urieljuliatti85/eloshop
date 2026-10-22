@@ -61,7 +61,9 @@
         ela não existe (cadastro pendente, suspenso ou escondido), cai na loja
         geral: a página própria responderia 404 ou "indisponível". %>
     <% store_path = current_seller.public_page_available? ? seller_path(current_seller) : products_path %>
-    <header class="sticky top-0 z-40 border-b border-brand-100 bg-white/90 sm:backdrop-blur"
+    <%# Borda de baixo serrilhada (.painel-topo): o recorte precisa de fundo
+        sólido, por isso o topo deixou de ser translúcido com desfoque. %>
+    <header class="painel-topo sticky top-0 z-40"
             data-controller="mobile-menu"
             data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
       <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6 lg:flex-nowrap lg:px-8">
@@ -151,7 +153,7 @@
                 (a conta suspensa), não para "Aprovado". %>
             <p class="text-xs font-semibold <%= { "approved" => "text-emerald-700", "pending" => "text-amber-700", "suspended" => "text-red-700" }.fetch(current_seller.status, "text-stone-600") %>"><%= t(current_seller.status, scope: "sellers.statuses") %></p>
           </div>
-          <span class="hidden size-9 place-items-center rounded-full bg-brand-600 text-sm font-bold text-white sm:grid" aria-hidden="true"><%= current_seller.name.first.upcase %></span>
+          <span class="painel-roseta hidden size-10 place-items-center bg-brand-600 text-sm font-bold text-white sm:grid" aria-hidden="true"><%= current_seller.name.first.upcase %></span>
           <%= button_to seller_logout_path, method: :delete, class: "hidden size-11 cursor-pointer place-items-center rounded-full border border-brand-200 text-stone-600 transition hover:border-brand-400 hover:text-brand-600 sm:grid", aria: { label: "Sair" } do %>
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/></svg>
           <% end %>
@@ -161,8 +163,11 @@
                   aria-expanded="false" aria-controls="seller-nav-panel" aria-label="Abrir menu do painel"
                   data-mobile-menu-target="button"
                   data-action="mobile-menu#toggle">
-            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-              <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
+            <%# Risco do meio mais curto e na cor da marca, mesmo vocabulário de
+                acabamento da borda serrilhada do topo. %>
+            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <path d="M4 7h16M4 17h16" />
+              <path d="M10 12h10" class="text-brand-600" stroke="currentColor" />
             </svg>
           </button>
         </div>
