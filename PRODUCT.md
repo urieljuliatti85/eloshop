@@ -53,7 +53,7 @@ Feito para peças artesanais, não para estoque genérico: peça única, sob enc
 2. Um próximo passo por vez: o artesão nunca deve escolher entre vários avisos igualmente urgentes.
 3. Dinheiro transparente: todo valor mostrado diz se já desconta a comissão, e o mesmo pedido mostra o mesmo número em qualquer tela.
 4. O vocabulário é o do ateliê (peça, encomenda, produção), não o de sistema.
-5. Vermelho como alerta só para o que realmente bloqueia a venda; a capa do caderno (Primeiros passos) usa o vermelho da marca, por escolha de 2026-10-15.
+5. Vermelho como alerta só para o que realmente bloqueia a venda.
 
 ## Accessibility & Inclusion
 

@@ -7,18 +7,14 @@ related_targets: []
 
 # Fluxo guiado de primeiros passos (painel do artesão)
 
-Escopo: o passo a passo de configuração do ateliê (endereço, conta do Mercado Pago, chave PIX, primeira peça, aprovação), uma etapa por tela. Modo: Operate. Usuário: artesão no celular, na oficina, configurando pela primeira vez. Tarefa: concluir a próxima etapa e saber o que falta. Restrições: textos e ordem dos fluxos do Mercado Pago e da chave PIX só mudam com aprovação; CSP sem CDN (fontes servidas pelo app); o tour localiza passos pelos links do menu.
+Escopo: o passo a passo de configuração do ateliê (endereço, conta do Mercado Pago, chave PIX, primeira peça, aprovação), uma etapa por tela. Modo: Operate. Usuário: artesão no celular, na oficina, configurando pela primeira vez. Tarefa: concluir a próxima etapa e saber o que falta. Restrições: textos e ordem dos fluxos do Mercado Pago e da chave PIX só mudam com aprovação; CSP sem CDN; o tour localiza passos pelos links do menu.
 
 ## Direction contract
 
-THESIS: O passo a passo é a página do caderno de encomendas do ateliê: cada etapa concluída é riscada e recebe um carimbo, e só a etapa atual pede ação. Recusa o assistente de SaaS com bolinhas numeradas, barra azul e botões Voltar/Avançar.
+THESIS: O passo a passo segue o padrão do painel (DESIGN.md): título forte, faixa de etapas e a etapa aberta num cartão branco, com uma ação principal vermelha. O mundo do caderno de encomendas (capa, pauta, carimbo, Karla e Caveat) foi retirado em 2026-10-22 a pedido do usuário.
 
-OWN-WORLD: Faixa de capa vermelha da marca (#b81e0a, troca pedida pelo usuário em 2026-10-15; era verde-garrafa) como cor do fluxo; folha clara (#fbfaf6) com pauta fina e discreta; tinta grafite (#1d1d1b); carimbo vermelho-óxido (#b23a2a) só para etapa concluída. Uma sans de trabalho para a interface e uma letra manuscrita só no título da folha e no carimbo. Controles web padrão.
+FORM: Faixa horizontal de segmentos retos, sem pílulas nem cantos arredondados (pedido do usuário em 2026-10-22). Traço de 4px no topo de cada segmento diz o estado: verde feita, vermelho atual, cinza pendente; a atual com fundo brand-50 e etiqueta reta "Agora", a feita com etiqueta reta "Feito".
 
-STORY: O artesão vê de relance o que já fez e o que falta, faz uma etapa por vez, ganha o carimbo quando conclui e sabe o que cada etapa destrava.
+FIRST VIEWPORT: No celular, "Primeiros passos" e "N de 5 etapas concluídas", o botão do tour, a faixa com os cinco segmentos lado a lado só com número ou ✓, a linha "Etapa N de 5: nome" e o início do cartão da etapa atual.
 
-FIRST VIEWPORT: No celular, faixa vermelha com "Primeiros passos" e "N de 5"; a folha com as cinco etapas em lista (prontas riscadas, a atual marcada); o carimbo da última concluída; título, texto e prova da etapa atual; botão principal vermelho fixo no pé da tela.
-
-FORM: Caderno de Encomendas, posição 1 da lista ordenada (escolha do usuário pelo card IMPECCABLE’S PICK). seed: none (unavailable)
-
-FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+STORY: O artesão vê de relance o que já fez e o que falta, abre uma etapa por vez e sabe o que cada etapa destrava ("Depois disso").
