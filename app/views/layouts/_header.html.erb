@@ -14,9 +14,6 @@
           área de quem tem direito a ela. O rótulo de cada item repete o
           título da página de destino. %>
       <% signed_in_user = authenticated? ? Current.user : nil
-         # O topo também é renderizado fora da vitrine (login da administração,
-         # cadastro de ateliê), onde o helper de cliente não existe.
-         shopping_customer = respond_to?(:customer_authenticated?) && customer_authenticated?
 
          items = [ [ "Início", root_path, "home" ],
                    [ "Loja", products_path, "products" ],
@@ -26,9 +23,7 @@
            items << [ "Administração", admin_root_path, "admin/dashboard" ]
          elsif signed_in_user&.seller?
            items << [ "Painel do Artesão", seller_root_path, "seller_portal/dashboard" ]
-         # Cliente logado está comprando: os convites de artesão saem do topo
-         # (continuam no rodapé) para não disputar atenção com a compra.
-         elsif !shopping_customer
+         else
            items << [ "Entrar no Ateliê", seller_login_path, "seller_portal/sessions" ]
            items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations" ]
          end %>
@@ -275,7 +270,7 @@
                           [ "Loja", products_path, "products" ],
                           [ "Ateliês", sellers_path, "sellers" ],
                           [ "Como funciona", how_it_works_path, "how_it_works" ] ]
-         unless mobile_user || (respond_to?(:customer_authenticated?) && customer_authenticated?)
+         unless mobile_user
            mobile_items << [ "Entrar no Ateliê", seller_login_path, "seller_portal/sessions" ]
            mobile_items << [ "Cadastre seu Ateliê", new_seller_registration_path, "seller_registrations" ]
          end %>

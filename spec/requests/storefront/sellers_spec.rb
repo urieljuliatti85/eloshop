@@ -84,19 +84,6 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(header_nav).to include(seller_login_path)
     end
 
-    # Cliente logado está comprando: o convite de artesão sai do topo e fica
-    # no rodapé, que continua levando ao login do ateliê.
-    it "moves the atelier links to the footer for a signed-in customer" do
-      customer = Customer.create!(name: "Cliente topo", email: "cliente-topo@eloshop.test", password: "password123")
-      post customer_session_path, params: { email: customer.email, password: "password123" }
-
-      get root_path
-
-      expect(header_nav).not_to include("Cadastre seu Ateliê")
-      expect(header_nav).not_to include("Entrar no Ateliê")
-      expect(response.body[/<footer.*<\/footer>/m]).to include(seller_login_path)
-    end
-
     # A administração da plataforma não é um ateliê: o admin não vê convite,
     # login nem painel de vendedor no menu público.
     it "hides every atelier link for a signed-in admin" do
