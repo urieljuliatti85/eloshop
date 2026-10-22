@@ -16,8 +16,16 @@ export default class extends Controller {
     this.leaving = false
     this.keydown = (event) => { if (event.key === "Escape" && this.sheetOpen) this.closePreview() }
     this.beforeUnload = (event) => { if (this.dirty && !this.leaving) event.preventDefault() }
+    // O painel navega com Turbo: clicar no menu troca de página sem disparar
+    // `beforeunload`, e o rascunho sumia sem aviso.
+    this.beforeVisit = (event) => {
+      if (!this.dirty || this.leaving) return
+      if (window.confirm("Sair sem salvar? As alterações do tema serão perdidas.")) this.leaving = true
+      else event.preventDefault()
+    }
     document.addEventListener("keydown", this.keydown)
     window.addEventListener("beforeunload", this.beforeUnload)
+    document.addEventListener("turbo:before-visit", this.beforeVisit)
     this.resize = () => this.fit()
     window.addEventListener("resize", this.resize)
     this.frameTarget.addEventListener("load", () => this.loaded())
@@ -35,6 +43,7 @@ export default class extends Controller {
     this.observer?.disconnect()
     window.removeEventListener("resize", this.resize)
     window.removeEventListener("beforeunload", this.beforeUnload)
+    document.removeEventListener("turbo:before-visit", this.beforeVisit)
     document.removeEventListener("keydown", this.keydown)
     document.body.classList.remove("overflow-hidden")
     clearTimeout(this.timer)
