@@ -106,6 +106,41 @@
 }
 
 @layer components {
+  /* Topo do painel com a borda de baixo serrilhada, como tecido cortado com
+     tesoura de picotar. Dois zigue-zagues em gradiente: o de baixo, 1px mais
+     baixo e na cor da antiga borda (brand-100), vira o traço; o de cima, na
+     cor do fundo do topo, é o recorte. */
+  /* Selo picotado: círculo com a borda recortada em dentes, como roseta de
+     tecido. Usado na inicial do ateliê no topo do painel; o recorte come
+     ~2,5% do raio (32 dentes rasos: com menos e mais fundos virava selo de
+     promoção). */
+  .painel-roseta { clip-path: polygon(50.0% 0.0%, 54.7% 2.7%, 59.8% 1.0%, 63.8% 4.5%, 69.1% 3.8%, 72.4% 8.1%, 77.8% 8.4%, 80.1% 13.3%, 85.4% 14.6%, 86.7% 19.9%, 91.6% 22.2%, 91.9% 27.6%, 96.2% 30.9%, 95.5% 36.2%, 99.0% 40.2%, 97.3% 45.3%, 100.0% 50.0%, 97.3% 54.7%, 99.0% 59.8%, 95.5% 63.8%, 96.2% 69.1%, 91.9% 72.4%, 91.6% 77.8%, 86.7% 80.1%, 85.4% 85.4%, 80.1% 86.7%, 77.8% 91.6%, 72.4% 91.9%, 69.1% 96.2%, 63.8% 95.5%, 59.8% 99.0%, 54.7% 97.3%, 50.0% 100.0%, 45.3% 97.3%, 40.2% 99.0%, 36.2% 95.5%, 30.9% 96.2%, 27.6% 91.9%, 22.2% 91.6%, 19.9% 86.7%, 14.6% 85.4%, 13.3% 80.1%, 8.4% 77.8%, 8.1% 72.4%, 3.8% 69.1%, 4.5% 63.8%, 1.0% 59.8%, 2.7% 54.7%, 0.0% 50.0%, 2.7% 45.3%, 1.0% 40.2%, 4.5% 36.2%, 3.8% 30.9%, 8.1% 27.6%, 8.4% 22.2%, 13.3% 19.9%, 14.6% 14.6%, 19.9% 13.3%, 22.2% 8.4%, 27.6% 8.1%, 30.9% 3.8%, 36.2% 4.5%, 40.2% 1.0%, 45.3% 2.7%); }
+
+  .painel-topo { @apply relative bg-white; }
+  .painel-topo::before,
+  .painel-topo::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 7px;
+    pointer-events: none;
+    background-size: 14px 14px;
+    background-repeat: repeat-x;
+  }
+  .painel-topo::before {
+    top: calc(100% + 1px);
+    background-image:
+      linear-gradient(135deg, var(--color-brand-200) 25%, transparent 25%),
+      linear-gradient(225deg, var(--color-brand-200) 25%, transparent 25%);
+  }
+  .painel-topo::after {
+    top: 100%;
+    background-image:
+      linear-gradient(135deg, var(--color-white) 25%, transparent 25%),
+      linear-gradient(225deg, var(--color-white) 25%, transparent 25%);
+  }
+
   .app-flash {
     @apply fixed left-4 right-4 top-4 z-50 mx-auto flex max-w-xl items-center gap-4 overflow-hidden rounded-3xl border bg-white px-5 py-5 pr-14 text-left shadow-[0_22px_55px_rgba(15,23,42,0.18)] sm:left-auto sm:right-6 sm:top-6 sm:mx-0 sm:gap-5 sm:px-6 sm:py-6 sm:pr-16;
   }
