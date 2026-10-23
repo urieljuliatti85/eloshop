@@ -105,7 +105,7 @@ class ProductsController < StorefrontController
       # associação vira sua própria query pequena, o plano nunca chega ao
       # limiar do JIT e a ação cai para ~10 ms.
       .preload(:seller, :product_variants, :personalization_options, category: :parent)
-      .preload(main_image_attachment: :blob)
+      .preload_main_image
       .limit(@per_page)
       .offset((@page - 1) * @per_page)
       # A view pergunta `@products.any?` antes de renderizar a grade; sem
@@ -127,7 +127,7 @@ class ProductsController < StorefrontController
     # estimado de 529.762, 5x o limiar) contra ~13 ms com preload.
     @related_products = @product.related_products
       .preload(:seller, :product_variants, :personalization_options, category: :parent)
-      .preload(main_image_attachment: :blob)
+      .preload_main_image
       .load
     # `.load` porque o parcial pergunta `reviews.any?` antes de iterar; sem
     # isso, a pergunta é um SELECT ... LIMIT 1 a mais.

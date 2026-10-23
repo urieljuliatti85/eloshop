@@ -34,12 +34,12 @@
         <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Sob encomenda</p>
       <% end %>
 
+      <%# Compartilhar saiu do lado do título: no celular os cinco botões
+          espremiam o nome em quatro linhas, estouravam a largura da tela e
+          empurravam o botão de compra para fora da primeira dobra. %>
       <div class="mt-1 flex items-start justify-between gap-4">
         <h1 class="text-3xl font-bold text-ink md:text-4xl"><%= @product.name %></h1>
-        <div class="flex items-center gap-2">
-          <%= render "share_buttons", product: @product %>
-          <%= render "wishlist_button", product: @product %>
-        </div>
+        <%= render "wishlist_button", product: @product %>
       </div>
 
       <% if @product.average_rating %>
@@ -67,7 +67,7 @@
           o CTA nascia abaixo da dobra em telas de 390px. %>
       <p class="order-2 mt-6 leading-relaxed text-ink-muted md:order-none"><%= @product.description %></p>
 
-      <div class="order-1 mt-8 border-t border-gray-200 pt-8 md:order-none">
+      <div class="order-1 mt-6 border-t border-gray-200 pt-6 md:order-none md:mt-8 md:pt-8">
         <% if @product.available_for_purchase? %>
           <p class="mb-4 text-sm font-medium text-green-700">Disponível</p>
 
@@ -82,19 +82,24 @@
               <div class="flex items-center gap-4">
                 <div class="flex items-center rounded-full border border-gray-300">
                   <% if @product.availability_type_made_to_order? %>
-                    <%= form.number_field :quantity, value: 1, min: 1, class: "w-16 rounded-full px-3 py-2 text-center focus:outline-none" %>
+                    <%= form.number_field :quantity, value: 1, min: 1, aria: { label: "Quantidade" }, class: "min-h-11 w-16 rounded-full px-3 py-2 text-center focus:outline-2 focus:outline-offset-2 focus:outline-brand-600" %>
                   <% else %>
-                    <%= form.number_field :quantity, value: 1, min: 1, max: @product.stock_quantity, class: "w-16 rounded-full px-3 py-2 text-center focus:outline-none" %>
+                    <%= form.number_field :quantity, value: 1, min: 1, max: @product.stock_quantity, aria: { label: "Quantidade" }, class: "min-h-11 w-16 rounded-full px-3 py-2 text-center focus:outline-2 focus:outline-offset-2 focus:outline-brand-600" %>
                   <% end %>
                 </div>
 
-                <%= form.submit "Adicionar ao carrinho", class: "flex-1 rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-600 cursor-pointer" %>
+                <%= form.submit "Adicionar ao carrinho", class: "flex-1 rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-700 cursor-pointer" %>
               </div>
             <% end %>
           <% end %>
         <% else %>
           <p class="text-sm font-medium text-red-700">Indisponível</p>
         <% end %>
+      </div>
+
+      <div class="order-3 mt-6 flex items-center gap-3 md:order-none">
+        <span class="text-sm text-ink-muted">Compartilhar</span>
+        <%= render "share_buttons", product: @product %>
       </div>
 
       <div class="order-3 mt-8 divide-y divide-gray-200 border-t border-gray-200 md:order-none">

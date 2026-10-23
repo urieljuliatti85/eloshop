@@ -45,7 +45,7 @@
             Descubra criações artesanais de ateliês independentes, conheça a história por trás de cada peça e escolha algo especial para você ou para presentear.
           </p>
 
-          <%= link_to "Explorar produtos", products_path, class: "rounded-full bg-brand-500 px-8 py-4 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600" %>
+          <%= link_to "Explorar produtos", products_path, class: "rounded-full bg-brand-600 px-8 py-4 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %>
         </div>
       </li>
 
@@ -87,7 +87,7 @@
     <%# Controles só aparecem com JavaScript: sem ele a rolagem da própria
         faixa já dá conta, e um botão inerte seria pior que nenhum. %>
     <div class="mt-4 flex items-center justify-center gap-3" data-carousel-target="controls" hidden>
-      <button type="button" class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-brand-500 text-white shadow-sm transition hover:bg-brand-600"
+      <button type="button" class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-brand-600 text-white shadow-sm transition hover:bg-brand-700"
               data-action="carousel#previous" aria-label="Banner anterior">
         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
           <path d="m15 5-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" />
@@ -105,7 +105,7 @@
         <% end %>
       </div>
 
-      <button type="button" class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-brand-500 text-white shadow-sm transition hover:bg-brand-600"
+      <button type="button" class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-brand-600 text-white shadow-sm transition hover:bg-brand-700"
               data-action="carousel#next" aria-label="Próximo banner">
         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
           <path d="m9 5 7 7-7 7" stroke-linecap="round" stroke-linejoin="round" />
@@ -155,7 +155,7 @@
               <%= link_to products_path(category: category.slug), class: "group flex flex-col items-center gap-3 text-center" do %>
                 <div class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-sand-100 transition group-hover:bg-brand-50 sm:h-28 sm:w-28">
                   <% if (cover = @category_covers[category]) %>
-                    <%= image_tag cover.main_image, class: "h-full w-full object-cover transition duration-300 group-hover:scale-105", alt: "", loading: "lazy" %>
+                    <%= image_tag cover.main_image.variant(Product::CARD_IMAGE_VARIANT), class: "h-full w-full object-cover transition duration-300 group-hover:scale-105", alt: "", loading: "lazy" %>
                   <% end %>
                 </div>
                 <span class="text-base font-medium text-white [text-shadow:0_1px_10px_rgba(0,0,0,0.4)] transition group-hover:text-brand-100"><%= category.name %></span>

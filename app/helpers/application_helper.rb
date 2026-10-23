@@ -120,6 +120,16 @@ module ApplicationHelper
     "Até #{shipping.estimated_days} dias úteis"
   end
 
+  # Prazo mostrado antes de pagar. Com peça sob encomenda, o transporte só
+  # começa depois da produção (docs/shipping.md): somar os dois evita prometer
+  # "até 8 dias" por uma peça que leva 12 só para ficar pronta.
+  def checkout_delivery_estimate_label(shipping, production_max_days)
+    return shipping_estimate_label(shipping) if production_max_days.blank?
+    return "Retirada depois da produção (até #{production_max_days} dias úteis)" if shipping.local_pickup?
+
+    "Até #{production_max_days + shipping.estimated_days} dias úteis (produção de até #{production_max_days} + transporte de até #{shipping.estimated_days})"
+  end
+
   # Compartilhado entre cliente, painel do vendedor e admin — os três mostram
   # o mesmo Payment, cada um na sua tela de pedido.
   def payment_method_label(payment)
@@ -129,6 +139,28 @@ module ApplicationHelper
     parts << "#{payment.installments}×" if payment.installments > 1
     parts << "#{payment.card_brand.humanize} •••• #{payment.card_last_four}" if payment.card_last_four.present?
     parts.join(" · ")
+  end
+
+  ORDER_STATUS_BADGE_CLASSES = {
+    "pending" => "bg-amber-100 text-amber-900",
+    "confirmed" => "bg-emerald-100 text-emerald-800",
+    "cancelled" => "bg-stone-100 text-stone-700",
+    "partially_refunded" => "bg-stone-100 text-stone-700",
+    "refunded" => "bg-stone-100 text-stone-700"
+  }.freeze
+
+  def order_status_badge_classes(order)
+    ORDER_STATUS_BADGE_CLASSES.fetch(order.status)
+  end
+
+  # "Pago com PIX" só depois de o dinheiro entrar: num pedido ainda pendente a
+  # mesma frase contradizia o selo "Aguardando pagamento" logo acima.
+  def payment_summary_label(payment)
+    if payment.paid? || payment.partially_refunded? || payment.refunded?
+      safe_join([ "Pago com ", tag.span(payment_method_label(payment), class: "font-semibold") ])
+    else
+      safe_join([ "Forma de pagamento escolhida: ", tag.span(payment_method_label(payment), class: "font-semibold") ])
+    end
   end
 
   SELLER_ORDER_FULFILLMENT_BADGE_CLASSES = {

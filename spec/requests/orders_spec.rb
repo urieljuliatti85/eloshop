@@ -89,6 +89,30 @@ RSpec.describe "Orders", type: :request do
       expect(response.body).to include("Ateliê · Retirada no ateliê")
       expect(response.body).to include("Retirada combinada com o ateliê · R$ 0,00")
     end
+
+    # A estimativa mostrava só o transporte ("Até 8 dias úteis") para uma
+    # peça que leva até 12 dias só para ficar pronta.
+    it "adds the production lead time of made-to-order pieces to the delivery estimate" do
+      product.update!(
+        availability_type: :made_to_order,
+        stock_quantity: 0,
+        production_time_min_days: 7,
+        production_time_max_days: 12,
+        fixed_shipping_cents: 2000,
+        fixed_shipping_estimated_days: 8,
+        local_pickup_enabled: true
+      )
+      sign_in_customer
+      add_to_cart
+      customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+
+      get new_order_path
+
+      expect(response.body).to include("Sob encomenda: produção de 7 a 12 dias úteis")
+      expect(response.body).to include("Até 20 dias úteis (produção de até 12 + transporte de até 8) · R$ 20,00")
+      expect(response.body).to include("Retirada depois da produção (até 12 dias úteis)")
+      expect(response.body).not_to include("Até 8 dias úteis · R$ 20,00")
+    end
   end
 
   describe "POST /orders" do
@@ -229,6 +253,23 @@ RSpec.describe "Orders", type: :request do
       expect(response.body).to include("Em preparação")
       expect(response.body).to include("Enviado")
       expect(response.body).to include("Entregue")
+    end
+
+    # O pedido pendente dizia "Aguardando pagamento" duas vezes e, logo
+    # abaixo, "Pago com PIX" — antes de o cliente pagar.
+    it "does not claim the order was paid while the payment is pending" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      post orders_path, params: { address_id: address.id }
+      order = Order.last
+      post order_payment_path(order), params: { payment_method: "pix" }
+
+      get order_path(order)
+
+      expect(response.body).not_to include("Pago com")
+      expect(response.body).to include("Forma de pagamento escolhida:")
+      expect(response.body.scan("Aguardando pagamento").size).to eq(1)
     end
 
     it "shows shipment details after the seller marks the order as shipped" do
