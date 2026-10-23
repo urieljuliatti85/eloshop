@@ -84,4 +84,27 @@ RSpec.describe "Customer sessions", type: :request do
       end
     end
   end
+
+  describe "GET /customer_session/new" do
+    # O login no meio da compra parecia um desvio para outra parte da loja:
+    # sem etapas e com o título genérico "Quero comprar".
+    it "shows the checkout steps when the login interrupts a purchase" do
+      product = Product.create!(seller: approved_seller, name: "Contexto", sku: "CONTEXT-LOGIN", price_cents: 1000, stock_quantity: 1, status: :active)
+      post cart_items_path, params: { product_id: product.id, quantity: 1 }
+      get new_order_path
+
+      get new_customer_session_path
+
+      expect(response.body).to include("Identifique-se para finalizar a compra")
+      expect(response.body).to include('aria-label="Etapas do checkout"')
+      expect(response.body).to include('autocomplete="current-password"')
+    end
+
+    it "keeps the plain login outside a purchase" do
+      get new_customer_session_path
+
+      expect(response.body).to include("Quero comprar")
+      expect(response.body).not_to include('aria-label="Etapas do checkout"')
+    end
+  end
 end

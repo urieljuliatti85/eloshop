@@ -244,7 +244,8 @@ RSpec.describe "Storefront sellers", type: :request do
 
       get seller_path(approved_seller.slug)
 
-      expect(response.body).to include("var(--atelier-soft)_45%")
+      expect(response.body).to include("[&amp;_article]:bg-[var(--atelier-card)]")
+      expect(Nokogiri::HTML(response.body).at_css("div[style*='--atelier-card']")["style"]).to include("--atelier-card:color-mix(in srgb, var(--atelier-soft) 45%, white)")
     end
 
     it "applies corners and card style to the catalog" do
@@ -289,6 +290,107 @@ RSpec.describe "Storefront sellers", type: :request do
       get seller_path(approved_seller.slug)
 
       expect(response.body).not_to include("object-cover")
+    end
+
+    it "lays the hero photo beside the name with the split hero" do
+      approved_seller.cover_image.attach(fixture_file_upload("sample.png", "image/png"))
+      approved_seller.update!(theme_hero: "dividido")
+
+      get seller_path(approved_seller.slug)
+
+      hero = Nokogiri::HTML(response.body).at_css("section.md\\:grid-cols-2")
+      expect(hero.at_css("h1").text).to eq(approved_seller.name)
+      expect(hero.at_css('img[fetchpriority="high"]')).to be_present
+    end
+
+    it "sets the name over the page, not over a color block, with the editorial hero" do
+      approved_seller.cover_image.attach(fixture_file_upload("sample.png", "image/png"))
+      approved_seller.update!(theme_hero: "editorial")
+
+      get seller_path(approved_seller.slug)
+
+      title = Nokogiri::HTML(response.body).at_css("h1")
+      expect(title["class"]).to include("text-ink")
+      expect(title.ancestors("section").first["class"]).not_to include("atelier-from")
+      expect(response.body).to include('fetchpriority="high"')
+    end
+
+    it "shrinks the hero to a band without a photo" do
+      approved_seller.cover_image.attach(fixture_file_upload("sample.png", "image/png"))
+      approved_seller.update!(theme_hero: "faixa")
+
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).to include(approved_seller.name)
+      expect(response.body).not_to include('fetchpriority="high"')
+    end
+
+    it "paints the whole page with the chosen background" do
+      approved_seller.update!(theme_background: "papel")
+
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).to include("background-color:#faf6ee", "background-image:url(data:image/svg+xml,")
+    end
+
+    it "adds no background layer on the plain white page" do
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).not_to include("w-screen -translate-x-1/2")
+    end
+
+    it "separates the hero and the sections with the chosen ornament" do
+      approved_seller.update!(theme_ornament: "renda", about_text: "Nossa história.", footer_text: "Até logo.")
+
+      get seller_path(approved_seller.slug)
+
+      ornaments = Nokogiri::HTML(response.body).css('div[aria-hidden="true"][style*="mask:"]')
+      expect(ornaments.size).to eq(3)
+      expect(response.body).not_to include("<hr")
+    end
+
+    it "skips the divider of an empty section" do
+      approved_seller.update!(theme_sections: %w[about catalog footer], footer_text: "Até logo.")
+
+      get seller_path(approved_seller.slug)
+
+      expect(response.body.scan("<hr").size).to eq(1)
+    end
+
+    it "sets the titles in the chosen heading font" do
+      approved_seller.update!(theme_heading_font: "suave")
+
+      get seller_path(approved_seller.slug)
+
+      page = Nokogiri::HTML(response.body)
+      expect(page.at_css("div[style*='--atelier-heading-font']")["style"]).to include("--atelier-heading-font:'Fraunces'")
+      expect(page.at_css("h1")["class"]).to include("atelier-heading")
+    end
+
+    it "switches the page to light text on the dark background" do
+      approved_seller.update!(theme_background: "escuro", theme_ornament: "costura")
+
+      get seller_path(approved_seller.slug)
+
+      page = Nokogiri::HTML(response.body)
+      expect(page.at_css("div.atelier-dark")).to be_present
+      expect(response.body).to include("--atelier-accent-on-page:var(--atelier-soft)")
+      expect(page.at_css("details .atelier-light")).to be_present
+    end
+
+    it "keeps the light page out of dark mode" do
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).not_to include("atelier-dark")
+    end
+
+    it "applies the chosen photo ratio to the product cards" do
+      approved_seller.update!(theme_image_ratio: "retrato")
+      create_product(seller: approved_seller, name: "Peça em retrato")
+
+      get seller_path(approved_seller.slug)
+
+      expect(response.body).to include("[&amp;_article_.aspect-square]:aspect-[4/5]")
     end
 
     it "renders without theme when the atelier has none" do

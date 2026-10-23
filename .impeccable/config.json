@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "fraunces",
+        "createdAt": "2026-10-22T17:35:30.047Z",
+        "reason": "Fontes de título escolhíveis pelo artesão no tema da vitrine (SellerTheme::HEADING_FONTS), não do design system do painel; etapa 2 aprovada pelo usuário em 2026-10-22"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "dm serif display",
+        "createdAt": "2026-10-22T17:35:30.082Z",
+        "reason": "Fontes de título escolhíveis pelo artesão no tema da vitrine (SellerTheme::HEADING_FONTS), não do design system do painel; etapa 2 aprovada pelo usuário em 2026-10-22"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "space grotesk",
+        "createdAt": "2026-10-22T17:35:30.117Z",
+        "reason": "Fontes de título escolhíveis pelo artesão no tema da vitrine (SellerTheme::HEADING_FONTS), não do design system do painel; etapa 2 aprovada pelo usuário em 2026-10-22"
+      }
+    ]
+  }
+}

@@ -593,14 +593,113 @@ class SellerTest < ActiveSupport::TestCase
     assert_empty seller.errors[:theme_palette]
   end
 
-  test "every preset only references existing palettes, fonts, layouts and heroes" do
+  test "every preset sets every theme option, and only to existing keys" do
+    SellerTheme::PRESETS.each do |key, preset|
+      assert SellerTheme::PALETTES.key?(preset[:palette]), key
+      assert SellerTheme::FONTS.key?(preset[:font]), key
+      assert SellerTheme::LAYOUTS.key?(preset[:layout]), key
+      assert SellerTheme::HEROES.key?(preset[:hero]), key
+      assert SellerTheme::CORNERS.key?(preset[:corners]), key
+      assert SellerTheme::CARD_STYLES.key?(preset[:card_style]), key
+      assert SellerTheme::BACKGROUNDS.key?(preset[:background]), key
+      assert SellerTheme::ORNAMENTS.key?(preset[:ornament]), key
+      assert SellerTheme::IMAGE_RATIOS.key?(preset[:image_ratio]), key
+      assert SellerTheme::HEADING_FONTS.key?(preset[:heading_font]), key
+    end
+  end
+
+  # O editor aplica cada chave do tema como um campo `theme_<chave>`: uma
+  # chave sem coluna seria ignorada em silêncio.
+  test "every preset key maps to a seller theme column" do
     SellerTheme::PRESETS.each_value do |preset|
-      assert SellerTheme::PALETTES.key?(preset[:palette])
-      assert SellerTheme::FONTS.key?(preset[:font])
-      assert SellerTheme::LAYOUTS.key?(preset[:layout])
-      assert SellerTheme::HEROES.key?(preset[:hero])
-      assert SellerTheme::CORNERS.key?(preset[:corners])
-      assert SellerTheme::CARD_STYLES.key?(preset[:card_style])
+      (preset.keys - [ :label ]).each { |key| assert Seller.column_names.include?("theme_#{key}"), key }
+    end
+  end
+
+  test "background, ornament and photo ratio default to the plain storefront and accept only catalog keys" do
+    seller = sellers(:approved)
+    assert_equal "branco", seller.theme_background
+    assert_equal "nenhum", seller.theme_ornament
+    assert_equal "quadrada", seller.theme_image_ratio
+
+    seller.assign_attributes(theme_background: "neon", theme_ornament: "url(evil)", theme_image_ratio: "16:9")
+    assert_not seller.valid?
+    assert seller.errors[:theme_background].any?
+    assert seller.errors[:theme_ornament].any?
+    assert seller.errors[:theme_image_ratio].any?
+  end
+
+  test "heading font defaults to the text font and accepts only catalog keys" do
+    seller = sellers(:approved)
+    assert_equal "igual", seller.theme_heading_font
+    assert_includes SellerTheme.css_variables(palette: "oliva", font: "classica"), "--atelier-heading-font:var(--atelier-font)"
+
+    seller.theme_heading_font = "Comic Sans; color:red"
+    assert_not seller.valid?
+    assert seller.errors[:theme_heading_font].any?
+  end
+
+  # A CSP só admite fonte do próprio app: cada fonte de título precisa de um
+  # @font-face com o arquivo em app/assets/fonts, ou cairia no fallback.
+  test "every custom heading font is self-hosted" do
+    css = Rails.root.join("app/assets/tailwind/application.css").read
+    SellerTheme::HEADING_FONTS.each_value do |heading|
+      next unless heading[:stack]
+
+      family = heading[:stack][/\A'([^']+)'/, 1]
+      face = css[/@font-face \{[^}]*font-family: "#{family}";[^}]*\}/]
+      assert face, "#{family}: falta @font-face"
+      file = face[/url\("([^"]+)"\)/, 1]
+      assert Rails.root.join("app/assets/fonts", file).exist?, "#{family}: falta #{file}"
+    end
+  end
+
+  # No fundo escuro (o início do degradê misturado a quase preto), o destaque
+  # vira o tom claro da paleta; ele e os textos claros do `atelier-dark`
+  # precisam do contraste AA, também sobre o card com fundo.
+  test "the dark background keeps page text readable for every palette" do
+    mix = ->(color, share, base) do
+      color.delete("#").scan(/../).zip(base.delete("#").scan(/../))
+           .map { |a, b| format("%02x", (a.to_i(16) * share + b.to_i(16) * (1 - share)).round) }.join.prepend("#")
+    end
+    SellerTheme::PALETTES.each do |key, palette|
+      page = mix.(palette[:from], SellerTheme::DARK_FROM_SHARE / 100.0, SellerTheme::DARK_BASE)
+      card = mix.(palette[:to], 0.22, "#1c1917")
+      [ palette[:soft], "#f5f1ec", "#c9c2b9" ].each do |text|
+        assert_operator SellerTheme.contrast_ratio(text, page), :>=, 4.5, "#{key}: #{text} na página"
+        assert_operator SellerTheme.contrast_ratio(text, card), :>=, 4.5, "#{key}: #{text} no card"
+      end
+    end
+  end
+
+  test "the dark background swaps the on-page accent and the card tone" do
+    light = SellerTheme.css_variables(palette: "oliva", font: "moderna", background: "branco")
+    dark = SellerTheme.css_variables(palette: "oliva", font: "moderna", background: "escuro")
+
+    assert_includes light, "--atelier-accent-on-page:var(--atelier-accent)"
+    assert_includes dark, "--atelier-accent-on-page:var(--atelier-soft)"
+    assert_not_equal light[/--atelier-card:[^;]*/], dark[/--atelier-card:[^;]*/]
+    assert SellerTheme.dark?("escuro")
+    assert_not SellerTheme.dark?("papel")
+  end
+
+  test "the plain background and no ornament add no styles" do
+    assert_nil SellerTheme.page_background_style("branco")
+    assert_nil SellerTheme.ornament_style("nenhum")
+    assert_nil SellerTheme.ornament_style("desconhecido")
+  end
+
+  # O SVG vai inteiro codificado dentro de `url()`: aspas, `#` ou parênteses
+  # soltos fechariam a declaração antes da hora.
+  test "textures and ornaments are fully encoded data URIs" do
+    styles = SellerTheme::BACKGROUNDS.keys.filter_map { |key| SellerTheme.page_background_style(key) } +
+             SellerTheme::ORNAMENTS.keys.filter_map { |key| SellerTheme.ornament_style(key) }
+    urls = styles.flat_map { |style| style.scan(/url\(([^)]*)\)/).flatten }
+
+    assert_not_empty urls
+    urls.each do |url|
+      assert url.start_with?("data:image/svg+xml,%3Csvg"), url
+      assert_no_match(/["'#<> ]/, url)
     end
   end
 

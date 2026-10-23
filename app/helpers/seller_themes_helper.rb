@@ -1,7 +1,13 @@
 module SellerThemesHelper
   # Variáveis CSS do tema do ateliê, para o `style` do contêiner da vitrine.
   def seller_theme_style(seller)
-    SellerTheme.css_variables(palette: seller.theme_palette, font: seller.theme_font, accent_color: seller.theme_accent_color)
+    SellerTheme.css_variables(palette: seller.theme_palette, font: seller.theme_font, accent_color: seller.theme_accent_color,
+                              heading_font: seller.theme_heading_font, background: seller.theme_background)
+  end
+
+  # No fundo escuro, `atelier-dark` troca as cores do texto (application.css).
+  def seller_theme_class(seller)
+    "atelier-dark" if SellerTheme.dark?(seller.theme_background)
   end
 
   # Classes da grade do catálogo (literais completas, para o Tailwind achar).
@@ -22,16 +28,49 @@ module SellerThemesHelper
     { "retos" => "rounded-none", "arredondados" => "rounded-[3rem]" }.fetch(corners, "rounded-[2rem]")
   end
 
-  # Cantos e moldura dos cards de peça, aplicados de fora (o parcial do card
-  # é compartilhado com o resto da loja e não conhece o tema).
-  def seller_cards_class(corners, card_style)
-    radius = { "retos" => "[&_article_.aspect-square]:rounded-none", "arredondados" => "[&_article_.aspect-square]:rounded-[2rem]" }[corners]
+  # Cantos, moldura e proporção da foto dos cards de peça, aplicados de fora
+  # (o parcial do card é compartilhado com o resto da loja e não conhece o
+  # tema). A proporção sobrescreve o `aspect-square` do próprio card.
+  def seller_cards_class(seller)
+    radius = { "retos" => "[&_article_.aspect-square]:rounded-none", "arredondados" => "[&_article_.aspect-square]:rounded-[2rem]" }[seller.theme_corners]
+    ratio = { "retrato" => "[&_article_.aspect-square]:aspect-[4/5]", "paisagem" => "[&_article_.aspect-square]:aspect-[4/3]" }[seller.theme_image_ratio]
     frame = {
       "borda" => "[&_article]:rounded-2xl [&_article]:border [&_article]:border-sand-200 [&_article]:p-3",
       "sombra" => "[&_article]:rounded-2xl [&_article]:p-3 [&_article]:shadow-[0_8px_30px_rgba(0,0,0,0.08)]",
-      "fundo" => "[&_article]:rounded-2xl [&_article]:p-3 [&_article]:bg-[color-mix(in_srgb,var(--atelier-soft)_45%,white)]"
-    }[card_style]
-    [ radius, frame ].compact.join(" ")
+      "fundo" => "[&_article]:rounded-2xl [&_article]:p-3 [&_article]:bg-[var(--atelier-card)]"
+    }[seller.theme_card_style]
+    [ radius, ratio, frame ].compact.join(" ")
+  end
+
+  # Foto do topo: a capa enviada pelo ateliê ou, sem ela, a da peça mais
+  # recente. É uma variante, não o original: o topo é o elemento mais pesado
+  # da página e o original da peça pode ter vários MB.
+  def seller_cover_photo(seller, products)
+    image = seller.cover_image.attached? ? seller.cover_image : products.find { |product| product.main_image.attached? }&.main_image
+    image&.variant(resize_to_limit: [ 1600, 700 ])
+  end
+
+  # Seções que de fato têm o que mostrar: "Sobre" e rodapé vazios não entram,
+  # para não sobrar um divisor solto entre duas seções.
+  def seller_visible_sections(seller)
+    seller.theme_sections.select do |section|
+      case section
+      when "about" then seller.about_text.present? || seller.about_image.attached?
+      when "footer" then seller.footer_text.present?
+      else true
+      end
+    end
+  end
+
+  # Faixa de ornamento na cor da paleta, ou nil sem ornamento.
+  def seller_ornament(seller)
+    style = SellerTheme.ornament_style(seller.theme_ornament)
+    tag.div(class: "w-full bg-[var(--atelier-accent-on-page)] opacity-60", style: style, aria: { hidden: true }) if style
+  end
+
+  # Divisor entre seções: o ornamento do tema ou, sem ele, uma linha.
+  def seller_section_divider(seller)
+    seller_ornament(seller) || tag.hr(class: "border-sand-200")
   end
 
   def seller_instagram_url(seller)

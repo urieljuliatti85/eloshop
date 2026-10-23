@@ -3,7 +3,7 @@ module CustomerAuthentication
 
   included do
     before_action :require_customer_authentication
-    helper_method :customer_authenticated?
+    helper_method :customer_authenticated?, :checkout_in_progress?
   end
 
   class_methods do
@@ -35,6 +35,13 @@ module CustomerAuthentication
     def request_customer_authentication
       session[:return_to_after_customer_authenticating] = request.fullpath if %w[GET HEAD].include?(request.request_method)
       redirect_to new_customer_session_path
+    end
+
+    # O login/cadastro foi pedido no meio da compra (o carrinho manda para a
+    # revisão do pedido, que exige cliente): a tela mostra as etapas do
+    # checkout em vez de parecer um desvio para outra parte da loja.
+    def checkout_in_progress?
+      session[:return_to_after_customer_authenticating].to_s.start_with?(new_order_path)
     end
 
     def after_customer_authentication_url

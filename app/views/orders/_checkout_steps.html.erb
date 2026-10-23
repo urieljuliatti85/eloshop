@@ -1,0 +1,13 @@
+<%# Etapas do checkout, compartilhadas pela identificação (login/cadastro no
+    meio da compra), pela revisão do pedido e pelo pagamento. `current`: 1 a 3. %>
+<ol class="grid grid-cols-3 gap-2 text-xs font-semibold sm:max-w-xl sm:text-sm" aria-label="Etapas do checkout">
+  <% [ "Identificação", "Entrega", "Pagamento" ].each.with_index(1) do |label, number| %>
+    <% if number < current %>
+      <li class="rounded-full bg-green-50 px-3 py-2 text-center text-green-800"><%= number %>. <%= label %> <span aria-hidden="true">✓</span><span class="sr-only">(concluída)</span></li>
+    <% elsif number == current %>
+      <li class="rounded-full bg-brand-600 px-3 py-2 text-center text-white" aria-current="step"><%= number %>. <%= label %></li>
+    <% else %>
+      <li class="rounded-full bg-gray-100 px-3 py-2 text-center text-ink-muted"><%= number %>. <%= label %></li>
+    <% end %>
+  <% end %>
+</ol>

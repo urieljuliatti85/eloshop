@@ -55,6 +55,31 @@ class SellerThemeEditorTest < ApplicationSystemTestCase
     page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
   end
 
+  # O painel navega com Turbo, que não dispara `beforeunload`: sair pelo menu
+  # perdia o rascunho sem nenhum aviso.
+  test "asks before leaving through the panel menu with unsaved changes" do
+    sign_in_seller(users(:seller))
+    visit edit_seller_theme_path
+    find("button[data-preset='rustico']").click
+
+    dismiss_confirm("Sair sem salvar? As alterações do tema serão perdidas.") do
+      within("nav", match: :first) { click_link "Pedidos" }
+    end
+    assert_current_path edit_seller_theme_path
+    assert_selector "[data-theme-editor-target=dirty]", visible: true
+
+    accept_confirm { within("nav", match: :first) { click_link "Pedidos" } }
+    assert_current_path seller_orders_path
+  end
+
+  test "leaves through the panel menu without asking when nothing changed" do
+    sign_in_seller(users(:seller))
+    visit edit_seller_theme_path
+
+    within("nav", match: :first) { click_link "Pedidos" }
+    assert_current_path seller_orders_path
+  end
+
   private
 
   def sign_in_seller(user)
