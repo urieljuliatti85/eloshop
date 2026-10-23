@@ -1,6 +1,6 @@
 <% content_for :title, "Primeiros passos | #{current_seller.name}" %>
-<%# Fluxo guiado no mundo do caderno de encomendas: a folha lista as cinco
-    etapas (as feitas riscadas e carimbadas) e abre uma etapa por vez. A
+<%# Fluxo guiado no padrão do painel: a faixa mostra as cinco etapas (as
+    feitas com o traço verde) e abre uma etapa por vez. A
     etapa vem da URL; sem ela, a próxima pendente. As ações continuam nas
     telas de sempre (Dados do Ateliê, conexão do Mercado Pago, novo produto). %>
 <%
@@ -21,61 +21,82 @@
   slugs = SellerPortal::GettingStartedController::STEP_SLUGS
 %>
 
-<div class="caderno max-w-3xl">
-  <header class="caderno-capa">
-    <h1 class="font-caderno-mao text-4xl leading-none">Primeiros passos</h1>
-    <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <p class="text-sm font-bold"><%= @completed_steps_count %> de <%= @steps.size %> etapas concluídas</p>
-      <button type="button" data-action="tour#start" class="inline-flex min-h-11 cursor-pointer items-center rounded-full border border-white/40 px-4 text-sm font-bold text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Fazer tour pelo painel</button>
+<div class="max-w-3xl space-y-6">
+  <header class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-black tracking-tight text-stone-950">Primeiros passos</h1>
+      <p class="mt-1 text-sm text-stone-600"><%= @completed_steps_count %> de <%= @steps.size %> etapas concluídas</p>
     </div>
+    <button type="button" data-action="tour#start" class="seller-button seller-button--secondary">Fazer tour pelo painel</button>
   </header>
 
-  <div class="caderno-folha">
-    <ol class="caderno-indice" aria-label="Etapas para preparar o ateliê">
+  <%# Etapas numa faixa horizontal de segmentos retos (sem pílulas nem
+      cantos arredondados): o traço no topo de cada segmento diz o estado
+      (verde feita, vermelho atual, cinza pendente). No celular os cinco
+      segmentos cabem lado a lado só com o número (ou o ✓), e a linha abaixo
+      da faixa nomeia a etapa atual; do `sm` em diante cada segmento mostra o
+      nome e a faixa rola se não couber.
+      `relative` na lista: sem ele o texto sr-only (absoluto) escapava da
+      rolagem e alargava a página no celular. %>
+  <nav aria-label="Etapas">
+    <ol aria-label="Etapas para preparar o ateliê" class="relative grid grid-cols-5 border border-brand-100 bg-white sm:flex sm:snap-x sm:overflow-x-auto sm:[scrollbar-width:thin]">
       <% @steps.each_with_index do |(step, done), index| %>
         <% current = step == @current_step %>
-        <li>
-          <%= link_to seller_getting_started_path(etapa: slugs[step]), aria: { current: (current ? "step" : nil) }, class: (current ? "font-bold" : "") do %>
-            <span class="flex min-w-0 items-baseline gap-3">
-              <span class="w-4 shrink-0 text-sm text-stone-500" aria-hidden="true"><%= index + 1 %></span>
-              <span class="<%= done ? 'text-stone-500 line-through decoration-caderno-carimbo decoration-2' : '' %>"><%= short_titles[step] %></span>
+        <li class="border-l border-brand-100 first:border-l-0 sm:min-w-[9.5rem] sm:flex-1 sm:snap-start">
+          <%= link_to seller_getting_started_path(etapa: slugs[step]), aria: { current: (current ? "step" : nil) },
+                class: "flex h-full border-t-4 transition focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600 #{done ? 'border-emerald-600' : current ? 'border-brand-600' : 'border-stone-200'} #{current ? 'bg-brand-50 text-stone-950' : 'text-stone-800 hover:bg-brand-50/60'}" do %>
+            <%# Celular: só o número ou o ✓; o nome vai para o leitor de tela. %>
+            <span class="flex min-h-14 w-full items-center justify-center sm:hidden">
+              <% if done %>
+                <svg viewBox="0 0 20 20" class="size-5 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 10.5 3.2 3L15 7"/></svg>
+              <% else %>
+                <span class="text-base font-bold tabular-nums <%= current ? 'text-brand-700' : 'text-stone-500' %>" aria-hidden="true"><%= index + 1 %></span>
+              <% end %>
+              <span class="sr-only">Etapa <%= index + 1 %>: <%= short_titles[step] %><%= " (feita)" if done %></span>
+            </span>
+            <span class="hidden min-h-20 w-full flex-col gap-2 px-3 py-3 sm:flex">
+              <span class="flex items-center justify-between gap-2">
+                <span class="text-xs font-bold tabular-nums <%= done ? 'text-emerald-700' : current ? 'text-brand-700' : 'text-stone-500' %>" aria-hidden="true">Etapa <%= index + 1 %></span>
+                <% if done %>
+                  <span class="bg-emerald-100 px-1.5 py-0.5 text-[0.6875rem] font-bold uppercase tracking-wide text-emerald-800" aria-hidden="true">Feito</span>
+                <% elsif current %>
+                  <span class="bg-brand-100 px-1.5 py-0.5 text-[0.6875rem] font-bold uppercase tracking-wide text-brand-700">Agora</span>
+                <% end %>
+              </span>
+              <span class="text-sm leading-snug <%= current ? 'font-bold' : done ? 'text-stone-600' : 'font-semibold' %>"><%= short_titles[step] %></span>
               <% if done %><span class="sr-only">(feita)</span><% end %>
             </span>
-            <% if done %>
-              <span class="caderno-carimbo" aria-hidden="true">Feito</span>
-            <% elsif current %>
-              <span class="font-caderno-mao text-xl leading-none text-caderno-capa">agora</span>
-            <% end %>
           <% end %>
         </li>
       <% end %>
     </ol>
-
     <% if @current_step %>
-      <% number = @steps.keys.index(@current_step) + 1 %>
-      <section class="mt-6 border-t-2 border-caderno-tinta pt-6" aria-labelledby="etapa-title">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <h2 id="etapa-title" class="text-2xl font-bold leading-tight sm:text-3xl"><span class="text-caderno-capa"><%= number %>.</span> <%= titles[@current_step] %></h2>
-          <% if @steps[@current_step] %><span class="caderno-carimbo caderno-carimbo--grande">Feito</span><% end %>
-        </div>
-        <%# A pauta começa abaixo do título da etapa, alinhada à primeira linha
-            do texto (passo de 28px, o leading-7). %>
-        <div class="caderno-pauta">
-          <%= render "seller_portal/getting_started/steps/#{@current_step}", done: @steps[@current_step] %>
-        </div>
-        <% if @steps[@current_step] && @next_pending_step %>
-          <p class="mt-6 border-t border-caderno-pauta pt-4">
-            <%= link_to "Próxima etapa: #{short_titles[@next_pending_step]}", seller_getting_started_path(etapa: slugs[@next_pending_step]), class: "caderno-botao" %>
-          </p>
-        <% end %>
-      </section>
-    <% else %>
-      <section class="mt-6 border-t-2 border-caderno-tinta pt-6 text-center" aria-labelledby="etapa-title">
-        <span class="caderno-carimbo caderno-carimbo--grande">Ateliê pronto</span>
-        <h2 id="etapa-title" class="mt-5 text-2xl font-bold">Todas as etapas estão feitas</h2>
-        <p class="mx-auto mt-2 max-w-md text-base leading-7 text-stone-700">Seus produtos podem ser publicados e vendidos. O dia a dia do ateliê fica na visão geral.</p>
-        <%= link_to "Ir para a visão geral", seller_root_path, class: "caderno-botao mt-5" %>
-      </section>
+      <p class="mt-2 text-sm text-stone-700 sm:hidden" aria-hidden="true">
+        <span class="font-bold text-brand-700">Etapa <%= @steps.keys.index(@current_step) + 1 %> de <%= @steps.size %>:</span> <%= short_titles[@current_step] %>
+      </p>
     <% end %>
-  </div>
+  </nav>
+
+  <% if @current_step %>
+    <% number = @steps.keys.index(@current_step) + 1 %>
+    <section class="seller-card-lg" aria-labelledby="etapa-title">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <h2 id="etapa-title" class="text-2xl font-bold leading-tight text-stone-950"><span class="text-brand-700"><%= number %>.</span> <%= titles[@current_step] %></h2>
+        <% if @steps[@current_step] %><span class="seller-badge bg-emerald-100 text-emerald-800">Feito</span><% end %>
+      </div>
+      <%= render "seller_portal/getting_started/steps/#{@current_step}", done: @steps[@current_step] %>
+      <% if @steps[@current_step] && @next_pending_step %>
+        <p class="mt-6 border-t border-brand-100 pt-5">
+          <%= link_to "Próxima etapa: #{short_titles[@next_pending_step]}", seller_getting_started_path(etapa: slugs[@next_pending_step]), class: "seller-button seller-button--primary" %>
+        </p>
+      <% end %>
+    </section>
+  <% else %>
+    <section class="seller-card-lg text-center" aria-labelledby="etapa-title">
+      <span class="seller-badge bg-emerald-100 text-emerald-800">Ateliê pronto</span>
+      <h2 id="etapa-title" class="mt-4 text-2xl font-bold text-stone-950">Todas as etapas estão feitas</h2>
+      <p class="mx-auto mt-2 max-w-md text-base leading-7 text-stone-700">Seus produtos podem ser publicados e vendidos. O dia a dia do ateliê fica na visão geral.</p>
+      <%= link_to "Ir para a visão geral", seller_root_path, class: "seller-button seller-button--primary mt-5" %>
+    </section>
+  <% end %>
 </div>

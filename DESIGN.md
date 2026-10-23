@@ -1,250 +1,232 @@
 ---
-name: EloShop — Caderno de Encomendas
-description: Mundo visual do fluxo "Primeiros passos" do painel do artesão; o caderno de encomendas do ateliê, com capa vermelha, folha pautada e carimbo.
+name: EloShop — Painel do Artesão
+description: Sistema visual do painel do artesão (/painel), inclusive o fluxo "Primeiros passos": fundo pêssego quente, cartões brancos, vermelho da marca na ação e neutros stone.
 colors:
-  caderno-capa: "#b81e0a"
-  caderno-capa-escura: "#8f1708"
-  caderno-folha: "#fbfaf6"
-  caderno-pauta: "#e7e3d6"
-  caderno-tinta: "#1d1d1b"
-  caderno-carimbo: "#b23a2a"
-  texto-grafite: "oklch(37.4% 0.01 67.558)"
-  lapis-apagado: "oklch(55.3% 0.013 58.071)"
-  papel-branco: "#ffffff"
+  brand-50: "#fef2f0"
+  brand-100: "#fde1dd"
+  brand-200: "#fbbeb6"
+  brand-500: "#f33920"
+  brand-600: "#df240c"
+  brand-700: "#b81e0a"
+  fundo-pessego: "#fdf1e7"
+  papel: "#ffffff"
+  tinta: "#0c0a09"
+  texto: "#44403c"
+  texto-apoio: "#57534e"
+  texto-apagado: "#78716c"
+  linha: "#e7e5e4"
+  borda-campo: "#d6d3d1"
+  feito: "#059669"
+  feito-fundo: "#d1fae5"
+  feito-texto: "#065f46"
+  atencao-fundo: "#fffbeb"
+  atencao-texto: "#78350f"
+  bloqueio-fundo: "#fee2e2"
+  bloqueio-texto: "#991b1b"
 typography:
   display:
-    fontFamily: "Caveat, Karla, cursive"
-    fontSize: "2.25rem"
-    fontWeight: 600
-    lineHeight: 1
+    fontFamily: "ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.875rem"
+    fontWeight: 900
+    lineHeight: 1.2
+    letterSpacing: "-0.025em"
   headline:
-    fontFamily: "Karla, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.5rem"
     fontWeight: 700
     lineHeight: 1.25
   title:
-    fontFamily: "Karla, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1rem"
+    fontFamily: "ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.25rem"
     fontWeight: 700
-    lineHeight: 1.5
+    lineHeight: 1.4
   body:
-    fontFamily: "Karla, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: "1.75rem"
+  body-sm:
+    fontFamily: "ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 400
+    lineHeight: "1.25rem"
   label:
-    fontFamily: "Karla, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 700
     lineHeight: "1.25rem"
-  carimbo:
-    fontFamily: "Caveat, Karla, cursive"
-    fontSize: "1.125rem"
+  etiqueta:
+    fontFamily: "ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.75rem"
     fontWeight: 600
-    lineHeight: 1.25
-  carimbo-grande:
-    fontFamily: "Caveat, Karla, cursive"
-    fontSize: "1.875rem"
-    fontWeight: 600
-    lineHeight: 1.25
+    lineHeight: "1rem"
 rounded:
-  folha: "4px"
-  carimbo: "6px"
-  capa: "1.75rem"
+  reto: "0px"
+  campo: "0.75rem"
+  cartao: "1rem"
+  cartao-grande: "2rem"
   pill: "9999px"
 spacing:
-  capa-borda: "8px"
-  capa-borda-sm: "12px"
-  folha-margem: "20px"
-  folha-margem-sm: "32px"
-  pauta: "28px"
-  bloco: "24px"
-  paragrafo: "16px"
+  campo-x: "12px"
+  campo-y: "8px"
+  cartao: "24px"
+  cartao-grande: "32px"
+  secao: "24px"
+  pagina: "32px"
 components:
-  caderno-capa:
-    backgroundColor: "{colors.caderno-capa}"
-    textColor: "{colors.papel-branco}"
-    rounded: "{rounded.capa}"
-    padding: "{spacing.capa-borda}"
-  caderno-folha:
-    backgroundColor: "{colors.caderno-folha}"
-    textColor: "{colors.caderno-tinta}"
-    rounded: "{rounded.folha}"
-    padding: "16px 20px 24px"
   button-primary:
-    backgroundColor: "{colors.caderno-capa}"
-    textColor: "{colors.papel-branco}"
-    typography: "{typography.title}"
+    backgroundColor: "{colors.brand-600}"
+    textColor: "{colors.papel}"
+    typography: "{typography.label}"
     rounded: "{rounded.pill}"
     padding: "12px 24px"
-    height: "48px"
+    height: "44px"
   button-primary-hover:
-    backgroundColor: "{colors.caderno-capa-escura}"
-    textColor: "{colors.papel-branco}"
-  button-capa-ghost:
-    textColor: "{colors.papel-branco}"
+    backgroundColor: "{colors.brand-700}"
+    textColor: "{colors.papel}"
+  button-secondary:
+    backgroundColor: "{colors.papel}"
+    textColor: "{colors.brand-700}"
     typography: "{typography.label}"
     rounded: "{rounded.pill}"
-    padding: "0 16px"
+    padding: "12px 24px"
     height: "44px"
-  link:
-    textColor: "{colors.caderno-tinta}"
-    typography: "{typography.label}"
-    height: "44px"
-  indice-item:
-    textColor: "{colors.caderno-tinta}"
-    typography: "{typography.body}"
-    rounded: "{rounded.folha}"
-    padding: "8px"
-    height: "48px"
-  carimbo:
-    textColor: "{colors.caderno-carimbo}"
-    typography: "{typography.carimbo}"
-    rounded: "{rounded.carimbo}"
-    padding: "0 8px"
-  carimbo-grande:
-    textColor: "{colors.caderno-carimbo}"
-    typography: "{typography.carimbo-grande}"
-    rounded: "{rounded.carimbo}"
-    padding: "2px 16px"
-  nota:
-    backgroundColor: "{colors.caderno-pauta}"
-    textColor: "{colors.caderno-tinta}"
-    typography: "{typography.body}"
-    rounded: "{rounded.folha}"
-    padding: "12px 16px"
-  pendente:
-    backgroundColor: "{colors.papel-branco}"
-    textColor: "{colors.caderno-tinta}"
-    rounded: "{rounded.folha}"
-    padding: "12px 16px"
+  button-secondary-hover:
+    backgroundColor: "{colors.brand-50}"
+    textColor: "{colors.brand-700}"
+  card:
+    backgroundColor: "{colors.papel}"
+    textColor: "{colors.tinta}"
+    rounded: "{rounded.cartao}"
+    padding: "{spacing.cartao}"
+  card-lg:
+    backgroundColor: "{colors.papel}"
+    textColor: "{colors.tinta}"
+    rounded: "{rounded.cartao-grande}"
+    padding: "{spacing.cartao-grande}"
+  input:
+    backgroundColor: "{colors.brand-50}"
+    textColor: "{colors.tinta}"
+    typography: "{typography.body-sm}"
+    rounded: "{rounded.campo}"
+    padding: "8px 12px"
+  badge:
+    typography: "{typography.etiqueta}"
+    rounded: "{rounded.pill}"
+    padding: "2px 10px"
+  step-segment:
+    backgroundColor: "{colors.papel}"
+    textColor: "{colors.tinta}"
+    typography: "{typography.body-sm}"
+    rounded: "{rounded.reto}"
+    padding: "12px"
+  step-segment-current:
+    backgroundColor: "{colors.brand-50}"
+    textColor: "{colors.tinta}"
 ---
 
-# Design System: EloShop — Caderno de Encomendas
+# Design System: EloShop — Painel do Artesão
 
 ## Overview
 
-**Creative North Star: "O Caderno de Encomendas do Ateliê"**
+**Creative North Star: "A bancada organizada do ateliê"**
 
-Escopo, sem ambiguidade: este mundo vale **somente** para o fluxo guiado "Primeiros passos" do painel do artesão (`/painel/primeiros-passos/:etapa`, `app/views/seller_portal/getting_started/`). O restante do painel (`/painel`) continua no sistema incumbente do painel: fundo pêssego quente, escala de marca vermelho-laranja `brand-*` (#F33920 no 500), neutros `stone` e as classes `seller-*` (cartões brancos com borda `brand-100`, botões em pílula `brand-600`, campos com foco `brand-500`). A vitrine tem identidade própria e não é descrita aqui. Nenhum token `caderno-*` deve vazar para outras telas do painel, nem os tokens `brand-*`/`seller-*` devem substituir os do caderno dentro do fluxo.
+Escopo: todo o painel do artesão (`/painel`), inclusive o fluxo "Primeiros passos" (`/painel/primeiros-passos`). A vitrine pública e a administração da plataforma têm sistemas próprios e não são descritas aqui.
 
-O fluxo é a página do caderno onde o ateliê anota as encomendas: uma capa vermelha da marca envolve uma folha clara, como um caderno aberto; a folha tem pauta fina no passo exato da linha de texto (28px); as etapas feitas são riscadas e recebem um carimbo escrito à mão. Só a etapa atual pede ação, e essa ação fica presa ao pé da tela. O mundo entra por cor, letra, pauta e carimbo; os controles continuam sendo controles web comuns (links, botões em pílula, foco visível), sem imitação de papel em botões e campos.
+O painel é ferramenta de trabalho, usada com frequência no celular, na oficina, com uma mão e sob luz forte. A densidade é de leitura calma: cartões brancos sobre um fundo pêssego quente, um título forte por tela e uma ação principal vermelha. O painel responde primeiro "tenho pedido para enviar e quanto vou receber?"; a configuração vem depois.
 
-A densidade é de leitura calma: uma coluna de no máximo 68ch, texto de corpo em 16px com entrelinha de 28px, alvos de toque de 44–48px pensados para o celular na oficina. O fluxo recusa o assistente de SaaS: bolinhas numeradas, barra de progresso azul e pares Voltar/Avançar.
+Até 2026-10-22 o "Primeiros passos" tinha um mundo próprio (o "Caderno de Encomendas", com capa vermelha, folha pautada, carimbo manuscrito e as fontes Karla e Caveat). Ele foi retirado a pedido do usuário: o fluxo segue o mesmo padrão do resto do painel. A Karla saiu do app; a Caveat continua só como fonte de título "Manuscrita" da vitrine (`SellerTheme::HEADING_FONTS`), nunca no painel.
 
 **Key Characteristics:**
-- Capa vermelha da marca (#b81e0a) envolvendo uma folha clara pautada.
-- Pauta de 28px alinhada à entrelinha do corpo.
-- Etapa concluída = texto riscado em vermelho-óxido + carimbo manuscrito "Feito".
-- Duas letras: Karla para trabalhar, Caveat só para a mão do artesão.
-- Uma ação principal por etapa, fixa no pé da folha.
+- Fundo em degradê pêssego (`brand-50` para `#fdf1e7`), topo branco fixo e menu lateral a partir de `lg`.
+- Cartões brancos com borda `brand-100` (`.seller-card`, `.seller-card-lg`).
+- Vermelho da marca só na ação principal e no destaque da etapa atual; vermelho de alerta só no que bloqueia a venda.
+- Estado sempre em texto, nunca só por cor ("Feito", "Agora", "Obrigatório", "Pendente").
+- Fonte do sistema (sem fonte servida pelo app).
 
 ## Colors
 
-Paleta de caderno: um vermelho de capa, papel quase branco, linha de pauta bege e tinta grafite, com o vermelho-óxido do carimbo como única marca de conclusão.
+Uma escala de marca vermelho-laranja (`brand-*`, extraída da logo, #F33920 no 500), neutros `stone` quentes e três cores de estado (verde, âmbar, vermelho).
 
 ### Primary
-- **Vermelho de Capa** (caderno-capa): faixa da capa que envolve a folha, botão principal da etapa, numeral da etapa no título, palavra "agora" no índice, cor de seleção de texto e anel de foco de todos os controles do caderno. É o `brand-700` da marca, escolhido pelo usuário em 2026-10-15 (substituiu o verde-garrafa do contrato original); texto branco sobre ele fica em ~6,6:1.
-- **Capa Escurecida** (caderno-capa-escura): só o hover do botão principal.
-
-### Secondary
-- **Vermelho-Óxido de Carimbo** (caderno-carimbo): borda e letra do carimbo "Feito"/"Ateliê pronto", traço que risca a etapa concluída e borda de 2px do aviso de pendência que impede a etapa. Mais apagado e mais terroso que a capa, para ler como tinta de carimbo e não como interface.
+- **Vermelho de Ação** (brand-600, #df240c): botão principal (`.seller-button--primary`), número da etapa atual. Texto branco sobre ele a 4,8:1.
+- **Vermelho Profundo** (brand-700, #b81e0a): hover do botão principal, texto de botão secundário, etiqueta "Agora", número do título da etapa.
+- **Rosado de Destaque** (brand-50/100/200): fundo da etapa atual, das notas ("Depois disso") e do hover; bordas de cartão (`brand-100`) e de botão secundário (`brand-200`).
 
 ### Neutral
-- **Folha** (caderno-folha): fundo da folha e da barra de ação fixa.
-- **Linha de Pauta** (caderno-pauta): linhas da pauta, divisórias entre itens do índice, borda superior da barra de ação, sublinhado de repouso dos links, fundo da nota "Depois disso" e do hover do índice (a 50%).
-- **Tinta Grafite** (caderno-tinta): texto base, títulos, o fio de 2px que separa o índice da etapa aberta.
-- **Grafite de Texto** (texto-grafite, `stone-700`): parágrafos corridos da etapa.
-- **Lápis Apagado** (lapis-apagado, `stone-500`): numerais do índice e título da etapa já riscada.
-- **Papel Branco** (papel-branco): texto sobre a capa e fundo do aviso de pendência, para que ele se destaque da folha.
+- **Fundo Pêssego** (`brand-50` → `#fdf1e7`): fundo de todas as telas do painel.
+- **Papel** (#ffffff): cartões, topo, faixa de etapas.
+- **Tinta** (stone-950): títulos. **Texto** (stone-700): parágrafos. **Apoio** (stone-600): legendas e contagens. **Apagado** (stone-500): números de etapa pendente.
+
+### Estado
+- **Feito** (emerald-600 traço/ícone, emerald-100 fundo, emerald-800 texto): etapa concluída, conta aprovada.
+- **Atenção** (amber-50 fundo, amber-900 texto): pendência que espera a plataforma ou o artesão, sem bloquear.
+- **Bloqueio** (red-100 fundo, red-800 texto): só o que impede a venda ("Obrigatório").
 
 ### Named Rules
-**The Capa Rule.** O vermelho de capa emoldura e age: capa, botão principal, numeral da etapa, "agora" e foco. Não vira fundo de blocos de conteúdo dentro da folha.
+**The Um Vermelho Rule.** Por tela, um botão vermelho cheio (a ação principal); o resto é secundário ou link.
 
-**The Carimbo Rule.** O vermelho-óxido marca o que terminou (carimbo, risco) e, como borda, o único estado que impede a etapa. Nunca aparece em botões, links ou títulos.
+**The Estado em Texto Rule.** Cor de estado sempre acompanha uma palavra ("Feito", "Agora", "Pendente") ou um ícone com texto para leitor de tela.
 
 ## Typography
 
-**Display Font:** Caveat SemiBold 600 (com Karla, cursive)
-**Body Font:** Karla variável 200–800 (com ui-sans-serif, system-ui, sans-serif)
-
-**Character:** Karla é uma grotesca de trabalho com desenho levemente artesanal, legível no corpo e firme em negrito; Caveat é a letra de quem escreve no caderno e aparece em pouquíssimos pontos. As duas são servidas pelo próprio app (subconjunto latino, `app/assets/fonts/`, OFL), porque a CSP só permite `font-src 'self'`; `font-display: swap`.
+**Fonte:** a do sistema (`ui-sans-serif, system-ui, sans-serif`), padrão do Tailwind. O painel não serve fonte própria.
 
 ### Hierarchy
-- **Display** (Caveat 600, 2.25rem, entrelinha 1): só o título "Primeiros passos" na capa.
-- **Headline** (Karla 700, 1.5rem no celular, 1.875rem a partir de 640px, entrelinha 1.25): título da etapa aberta, precedido do numeral em vermelho de capa ("2.").
-- **Title** (Karla 700, 1rem): subtítulos dentro da etapa ("Como a conexão funciona") e o rótulo do botão principal.
-- **Body** (Karla 400, 1rem, entrelinha 28px, máx. 68ch): parágrafos e listas da etapa, e os itens do índice (o atual em 700).
-- **Label** (Karla 700, 0.875rem): contagem "N de 5 etapas concluídas", botão fantasma da capa e links secundários.
-- **Carimbo** (Caveat 600, 1.125rem; 1.875rem no carimbo grande): texto do carimbo e a marca "agora" (1.25rem) da etapa atual.
-
-### Named Rules
-**The Mão Rule.** Caveat só onde o artesão escreveria à mão: o título da capa, o carimbo e o "agora" do índice. Nunca em texto corrido, botões, rótulos ou títulos de etapa.
-
-**The Pauta Rule.** O corpo dentro da pauta tem entrelinha de exatamente 28px (`leading-7`), o mesmo passo da pauta; mudar uma sem a outra desalinha a linha da base do texto.
+- **Display** (900, 1.875rem, `tracking-tight`): título da tela (`h1`), ex.: "Visão geral", "Primeiros passos".
+- **Headline** (700, 1.5rem): título de seção ou da etapa aberta.
+- **Title** (700, 1.25rem): título de cartão ("Para começar a vender").
+- **Body** (400, 1rem, entrelinha 28px, máx. 68ch): texto corrido das etapas.
+- **Body-sm** (400, 0.875rem): legendas, linhas de lista, campos.
+- **Label** (700, 0.875rem): botões e links de ação.
+- **Etiqueta** (600, 0.75rem): `.seller-badge`; nas etiquetas retas da faixa de etapas, 0.6875rem em caixa alta.
 
 ## Layout
 
-Uma única coluna com largura máxima de 48rem (`max-w-3xl`) dentro da área de conteúdo do painel. A capa tem 8px de borda vermelha em volta da folha (12px a partir de 640px) e, acima da folha, uma faixa com o título à esquerda e, à direita, a contagem e o botão do tour; no celular a faixa quebra em linhas. A folha tem margem interna de 20px (32px a partir de 640px), 16px no topo e 24px no pé (32px a partir de 640px).
-
-Ordem da folha: índice das cinco etapas (itens de no mínimo 48px, separados por linhas de pauta, numeral à esquerda e carimbo ou "agora" à direita); fio de 2px em tinta; etapa aberta com título e, abaixo dele, o bloco pautado. A pauta é um gradiente repetido de 28px começando 1rem abaixo do topo do bloco, alinhado à primeira linha de texto; o bloco usa `flow-root` para que a margem do primeiro parágrafo não escape e desloque a pauta. Texto corrido limitado a 68ch.
-
-Ritmo: 16px antes do primeiro parágrafo, 12px entre parágrafos seguidos, 24px antes de subtítulos e da barra de ação. A barra de ação (`caderno-acoes`) é `sticky` no pé da tela em qualquer largura, sangra até as bordas da folha, tem fundo de folha e borda superior em pauta; no celular empilha botão e link, a partir de 640px coloca-os em linha. Um único ponto de quebra: 640px.
+Coluna de conteúdo com `max-w-7xl`; menu lateral de 15rem fixo a partir de `lg` e, abaixo disso, menu no hambúrguer do topo. Telas de leitura (Primeiros passos) limitam o conteúdo a `max-w-3xl`. Ritmo vertical de 24–32px entre blocos (`space-y-6`/`space-y-8`). Um ponto de quebra principal (`lg`, 1024px) para o menu e `sm` (640px) para empilhar ações.
 
 ## Elevation & Depth
 
-Quase plano. O caderno inteiro tem uma única sombra ambiente, curta e larga, em tinta grafite; folha, nota e barra de ação não têm sombra e se separam por cor e por linha. A profundidade principal é a da capa vermelha em volta da folha clara.
-
-### Shadow Vocabulary
-- **Caderno sobre a mesa** (`box-shadow: 0 1px 2px rgba(29,29,27,0.06), 0 16px 40px rgba(29,29,27,0.10)`): só no contêiner do caderno.
-
-### Named Rules
-**The Uma Sombra Rule.** Uma sombra, no caderno. Nada dentro da folha se eleva; separação interna é feita por pauta, fio e fundo.
+Quase plano. Cartões com sombra curta e larga em tom quente (`.seller-card-lg`: `0 1px 2px rgba(120,40,10,0.03), 0 16px 40px rgba(120,40,10,0.05)`; `.seller-card`: `shadow-sm`). Nada dentro de um cartão se eleva; separação interna por linha `brand-100`.
 
 ## Shapes
 
-Contraste de cantos: a capa é generosamente arredondada (1.75rem), como capa dura de canto gasto; a folha, a nota e o aviso de pendência têm cantos quase retos (4px), como papel. Botões são pílulas completas. O carimbo é um retângulo de cantos suaves (6px) com borda de 2px (3px no grande), girado −3° (−4° no grande), a única forma inclinada do sistema. Linhas: pauta de 1px, divisórias de 1px em pauta, fio de 2px em tinta entre índice e etapa, risco de 2px em vermelho-óxido nas etapas feitas.
+Botões e etiquetas em pílula; campos com 0.75rem; cartões com 1rem (`.seller-card`) ou 2rem (`.seller-card-lg`). Exceção deliberada: a faixa de etapas dos Primeiros passos é reta (0px), com segmentos horizontais e etiquetas retas, pedido do usuário em 2026-10-22.
 
 ## Components
 
 ### Buttons
-- **Shape:** pílula (9999px), altura mínima de 48px.
-- **Primary (`caderno-botao`):** vermelho de capa com texto branco, Karla 700 1rem, 12px × 24px. Uma por etapa, na barra de ação fixa; em largura total no celular quando o rótulo é longo.
-- **Hover / Focus:** hover escurece para a capa escurecida; foco com contorno de 2px em vermelho de capa, afastado 2px. Transição de cor padrão (150ms).
-- **Fantasma da capa:** só na faixa da capa (tour do painel): borda branca a 40%, texto branco Karla 700 0.875rem, altura de 44px; hover com branco a 10% no fundo.
+- **Primary (`.seller-button .seller-button--primary`):** vermelho de ação, texto branco, pílula, altura mínima de 44px. Hover em brand-700.
+- **Secondary (`.seller-button .seller-button--secondary`):** borda brand-200, texto brand-700, fundo transparente; hover brand-50.
+- **Link de ação:** texto stone-700 em negrito, sublinhado stone-300 afastado 4px, altura mínima de 44px; hover brand-700.
 
-### Links
-- **Style (`caderno-link`):** Karla 700 0.875rem em tinta, sublinhado de 2px em pauta afastado 4px, altura mínima de 44px. Ação secundária da etapa ou ação de revisar quando a etapa já está feita.
-- **Hover / Focus:** o sublinhado passa para vermelho de capa; foco com contorno de 2px em vermelho de capa.
+### Cards
+- **`.seller-card`:** branco, borda brand-100, 1rem de raio, 24px de margem interna.
+- **`.seller-card-lg`:** o mesmo com 2rem de raio e 32px de margem a partir de `sm`.
+- **Nota:** fundo brand-50, raio 0.75rem, 12px × 16px (ex.: "Depois disso").
+- **Pendência:** fundo amber-50, borda amber-200, texto amber-900.
 
-### Cards / Containers
-- **Caderno:** capa vermelha (1.75rem de raio) com a sombra única, envolvendo a folha.
-- **Folha:** fundo de folha, 4px de raio, sem borda nem sombra.
-- **Nota "Depois disso" (`caderno-nota`):** fundo em linha de pauta, 4px de raio, 12px × 16px, corpo de 28px; diz o que a etapa destrava.
-- **Pendência (`caderno-pendente`):** fundo branco, borda de 2px em vermelho-óxido, Karla 600; só para o estado que impede a etapa (ex.: conexão ainda não configurada pela plataforma), substituindo a ação.
+### Inputs
+- **`.seller-input`:** borda stone-300, fundo brand-50/30, raio 0.75rem; foco com borda brand-500, fundo branco e anel brand-200. Rótulo `.seller-label` (600, 0.875rem, stone-700).
 
-### Navigation
-- **Índice das etapas (`caderno-indice`):** lista ordenada com `aria-label`; cada item é um link de no mínimo 48px, numeral em lápis apagado, título curto em corpo. Etapa atual em 700, com `aria-current="step"` e "agora" em Caveat vermelho de capa à direita. Etapa feita: título em lápis apagado riscado em vermelho-óxido, carimbo "Feito" à direita (decorativo, `aria-hidden`) e "(feita)" para leitores de tela. Hover com fundo em pauta a 50%; foco com contorno vermelho de capa.
+### Badges
+- **`.seller-badge`:** pílula 0.75rem/600; cores pelas regras de estado.
 
-### Carimbo (signature)
-Retângulo inclinado com borda e letra Caveat em vermelho-óxido. Pequeno ("Feito") no índice; grande ao lado do título de uma etapa concluída e no fechamento "Ateliê pronto", quando todas as etapas estão feitas. Só significa conclusão.
-
-### Barra de ação (`caderno-acoes`)
-Presa ao pé da tela, fundo de folha, borda superior em pauta. Contém a ação principal da etapa e, opcionalmente, um link secundário; ou o aviso de pendência no lugar da ação. Quando a etapa atual já está feita e há outra pendente, o fim da etapa oferece "Próxima etapa: …" como botão principal.
+### Faixa de etapas (Primeiros passos)
+Lista ordenada horizontal, segmentos retos separados por linha brand-100, num contorno brand-100 sobre branco. Traço de 4px no topo de cada segmento: emerald-600 feita, brand-600 atual, stone-200 pendente. A atual tem fundo brand-50, `aria-current="step"` e etiqueta reta "Agora"; a feita, etiqueta reta "Feito" e "(feita)" para leitor de tela.
+- **Celular:** os cinco segmentos lado a lado só com o número (ou ✓), altura de 56px, nome completo em `sr-only`; abaixo da faixa, uma linha "Etapa N de 5: nome".
+- **A partir de `sm`:** cada segmento mostra "Etapa N", a etiqueta e o nome curto; a faixa rola na horizontal se não couber (largura mínima de 9.5rem por segmento). A lista é `relative` para conter o texto `sr-only` absoluto dentro da rolagem.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** restringir os tokens `caderno-*` e as classes `.caderno*` ao fluxo "Primeiros passos"; o resto do painel segue `brand-*`/`seller-*`.
-- **Do** manter a entrelinha do corpo pautado em 28px, igual ao passo da pauta.
-- **Do** marcar etapa concluída com texto + risco + carimbo, nunca só por cor, e anunciar "(feita)" para leitores de tela.
-- **Do** dar a cada etapa uma única ação principal (`caderno-botao`), na barra fixa do pé.
-- **Do** usar o contorno de foco de 2px em vermelho de capa em todo controle do caderno.
-- **Do** servir fontes do próprio app (`app/assets/fonts/`), registrando origem e licença em `CREDITS.md`.
+- **Do** usar as classes `seller-*` para cartões, botões, campos e etiquetas do painel.
+- **Do** manter um botão vermelho cheio por tela.
+- **Do** escrever o estado em texto além da cor.
+- **Do** garantir alvos de toque de 44px e contraste AA (4,5:1 no texto).
 
 ### Don't:
-- **Don't** usar bolinhas numeradas, barra de progresso ou pares Voltar/Avançar de assistente de SaaS neste fluxo.
-- **Don't** usar Caveat fora do título da capa, do carimbo e do "agora".
-- **Don't** usar o carimbo ou o vermelho-óxido para algo que não seja conclusão (carimbo, risco) ou o aviso que impede a etapa (borda).
-- **Don't** adicionar sombras dentro da folha; a única sombra é a do caderno.
-- **Don't** carregar fontes de CDN externo; a CSP só permite `font-src 'self'`.
+- **Don't** trazer de volta o mundo do caderno (capa, pauta, carimbo, Karla, Caveat no painel) nem outro mundo próprio por tela sem pedido explícito.
+- **Don't** usar vermelho de alerta para o que não bloqueia a venda.
+- **Don't** reintroduzir pílulas ou cantos arredondados na faixa de etapas dos Primeiros passos.
+- **Don't** depender de fonte ou script de CDN externo (a CSP só aceita o próprio app).

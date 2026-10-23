@@ -1,15 +1,15 @@
-<p class="caderno-texto mt-4">Quando o ateliê está aprovado, seus produtos podem ser publicados e vendidos. O repasse é automático pelo Mercado Pago; você não precisa solicitar uma transferência manual à EloShop.</p>
+<p class="max-w-[68ch] text-base leading-7 text-stone-700 mt-4">Quando o ateliê está aprovado, seus produtos podem ser publicados e vendidos. O repasse é automático pelo Mercado Pago; você não precisa solicitar uma transferência manual à EloShop.</p>
 
-<h3 class="mt-6 font-bold">O caminho do dinheiro</h3>
-<ol class="caderno-texto mt-2 list-decimal pl-5">
-  <li><strong class="text-caderno-tinta">Compra:</strong> o cliente paga no checkout da EloShop.</li>
-  <li><strong class="text-caderno-tinta">Processamento:</strong> o Mercado Pago autoriza e registra a transação.</li>
-  <li><strong class="text-caderno-tinta">Comissão:</strong> a EloShop recebe <strong><%= seller_commission_text(current_seller) %></strong> sobre os produtos após descontos. O frete não entra nessa comissão.</li>
-  <li><strong class="text-caderno-tinta">Saldo:</strong> o restante, incluindo o frete, segue para sua conta, descontadas as tarifas do Mercado Pago.</li>
+<h3 class="mt-6 font-bold text-stone-950">O caminho do dinheiro</h3>
+<ol class="max-w-[68ch] text-base leading-7 text-stone-700 mt-2 list-decimal pl-5">
+  <li><strong class="text-stone-950">Compra:</strong> o cliente paga no checkout da EloShop.</li>
+  <li><strong class="text-stone-950">Processamento:</strong> o Mercado Pago autoriza e registra a transação.</li>
+  <li><strong class="text-stone-950">Comissão:</strong> a EloShop recebe <strong><%= seller_commission_text(current_seller) %></strong> sobre os produtos após descontos. O frete não entra nessa comissão.</li>
+  <li><strong class="text-stone-950">Saldo:</strong> o restante, incluindo o frete, segue para sua conta, descontadas as tarifas do Mercado Pago.</li>
 </ol>
 
-<p class="caderno-texto mt-4">O prazo de liberação e as tarifas são definidos pelo Mercado Pago. Nota fiscal e obrigações tributárias da venda são responsabilidade do artesão; cancelamentos e reembolsos são tratados pela plataforma.</p>
+<p class="max-w-[68ch] text-base leading-7 text-stone-700 mt-4">O prazo de liberação e as tarifas são definidos pelo Mercado Pago. Nota fiscal e obrigações tributárias da venda são responsabilidade do artesão; cancelamentos e reembolsos são tratados pela plataforma.</p>
 
-<div class="caderno-acoes">
-  <%= link_to(done ? "Acompanhar pedidos" : "Ver situação do ateliê", done ? seller_orders_path : seller_atelier_path, class: (done ? "caderno-botao" : "caderno-link")) %>
+<div class="mt-6 flex flex-col gap-3 border-t border-brand-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
+  <%= link_to(done ? "Acompanhar pedidos" : "Ver situação do ateliê", done ? seller_orders_path : seller_atelier_path, class: (done ? "seller-button seller-button--primary justify-center" : "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700")) %>
 </div>
