@@ -47,6 +47,15 @@ class Product < ApplicationRecord
   }, default: "standard", prefix: true
 
   has_one_attached :main_image
+
+  # Tamanho do card do catálogo (400px) em 2x: a vitrine nunca serve o original
+  # da capa, que pode ter alguns megabytes.
+  CARD_IMAGE_VARIANT = { resize_to_fill: [ 800, 800 ] }.freeze
+
+  # A capa com os registros de variante, para o card pedir a variante sem uma
+  # query por produto. preload, e não with_attached_main_image (que usa
+  # includes): ver o comentário em ProductsController#index sobre o JIT.
+  scope :preload_main_image, -> { preload(main_image_attachment: { blob: { variant_records: { image_attachment: :blob } } }) }
   # Fotos adicionais (galeria) — main_image continua sendo a capa,
   # explicitamente definida, ver docs/catalog.md "Imagens".
   has_many_attached :images
