@@ -227,6 +227,31 @@ module SellerTheme
     "solar"       => { label: "Solar",       palette: "mostarda", font: "geometrica", layout: "destaque", hero: "compacto", corners: "arredondados", card_style: "fundo" }.merge(PLAIN_PAGE)
   }.freeze
 
+  # Filtro do editor: as categorias da loja (raízes de `db/seeds/categories.rb`)
+  # para as quais cada tema foi pensado. Fica fora de PRESETS porque o editor
+  # aplica cada chave de um tema como um campo `theme_<chave>`. Um tema pode
+  # servir a mais de uma categoria; os de fundo escuro têm filtro próprio.
+  PRESET_CATEGORIES = {
+    "casa"       => { label: "Casa",                   presets: %w[ceramica cestaria horta marcenaria mesa_posta luz_de_vela rustico minimalista] },
+    "moda"       => { label: "Moda",                   presets: %w[bordado renda litoral joalheria chita boho] },
+    "presentes"  => { label: "Presentes",              presets: %w[carta chita solar joalheria] },
+    "infantil"   => { label: "Infantil",               presets: %w[ciranda solar] },
+    "papelaria"  => { label: "Papelaria",              presets: %w[caderno galeria] },
+    "bem_estar"  => { label: "Bem-estar e cuidados",   presets: %w[ervas luz_de_vela horta] },
+    "pets"       => { label: "Pets",                   presets: %w[patas] },
+    "festas"     => { label: "Festas e eventos",       presets: %w[arraial carta noite] },
+    "arte"       => { label: "Arte e colecionáveis",   presets: %w[galeria vitral ceramica brasa mata] },
+    "materiais"  => { label: "Materiais e aviamentos", presets: %w[armarinho cestaria caderno] }
+  }.freeze
+  DARK_PRESETS_FILTER = "escuro"
+
+  # Chaves do filtro a que o tema pertence, inclusive o de fundo escuro.
+  def self.preset_filters(key)
+    filters = PRESET_CATEGORIES.select { |_, category| category[:presets].include?(key) }.keys
+    filters << DARK_PRESETS_FILTER if dark?(PRESETS.dig(key, :background))
+    filters
+  end
+
   # Variáveis CSS da vitrine. Só valores do catálogo acima (ou um hex já
   # validado por `contrast_ratio`) entram aqui. Com cor própria, as demais
   # cores do topo saem dela por `color-mix`, sem tabela por cor.

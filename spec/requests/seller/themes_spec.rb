@@ -71,6 +71,19 @@ RSpec.describe "Seller theme", type: :request do
       expect(minimalista).to include("Grafite · Moderna", "Ampla · topo compacto")
     end
 
+    it "filters presets by store category through a select that is not part of the theme" do
+      sign_in_as(user)
+
+      get edit_seller_theme_path
+
+      html = Nokogiri::HTML(response.body)
+      select = html.at_css("select#theme_preset_filter")
+      expect(select["name"]).to be_nil
+      expect(select.css("option").map { |option| option.text.strip }).to include("Todos os temas", "Infantil", "Pets", "Fundo escuro")
+      expect(html.at_css('button[data-preset="patas"]')["data-filters"]).to eq("pets")
+      expect(html.at_css('#panel-temas p:not([id])').text).to include("Um ponto de partida")
+    end
+
     it "shows the character count of each limited text" do
       seller.update!(notice_text: "Férias até dia 10")
       sign_in_as(user)

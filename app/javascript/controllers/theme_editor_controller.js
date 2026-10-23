@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 // `/painel/atelie/tema/preview`, que renderiza a página real em memória (nada
 // é gravado). Arquivos não vão no rascunho: o preview mostra os já salvos.
 export default class extends Controller {
-  static targets = ["form", "tab", "panel", "stage", "frame", "viewport", "status", "device", "dirty", "closeButton", "expandButton", "imageNote", "preset", "useCustomColor", "customColor", "contrastHint"]
+  static targets = ["form", "tab", "panel", "stage", "frame", "viewport", "status", "device", "dirty", "closeButton", "expandButton", "imageNote", "preset", "presetCount", "useCustomColor", "customColor", "contrastHint"]
   static values = { previewUrl: String, presets: Object, minContrast: Number, initialTab: String, maxImageBytes: Number, imageTypes: Array }
   static classes = ["open"]
 
@@ -95,6 +95,20 @@ export default class extends Controller {
       const match = !custom && this.presetFields(preset).every((key) => preset[key] === value(key))
       button.setAttribute("aria-pressed", match)
     })
+  }
+
+  // Filtra a lista de temas prontos. O select fica dentro do formulário, mas
+  // não é do tema: o evento não sobe para `changed`, então nada fica "não
+  // salvo" e a prévia não recarrega.
+  filterPresets(event) {
+    event.stopPropagation()
+    const filter = event.currentTarget.value
+    let shown = 0
+    this.presetTargets.forEach((button) => {
+      button.hidden = filter !== "" && !button.dataset.filters.split(" ").includes(filter)
+      if (!button.hidden) shown++
+    })
+    this.presetCountTarget.textContent = shown === 1 ? "1 tema" : `${shown} temas`
   }
 
   // Cada chave de um tema pronto (menos o nome) é um campo `theme_<chave>`.
