@@ -1,3 +1,21 @@
+  <%# Filtro só da lista: sem `name`, não vai no formulário, e o editor não o
+      conta como alteração do tema. %>
+  <div>
+    <label for="theme_preset_filter" class="text-sm font-semibold text-stone-700">Filtrar por tema</label>
+    <select id="theme_preset_filter" class="seller-input mt-2"
+            data-action="change->theme-editor#filterPresets input->theme-editor#filterPresets" aria-describedby="theme_preset_count">
+      <option value="">Todos os temas</option>
+      <optgroup label="Categoria da loja">
+        <% SellerTheme::PRESET_CATEGORIES.each do |key, category| %>
+          <option value="<%= key %>"><%= category[:label] %></option>
+        <% end %>
+      </optgroup>
+      <optgroup label="Estilo">
+        <option value="<%= SellerTheme::DARK_PRESETS_FILTER %>">Fundo escuro</option>
+      </optgroup>
+    </select>
+    <p id="theme_preset_count" class="mt-1 text-xs text-stone-500" aria-live="polite" data-theme-editor-target="presetCount"><%= SellerTheme::PRESETS.size %> temas</p>
+  </div>
   <p class="text-sm text-stone-500">Um ponto de partida. Aplique um e ajuste o que quiser nas outras abas.</p>
   <% short = ->(label) { label.split(" (").first } %>
   <div class="grid grid-cols-2 gap-3">
@@ -6,6 +24,7 @@
       <%# `aria-pressed` diz se o formulário está exatamente neste tema; o
           editor recalcula a cada mudança. %>
       <button type="button" data-action="theme-editor#applyPreset" data-preset="<%= key %>" data-theme-editor-target="preset" aria-pressed="false"
+              data-filters="<%= SellerTheme.preset_filters(key).join(" ") %>"
               class="group flex min-h-11 cursor-pointer flex-col gap-2 rounded-2xl border border-stone-200 bg-white p-2.5 text-left transition hover:border-stone-400 focus-visible:ring-3 focus-visible:ring-brand-300 aria-pressed:border-stone-900 aria-pressed:ring-2 aria-pressed:ring-stone-900">
         <%# Miniatura: o topo na cor da paleta sobre o fundo da página, com o
             ornamento embaixo quando o tema tem um. %>

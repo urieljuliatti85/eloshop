@@ -703,6 +703,22 @@ class SellerTest < ActiveSupport::TestCase
     end
   end
 
+  # O filtro do editor não pode esconder um tema de vez nem apontar para um
+  # tema que não existe.
+  test "preset filters point to existing presets and reach every preset" do
+    SellerTheme::PRESET_CATEGORIES.each do |key, category|
+      assert_not_empty category[:presets], key
+      category[:presets].each { |preset| assert SellerTheme::PRESETS.key?(preset), "#{key}: #{preset}" }
+    end
+    SellerTheme::PRESETS.each_key { |key| assert_not_empty SellerTheme.preset_filters(key), key }
+  end
+
+  test "dark presets also fall under the dark background filter" do
+    assert_includes SellerTheme.preset_filters("luz_de_vela"), "bem_estar"
+    assert_includes SellerTheme.preset_filters("luz_de_vela"), SellerTheme::DARK_PRESETS_FILTER
+    assert_not_includes SellerTheme.preset_filters("ciranda"), SellerTheme::DARK_PRESETS_FILTER
+  end
+
   test "presets have distinct names" do
     labels = SellerTheme::PRESETS.values.pluck(:label)
     assert_equal labels.uniq, labels

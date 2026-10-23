@@ -42,6 +42,24 @@ class SellerThemeEditorTest < ApplicationSystemTestCase
     assert_no_selector "[role=dialog]"
   end
 
+  test "filters presets by category without touching the draft" do
+    sign_in_seller(users(:seller))
+    visit edit_seller_theme_path
+
+    select "Pets", from: "Filtrar por tema"
+    assert_selector "button[data-preset='patas']"
+    assert_no_selector "button[data-preset='rustico']"
+    assert_selector "#theme_preset_count", text: "1 tema"
+    assert_selector "[data-theme-editor-target=dirty]", visible: :hidden
+
+    select "Fundo escuro", from: "Filtrar por tema"
+    assert_selector "button[data-preset='luz_de_vela']"
+    assert_no_selector "button[data-preset='patas']"
+
+    select "Todos os temas", from: "Filtrar por tema"
+    assert_selector "#theme_preset_count", text: "#{SellerTheme::PRESETS.size} temas"
+  end
+
   test "opens the draft preview on a phone" do
     page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 390, height: 844, deviceScaleFactor: 2, mobile: true)
     sign_in_seller(users(:seller))

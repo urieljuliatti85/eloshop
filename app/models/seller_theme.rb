@@ -16,7 +16,9 @@ module SellerTheme
     "indigo"    => { label: "Índigo",    from: "#141a3d", to: "#3a43a0", glow: "#7b84e0", soft: "#d6d9f7", accent: "#333c96" },
     "lavanda"   => { label: "Lavanda",   from: "#2e2450", to: "#6a55b0", glow: "#a594e6", soft: "#e4def9", accent: "#5a46a0" },
     "caramelo"  => { label: "Caramelo",  from: "#3f2412", to: "#8f5426", glow: "#d4935a", soft: "#f4dcc4", accent: "#7e4920" },
-    "cacau"     => { label: "Cacau",     from: "#2a1a14", to: "#5e3a2c", glow: "#a0705a", soft: "#ead8cf", accent: "#5a3729" }
+    "cacau"     => { label: "Cacau",     from: "#2a1a14", to: "#5e3a2c", glow: "#a0705a", soft: "#ead8cf", accent: "#5a3729" },
+    "rosa"      => { label: "Rosa",      from: "#4a1530", to: "#b03366", glow: "#e87aa4", soft: "#f9d3e2", accent: "#a12c5c" },
+    "salvia"    => { label: "Sálvia",    from: "#22332b", to: "#4a6b5b", glow: "#8fb3a2", soft: "#d6e8df", accent: "#3d5c4d" }
   }.freeze
 
   # Só pilhas de fontes do sistema: a CSP não admite fonte externa.
@@ -117,7 +119,30 @@ module SellerTheme
                         "<path d='M10 8C12 3 17 2 21 3C19 7 15 8 10 8Z'/><path d='M30 8C28 13 23 14 19 13C21 9 25 8 30 8Z'/></svg>" },
     "trancado" => { label: "Trançado", height: 12,
                     svg: "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='12'>" \
-                         "<path d='M0 2h6l2 3H2zM8 7h6l2 3H10z'/><path d='M8 2h6l-2 3H6zM0 7h6l-2 3H-2z' opacity='.5'/></svg>" }
+                         "<path d='M0 2h6l2 3H2zM8 7h6l2 3H10z'/><path d='M8 2h6l-2 3H6zM0 7h6l-2 3H-2z' opacity='.5'/></svg>" },
+    "bandeirinhas" => { label: "Bandeirinhas", height: 18,
+                        svg: "<svg xmlns='http://www.w3.org/2000/svg' width='28' height='18'>" \
+                             "<path d='M0 2q14 3 28 0' fill='none' stroke='black' stroke-width='1.2'/><path d='M5 3.2h12l-6 13z'/></svg>" },
+    "patinhas" => { label: "Patinhas", height: 22,
+                    svg: "<svg xmlns='http://www.w3.org/2000/svg' width='44' height='18'><g transform='translate(11 10)'>" \
+                         "<ellipse cy='3' rx='3.6' ry='3'/><circle cx='-4' cy='-2' r='1.5'/><circle cx='-1.4' cy='-4.4' r='1.5'/>" \
+                         "<circle cx='1.4' cy='-4.4' r='1.5'/><circle cx='4' cy='-2' r='1.5'/></g>" \
+                         "<g transform='translate(33 9) rotate(15)'>" \
+                         "<ellipse cy='3' rx='3.6' ry='3'/><circle cx='-4' cy='-2' r='1.5'/><circle cx='-1.4' cy='-4.4' r='1.5'/>" \
+                         "<circle cx='1.4' cy='-4.4' r='1.5'/><circle cx='4' cy='-2' r='1.5'/></g></svg>" },
+    "estrelas" => { label: "Estrelinhas", height: 20,
+                    svg: "<svg xmlns='http://www.w3.org/2000/svg' width='36' height='16'><path d='M10 2L11.6 6.3L16.2 6.5L12.6 9.3L13.8 13.8L10 11.2" \
+                         "L6.2 13.8L7.4 9.3L3.8 6.5L8.4 6.3zM27 2.8L27.8 4.9L30 5L28.2 6.4L28.9 8.6L27 7.3L25.1 8.6L25.8 6.4L24 5L26.2 4.9z" \
+                         "M29.8 12a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0-2.4 0z'/></svg>" },
+    "contas"   => { label: "Contas", height: 14,
+                    svg: "<svg xmlns='http://www.w3.org/2000/svg' width='20' height='14'><path d='M0 7h20' stroke='black' stroke-width='1'/>" \
+                         "<circle cx='6' cy='7' r='4'/><circle cx='15' cy='7' r='2'/></svg>" },
+    "botoes"   => { label: "Botões", height: 16,
+                    svg: "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='16'><path fill-rule='evenodd' d='" \
+                         "M3.5 8a6.5 6.5 0 1 0 13 0a6.5 6.5 0 1 0-13 0zM7.3 6.2a.9 .9 0 1 0 1.8 0a.9 .9 0 1 0-1.8 0z" \
+                         "M10.9 6.2a.9 .9 0 1 0 1.8 0a.9 .9 0 1 0-1.8 0zM7.3 9.8a.9 .9 0 1 0 1.8 0a.9 .9 0 1 0-1.8 0z" \
+                         "M10.9 9.8a.9 .9 0 1 0 1.8 0a.9 .9 0 1 0-1.8 0zM22 8a4 4 0 1 0 8 0a4 4 0 1 0-8 0z" \
+                         "M24 8a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0zM26.4 8a.8 .8 0 1 0 1.6 0a.8 .8 0 1 0-1.6 0z'/></svg>" }
   }.freeze
 
   # Proporção da foto nos cards de peça.
@@ -166,6 +191,24 @@ module SellerTheme
                        background: "papel",  ornament: "renda",   image_ratio: "retrato", heading_font: "revista" },
     "bordado"     => { label: "Bordado",     palette: "ameixa",   font: "artesanal", layout: "ampla",    hero: "compacto",  corners: "suaves",       card_style: "fundo",
                        background: "tom",    ornament: "costura", image_ratio: "quadrada", heading_font: "manuscrita" },
+    # Temas pensados para as categorias da loja que ainda não tinham um
+    # (Infantil, Festas, Pets, Bem-estar, Joias, Aviamentos, Madeira, Mesa posta).
+    "ciranda"     => { label: "Ciranda",     palette: "rosa",     font: "artesanal", layout: "grade",    hero: "capa",      corners: "arredondados", card_style: "fundo",
+                       background: "tom",    ornament: "estrelas", image_ratio: "quadrada", heading_font: "suave" },
+    "arraial"     => { label: "Arraial",     palette: "mostarda", font: "artesanal", layout: "grade",    hero: "capa",      corners: "arredondados", card_style: "borda",
+                       background: "papel",  ornament: "bandeirinhas", image_ratio: "quadrada", heading_font: "manuscrita" },
+    "patas"       => { label: "Patas",       palette: "oceano",   font: "geometrica", layout: "grade",   hero: "dividido",  corners: "arredondados", card_style: "sombra",
+                       background: "linho",  ornament: "patinhas", image_ratio: "quadrada", heading_font: "contemporanea" },
+    "ervas"       => { label: "Ervas e aromas", palette: "salvia", font: "humanista", layout: "ampla",   hero: "editorial", corners: "arredondados", card_style: "limpo",
+                       background: "tom",    ornament: "folhas",  image_ratio: "retrato", heading_font: "suave" },
+    "joalheria"   => { label: "Joalheria",   palette: "grafite",  font: "elegante",  layout: "ampla",    hero: "editorial", corners: "retos",        card_style: "limpo",
+                       background: "branco", ornament: "contas",  image_ratio: "retrato", heading_font: "revista" },
+    "armarinho"   => { label: "Armarinho",   palette: "indigo",   font: "maquina",   layout: "grade",    hero: "faixa",     corners: "retos",        card_style: "borda",
+                       background: "linho",  ornament: "botoes",  image_ratio: "quadrada", heading_font: "contemporanea" },
+    "marcenaria"  => { label: "Marcenaria",  palette: "caramelo", font: "classica",  layout: "ampla",    hero: "dividido",  corners: "retos",        card_style: "limpo",
+                       background: "papel",  ornament: "nenhum",  image_ratio: "paisagem", heading_font: "suave" },
+    "mesa_posta"  => { label: "Mesa posta",  palette: "oliva",    font: "classica",  layout: "destaque", hero: "capa",      corners: "suaves",       card_style: "sombra",
+                       background: "linho",  ornament: "renda",   image_ratio: "paisagem", heading_font: "revista" },
     # Temas de fundo escuro.
     "noite"       => { label: "Noite de feira", palette: "mostarda", font: "moderna", layout: "grade",  hero: "capa",      corners: "suaves",       card_style: "fundo",
                        background: "escuro", ornament: "costura", image_ratio: "quadrada", heading_font: "contemporanea" },
@@ -175,12 +218,39 @@ module SellerTheme
                        background: "escuro", ornament: "folhas",  image_ratio: "retrato", heading_font: "suave" },
     "vitral"      => { label: "Vitral",      palette: "indigo",   font: "elegante",  layout: "destaque", hero: "faixa",     corners: "retos",        card_style: "sombra",
                        background: "escuro", ornament: "nenhum",  image_ratio: "quadrada", heading_font: "revista" },
+    "luz_de_vela" => { label: "Luz de vela", palette: "cacau",    font: "elegante",  layout: "destaque", hero: "dividido",  corners: "suaves",       card_style: "fundo",
+                       background: "escuro", ornament: "estrelas", image_ratio: "retrato", heading_font: "revista" },
     # Temas de cor e fonte, sobre a página branca de sempre.
     "rustico"     => { label: "Rústico",     palette: "oliva",   font: "classica",  layout: "grade",    hero: "capa",     corners: "suaves",       card_style: "limpo" }.merge(PLAIN_PAGE),
     "minimalista" => { label: "Minimalista", palette: "grafite", font: "moderna",   layout: "ampla",    hero: "compacto", corners: "retos",        card_style: "borda" }.merge(PLAIN_PAGE),
     "boho"        => { label: "Boho",        palette: "terracota", font: "artesanal", layout: "destaque", hero: "capa",     corners: "arredondados", card_style: "sombra" }.merge(PLAIN_PAGE),
     "solar"       => { label: "Solar",       palette: "mostarda", font: "geometrica", layout: "destaque", hero: "compacto", corners: "arredondados", card_style: "fundo" }.merge(PLAIN_PAGE)
   }.freeze
+
+  # Filtro do editor: as categorias da loja (raízes de `db/seeds/categories.rb`)
+  # para as quais cada tema foi pensado. Fica fora de PRESETS porque o editor
+  # aplica cada chave de um tema como um campo `theme_<chave>`. Um tema pode
+  # servir a mais de uma categoria; os de fundo escuro têm filtro próprio.
+  PRESET_CATEGORIES = {
+    "casa"       => { label: "Casa",                   presets: %w[ceramica cestaria horta marcenaria mesa_posta luz_de_vela rustico minimalista] },
+    "moda"       => { label: "Moda",                   presets: %w[bordado renda litoral joalheria chita boho] },
+    "presentes"  => { label: "Presentes",              presets: %w[carta chita solar joalheria] },
+    "infantil"   => { label: "Infantil",               presets: %w[ciranda solar] },
+    "papelaria"  => { label: "Papelaria",              presets: %w[caderno galeria] },
+    "bem_estar"  => { label: "Bem-estar e cuidados",   presets: %w[ervas luz_de_vela horta] },
+    "pets"       => { label: "Pets",                   presets: %w[patas] },
+    "festas"     => { label: "Festas e eventos",       presets: %w[arraial carta noite] },
+    "arte"       => { label: "Arte e colecionáveis",   presets: %w[galeria vitral ceramica brasa mata] },
+    "materiais"  => { label: "Materiais e aviamentos", presets: %w[armarinho cestaria caderno] }
+  }.freeze
+  DARK_PRESETS_FILTER = "escuro"
+
+  # Chaves do filtro a que o tema pertence, inclusive o de fundo escuro.
+  def self.preset_filters(key)
+    filters = PRESET_CATEGORIES.select { |_, category| category[:presets].include?(key) }.keys
+    filters << DARK_PRESETS_FILTER if dark?(PRESETS.dig(key, :background))
+    filters
+  end
 
   # Variáveis CSS da vitrine. Só valores do catálogo acima (ou um hex já
   # validado por `contrast_ratio`) entram aqui. Com cor própria, as demais
