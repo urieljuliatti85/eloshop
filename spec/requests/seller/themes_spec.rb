@@ -271,6 +271,27 @@ RSpec.describe "Seller theme", type: :request do
         expect(seller.reload.theme_accent_color).to be_nil
       end
 
+      it "saves page background, ornament, photo ratio, heading font and the new hero formats" do
+        sign_in_as(user)
+
+        patch seller_theme_path, params: { seller: { theme_background: "escuro", theme_ornament: "chita", theme_image_ratio: "retrato", theme_hero: "editorial", theme_heading_font: "manuscrita" } }
+
+        expect(response).to redirect_to(edit_seller_theme_path)
+        seller.reload
+        expect([ seller.theme_background, seller.theme_ornament, seller.theme_image_ratio, seller.theme_hero, seller.theme_heading_font ])
+          .to eq(%w[escuro chita retrato editorial manuscrita])
+      end
+
+      it "rejects a background or ornament outside the catalog, reopening the style tab" do
+        sign_in_as(user)
+
+        patch seller_theme_path, params: { seller: { theme_background: "url(x)", theme_ornament: "chita" } }
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.body).to include('data-theme-editor-initial-tab-value="estilo"')
+        expect(seller.reload.theme_ornament).to eq("nenhum")
+      end
+
       it "rejects unknown sections and invalid contacts" do
         sign_in_as(user)
 

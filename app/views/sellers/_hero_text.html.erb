@@ -1,0 +1,9 @@
+<%# Logo, nome e contatos sobre o bloco de cor do topo (texto branco). %>
+<% if seller.logo.attached? %>
+  <%= image_tag seller.logo.variant(resize_to_fill: [ 160, 160 ]), alt: "Logo do ateliê #{seller.name}",
+        class: "mb-5 size-20 rounded-full border-2 border-white/60 object-cover sm:size-24" %>
+<% end %>
+<p class="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[var(--atelier-soft)]">Ateliê na EloShop</p>
+<h1 class="atelier-heading text-4xl font-black leading-[0.98] tracking-tight sm:text-5xl lg:text-6xl"><%= seller.name %></h1>
+<p class="mt-5 max-w-lg text-sm leading-6 text-white/80 sm:text-base"><%= count %></p>
+<%= render "sellers/social_links", seller: seller, link_class: "border-white/50 hover:bg-white/15" %>

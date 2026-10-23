@@ -1,0 +1,11 @@
+<% if seller.instagram_handle.present? || seller.whatsapp_number.present? %>
+  <% classes = "inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold #{link_class}" %>
+  <div class="<%= local_assigns.fetch(:wrapper_class, "mt-5 flex flex-wrap gap-2") %>">
+    <% if seller.instagram_handle.present? %>
+      <%= link_to "Instagram", seller_instagram_url(seller), target: "_blank", rel: "noopener nofollow", class: classes %>
+    <% end %>
+    <% if seller.whatsapp_number.present? %>
+      <%= link_to "WhatsApp", seller_whatsapp_url(seller), target: "_blank", rel: "noopener nofollow", class: classes %>
+    <% end %>
+  </div>
+<% end %>

@@ -18,6 +18,9 @@
      fundo dos cards do catálogo). */
   --color-sand-50: #faf3ea;
   --color-sand-100: #f9f1e7;
+  /* Divisores e bordas dos cards da vitrine do ateliê. Sem ela definida, o
+     `border-sand-200` não gerava CSS e as linhas saíam na cor do texto. */
+  --color-sand-200: #ecdcc6;
   --color-mist-100: #f4f5f7;
 
   /* Caderno de encomendas: o mundo do fluxo "Primeiros passos" do painel. */
@@ -49,6 +52,57 @@
   font-weight: 600;
   font-display: swap;
   src: url("caveat-600-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("fraunces-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Serif Display";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("dm-serif-display-400-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("space-grotesk-latin.woff2") format("woff2");
+}
+
+/* Vitrine do ateliê (SellerTheme). Títulos na fonte de título do tema; sem
+   negrito sintético, porque Caveat e DM Serif Display têm um peso só e o
+   negrito falso borra o desenho delas. */
+.atelier-heading {
+  font-family: var(--atelier-heading-font, inherit);
+  font-synthesis-weight: none;
+}
+
+/* Fundo escuro: o texto da vitrine usa `ink`, `ink-muted` e `sand-200` do
+   tema, então basta trocar essas cores dentro do contêiner. O que continua
+   claro volta às cores originais: a foto do card (com os selos "Peça única",
+   "Indisponível" e o botão de carrinho), toda superfície branca (favoritos,
+   compartilhar) e a caixa de denúncia (`atelier-light`). */
+.atelier-dark {
+  color-scheme: dark;
+  --color-ink: #f5f1ec;
+  --color-ink-muted: #c9c2b9;
+  --color-sand-200: rgb(255 255 255 / 0.16);
+  --color-brand-600: #f88f81;
+}
+.atelier-dark .aspect-square,
+.atelier-dark .bg-white,
+.atelier-dark .atelier-light {
+  color-scheme: light;
+  --color-ink: #1d2026;
+  --color-ink-muted: #6b7280;
+  --color-sand-200: #ecdcc6;
+  --color-brand-600: #df240c;
 }
 
 @layer components {

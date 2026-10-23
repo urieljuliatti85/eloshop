@@ -75,12 +75,7 @@ export default class extends Controller {
     const preset = this.presetsValue[event.currentTarget.dataset.preset]
     if (!preset) return
 
-    this.check("theme_palette", preset.palette)
-    this.check("theme_font", preset.font)
-    this.check("theme_layout", preset.layout)
-    this.check("theme_hero", preset.hero)
-    this.check("theme_corners", preset.corners)
-    this.check("theme_card_style", preset.card_style)
+    this.presetFields(preset).forEach((key) => this.check(`theme_${key}`, preset[key]))
     this.useCustomColorTarget.checked = false
     this.changed()
   }
@@ -93,17 +88,18 @@ export default class extends Controller {
   // Marca o tema pronto que coincide com o formulário (nenhum, se algo foi
   // ajustado depois de aplicar ou se há cor própria).
   syncPresets() {
-    const value = (attribute) => this.formTarget.querySelector(`input[name="seller[${attribute}]"]:checked`)?.value
-    const current = {
-      palette: value("theme_palette"), font: value("theme_font"), layout: value("theme_layout"),
-      hero: value("theme_hero"), corners: value("theme_corners"), card_style: value("theme_card_style")
-    }
+    const value = (key) => this.formTarget.querySelector(`input[name="seller[theme_${key}]"]:checked`)?.value
     const custom = this.useCustomColorTarget.checked
     this.presetTargets.forEach((button) => {
       const preset = this.presetsValue[button.dataset.preset]
-      const match = !custom && Object.keys(current).every((key) => preset[key] === current[key])
+      const match = !custom && this.presetFields(preset).every((key) => preset[key] === value(key))
       button.setAttribute("aria-pressed", match)
     })
+  }
+
+  // Cada chave de um tema pronto (menos o nome) é um campo `theme_<chave>`.
+  presetFields(preset) {
+    return Object.keys(preset).filter((key) => key !== "label")
   }
 
   moveUp(event) {
