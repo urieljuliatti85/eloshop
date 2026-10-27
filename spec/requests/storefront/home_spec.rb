@@ -32,6 +32,43 @@ RSpec.describe "Storefront home", type: :request do
       expect(response.body).to include("/produtos?q={search_term_string}")
     end
 
+    it "opens the carousel with the EloShop Instagram banner, opening in a new tab" do
+      get root_path
+
+      doc = Nokogiri::HTML(response.body)
+      slides = doc.css("[data-carousel-target='slide']")
+      expect(slides.map { |slide| slide["aria-label"] }).to eq([ "1 de 3", "2 de 3", "3 de 3" ])
+      expect(doc.css("[data-carousel-target='dot']").size).to eq(3)
+
+      banner = slides.first
+      expect(banner.text.squish).to include(
+        "Sejam muito bem-vindos ao nosso espaço dedicado ao artesanato!",
+        "Confira o nosso Instagram e acompanhe novidades, processos criativos dos nossos artesãos, entre outros.",
+        "@eloshop__"
+      )
+      link = banner.at_css("a[href='https://www.instagram.com/eloshop__']")
+      expect(link["target"]).to eq("_blank")
+      expect(link["rel"]).to eq("noopener")
+      expect(link["aria-label"]).to include("abre em nova aba")
+    end
+
+    it "puts the Instagram as the last pill of the desktop menu and as an icon in the mobile top bar" do
+      get root_path
+
+      doc = Nokogiri::HTML(response.body)
+      desktop = doc.at_css("header nav.md\\:flex").css("a").last
+      mobile = doc.css("header a.md\\:hidden[href='https://www.instagram.com/eloshop__']")
+      expect(mobile.size).to eq(1)
+      [ desktop, mobile.first ].each do |link|
+        expect(link["href"]).to eq("https://www.instagram.com/eloshop__")
+        expect(link["target"]).to eq("_blank")
+        expect(link["aria-label"]).to eq("Instagram da EloShop (abre em nova aba)")
+      end
+      # Não se repete no menu do hambúrguer.
+      hamburger = doc.at_css("header [data-mobile-menu-target='panel']")
+      expect(hamburger.css("a[href='https://www.instagram.com/eloshop__']")).to be_empty
+    end
+
     # O carrossel é progressivo: os dois banners vêm no HTML e continuam
     # alcançáveis pela rolagem da faixa mesmo sem JavaScript.
     it "renders the artisan banner with its call to action" do
