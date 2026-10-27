@@ -113,6 +113,8 @@ Rails.application.routes.draw do
     # Uma etapa por tela; sem etapa na URL, abre a próxima pendente.
     get "primeiros-passos(/:etapa)", to: "getting_started#show", as: :getting_started,
       constraints: { etapa: /endereco|mercado-pago|chave-pix|primeira-peca|aprovacao/ }
+    # Endereço de origem preenchido dentro dos Primeiros passos do painel inicial.
+    resource :origin_address, only: :update, controller: "origin_addresses", path: "primeiros-passos/endereco"
     post "tour/concluir", to: "tours#complete", as: :tour_completion
     resource :pix_key_confirmation, only: %i[create destroy], path: "chave-pix"
     get "cadastro-chave-pix", to: "pix_key_guides#show", as: :pix_key_guide

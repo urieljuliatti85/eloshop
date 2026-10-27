@@ -1,6 +1,6 @@
   <%# O que pede ação hoje, em frases e não em números soltos: o artesão abre o
       painel para saber se tem pedido para enviar. Só aparecem as linhas com algo. %>
-  <section class="seller-card" aria-labelledby="todo-title">
+  <section id="o-que-fazer-agora" class="seller-card scroll-mt-40 sm:scroll-mt-28" aria-labelledby="todo-title">
     <h2 id="todo-title" class="text-xl font-bold text-stone-950">O que fazer agora</h2>
     <% todo = [
       ([ @to_prepare_count, @to_prepare_count == 1 ? "pedido pago para preparar e enviar" : "pedidos pagos para preparar e enviar", "Ver pedidos", seller_orders_path, true ] if @to_prepare_count.positive?),

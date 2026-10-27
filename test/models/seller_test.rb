@@ -534,6 +534,20 @@ class SellerTest < ActiveSupport::TestCase
     assert_equal({ address: true, mercado_pago: true, pix_key: true, product: true, approval: true }, seller.getting_started_steps)
   end
 
+  test "setup_steps keeps a connected but not accepted Mercado Pago account as pending" do
+    seller = Seller.create!(name: "Ateliê não aceito", owner_full_name: "Ana Aceite", cpf: "11144477735")
+    seller.update!(
+      mercado_pago_user_id: "123456", mercado_pago_access_token_ciphertext: "a", mercado_pago_refresh_token_ciphertext: "r",
+      mercado_pago_connected_at: Time.current, mercado_pago_live_mode: false, mercado_pago_test_account: true
+    )
+
+    assert seller.getting_started_steps[:mercado_pago], "a página Primeiros passos vê a conexão"
+    assert_not seller.setup_steps[:mercado_pago], "o painel cobra a conta real"
+
+    seller.update!(mercado_pago_live_mode: true, mercado_pago_test_account: false)
+    assert seller.setup_steps[:mercado_pago]
+  end
+
   test "public_page_available? is true only for an approved seller that is not hidden" do
     seller = Seller.create!(name: "Ateliê da página", owner_full_name: "Ana Página", cpf: "11144477735")
     assert_not seller.public_page_available?, "pendente responde 404"

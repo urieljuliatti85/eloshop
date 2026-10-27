@@ -244,6 +244,21 @@ class Seller < ApplicationRecord
     }
   end
 
+  # Pagos e ainda não despachados: o mesmo `:preparing` da linha do tempo do
+  # pedido. É o "preparar e enviar" do painel inicial e da aba Pedidos.
+  def seller_orders_to_prepare
+    seller_orders.where(status: %w[confirmed partially_refunded]).joins(:shipment).merge(Shipment.pending)
+  end
+
+  # As mesmas etapas como o painel do artesão as cobra (bloco do painel
+  # inicial e abas do celular): conta do Mercado Pago conectada mas não
+  # aceita conta como pendente, porque é ela que o artesão precisa corrigir.
+  def setup_steps
+    steps = getting_started_steps
+    steps[:mercado_pago] = false if mercado_pago_account_state == :not_accepted
+    steps
+  end
+
   def mercado_pago_connected?
     mercado_pago_user_id.present? &&
       mercado_pago_access_token_ciphertext.present? &&
