@@ -62,8 +62,16 @@ class OrdersController < StorefrontController
     shipment = order.seller_order.shipment
     raise ActiveRecord::RecordNotFound unless shipment
 
-    shipment.report_delivered_by_customer!
-    NotifySellerOfDeliveryJob.perform_later(order.seller_order)
+    if shipment.report_delivered_by_customer!
+      NotifySellerOfDeliveryJob.perform_later(order.seller_order)
+      Notification.create!(
+        recipient: order.seller_order.seller,
+        kind: :delivery_reported,
+        title: shipment.local_pickup? ? "Cliente retirou o pedido" : "Cliente recebeu o pedido",
+        body: "O cliente avisou que #{shipment.local_pickup? ? 'retirou' : 'recebeu'} o pedido ##{order.id}. Confirme a entrega no painel.",
+        url: seller_order_path(order)
+      )
+    end
 
     message = shipment.local_pickup? ? "Retirada confirmada." : "Recebimento confirmado."
     redirect_to order_path(order), notice: message

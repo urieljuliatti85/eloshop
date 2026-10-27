@@ -380,6 +380,26 @@ RSpec.describe "Orders", type: :request do
       expect(response).to redirect_to(order_path(order))
       expect(shipment.reload).to be_shipped
       expect(shipment.customer_reported_delivered_at).to be_present
+
+      notification = Notification.find_by!(recipient: order.seller_order.seller, kind: "delivery_reported")
+      expect(notification.title).to eq("Cliente recebeu o pedido")
+      expect(notification.url).to eq(seller_order_path(order))
+    end
+
+    # Clicar de novo não repete o e-mail nem a notificação ao ateliê.
+    it "notifies the seller only on the first report" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      post orders_path, params: { address_id: address.id }
+      order = Order.last
+      order.confirm!
+      create_shipment_for(order).mark_shipped!
+      patch deliver_order_path(order)
+
+      expect { patch deliver_order_path(order) }.not_to have_enqueued_job(NotifySellerOfDeliveryJob)
+      expect(Notification.where(recipient: order.seller_order.seller, kind: "delivery_reported").count).to eq(1)
+      expect(response).to redirect_to(order_path(order))
     end
 
     it "does not accept the report for an order whose shipment has not been marked as shipped yet" do
