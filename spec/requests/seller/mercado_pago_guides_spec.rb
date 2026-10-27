@@ -20,6 +20,15 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
     )
   end
 
+  # No painel inicial só a etapa atual dos Primeiros passos é detalhada; com
+  # o endereço feito, a etapa atual é a conta do Mercado Pago.
+  def fill_address!
+    seller.update!(
+      origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
+      origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP"
+    )
+  end
+
   describe "GET /painel/conta-vendedor-mercado-pago" do
     it "shows the PIX key warning until the seller confirms the key" do
       sign_in_as(user)
@@ -127,6 +136,7 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
     [ true, nil ].each do |test_account|
       it "warns instead of showing connected when test_account is #{test_account.inspect}" do
         connect_seller!(test_account: test_account)
+        fill_address!
         sign_in_as(user)
 
         get seller_root_path
@@ -162,22 +172,25 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
 
   describe "navigation and dashboard banner" do
     it "flags the step as mandatory until the account is connected" do
+      fill_address!
       sign_in_as(user)
 
       get seller_root_path
 
-      expect(response.body).to include("Conta Vendedor no Mercado Pago", "Obrigatório", "Sem ela, nada é publicado.")
+      setup = Nokogiri::HTML(response.body).at_css("section[aria-labelledby='setup-title']").text.squish
+      expect(setup).to include("Conecte sua conta do Mercado Pago", "Obrigatório", "Conectar Mercado Pago")
       expect(response.body).to include(seller_mercado_pago_guide_path)
     end
 
-    # Sem pedidos ainda, o cadastro é o trabalho do dia: a etapa obrigatória
-    # fica acima do resumo, e não abaixo, onde passava despercebida.
-    it "shows the mandatory step above the work summary while there are no orders" do
+    # Enquanto o cadastro não está pronto, a etapa obrigatória fica acima do
+    # resumo, e não abaixo, onde passava despercebida.
+    it "shows the mandatory step above the work summary while setup is pending" do
+      fill_address!
       sign_in_as(user)
 
       get seller_root_path
 
-      expect(response.body.index("Sem ela, nada é publicado.")).to be < response.body.index("O que fazer agora")
+      expect(response.body.index("Conecte sua conta do Mercado Pago")).to be < response.body.index('id="o-que-fazer-agora"')
     end
 
     it "keeps the account steps in reading order inside the setup block" do
@@ -186,10 +199,9 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
 
       get seller_root_path
 
-      body = response.body
-      order = [ "Conta Vendedor no Mercado Pago</h3>", "Aprovação da EloShop" ].map { |text| body.index(text) || body.index(text.sub("</h3>", "")) }
-      expect(order).to all(be_present)
-      expect(order).to eq(order.sort)
+      strip = Nokogiri::HTML(response.body).css("section[aria-labelledby='setup-title'] ol[aria-label='Etapas para preparar o ateliê'] li")
+      titles = strip.map { |step| step.at_css(".sr-only").text.squish }
+      expect(titles.index("Etapa 2: Conta do Mercado Pago")).to be < titles.index("Etapa 5: Aprovação e recebimento")
     end
 
     it "replaces the warning with a connected label once connected" do

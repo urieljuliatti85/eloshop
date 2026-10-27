@@ -8,5 +8,5 @@
 </ul>
 
 <div class="mt-6 flex flex-col gap-3 border-t border-brand-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
-  <%= link_to(done ? "Gerenciar produtos" : "Novo produto", done ? seller_products_path : new_seller_product_path, class: (done ? "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" : "seller-button seller-button--primary justify-center")) %>
+  <%= link_to(done ? "Gerenciar produtos" : "Novo produto", done ? seller_products_path : new_seller_product_path, data: { turbo_frame: "_top" }, class: (done ? "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" : "seller-button seller-button--primary justify-center")) %>
 </div>

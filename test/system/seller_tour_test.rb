@@ -60,7 +60,7 @@ class SellerTourTest < ApplicationSystemTestCase
     sign_in_seller(@user)
     assert_no_selector "[role='dialog']"
 
-    click_button "Refazer o tour"
+    click_button "Refaça o tour"
 
     assert_selector "[role='dialog']", text: /passo 1 de 5/i
   end
