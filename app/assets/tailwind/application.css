@@ -233,15 +233,19 @@
   /* Fluxo de vantagens da aba "Quem vende" (/como-funciona). A cor fica
      numa placa atrás do conteúdo (.processo__placa), com cantos
      arredondados e um pesponto tracejado por dentro, o ornamento de feito à
-     mão. No celular, blocos empilhados. Do `lg` em diante, cada placa
+     mão. No celular, um carrossel. Do `lg` em diante, cada placa
      inclina em perspectiva (lado esquerdo mais alto, cantos ainda
      arredondados), com uma placa mais escura deslocada atrás. Só a placa
      inclina: o texto continua reto. A perspectiva estreita a placa, por isso
      ela é mais larga que o conteúdo (`right` negativo) e entra por baixo da
      seguinte, que vem depois no DOM e fica por cima; o conteúdo nunca passa
      da borda visível. A última não se estende, para não sair do quadro. */
-  .processo { @apply grid gap-4 sm:grid-cols-2 lg:flex lg:gap-0 lg:pt-3 lg:pl-3; }
-  .processo__passo { @apply relative isolate min-w-0 lg:flex-1; }
+  /* Abaixo do `lg`, a lista é a faixa de um carrossel (carousel_controller):
+     rolagem com snap, indo até a borda do quadro areia (o `-mx` desfaz o
+     padding dele e o `px` mantém a primeira placa alinhada ao título), com
+     a seguinte aparecendo na borda. */
+  .processo { @apply -mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-6 px-6 pb-2 [scrollbar-width:none] sm:-mx-10 sm:scroll-px-10 sm:px-10 lg:mx-0 lg:gap-0 lg:overflow-visible lg:px-0 lg:pt-3 lg:pb-0 lg:pl-3; }
+  .processo__passo { @apply relative isolate w-[82%] min-w-0 shrink-0 snap-start sm:w-[46%] lg:w-auto lg:flex-1 lg:shrink; }
   .processo__placa { @apply absolute inset-0 -z-10 rounded-[1.5rem]; }
   .processo__placa--frente::after { content: ""; position: absolute; inset: 0.6rem; border: 2px dashed rgb(255 255 255 / 0.32); border-radius: 1rem; }
   .processo__placa--sombra { @apply hidden lg:block; }
@@ -254,6 +258,33 @@
     .processo__passo:last-child .processo__placa { right: 0; }
     .processo__conteudo { min-height: 20rem; justify-content: center; padding: 3.25rem 1.5rem 4.5rem 2rem; }
     .processo__passo:last-child .processo__conteudo { padding-right: 3rem; }
+  }
+
+  /* Etapas de "Como funciona" (aba Quem vende), no modelo de um fluxo de
+     seis passos: selo hexagonal numerado sobre uma linha, conector e um
+     hexágono contornado com o ícone. A cor de cada passo vem de `--passo`
+     (style no item). Bordas e linhas são costuradas, como as placas do
+     destaque: pesponto tracejado dentro dos hexágonos (SVG, porque
+     clip-path não aceita borda tracejada), conector em linha tracejada,
+     fita com costura nas duas bordas no desktop e pesponto por dentro dos
+     cartões do celular. Do `lg` em diante, as seis colunas lado a lado sobre
+     a fita; abaixo disso, um carrossel (carousel_controller) de cartões com
+     rolagem e snap, o próximo aparecendo na borda. */
+  .fluxo__desenho { @apply absolute inset-0 size-full overflow-visible; }
+  .fluxo__costura { fill: none; stroke: color-mix(in srgb, var(--passo) 55%, white); stroke-width: 1.6; stroke-dasharray: 5 4; stroke-linecap: round; stroke-linejoin: round; }
+  .fluxo__costura--clara { stroke: rgb(255 255 255 / 0.7); }
+  .fluxo__selo { @apply relative grid h-16 w-[4.6rem] place-items-center; }
+  .fluxo__selo-fundo { fill: var(--passo); }
+  .fluxo__selo-numero { @apply relative text-xl font-bold tabular-nums text-white; }
+  .fluxo__conector { @apply relative h-8 w-0; border-left: 2px dashed var(--passo); }
+  .fluxo__conector::after { content: ""; position: absolute; bottom: -3px; left: -1px; width: 7px; height: 7px; border-radius: 9999px; transform: translateX(-50%); background: var(--passo); }
+  .fluxo__icone { @apply relative mt-1 grid h-28 w-32 place-items-center; color: var(--passo); }
+  .fluxo__icone-contorno { fill: #fff; stroke: var(--passo); stroke-width: 2.5; stroke-linejoin: round; }
+  .fluxo__cartao { position: relative; }
+  .fluxo__cartao::after { content: ""; position: absolute; inset: 0.55rem; border: 1.5px dashed color-mix(in srgb, var(--passo) 40%, white); border-radius: 1.1rem; pointer-events: none; }
+  @media (width >= 64rem) {
+    .fluxo__cartao::after { content: none; }
+    .fluxo__lista::before { content: ""; position: absolute; top: 2.5rem; left: 6%; right: 6%; height: 1rem; transform: translateY(-50%); border-radius: 9999px; background: var(--color-sand-100); border-block: 2px dashed var(--color-sand-200); }
   }
 }
 

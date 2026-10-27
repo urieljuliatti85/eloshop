@@ -70,4 +70,20 @@ class HowItWorksControllerTest < ActionDispatch::IntegrationTest
 
     assert_not_includes response.body, "Melhor Envio"
   end
+
+  test "seller benefits and steps become carousels on mobile, without autoplay" do
+    get how_it_works_path(aba: "vende")
+
+    carousels = css_select("[data-tab-name='vende'] [data-controller='carousel']")
+    assert_equal 2, carousels.size
+    assert carousels.all? { |carousel| carousel["data-carousel-interval-value"] == "0" }
+
+    benefits, steps = carousels
+    assert_equal 4, benefits.css("[data-carousel-target='slide']").size
+    assert_equal 4, benefits.css("[data-carousel-target='dot']").size
+    assert_equal 6, steps.css("[data-carousel-target='slide']").size
+    assert_equal 6, steps.css("[data-carousel-target='dot']").size
+    assert_equal "01", steps.at_css(".fluxo__selo-numero").text
+    assert carousels.all? { |carousel| carousel.at_css("[data-carousel-target='controls']").key?("hidden") }
+  end
 end
