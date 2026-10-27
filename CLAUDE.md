@@ -105,6 +105,7 @@ Exemplos:
 - arquitetura, deploy, observabilidade → docs/architecture.md
 - segurança → docs/security.md
 - decisões arquiteturais já tomadas → docs/decisions/*.md (ADRs)
+- skills de revisão e QA (`pr-reviewer`, `principal-reviewer`, `qa`; só por comando explícito) → docs/skills.md
 - sequência de implementação e fase atual → ROADMAP.md
 
 Não leia todos os documentos indiscriminadamente.
