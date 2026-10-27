@@ -11,7 +11,9 @@
       <p class="mt-1">Sem um valor definido por você, o checkout usa um frete estimado pela EloShop, que pode não cobrir o custo da sua etiqueta.</p>
       <ul class="mt-2 list-disc space-y-1 pl-5">
         <% @published_without_shipping.each do |product| %>
-          <li><%= link_to product.name, edit_seller_product_path(product), class: "font-semibold underline underline-offset-4" %></li>
+          <%# O nome fica como texto: um link com o nome duplicaria o do cartão
+              do produto, que leva ao detalhe, e não à edição. %>
+          <li><span id="missing-shipping-<%= product.id %>"><%= product.name %></span> · <%= link_to "definir frete", edit_seller_product_path(product), class: "font-semibold underline underline-offset-4", aria: { describedby: "missing-shipping-#{product.id}" } %></li>
         <% end %>
       </ul>
     </section>
