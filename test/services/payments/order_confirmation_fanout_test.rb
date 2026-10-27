@@ -62,6 +62,22 @@ module Payments
       end
     end
 
+    # Além do e-mail, o ateliê vê a venda no sino do painel. Mesma guarda da
+    # máquina de estados: eventos repetidos não duplicam o aviso.
+    test "confirmar notifica o ateliê no painel uma única vez" do
+      order, payment = build_order_with_payment
+      seller_notifications = -> { Notification.where(recipient: sellers(:approved), kind: "order_confirmed") }
+
+      assert_difference -> { seller_notifications.call.count }, 1 do
+        approve(payment)
+        approve(payment)
+      end
+
+      notification = seller_notifications.call.last
+      assert_includes notification.body, "##{order.id}"
+      assert_equal "/painel/orders/#{order.id}", notification.url
+    end
+
     test "pagamento recusado não avisa ninguém" do
       _order, payment = build_order_with_payment
 

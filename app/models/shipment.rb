@@ -46,10 +46,15 @@ class Shipment < ApplicationRecord
   # não é autoridade suficiente para fechar a entrega de forma irreversível
   # nem, no futuro, para liberar repasse — decisão de negócio revisitada em
   # 2026-09-24 depois de considerar o risco de clique precoce/indevido.
+  # Devolve `true` só no primeiro aviso: clicar de novo não muda a data
+  # registrada nem deve repetir e-mail e notificação ao artesão.
   def report_delivered_by_customer!
-    raise InvalidStatusTransition, "o envio precisa estar marcado como enviado" unless shipped?
+    with_lock do
+      raise InvalidStatusTransition, "o envio precisa estar marcado como enviado" unless shipped?
+      next false if customer_reported_delivered_at?
 
-    update!(customer_reported_delivered_at: Time.current)
+      update!(customer_reported_delivered_at: Time.current)
+    end
   end
 
   private
