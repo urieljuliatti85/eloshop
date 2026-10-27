@@ -6,6 +6,7 @@ class Product < ApplicationRecord
 
   money_attribute :price
   money_attribute :fixed_shipping
+  money_attribute :fixed_shipping_interstate
 
   class InvalidStatusTransition < StandardError; end
 
@@ -90,6 +91,13 @@ class Product < ApplicationRecord
             presence: true, if: :fixed_shipping_started?
   validates :fixed_shipping_cents, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validates :fixed_shipping_estimated_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  # Faixa opcional para fora do estado do ateliê; só existe como variação da
+  # principal (as mesmas regras também são constraints no banco).
+  validates :fixed_shipping_interstate_cents, :fixed_shipping_interstate_estimated_days,
+            presence: true, if: :fixed_shipping_interstate_started?
+  validates :fixed_shipping_interstate_cents, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :fixed_shipping_interstate_estimated_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validate :fixed_shipping_interstate_requires_base, if: :fixed_shipping_interstate_started?
 
   # Peso e dimensões são exigidos para PUBLICAR, não para rascunhar: o
   # vendedor cadastra a peça enquanto ainda a está fazendo, mas não anuncia
@@ -107,6 +115,12 @@ class Product < ApplicationRecord
   # publicar, não para rascunhar, e fora do `save` comum para não quebrar o
   # catálogo legado sem categoria.
   validate :category_for_publication, on: :publication
+
+  # O frete é definido pelo vendedor (termos comerciais de 2026-10-03): sem
+  # valor próprio, o checkout cairia na tabela interna, um palpite da
+  # plataforma que não bate com o custo real da etiqueta. Mesma lógica do
+  # peso: exigido só para publicar, para não quebrar o catálogo já publicado.
+  validate :seller_defined_shipping_for_publication, on: :publication
 
   validates :stock_quantity, numericality: { less_than_or_equal_to: 1 }, if: :availability_type_one_of_a_kind?
   validates :production_time_min_days, :production_time_max_days,
@@ -132,6 +146,12 @@ class Product < ApplicationRecord
     end
 
     transition_to!("active")
+  end
+
+  def seller_defined_shipping_for_publication
+    return if fixed_shipping_configured? || free_shipping?
+
+    errors.add(:base, "Defina o frete deste produto (valor e prazo) ou marque frete grátis antes de publicar.")
   end
 
   def category_for_publication
@@ -227,6 +247,14 @@ class Product < ApplicationRecord
     fixed_shipping_cents.present? && fixed_shipping_estimated_days.present?
   end
 
+  def fixed_shipping_interstate_started?
+    fixed_shipping_interstate_cents.present? || fixed_shipping_interstate_estimated_days.present?
+  end
+
+  def fixed_shipping_interstate_configured?
+    fixed_shipping_interstate_cents.present? && fixed_shipping_interstate_estimated_days.present?
+  end
+
   scope :matching_query, ->(query) {
     term = "%#{sanitize_sql_like(query.to_s.strip)}%"
     left_joins(:category, :tags, :materials, :techniques)
@@ -248,6 +276,9 @@ class Product < ApplicationRecord
   # comercial. Cada ProductVariant passa a ser a fonte de verdade; por isso
   # este escopo cobre somente produtos sem variantes.
   scope :without_variants, -> { where.missing(:product_variants) }
+  # Sem frete definido pelo vendedor: o checkout usa a tabela interna, um
+  # palpite da plataforma. Publicados assim antes da regra de publicação.
+  scope :without_seller_defined_shipping, -> { where(fixed_shipping_cents: nil, free_shipping: false) }
   scope :low_stock, -> {
     active.availability_type_standard.without_variants.where(stock_quantity: 1..LOW_STOCK_THRESHOLD)
   }
@@ -290,6 +321,12 @@ class Product < ApplicationRecord
   end
 
   private
+
+  def fixed_shipping_interstate_requires_base
+    return if fixed_shipping_configured?
+
+    errors.add(:fixed_shipping, "precisa ser definido para o seu estado antes do frete para outros estados")
+  end
 
   def allowed_status_transitions
     availability_type_one_of_a_kind? ? ONE_OF_A_KIND_STATUS_TRANSITIONS : STANDARD_STATUS_TRANSITIONS

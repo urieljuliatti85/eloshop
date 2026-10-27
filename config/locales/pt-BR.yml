@@ -175,6 +175,9 @@ pt-BR:
         fixed_shipping: "Valor do frete fixo"
         fixed_shipping_cents: "Valor do frete fixo"
         fixed_shipping_estimated_days: "Prazo do frete fixo"
+        fixed_shipping_interstate: "Valor do frete para outros estados"
+        fixed_shipping_interstate_cents: "Valor do frete para outros estados"
+        fixed_shipping_interstate_estimated_days: "Prazo do frete para outros estados"
       product_variant:
         product: "Produto"
         sku: "SKU"

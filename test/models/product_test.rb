@@ -114,7 +114,7 @@ class ProductTest < ActiveSupport::TestCase
 
   test "publish! transitions draft to active" do
     product = products(:two)
-    product.update!(category: Category.create!(name: "Categoria transição"))
+    product.update!(category: Category.create!(name: "Categoria transição"), fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 6)
     product.publish!
     assert product.active?
   end
@@ -210,7 +210,7 @@ class ProductTest < ActiveSupport::TestCase
 
   test "standard product can go back to active after sold out (restock)" do
     product = products(:one)
-    product.update!(status: "sold_out", category: Category.create!(name: "Categoria restock"))
+    product.update!(status: "sold_out", category: Category.create!(name: "Categoria restock"), fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 6)
 
     product.publish!
 
@@ -525,11 +525,65 @@ class ProductTest < ActiveSupport::TestCase
     category = Category.create!(name: "Categoria para publicar")
     product = Product.create!(seller: sellers(:approved), name: "Completo", sku: "CAT-#{SecureRandom.hex(4)}",
       price_cents: 1000, stock_quantity: 1, currency: "BRL", status: "draft", category: category,
-      weight_grams: 300, length_cm: 10, width_cm: 10, height_cm: 10)
+      weight_grams: 300, length_cm: 10, width_cm: 10, height_cm: 10, fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 6)
 
     product.publish!
 
     assert product.reload.active?
+  end
+
+  # O frete é definido pelo vendedor: sem ele o checkout cairia na tabela
+  # interna, que não bate com o custo real da etiqueta.
+  test "publish! requires seller-defined shipping or free shipping" do
+    product = publishable_draft
+
+    error = assert_raises(Product::InvalidStatusTransition) { product.publish! }
+
+    assert_match(/frete/, error.message)
+    assert product.reload.draft?
+  end
+
+  test "publish! accepts free shipping instead of a shipping price" do
+    product = publishable_draft
+    product.update!(free_shipping: true)
+
+    product.publish!
+
+    assert product.reload.active?
+  end
+
+  # Catálogo já publicado antes da regra continua vendendo: a exigência só
+  # roda ao publicar, nunca num save comum.
+  test "an active product without seller-defined shipping can still be saved" do
+    product = publishable_draft
+    product.update_columns(status: "active")
+
+    assert product.update(stock_quantity: 2)
+    assert_includes Product.without_seller_defined_shipping, product
+  end
+
+  test "the interstate band must be complete" do
+    product = publishable_draft
+    product.assign_attributes(fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 5, fixed_shipping_interstate_cents: 3500)
+
+    assert_not product.valid?
+    assert product.errors.of_kind?(:fixed_shipping_interstate_estimated_days, :blank)
+  end
+
+  test "the interstate band requires the own-state band" do
+    product = publishable_draft
+    product.assign_attributes(fixed_shipping_interstate_cents: 3500, fixed_shipping_interstate_estimated_days: 9)
+
+    assert_not product.valid?
+    assert product.errors.include?(:fixed_shipping)
+  end
+
+  test "the database rejects an interstate band without the own-state band" do
+    product = publishable_draft
+
+    assert_raises(ActiveRecord::StatementInvalid) do
+      product.update_columns(fixed_shipping_interstate_cents: 3500, fixed_shipping_interstate_estimated_days: 9)
+    end
   end
 
   # Rascunho segue livre: o vendedor cadastra a peça enquanto ainda a faz.
@@ -548,5 +602,15 @@ class ProductTest < ActiveSupport::TestCase
     product.update_column(:status, "active")
 
     assert product.reload.update(stock_quantity: 4)
+  end
+
+  private
+
+  # Rascunho com tudo o que a publicação exige, menos o frete.
+  def publishable_draft
+    Product.create!(seller: sellers(:approved), name: "Sem frete", sku: "FRETE-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 1, currency: "BRL", status: "draft",
+      category: Category.create!(name: "Categoria #{SecureRandom.hex(3)}"),
+      weight_grams: 300, length_cm: 10, width_cm: 10, height_cm: 10)
   end
 end
