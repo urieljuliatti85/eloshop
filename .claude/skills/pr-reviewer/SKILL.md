@@ -1,5 +1,6 @@
 ---
 name: pr-reviewer
+disable-model-invocation: true
 description: Revisa pull requests Ruby on Rails com rigor de Principal Engineer, identificando bugs, regressões e riscos de arquitetura, segurança e operação.
 ---
 

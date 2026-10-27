@@ -1,5 +1,6 @@
 ---
 name: principal-reviewer
+disable-model-invocation: true
 description: Revisão de arquitetura e de sistema com olhar de Principal Engineer em Ruby on Rails — rede, segurança de ponta a ponta, escalabilidade, resiliência e evolução. Use quando pedirem revisão de arquitetura, de um fluxo ou módulo inteiro, de prontidão para produção, de escala ou de um desenho antes de implementar, ou uma "revisão de principal". Para a revisão linha a linha do diff de um PR, use a pr-reviewer.
 ---
 

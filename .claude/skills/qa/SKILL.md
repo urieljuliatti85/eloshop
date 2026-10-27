@@ -1,5 +1,6 @@
 ---
 name: qa
+disable-model-invocation: true
 description: QA experiente em arquitetura, rede, segurança e escala de aplicações Ruby on Rails — valida funcionalidades e as alterações de uma branch, investiga regressões, escreve testes de regressão e testa o sistema de ponta a ponta, incluindo requisitos não funcionais (falhas de rede e de provedores, segurança ativa, concorrência, carga, resiliência, deploy). Use quando pedirem para validar ou testar uma funcionalidade, uma branch, um fluxo inteiro, a prontidão para produção, segurança, carga ou o comportamento sob falha.
 ---
 
