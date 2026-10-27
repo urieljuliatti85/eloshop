@@ -12,9 +12,16 @@
     <%= javascript_importmap_tags %>
   </head>
 
+  <%# Abas inferiores do celular (layouts/_seller_mobile_tabs): os Primeiros
+      passos enquanto o cadastro não está pronto, o trabalho do dia depois.
+      Não no editor de tema, que tem a própria barra de ações no rodapé. Com
+      elas, `--seller-tabs-height` (só abaixo de `sm`) abre espaço no fim do
+      conteúdo e sobe o que é fixo embaixo. %>
+  <% mobile_tabs = controller_name != "themes" %>
+
   <%# Tour guiado: abre sozinho enquanto o vendedor não o concluiu e também por
       qualquer elemento com `data-action="tour#start"` (ver Primeiros passos). %>
-  <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased"
+  <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased <%= 'max-sm:[--seller-tabs-height:4rem]' if mobile_tabs %>"
         data-controller="tour"
         data-tour-steps-value="<%= seller_tour_steps.to_json %>"
         data-tour-complete-url-value="<%= seller_tour_completion_path %>"
@@ -199,7 +206,7 @@
     <%= render "layouts/flash_message", message: flash[:alert], variant: :error %>
 
     <%# Telas largas: barra lateral fixa à esquerda; o conteúdo ocupa o resto. %>
-    <div class="mx-auto flex w-full max-w-7xl gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <div class="mx-auto flex w-full max-w-7xl gap-8 px-4 pt-6 pb-[calc(1.5rem+var(--seller-tabs-height,0px))] sm:px-6 lg:px-8 lg:py-8">
       <aside class="hidden w-60 shrink-0 lg:block">
         <nav class="sticky top-24 flex flex-col gap-1.5 text-sm font-semibold" aria-label="Navegação do painel">
           <% nav_groups.each_with_index do |(group, items), index| %>
@@ -215,5 +222,15 @@
         <div class="seller-content"><%= yield %></div>
       </main>
     </div>
+
+    <% if mobile_tabs %>
+      <% setup_steps = current_seller.setup_steps %>
+      <% if setup_steps.values.include?(false) %>
+        <%= render "layouts/seller_mobile_tabs", label: "Primeiros passos", tabs: seller_setup_tabs(setup_steps) %>
+      <% else %>
+        <%= render "layouts/seller_mobile_tabs", label: "Atalhos do ateliê",
+              tabs: seller_work_tabs(active_nav_path, @to_prepare_count || current_seller.seller_orders_to_prepare.count) %>
+      <% end %>
+    <% end %>
   </body>
 </html>

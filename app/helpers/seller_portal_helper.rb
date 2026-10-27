@@ -19,6 +19,43 @@ module SellerPortalHelper
     ]
   end
 
+  # Abas inferiores do celular (layouts/_seller_mobile_tabs) enquanto o
+  # cadastro não está pronto: o início e as quatro etapas que dependem do
+  # artesão (a aprovação é da plataforma), cada uma aberta no bloco Primeiros
+  # passos do /painel. `mark`: :done (✓ verde) ou :next (ponto vermelho).
+  def seller_setup_tabs(steps)
+    slugs = SellerPortal::GettingStartedController::STEP_SLUGS
+    next_step = steps.key(false)
+    step_tab = lambda do |step, label, active|
+      { icon: step, label: label, path: seller_root_path(etapa: slugs[step], anchor: "primeiros-passos"), active: active,
+        mark: (steps[step] ? :done : (:next if step == next_step)) }
+    end
+
+    [
+      { icon: :home, label: "Início", path: seller_root_path, active: request.path == seller_root_path },
+      step_tab.call(:address, "Endereço", controller_name == "ateliers"),
+      step_tab.call(:mercado_pago, "Mercado Pago", controller_name == "mercado_pago_guides"),
+      step_tab.call(:pix_key, "PIX", controller_name == "pix_key_guides"),
+      step_tab.call(:product, "Peça", controller_name.in?(%w[products product_variants personalization_options]))
+    ]
+  end
+
+  # Com o cadastro pronto, as abas viram o trabalho do dia na ordem em que
+  # acontece: preparar os pedidos pagos (com a contagem), cadastrar peça,
+  # cuidar do catálogo e responder os clientes. A aba ativa é a mesma área
+  # marcada no menu lateral (`active_path`).
+  def seller_work_tabs(active_path, to_prepare_count)
+    [
+      { icon: :home, label: "Início", path: seller_root_path },
+      { icon: :orders, label: "Pedidos", path: seller_orders_path,
+        mark: (to_prepare_count if to_prepare_count.positive?),
+        mark_label: "#{to_prepare_count} para preparar e enviar" },
+      { icon: :new_product, label: "Nova peça", path: new_seller_product_path },
+      { icon: :products, label: "Produtos", path: seller_products_path },
+      { icon: :messages, label: "Mensagens", path: seller_messages_path }
+    ].each { |tab| tab[:active] = tab[:path] == active_path }
+  end
+
   # Selo de estoque da lista de produtos do painel: a disponibilidade dita o
   # que contar. Sob encomenda não tem estoque físico; com variantes, o estoque
   # mora nelas (ver Product#available_for_purchase?). Devolve [texto, classes].

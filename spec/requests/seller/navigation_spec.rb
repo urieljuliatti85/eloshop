@@ -7,9 +7,12 @@ RSpec.describe "Seller panel navigation", type: :request do
   before { sign_in_as(user) }
 
   # O menu aparece duas vezes (barra lateral e hambúrguer); só interessa qual
-  # área está marcada como atual.
+  # área está marcada como atual. As abas do celular têm spec própria
+  # (mobile_tabs_spec).
   def current_labels
-    Nokogiri::HTML(response.body).css("a[aria-current='page']").map { |link| link.text.strip.split("\n").first }.uniq
+    Nokogiri::HTML(response.body).css("a[aria-current='page']")
+      .reject { |link| link.ancestors("nav[data-mobile-tabs]").any? }
+      .map { |link| link.text.strip.split("\n").first }.uniq
   end
 
   it "marks the overview only on the root page" do
