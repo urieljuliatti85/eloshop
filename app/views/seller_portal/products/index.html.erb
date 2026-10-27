@@ -3,6 +3,21 @@
     <h1 class="text-3xl font-black tracking-tight">Produtos</h1>
     <%= link_to "Novo produto", new_seller_product_path, class: "seller-button seller-button--primary" %>
   </header>
+  <%# Produtos publicados antes de o frete passar a ser exigido para publicar:
+      seguem vendendo, mas com o frete estimado pela EloShop. %>
+  <% if @published_without_shipping.any? %>
+    <section class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-950" aria-labelledby="products-without-shipping-title" data-products-without-shipping>
+      <h2 id="products-without-shipping-title" class="font-bold">Defina o frete <%= @published_without_shipping.size == 1 ? "deste produto" : "destes #{@published_without_shipping.size} produtos" %></h2>
+      <p class="mt-1">Sem um valor definido por você, o checkout usa um frete estimado pela EloShop, que pode não cobrir o custo da sua etiqueta.</p>
+      <ul class="mt-2 list-disc space-y-1 pl-5">
+        <% @published_without_shipping.each do |product| %>
+          <%# O nome fica como texto: um link com o nome duplicaria o do cartão
+              do produto, que leva ao detalhe, e não à edição. %>
+          <li><span id="missing-shipping-<%= product.id %>"><%= product.name %></span> · <%= link_to "definir frete", edit_seller_product_path(product), class: "font-semibold underline underline-offset-4", aria: { describedby: "missing-shipping-#{product.id}" } %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
   <% if params[:q].present? %><p class="text-sm text-ink-muted">Resultados para “<%= params[:q] %>” · <%= link_to "Limpar busca", seller_products_path, class: "font-semibold text-brand-600 underline underline-offset-4" %></p><% end %>
 
   <% if @products.empty? %>

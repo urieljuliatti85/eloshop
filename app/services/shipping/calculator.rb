@@ -18,6 +18,10 @@ module Shipping
     # limit do Melhor Envio não é documentado (ADR 005).
     CACHE_TTL = 30.minutes
 
+    # Rótulo da opção do vendedor no checkout: deixa claro ao cliente que o
+    # valor vem de quem envia, não de uma cotação da transportadora.
+    SELLER_DEFINED_SERVICE = "Frete definido pelo ateliê"
+
     # A tabela interna não tem opção "mais rápida": é uma linha só.
     Result = Quote
 
@@ -123,7 +127,7 @@ module Shipping
 
       Quote.new(
         carrier: "Ateliê",
-        service: "Entrega padrão",
+        service: SELLER_DEFINED_SERVICE,
         shipping_cents: cart_items.sum { |item| shipping_cents_for(item) },
         estimated_days: cart_items.map { |item| estimated_days_for_item(item) }.max
       )
@@ -132,13 +136,44 @@ module Shipping
     def shipping_cents_for(item)
       product = item.product
       return 0 if product.free_shipping?
-      return product.fixed_shipping_cents * item.quantity if product.fixed_shipping_configured?
+      return seller_defined_band(product).first * item.quantity if product.fixed_shipping_configured?
 
       BASE_CENTS + (((product.weight_grams.to_i * item.quantity) / 1000.0).ceil * PER_KILOGRAM_CENTS)
     end
 
     def estimated_days_for_item(item)
-      item.product.fixed_shipping_estimated_days || estimated_days_for(destination_zip_code)
+      product = item.product
+      return seller_defined_band(product).last if product.fixed_shipping_configured?
+
+      estimated_days_for(destination_zip_code)
+    end
+
+    # Faixa do frete definido pelo vendedor, como [centavos, dias]. A faixa
+    # para outros estados é opcional: sem ela, o valor principal vale para
+    # todo o Brasil. Sem o estado de origem do ateliê não há como saber se o
+    # destino é interestadual, então vale o pior caso de cada lado: o maior
+    # valor (quem paga a etiqueta é o vendedor) e o maior prazo (o pedido não
+    # pode prometer menos do que o envio pode levar). Preço e prazo são
+    # escolhidos à parte: uma faixa mais barata pode ser a mais lenta.
+    def seller_defined_band(product)
+      base = [ product.fixed_shipping_cents, product.fixed_shipping_estimated_days ]
+      return base unless product.fixed_shipping_interstate_configured?
+
+      interstate = [ product.fixed_shipping_interstate_cents, product.fixed_shipping_interstate_estimated_days ]
+      case destination_interstate?
+      when true then interstate
+      when false then base
+      else base.zip(interstate).map(&:max)
+      end
+    end
+
+    # true/false quando os dois estados são conhecidos; nil quando falta um.
+    def destination_interstate?
+      origin = seller&.origin_state.to_s.strip.upcase
+      destination = @address.try(:state).to_s.strip.upcase
+      return nil if origin.blank? || destination.blank?
+
+      origin != destination
     end
 
     def any_product_free_shipping?

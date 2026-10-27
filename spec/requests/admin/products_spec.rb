@@ -274,7 +274,7 @@ RSpec.describe "Admin products", type: :request do
     it "publishes a draft product" do
       sign_in_as(user)
       product = Product.create!(seller: approved_seller, name: "Vaso publicar", sku: "PUB-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "draft",
-        category: Category.create!(name: "Categoria publicar"), weight_grams: 500, length_cm: 20, width_cm: 15, height_cm: 10)
+        category: Category.create!(name: "Categoria publicar"), weight_grams: 500, length_cm: 20, width_cm: 15, height_cm: 10, fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 6)
 
       patch publish_admin_product_path(product)
 

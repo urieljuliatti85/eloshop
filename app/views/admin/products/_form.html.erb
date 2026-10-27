@@ -108,11 +108,11 @@
     <% end %>
   </div>
 
-  <p class="text-sm text-gray-600"><span class="text-red-600" aria-hidden="true">*</span> Peso e dimensões são obrigatórios para <strong>publicar</strong>. Sem eles ainda é possível salvar como rascunho.</p>
+  <p class="text-sm text-gray-600"><span class="text-red-600" aria-hidden="true">*</span> Peso, dimensões e o frete (ou frete grátis) são obrigatórios para <strong>publicar</strong>. Sem eles ainda é possível salvar como rascunho.</p>
 
   <fieldset class="rounded-xl border border-slate-200 p-4">
     <legend class="px-1 text-sm font-semibold text-slate-700">Frete deste produto</legend>
-    <p class="text-sm text-gray-600">O valor é aplicado a cada unidade. Deixe valor e prazo vazios para usar o cálculo estimado da EloShop.</p>
+    <p class="text-sm text-gray-600">O valor é aplicado a cada unidade. Para publicar, defina o frete para o estado do ateliê ou marque frete grátis. A faixa para outros estados é opcional.</p>
 
     <div class="grid grid-cols-2 gap-3">
       <div>
@@ -123,6 +123,15 @@
       <div>
         <%= form.label :fixed_shipping_estimated_days, "Prazo máximo (dias úteis)" %>
         <%= form.number_field :fixed_shipping_estimated_days, min: 1, step: 1, placeholder: "8", class: "w-full" %>
+      </div>
+      <div>
+        <%= form.label :fixed_shipping_interstate, "Outros estados: valor por unidade (R$)" %>
+        <%= form.text_field :fixed_shipping_interstate, value: price_field_value(form.object.fixed_shipping_interstate_cents),
+              inputmode: "decimal", placeholder: "35,00", data: { controller: "price-input", action: "input->price-input#format" }, class: "w-full" %>
+      </div>
+      <div>
+        <%= form.label :fixed_shipping_interstate_estimated_days, "Outros estados: prazo máximo (dias úteis)" %>
+        <%= form.number_field :fixed_shipping_interstate_estimated_days, min: 1, step: 1, placeholder: "12", class: "w-full" %>
       </div>
     </div>
 
