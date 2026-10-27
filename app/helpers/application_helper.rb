@@ -12,6 +12,21 @@ module ApplicationHelper
     "credits#show" => { path: "/creditos", title: "Créditos" }
   }.freeze
 
+  # Perfil oficial da EloShop no Instagram: menu do topo e banner da home.
+  ELOSHOP_INSTAGRAM_URL = "https://www.instagram.com/eloshop__".freeze
+  ELOSHOP_INSTAGRAM_HANDLE = "@eloshop__".freeze
+
+  def eloshop_instagram_url = ELOSHOP_INSTAGRAM_URL
+  def eloshop_instagram_handle = ELOSHOP_INSTAGRAM_HANDLE
+
+  # Ícone do Instagram (contorno), herda a cor do texto.
+  def instagram_icon(css_class)
+    tag.svg(viewBox: "0 0 24 24", class: css_class, fill: "none", stroke: "currentColor", "stroke-width": 1.8,
+            "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": true) do
+      safe_join([ tag.rect(x: 3, y: 3, width: 18, height: 18, rx: 5), tag.circle(cx: 12, cy: 12, r: 4), tag.circle(cx: 17.5, cy: 6.5, r: 0.6, fill: "currentColor") ])
+    end
+  end
+
   def google_analytics_measurement_id
     measurement_id = ENV["GOOGLE_ANALYTICS_MEASUREMENT_ID"].to_s.strip.upcase
     measurement_id if measurement_id.match?(GOOGLE_ANALYTICS_MEASUREMENT_ID_PATTERN)
