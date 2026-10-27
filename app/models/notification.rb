@@ -13,7 +13,8 @@ class Notification < ApplicationRecord
     seller_report_received: "seller_report_received",
     seller_pending_approval: "seller_pending_approval",
     payment_declined: "payment_declined",
-    production_started: "production_started"
+    production_started: "production_started",
+    shipping_setup_required: "shipping_setup_required"
   }
 
   validates :kind, :title, :body, presence: true

@@ -45,7 +45,9 @@ ou de frete grátis (`Product#seller_defined_shipping_for_publication`, no
 contexto `:publication`, como peso e medidas): a tabela interna é um palpite da
 plataforma e não bate com o custo da etiqueta. Produtos publicados antes da
 regra seguem vendendo pela tabela; o painel lista quais são
-(`Product.without_seller_defined_shipping`). A opção aparece no checkout como
+(`Product.without_seller_defined_shipping`). Depois do deploy, rodar uma vez
+`bin/rails shipping:notify_missing` avisa no sino do painel cada ateliê nessa
+situação; rodar de novo não repete o aviso enquanto o anterior não for lido. A opção aparece no checkout como
 "Ateliê · Frete definido pelo ateliê".
 
 Em um carrinho com mais de um produto, os valores configurados são somados por
