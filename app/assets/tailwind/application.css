@@ -229,6 +229,32 @@
      estilo de input do admin e o focus:border da vitrine. */
   input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { @apply border-red-500! focus:border-red-500! focus:ring-red-100!; }
   .field-error { @apply mt-1 text-xs font-medium text-red-600; }
+
+  /* Fluxo de vantagens da aba "Quem vende" (/como-funciona). A cor fica
+     numa placa atrás do conteúdo (.processo__placa), com cantos
+     arredondados e um pesponto tracejado por dentro, o ornamento de feito à
+     mão. No celular, blocos empilhados. Do `lg` em diante, cada placa
+     inclina em perspectiva (lado esquerdo mais alto, cantos ainda
+     arredondados), com uma placa mais escura deslocada atrás. Só a placa
+     inclina: o texto continua reto. A perspectiva estreita a placa, por isso
+     ela é mais larga que o conteúdo (`right` negativo) e entra por baixo da
+     seguinte, que vem depois no DOM e fica por cima; o conteúdo nunca passa
+     da borda visível. A última não se estende, para não sair do quadro. */
+  .processo { @apply grid gap-4 sm:grid-cols-2 lg:flex lg:gap-0 lg:pt-3 lg:pl-3; }
+  .processo__passo { @apply relative isolate min-w-0 lg:flex-1; }
+  .processo__placa { @apply absolute inset-0 -z-10 rounded-[1.5rem]; }
+  .processo__placa--frente::after { content: ""; position: absolute; inset: 0.6rem; border: 2px dashed rgb(255 255 255 / 0.32); border-radius: 1rem; }
+  .processo__placa--sombra { @apply hidden lg:block; }
+  .processo__conteudo { @apply relative flex h-full flex-col px-7 pt-7 pb-14; }
+  .processo__seta { @apply absolute bottom-6 left-0 h-3.5 w-16 bg-white/90; clip-path: polygon(0 0, 78% 0, 100% 50%, 78% 100%, 0 100%); }
+  @media (width >= 64rem) {
+    .processo__passo { filter: drop-shadow(-12px 8px 16px rgb(60 15 5 / 0.28)); }
+    .processo__placa { right: -4.5rem; border-radius: 1.75rem; transform-origin: left center; transform: perspective(56rem) rotateY(20deg); }
+    .processo__placa--sombra { transform: translate(-0.75rem, -0.75rem) perspective(56rem) rotateY(20deg); }
+    .processo__passo:last-child .processo__placa { right: 0; }
+    .processo__conteudo { min-height: 20rem; justify-content: center; padding: 3.25rem 1.5rem 4.5rem 2rem; }
+    .processo__passo:last-child .processo__conteudo { padding-right: 3rem; }
+  }
 }
 
 /* Fundo fotográfico das páginas que usam a paisagem quente da marca (hoje
