@@ -22,6 +22,10 @@
      `border-sand-200` não gerava CSS e as linhas saíam na cor do texto. */
   --color-sand-200: #ecdcc6;
   --color-mist-100: #f4f5f7;
+
+  /* Serifada de destaque da loja (números e títulos editoriais, como os
+     cartões de "Como funciona"). A Fraunces já é servida abaixo. */
+  --font-craft: "Fraunces", Georgia, serif;
 }
 
 /* Fontes servidas pelo app (a CSP só permite font-src 'self'); ver

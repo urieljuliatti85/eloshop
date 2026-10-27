@@ -1,0 +1,133 @@
+<%# Aba "Quem vende": convence e orienta o artesão a aderir. Primeiro o que
+    ele ganha, depois cartões numerados na ordem em que as coisas
+    acontecem. Os cartões 2 a 6 são as mesmas etapas, na mesma ordem, dos
+    Primeiros passos do painel (Seller#getting_started_steps), para quem se
+    cadastra reconhecer o caminho. Melhor Envio fica de fora: a integração
+    está bloqueada em produção (docs/shipping.md) e o frete do MVP é o que o
+    próprio artesão define. %>
+<% launch_fee = fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS)
+   standard_fee = fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS)
+   tag_classes = {
+     required: "bg-brand-100 text-brand-700",
+     free: "bg-emerald-100 text-emerald-800",
+     note: "bg-sand-100 text-ink"
+   }
+   start_steps = [
+     { title: "Crie sua conta de artesão", tag: [ "Grátis", :free ],
+       body: "Nome do ateliê, seus dados e uma senha. Logo depois, o painel do ateliê abre com o passo a passo do que falta." },
+     { title: "Informe o endereço do ateliê", tag: [ "Não aparece na loja", :note ],
+       body: "É de onde suas encomendas saem. Serve para o frete e não muda o endereço de entrega do cliente." },
+     { title: "Conecte sua Conta Vendedor do Mercado Pago", tag: [ "Obrigatório", :required ],
+       body: "É nela que você recebe. Quem verifica sua identidade é o Mercado Pago: a EloShop não coleta nem guarda seus documentos. O e-mail da conta pode ser diferente do seu cadastro aqui." },
+     { title: "Cadastre uma chave PIX no Mercado Pago", tag: [ "Obrigatório para PIX", :required ], pix: true,
+       body: "Pelo app do Mercado Pago, em poucos minutos. O painel mostra o passo a passo com imagens." },
+     { title: "Cadastre sua primeira peça", tag: [ "Pode ser rascunho", :note ],
+       body: "Fotos, preço, materiais, peso e dimensões, e se é peça em estoque, única ou sob encomenda, com o prazo de produção. Dá para salvar e terminar depois." },
+     { title: "Aguarde a aprovação da EloShop", tag: [ "Feito pela EloShop", :note ],
+       body: "Conectar o Mercado Pago não aprova sozinho: a plataforma confirma que a conta é real e de vendedor. Aprovado, seu catálogo aparece na loja." }
+   ]
+   after_steps = [
+     { title: "Receba os pedidos e envie",
+       body: "O pedido chega no painel com os itens, a personalização escolhida e o endereço de entrega. O frete é você quem define: valor fixo por produto, retirada gratuita no ateliê ou o cálculo padrão da loja." },
+     { title: "Receba o pagamento",
+       body: "O valor cai direto na sua conta do Mercado Pago, já sem a comissão da EloShop. A tarifa do Mercado Pago na transação é sua, como em qualquer venda por ele." }
+   ]
+   step_card = "relative flex flex-col rounded-3xl border border-sand-200 p-6 shadow-[0_1px_2px_rgba(120,40,10,0.04)] sm:p-7" %>
+
+<section class="mt-10 overflow-hidden rounded-[2rem] border border-sand-200 bg-sand-50 px-6 py-9 sm:px-10 sm:py-12" aria-labelledby="vende-title">
+  <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Para quem faz à mão</p>
+  <h2 id="vende-title" class="mt-3 max-w-2xl font-craft text-4xl leading-[1.08] font-semibold text-ink sm:text-5xl">Venda suas peças como o seu próprio negócio</h2>
+  <p class="mt-4 max-w-2xl text-lg leading-relaxed text-ink-muted">
+    Cada ateliê na EloShop vende as próprias peças, com o próprio preço. O pagamento do cliente cai
+    direto na sua conta do Mercado Pago, e a plataforma fica só com uma comissão quando você vende.
+  </p>
+
+  <dl class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <% [
+      [ "Sem mensalidade", "Você só paga quando vende. Não há mensalidade, no momento." ],
+      [ "#{launch_fee} no começo", "Nos 3 primeiros meses depois da aprovação; depois, #{standard_fee}." ],
+      [ "Pagamento direto", "Na sua conta do Mercado Pago, sem esperar repasse." ],
+      [ "Seu frete", "Valor fixo, retirada no ateliê ou cálculo padrão: você escolhe." ]
+    ].each do |term, detail| %>
+      <div class="rounded-2xl bg-white px-5 py-4 ring-1 ring-sand-200">
+        <dt class="font-bold text-ink"><%= term %></dt>
+        <dd class="mt-1 text-sm leading-relaxed text-ink-muted"><%= detail %></dd>
+      </div>
+    <% end %>
+  </dl>
+
+  <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+    <%= link_to "Cadastrar meu ateliê", new_seller_registration_path,
+          class: "inline-flex min-h-12 items-center rounded-full bg-brand-600 px-7 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %>
+    <%= link_to "Já tenho conta: entrar no painel", seller_login_path,
+          class: "inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-sand-200 underline-offset-4 hover:text-brand-600" %>
+  </div>
+</section>
+
+<section class="mt-14" aria-labelledby="comecar-title">
+  <h2 id="comecar-title" class="text-2xl font-bold text-ink">Do cadastro à loja no ar</h2>
+  <p class="mt-2 max-w-2xl text-ink-muted">Na ordem em que você faz. Depois do cadastro, o painel do ateliê mostra estas mesmas etapas e marca cada uma que ficou pronta.</p>
+
+  <ol role="list" class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <% start_steps.each_with_index do |step, index| %>
+      <% label, kind = step[:tag] %>
+      <li class="<%= step_card %> bg-white">
+        <div class="flex items-start justify-between gap-3">
+          <span class="font-craft text-5xl leading-none font-semibold text-brand-600" aria-hidden="true"><%= index + 1 %></span>
+          <span class="rounded-full px-2.5 py-1 text-xs font-semibold <%= tag_classes.fetch(kind) %>"><%= label %></span>
+        </div>
+        <h3 class="mt-5 text-lg leading-snug font-bold text-ink"><span class="sr-only">Passo <%= index + 1 %>: </span><%= step[:title] %></h3>
+        <p class="mt-2 leading-relaxed text-ink-muted"><%= step[:body] %></p>
+        <% if step[:pix] %>
+          <p class="mt-4 rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm leading-relaxed text-ink">
+            <strong class="text-brand-700">Exigência obrigatória:</strong> a conta do Mercado Pago conectada precisa ter uma
+            <strong>chave PIX cadastrada</strong>. Sem ela, os pagamentos por PIX dos seus clientes são recusados. O cartão não depende disso.
+          </p>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</section>
+
+<section class="mt-14" aria-labelledby="depois-title">
+  <h2 id="depois-title" class="text-2xl font-bold text-ink">Depois da aprovação</h2>
+  <p class="mt-2 max-w-2xl text-ink-muted">O dia a dia do ateliê: vender, enviar e receber.</p>
+
+  <ol role="list" start="<%= start_steps.size + 1 %>" class="mt-6 grid gap-4 sm:grid-cols-2">
+    <% after_steps.each_with_index do |step, index| %>
+      <% number = start_steps.size + index + 1 %>
+      <li class="<%= step_card %> bg-sand-50">
+        <span class="font-craft text-5xl leading-none font-semibold text-brand-600" aria-hidden="true"><%= number %></span>
+        <h3 class="mt-5 text-lg leading-snug font-bold text-ink"><span class="sr-only">Passo <%= number %>: </span><%= step[:title] %></h3>
+        <p class="mt-2 leading-relaxed text-ink-muted"><%= step[:body] %></p>
+      </li>
+    <% end %>
+  </ol>
+</section>
+
+<section class="mt-14" aria-labelledby="comissao-title">
+  <h2 id="comissao-title" class="text-2xl font-bold text-ink">Comissão e responsabilidades</h2>
+
+  <dl class="mt-6 grid gap-4 sm:grid-cols-2">
+    <% [
+      [ "Quanto a EloShop cobra?", "#{launch_fee} nos 3 primeiros meses depois da aprovação do seu ateliê e #{standard_fee} depois disso, sobre o valor dos produtos, já descontado qualquer cupom — o frete não entra nesse cálculo. Não há mensalidade, no momento." ],
+      [ "Quem emite a nota fiscal?", "O ateliê. Nota fiscal e impostos são responsabilidade de quem vende." ],
+      [ "Quem decide cancelamentos e reembolsos?", "A plataforma opera e decide reembolsos e disputas; a comissão é devolvida proporcionalmente quando isso acontece." ],
+      [ "E se a peça quebrar no transporte?", "Quem envia responde pela peça. Capriche na embalagem e, para peças frágeis, prefira um envio com seguro." ]
+    ].each do |question, answer| %>
+      <div class="rounded-3xl bg-mist-100 px-6 py-5">
+        <dt class="font-semibold text-ink"><%= question %></dt>
+        <dd class="mt-1 leading-relaxed text-ink-muted"><%= answer %></dd>
+      </div>
+    <% end %>
+  </dl>
+</section>
+
+<section class="mt-14 flex flex-col items-start gap-5 rounded-[2rem] bg-brand-600 px-6 py-9 text-white sm:flex-row sm:items-center sm:justify-between sm:px-10" aria-labelledby="cta-title">
+  <div>
+    <h2 id="cta-title" class="font-craft text-3xl leading-tight font-semibold">Pronto para abrir seu ateliê?</h2>
+    <p class="mt-2 text-white/85">O cadastro é grátis e o painel te guia em cada etapa.</p>
+  </div>
+  <%= link_to "Cadastrar meu ateliê", new_seller_registration_path,
+        class: "inline-flex min-h-12 shrink-0 items-center rounded-full bg-white px-7 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50" %>
+</section>
