@@ -1,4 +1,8 @@
-<header class="sticky top-0 z-10 border-b border-gray-100 bg-white/90 backdrop-blur"
+<%# Borda de baixo serrilhada (.topo-serrilhado), a mesma do painel do
+    artesão e da administração. O recorte precisa de fundo sólido, por isso o
+    topo deixou de ser branco translúcido com desfoque; a borda cinza virou o
+    traço dos dentes. %>
+<header class="topo-serrilhado sticky top-0 z-10"
         data-controller="mobile-menu"
         data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
   <div class="container mx-auto flex items-center justify-between gap-3 px-5 py-4 md:gap-6">
