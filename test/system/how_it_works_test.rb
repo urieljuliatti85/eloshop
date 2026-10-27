@@ -29,6 +29,26 @@ class HowItWorksTest < ApplicationSystemTestCase
     assert_equal 0, page.evaluate_script("document.documentElement.scrollWidth - document.documentElement.clientWidth")
   end
 
+  # Cliques seguidos, antes de a rolagem animada terminar: a posição tem de
+  # seguir os cliques, não um slide do meio do caminho.
+  test "on mobile, quick taps on next move one step each" do
+    page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride",
+      width: MOBILE_WIDTH, height: 844, deviceScaleFactor: 2, mobile: true)
+    visit how_it_works_path(aba: "vende")
+    assert_selector "[aria-label='Ir para o passo 1'][aria-selected='true']"
+
+    page.execute_script(<<~JS)
+      const next = document.querySelector("[aria-label='Próximo passo']")
+      next.click()
+      setTimeout(() => next.click(), 60)
+      setTimeout(() => next.click(), 120)
+    JS
+
+    assert_selector "[aria-label='Ir para o passo 4'][aria-selected='true']"
+    sleep 1
+    assert_selector "[aria-label='Ir para o passo 4'][aria-selected='true']"
+  end
+
   test "on mobile, the seller benefits are a carousel too" do
     page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride",
       width: MOBILE_WIDTH, height: 844, deviceScaleFactor: 2, mobile: true)

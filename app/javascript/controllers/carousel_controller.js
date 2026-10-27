@@ -28,6 +28,7 @@ export default class extends Controller {
 
   disconnect() {
     this.stop()
+    clearTimeout(this.settleTimer)
     this.trackTarget.removeEventListener("scroll", this.onScroll)
   }
 
@@ -45,6 +46,11 @@ export default class extends Controller {
 
   scrollTo(index) {
     this.index = index
+    // Enquanto a rolagem animada não termina, o índice é o do destino: sem
+    // isso, os eventos de rolagem do meio do caminho o trocavam por um slide
+    // intermediário, e um segundo clique rápido partia da posição errada.
+    this.scrollingTo = true
+    this.settleSoon()
     const left = this.slideTargets[index].offsetLeft - this.slideTargets[0].offsetLeft
     this.trackTarget.scrollTo({ left, behavior: "smooth" })
     this.syncDots()
@@ -58,6 +64,11 @@ export default class extends Controller {
   // dois slides (que podem ocupar menos que a largura toda); no fim da
   // rolagem, o último slide é o atual mesmo sem chegar ao início dele.
   onScroll = () => {
+    if (this.scrollingTo) {
+      this.settleSoon()
+      return
+    }
+
     const track = this.trackTarget
     const slides = this.slideTargets
     const step = slides.length > 1 ? slides[1].offsetLeft - slides[0].offsetLeft : track.clientWidth
@@ -67,6 +78,13 @@ export default class extends Controller {
 
     this.index = index
     this.syncDots()
+  }
+
+  // A rolagem animada acabou quando os eventos de rolagem param por um
+  // instante (o evento `scrollend` ainda não existe em todo navegador).
+  settleSoon() {
+    clearTimeout(this.settleTimer)
+    this.settleTimer = setTimeout(() => { this.scrollingTo = false }, 150)
   }
 
   syncDots() {
