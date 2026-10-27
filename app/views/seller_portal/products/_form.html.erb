@@ -38,6 +38,7 @@
       <p class="text-sm font-semibold text-stone-700">Frete deste produto</p>
       <p class="mt-1 text-xs leading-5 text-stone-500">O valor é aplicado a cada unidade. Deixe valor e prazo vazios para usar o cálculo estimado da EloShop.</p>
     </div>
+    <%= render "seller_portal/shared/shipping_in_development" %>
     <div class="grid gap-5 sm:grid-cols-2">
       <div><%= form.label :fixed_shipping, "Valor fixo por unidade (R$)", class: label_class %><%= form.text_field :fixed_shipping, value: price_field_value(form.object.fixed_shipping_cents), inputmode: "decimal", placeholder: "20,00", data: { controller: "price-input", action: "input->price-input#format" }, class: field_class %></div>
       <div><%= form.label :fixed_shipping_estimated_days, "Prazo máximo (dias úteis)", class: label_class %><%= form.number_field :fixed_shipping_estimated_days, min: 1, step: 1, placeholder: "8", class: field_class %></div>
