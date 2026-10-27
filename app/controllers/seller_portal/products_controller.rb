@@ -10,6 +10,7 @@ module SellerPortal
       # mostra miniatura, preço "a partir de" e estoque por variante.
       @products = current_seller.products.preload(:product_variants, main_image_attachment: :blob).order(created_at: :desc)
       @products = @products.matching_query(params[:q]) if params[:q].present?
+      @published_without_shipping = current_seller.products.active.without_seller_defined_shipping.order(:name).to_a
     end
 
     def show
@@ -131,7 +132,7 @@ module SellerPortal
         :name, :description, :price, :currency, :sku, :stock_quantity, :main_image,
         :availability_type, :production_time_min_days, :production_time_max_days, :category_id,
         :weight_grams, :length_cm, :width_cm, :height_cm,
-        :fixed_shipping, :fixed_shipping_estimated_days, :local_pickup_enabled, :free_shipping, images: []
+        :fixed_shipping, :fixed_shipping_estimated_days, :fixed_shipping_interstate, :fixed_shipping_interstate_estimated_days, :local_pickup_enabled, :free_shipping, images: []
       ]).except(:images)
     end
   end

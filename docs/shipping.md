@@ -30,6 +30,24 @@ de R$ 15,00 mais R$ 5,00 por quilo, com prazo de 5 ou 8 dias conforme a faixa
 de CEP. Assim, vendedores existentes continuam vendendo sem migração de dados.
 Configurar apenas valor ou apenas prazo é inválido.
 
+**Duas faixas e frete exigido para publicar (2026-10-27).** O valor fixo
+passou a valer para o **mesmo estado do ateliê** (`fixed_shipping_*`), e um par
+opcional (`fixed_shipping_interstate_*`) vale para **os demais estados**. O
+`Shipping::Calculator` compara o estado do endereço do cliente com o
+`Seller#origin_state`: mesmo estado cobra a primeira faixa, outro estado cobra a
+segunda; sem a segunda faixa, o valor único vale para todo o Brasil; sem estado
+de origem no ateliê, vale o pior caso de cada lado — o maior valor, porque quem
+paga a etiqueta é o vendedor e o cliente vê o valor antes de pagar, e o maior
+prazo, para o pedido não prometer menos do que o envio pode levar. Constraints no banco espelham
+as validações (par completo, valores positivos, faixa interestadual só junto da
+principal). Para **publicar**, o produto precisa de frete definido pelo vendedor
+ou de frete grátis (`Product#seller_defined_shipping_for_publication`, no
+contexto `:publication`, como peso e medidas): a tabela interna é um palpite da
+plataforma e não bate com o custo da etiqueta. Produtos publicados antes da
+regra seguem vendendo pela tabela; o painel lista quais são
+(`Product.without_seller_defined_shipping`). A opção aparece no checkout como
+"Ateliê · Frete definido pelo ateliê".
+
 Em um carrinho com mais de um produto, os valores configurados são somados por
 unidade e o maior prazo vira a promessa do pedido. Produto legado sem
 configuração, quando misturado com produtos configurados, contribui com sua
@@ -178,6 +196,12 @@ Para retirada no ateliê, as duas últimas etapas são “Pronto para retirada�
 “Retirado”. O pedido só pode avançar depois da confirmação do pagamento, não
 pode pular a etapa de envio/pronto para retirada e grava `shipped_at` e
 `delivered_at`. Pedidos cancelados ou totalmente reembolsados não avançam.
+
+Enquanto a integração com o Melhor Envio está bloqueada, o detalhe do pedido
+orienta o artesão a comprar a etiqueta no site do Melhor Envio com a própria
+conta, com remetente e destinatário explícitos, e a colar o código de rastreio
+aqui. O formulário do produto orienta a simular o envio no mesmo site para
+definir as duas faixas.
 
 Essa atualização é deliberadamente manual: não cria etiqueta, não afirma que
 uma transportadora confirmou a entrega e não depende da integração bloqueada

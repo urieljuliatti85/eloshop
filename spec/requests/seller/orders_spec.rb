@@ -216,6 +216,41 @@ RSpec.describe "Seller orders", type: :request do
       expect(response.body).to include("Código de rastreamento (opcional)")
     end
 
+    # Enquanto a integração está bloqueada, a etiqueta é comprada no site do
+    # Melhor Envio; remetente e destinatário explícitos para não confundir o
+    # endereço do cliente com o da EloShop.
+    it "explains how to send the order through the Melhor Envio website" do
+      order = create_order_for(own_product)
+      order.confirm!
+      create_shipment_for(order)
+
+      get seller_order_path(order)
+
+      steps = Nokogiri::HTML(response.body).at_css("[data-shipping-steps]")
+      expect(steps.text).to include("Remetente:", "Destinatário:", "Endereço de entrega")
+      expect(steps.at_css("a[href='https://melhorenvio.com.br'][target='_blank'][rel='noopener noreferrer']")).to be_present
+    end
+
+    it "does not show the sending steps for local pickup" do
+      order = create_order_for(own_product)
+      order.confirm!
+      create_shipment_for(order, service: Shipping::Quote::LOCAL_PICKUP_SERVICE)
+
+      get seller_order_path(order)
+
+      expect(Nokogiri::HTML(response.body).at_css("[data-shipping-steps]")).to be_nil
+    end
+
+    it "does not show the sending steps once the order was shipped" do
+      order = create_order_for(own_product)
+      order.confirm!
+      create_shipment_for(order).mark_shipped!
+
+      get seller_order_path(order)
+
+      expect(Nokogiri::HTML(response.body).at_css("[data-shipping-steps]")).to be_nil
+    end
+
     it "marks the seller's confirmed order as shipped with the submitted details" do
       order = create_order_for(own_product)
       order.confirm!

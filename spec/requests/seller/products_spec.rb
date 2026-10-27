@@ -229,13 +229,44 @@ RSpec.describe "Seller products", type: :request do
     expect(own_product.reload.fixed_shipping_cents).to be_nil
   end
 
-  it "publishes once name, price and shipping dimensions are set" do
-    own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10, category: Category.create!(name: "Categoria publicar"))
+  it "publishes once name, price, shipping dimensions and shipping price are set" do
+    own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10, category: Category.create!(name: "Categoria publicar"),
+      fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 6)
 
     patch publish_seller_product_path(own_product)
 
     expect(response).to redirect_to(seller_product_path(own_product))
     expect(own_product.reload).to be_active
+  end
+
+  it "refuses to publish without a seller-defined shipping price" do
+    own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10, category: Category.create!(name: "Categoria frete"))
+
+    patch publish_seller_product_path(own_product)
+
+    expect(own_product.reload).to be_draft
+    expect(flash[:alert]).to include("frete")
+  end
+
+  it "saves both shipping bands through the update form" do
+    patch seller_product_path(own_product), params: { product: {
+      fixed_shipping: "20,00", fixed_shipping_estimated_days: "5",
+      fixed_shipping_interstate: "35,00", fixed_shipping_interstate_estimated_days: "9"
+    } }
+
+    own_product.reload
+    expect([ own_product.fixed_shipping_cents, own_product.fixed_shipping_estimated_days ]).to eq([ 2000, 5 ])
+    expect([ own_product.fixed_shipping_interstate_cents, own_product.fixed_shipping_interstate_estimated_days ]).to eq([ 3500, 9 ])
+  end
+
+  it "lists published products without a seller-defined shipping price" do
+    own_product.update_columns(status: "active")
+
+    get seller_products_path
+
+    warning = Nokogiri::HTML(response.body).at_css("[data-products-without-shipping]")
+    expect(warning).to be_present
+    expect(warning.text).to include(own_product.name)
   end
 
   it "refuses to publish without a category" do
