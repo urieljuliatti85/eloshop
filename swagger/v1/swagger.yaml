@@ -281,8 +281,3 @@ paths:
                     type: string
                 required:
                 - error
-servers:
-- url: https://{defaultHost}
-  variables:
-    defaultHost:
-      default: www.example.com
