@@ -1,20 +1,28 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["address", "shippingOption", "shipping", "total"]
+  static targets = ["address", "optionGroup", "shippingOption", "shipping", "total"]
   static values = { subtotal: Number }
 
   connect() {
     this.update()
   }
 
-  // As opções de frete são cotadas por CEP: trocar de endereço invalida a
-  // modalidade escolhida, e manter a marcação mostraria um preço que não
-  // corresponde ao destino. A recotação em si acontece no servidor, que
-  // recusa uma opção que não está mais entre as ofertadas.
+  // As opções de frete são cotadas por CEP, e cada endereço tem o próprio
+  // grupo: trocar de endereço mostra o grupo dele e desabilita os outros, para
+  // que só a modalidade do destino escolhido seja enviada. A recotação em si
+  // acontece no servidor, que recusa uma opção que não está mais entre as
+  // ofertadas.
   selectAddress() {
-    this.shippingOptionTargets.forEach((option, index) => {
-      option.checked = index === 0
+    const address = this.addressTargets.find((target) => target.checked)
+
+    this.optionGroupTargets.forEach((group) => {
+      const active = group.dataset.addressId === address?.value
+      group.hidden = !active
+      group.querySelectorAll("input").forEach((input, index) => {
+        input.disabled = !active
+        if (active && input.type === "radio") input.checked = index === 0
+      })
     })
     this.update()
   }
@@ -31,7 +39,7 @@ export default class extends Controller {
   // mais barata, que é o resumo exibido na lista.
   selectedShippingCents() {
     const selected =
-      this.shippingOptionTargets.find((option) => option.checked) ||
+      this.shippingOptionTargets.find((option) => option.checked && !option.disabled) ||
       this.addressTargets.find((address) => address.checked)
 
     return selected ? Number(selected.dataset.shippingCents) : null
