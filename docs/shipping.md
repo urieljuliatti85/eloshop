@@ -163,9 +163,12 @@ não está mais entre as ofertadas é recusada, não substituída. É a mesma re
 que já valia para preço de produto e desconto (ver `docs/checkout.md`).
 
 **Ainda não verificado:** a integração nunca rodou contra o sandbox do Melhor
-Envio — falta credencial. Os testes stubam HTTP e cobrem o contrato do adapter
-(o que envia, o que devolve, o que descarta), não a API real. Mesma situação
-registrada para o Mercado Pago.
+Envio. A credencial existe desde 2026-09-12 (aplicação `11947`), mas o WAF do
+provedor bloqueia o IP de saída da Railway com `E-WAF-0003` antes de a
+requisição chegar à API — ver o parágrafo de 2026-09-12 no `ROADMAP.md`. O
+pedido de liberação do IP é o ticket nº 2086648, aberto em 2026-10-28. Os
+testes stubam HTTP e cobrem o contrato do adapter (o que envia, o que devolve,
+o que descarta), não a API real.
 
 `TODO — DECISION REQUIRED`: segue pendente, e trava apenas as Etapas 2 e 3
 (etiqueta e rastreio), **quem absorve a diferença** quando o frete real sai mais
