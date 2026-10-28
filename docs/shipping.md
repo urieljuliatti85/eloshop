@@ -162,13 +162,49 @@ diferença de um frete real acima do estimado): essa continua em aberto.
 não está mais entre as ofertadas é recusada, não substituída. É a mesma regra
 que já valia para preço de produto e desconto (ver `docs/checkout.md`).
 
-**Ainda não verificado:** a integração nunca rodou contra o sandbox do Melhor
-Envio. A credencial existe desde 2026-09-12 (aplicação `11947`), mas o WAF do
-provedor bloqueia o IP de saída da Railway com `E-WAF-0003` antes de a
-requisição chegar à API — ver o parágrafo de 2026-09-12 no `ROADMAP.md`. O
-pedido de liberação do IP é o ticket nº 2086648, aberto em 2026-10-28. Os
-testes stubam HTTP e cobrem o contrato do adapter (o que envia, o que devolve,
-o que descarta), não a API real.
+**Verificado no sandbox, a partir do ambiente local (2026-10-28); produção
+segue bloqueada.** O WAF do provedor bloqueia o IP de saída da Railway com
+`E-WAF-0003` antes de a requisição chegar à API — ver o parágrafo de
+2026-09-12 no `ROADMAP.md`; o pedido de liberação do IP é o ticket nº 2086648,
+aberto em 2026-10-28. O bloqueio é só desse IP, então a integração foi
+exercitada da estação de desenvolvimento: OAuth completo (conectar, trocar o
+código, gravar os tokens cifrados com `melhor_envio_sandbox`), cotação real
+(Correios PAC e SEDEX, origem Vitória/ES, para ES, SP e AM) e um checkout até
+o pedido pago, com o frete escolhido gravado no `Shipment`. Os testes
+automatizados seguem stubando HTTP e cobrindo o contrato do adapter.
+
+Para repetir o teste local:
+
+* **Uma aplicação de sandbox só para desenvolvimento**, separada da `11947`
+  (cujo retorno aponta para produção). O cadastro do Melhor Envio exige
+  `https://` nas URLs, então o retorno passa por um túnel:
+  `cloudflared tunnel --url http://localhost:3000`. A URL
+  `*.trycloudflare.com` muda a cada execução, e a aplicação e o `.env`
+  precisam acompanhar.
+* No `.env`: `MELHOR_ENVIO_CLIENT_ID`, `MELHOR_ENVIO_CLIENT_SECRET`,
+  `MELHOR_ENVIO_REDIRECT_URI=https://<túnel>/painel/melhor-envio/callback` e
+  `MELHOR_ENVIO_SANDBOX=true`.
+* Em `config/environments/development.rb`, uma linha **local, que não vai
+  para o repositório**: `config.hosts << ".trycloudflare.com"` — sem ela o
+  Rails responde "Blocked host".
+* O botão de conexão está escondido pelo aviso do #273, mas a rota segue
+  ativa: abra `/painel/melhor-envio/conectar` direto, pelo endereço do túnel
+  (a sessão precisa estar no mesmo host do retorno).
+* O banco local nasce em pré-cadastro: abra as vendas pelo dashboard do admin
+  ou com `PlatformSetting.open_sales!`.
+* A cotação fica 30 minutos em cache; troque o CEP ou limpe o cache para
+  repetir.
+
+O teste revelou um defeito do checkout, corrigido no mesmo dia: a lista de
+modalidades era montada só para o primeiro endereço, e trocar de endereço
+deixava o resumo com o frete do anterior (o servidor recotava e cobrava o
+certo, mas o cliente via outro valor). Cada endereço tem agora o próprio grupo
+de modalidades.
+
+O código de rastreio **não** vem desta etapa: ele só existe depois da compra
+da etiqueta (Etapa 2). Até lá, o artesão compra a etiqueta no site do Melhor
+Envio e informa o código no detalhe do pedido (ver "Acompanhamento
+operacional do MVP").
 
 `TODO — DECISION REQUIRED`: segue pendente, e trava apenas as Etapas 2 e 3
 (etiqueta e rastreio), **quem absorve a diferença** quando o frete real sai mais
