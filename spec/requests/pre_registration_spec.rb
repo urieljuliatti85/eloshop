@@ -28,6 +28,20 @@ RSpec.describe "Pre-registration (sales closed)", type: :request do
     expect(response.body).not_to include("Adicionar ao carrinho")
   end
 
+  it "tells the customer on the cart page that sales open soon" do
+    close_sales
+
+    get cart_path
+
+    expect(response.body).to include("A EloShop abre as vendas em breve.", "meados de novembro de 2026", "favoritos")
+  end
+
+  it "shows no pre-registration notice on the cart once sales are open" do
+    get cart_path
+
+    expect(response.body).not_to include("A EloShop abre as vendas em breve.")
+  end
+
   it "refuses adding to the cart even when the request goes straight to the route" do
     close_sales
 

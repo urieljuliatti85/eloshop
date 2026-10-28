@@ -8,6 +8,8 @@
     <h1 class="mt-1 text-4xl font-bold text-ink">Carrinho</h1>
   </div>
 
+  <%= render "pre_launch_banner" unless sales_open? %>
+
   <% if @cart.cart_items.empty? %>
     <div class="mt-8 inline-block rounded-2xl bg-white/90 px-5 py-4 shadow-sm backdrop-blur-sm">
       <p class="text-ink-muted">Seu carrinho está vazio.</p>
