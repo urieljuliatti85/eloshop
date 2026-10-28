@@ -206,6 +206,16 @@
     <%= render "layouts/flash_message", message: flash[:notice], variant: :success %>
     <%= render "layouts/flash_message", message: flash[:alert], variant: :error %>
 
+    <% setup_steps = current_seller.setup_steps %>
+    <%# Pré-cadastro: todo ateliê vê quando as vendas abrem; a frase muda
+        conforme os primeiros passos estejam completos. Suspenso fica de fora:
+        o problema dele não é passo faltando. %>
+    <% if !sales_open? && !current_seller.suspended? %>
+      <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <%= render "seller_portal/shared/pre_launch_banner", ready: setup_steps.values.all? %>
+      </div>
+    <% end %>
+
     <%# Telas largas: barra lateral fixa à esquerda; o conteúdo ocupa o resto. %>
     <div class="mx-auto flex w-full max-w-7xl gap-8 px-4 pt-6 pb-[calc(1.5rem+var(--seller-tabs-height,0px))] sm:px-6 lg:px-8 lg:py-8">
       <aside class="hidden w-60 shrink-0 lg:block">
@@ -225,7 +235,6 @@
     </div>
 
     <% if mobile_tabs %>
-      <% setup_steps = current_seller.setup_steps %>
       <% if setup_steps.values.include?(false) %>
         <%= render "layouts/seller_mobile_tabs", label: "Primeiros passos", tabs: seller_setup_tabs(setup_steps) %>
       <% else %>

@@ -53,6 +53,30 @@ class SellerTest < ActiveSupport::TestCase
     assert_not seller.launch_fee_active?(at: Time.zone.local(2027, 6, 1))
   end
 
+  test "a seller approved during pre-registration starts the launch fee when sales open" do
+    PlatformSetting.instance.update!(sales_opened_at: nil)
+    seller = sellers(:approved)
+    seller.update!(approved_at: Time.zone.local(2026, 10, 28, 12))
+
+    assert_nil seller.launch_fee_ends_at
+    assert_not seller.launch_fee_active?
+    assert_equal 1_500, seller.platform_fee_rate_bps
+
+    PlatformSetting.instance.update!(sales_opened_at: Time.zone.local(2026, 11, 15, 9))
+
+    assert_equal Time.zone.local(2026, 11, 15, 9), seller.launch_fee_starts_at
+    assert_equal Time.zone.local(2027, 2, 15, 9), seller.launch_fee_ends_at
+    assert_equal 800, seller.platform_fee_rate_bps(at: Time.zone.local(2027, 2, 15, 8, 59))
+  end
+
+  test "a seller approved after sales opened starts the launch fee on approval" do
+    PlatformSetting.instance.update!(sales_opened_at: Time.zone.local(2026, 11, 15, 9))
+    seller = sellers(:approved)
+    seller.update!(approved_at: Time.zone.local(2026, 12, 1, 10))
+
+    assert_equal Time.zone.local(2026, 12, 1, 10), seller.launch_fee_starts_at
+  end
+
   test "a seller that was never approved has no launch period running" do
     seller = sellers(:pending)
 

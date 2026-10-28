@@ -1,4 +1,5 @@
 class OrdersController < StorefrontController
+  before_action :require_sales_open, only: %i[new create]
   before_action :ensure_cart_not_empty, only: :new
 
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to cart_path, alert: "Muitas tentativas. Tente novamente em alguns minutos." }
@@ -80,6 +81,13 @@ class OrdersController < StorefrontController
   end
 
   private
+
+  # O checkout também é bloqueado, então voltar ao Referer, como no resto da
+  # loja, viraria loop: o "Finalizar pedido" de uma tela aberta antes de as
+  # vendas fecharem volta para /orders/new, que volta para /orders/new...
+  def require_sales_open
+    redirect_to cart_path, alert: SALES_CLOSED_ALERT unless PlatformSetting.sales_open?
+  end
 
   def ensure_cart_not_empty
     redirect_to cart_path, alert: "Seu carrinho está vazio." if Current.cart.cart_items.empty?

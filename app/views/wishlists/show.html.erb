@@ -27,7 +27,7 @@
           </div>
 
           <div>
-            <% if product.available_for_purchase? && product.directly_purchasable? %>
+            <% if product.available_for_purchase? && product.directly_purchasable? && sales_open? %>
               <%= button_to "Mover para o carrinho", move_to_cart_wishlist_item_path(item), method: :post,
                     class: "w-full rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-ink hover:border-brand-500 hover:text-brand-600 cursor-pointer" %>
             <% elsif product.available_for_purchase? %>

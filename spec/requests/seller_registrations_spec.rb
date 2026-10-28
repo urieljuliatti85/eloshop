@@ -18,6 +18,20 @@ RSpec.describe "Seller registrations", type: :request do
     end
   end
 
+  it "invites artisans to pre-register while sales are closed" do
+    PlatformSetting.instance.update!(sales_opened_at: nil)
+
+    get new_seller_registration_path
+
+    expect(response.body).to include("Pré-cadastro aberto", "Monte sua loja agora e comece a vender na abertura.", "meados de novembro de 2026", "Começar meu cadastro")
+  end
+
+  it "drops the pre-registration invitation once sales are open" do
+    get new_seller_registration_path
+
+    expect(response.body).not_to include("Pré-cadastro aberto")
+  end
+
   it "describes the signup page with its own meta description" do
     get new_seller_registration_path
 
@@ -36,7 +50,7 @@ RSpec.describe "Seller registrations", type: :request do
   it "tells the seller about the launch commission before signing up" do
     get new_seller_registration_path
 
-    expect(response.body).to include("8% nos 3 primeiros meses depois da aprovação")
+    expect(response.body).to include("8% nos 3 primeiros meses de vendas")
     expect(response.body).to include("Não há mensalidade, no momento.")
   end
 

@@ -57,7 +57,7 @@
       dela e não por cima do nome e do preço. Fica fora do <a> porque um
       button_to é um <form>, que não pode aninhar dentro de um link. %>
   <div class="invisible absolute inset-x-0 top-0 hidden aspect-square items-end justify-center pb-5 opacity-0 transition group-hover:visible group-hover:opacity-100 md:flex">
-    <% if available && product.directly_purchasable? %>
+    <% if available && product.directly_purchasable? && sales_open? %>
       <%= button_to "Adicionar ao carrinho", cart_items_path, method: :post, params: { product_id: product.id },
             class: "cursor-pointer rounded-full bg-ink px-7 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600" %>
     <% elsif available %>
