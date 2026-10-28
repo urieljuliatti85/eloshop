@@ -38,6 +38,15 @@ RSpec.describe "Admin sellers", type: :request do
     expect(seller.reload).to be_approved
   end
 
+  it "emails the seller when approved" do
+    sign_in_as(admin)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+
+    expect do
+      patch approve_admin_seller_path(seller), params: { kyc_level_6_confirmed: "1" }
+    end.to have_enqueued_job(NotifySellerOfApprovalJob).with(seller)
+  end
+
   it "does not approve without a connected Mercado Pago account" do
     sign_in_as(admin)
 

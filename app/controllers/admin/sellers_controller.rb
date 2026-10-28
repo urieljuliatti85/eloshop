@@ -28,6 +28,7 @@ module Admin
 
     def approve
       @seller.approve!(kyc_level_6_confirmed: params[:kyc_level_6_confirmed] == "1")
+      NotifySellerOfApprovalJob.perform_later(@seller)
       redirect_to admin_seller_path(@seller), notice: "Artesão aprovado."
     rescue Seller::VerificationRequired => e
       redirect_to admin_seller_path(@seller), alert: e.message

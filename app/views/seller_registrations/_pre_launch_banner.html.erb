@@ -1,0 +1,18 @@
+<%# Pré-cadastro na porta de entrada do artesão: mesmo cartão do aviso do
+    painel (seller_portal/shared/_pre_launch_banner), aqui como convite. %>
+<section class="relative mx-auto mb-6 w-full max-w-xl overflow-hidden rounded-[1.75rem] bg-brand-600 text-white" aria-labelledby="pre-launch-signup-title">
+  <span class="pointer-events-none absolute inset-2 rounded-[1.4rem] border-2 border-dashed border-white/45 sm:inset-3" aria-hidden="true"></span>
+
+  <div class="relative flex flex-col items-start gap-4 px-7 py-8 sm:px-10 sm:py-10">
+    <p class="rounded-full bg-white/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em]">Pré-cadastro aberto</p>
+
+    <h2 id="pre-launch-signup-title" class="text-2xl font-black leading-tight tracking-tight sm:text-3xl">Monte sua loja agora e comece a vender na abertura.</h2>
+
+    <p class="text-base leading-relaxed text-white/90">
+      As vendas da EloShop abrem até meados de novembro de 2026. Quem se cadastra agora já conecta o Mercado Pago, publica as peças e divulga a página do ateliê antes da abertura. A comissão de lançamento de <%= fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS) %> só começa a contar quando as vendas abrirem.
+    </p>
+
+    <%= link_to "Começar meu cadastro", "#cadastro",
+          class: "inline-flex min-h-11 items-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50" %>
+  </div>
+</section>

@@ -93,18 +93,26 @@ module ApplicationHelper
 
   # Comissão que vale para este vendedor, em uma frase que cabe depois de
   # "a EloShop recebe ...": enquanto vale a de lançamento ela diz até quando e
-  # quanto passa a ser; antes da aprovação o prazo ainda não começou.
+  # quanto passa a ser; antes da aprovação ou da abertura das vendas o prazo
+  # ainda não começou.
   def seller_commission_text(seller)
     launch = fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS)
     standard = fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS)
+    ends_at = seller.launch_fee_ends_at
 
-    if seller.launch_fee_active?
-      "#{launch} (comissão de lançamento, até #{seller.launch_fee_ends_at.strftime("%d/%m/%Y")}; depois, #{standard})"
-    elsif seller.approved_at.present?
-      standard
+    if ends_at.nil?
+      "#{launch} nos 3 primeiros meses de vendas do seu ateliê e #{standard} depois disso"
+    elsif Time.current < ends_at
+      "#{launch} (comissão de lançamento, até #{ends_at.strftime("%d/%m/%Y")}; depois, #{standard})"
     else
-      "#{launch} nos 3 primeiros meses depois da aprovação do seu ateliê e #{standard} depois disso"
+      standard
     end
+  end
+
+  # Memoizado por request: o mesmo grid pergunta uma vez por card.
+  def sales_open?
+    @sales_open = PlatformSetting.sales_open? if @sales_open.nil?
+    @sales_open
   end
 
   # Valor para dentro de um campo de formulário: "89,90", sem "R$" e sem

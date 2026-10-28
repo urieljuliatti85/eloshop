@@ -1,4 +1,5 @@
 class PaymentsController < StorefrontController
+  before_action :require_sales_open, only: :create
   before_action :set_order
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to order_path(@order), alert: "Muitas tentativas. Tente novamente em alguns minutos." }
   # Por cliente, além do IP acima: carding distribuído troca de IP a cada

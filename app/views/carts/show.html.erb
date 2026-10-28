@@ -112,7 +112,11 @@
             <p class="mt-2 text-sm text-ink">Há peça sob encomenda: o envio sai depois da produção, em até <%= production_max_days %> dias úteis.</p>
           <% end %>
 
-          <%= link_to "Finalizar compra", new_order_path, class: "mt-8 block w-full rounded-full bg-brand-600 px-8 py-4 text-center text-sm font-semibold text-white hover:bg-brand-700" %>
+          <% if sales_open? %>
+            <%= link_to "Finalizar compra", new_order_path, class: "mt-8 block w-full rounded-full bg-brand-600 px-8 py-4 text-center text-sm font-semibold text-white hover:bg-brand-700" %>
+          <% else %>
+            <p class="mt-8 rounded-2xl bg-stone-100 px-4 py-3 text-center text-sm font-semibold text-stone-700">Vendas em breve</p>
+          <% end %>
         </div>
       </div>
     </div>

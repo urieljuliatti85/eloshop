@@ -13,7 +13,7 @@ class HowItWorksControllerTest < ActionDispatch::IntegrationTest
   test "explains the launch commission and that there is no monthly fee" do
     get how_it_works_path
 
-    assert_includes response.body, "8% nos 3 primeiros meses depois da aprovação do seu ateliê e 15% depois disso"
+    assert_includes response.body, "8% nos 3 primeiros meses de vendas do seu ateliê e 15% depois disso"
     assert_includes response.body, "Não há mensalidade, no momento."
   end
 

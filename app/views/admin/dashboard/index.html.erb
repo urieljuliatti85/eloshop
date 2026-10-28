@@ -8,6 +8,23 @@
     <%= link_to "Ver loja", root_path, class: "admin-button admin-button--secondary" %>
   </header>
 
+  <%# Pré-cadastro: uma ação só de ida (ver Admin::SalesOpeningsController). %>
+  <% if (sales_opened_at = PlatformSetting.sales_opened_at) %>
+    <p class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+      <strong>Vendas abertas</strong> desde <%= l(sales_opened_at, format: "%d/%m/%Y às %H:%M") %>.
+    </p>
+  <% else %>
+    <section class="flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:flex-row sm:items-center sm:justify-between" aria-labelledby="sales-closed-title">
+      <div>
+        <h2 id="sales-closed-title" class="text-base font-bold text-amber-900">Vendas fechadas (pré-cadastro)</h2>
+        <p class="mt-1 text-sm text-amber-800">Artesãos se cadastram, são aprovados e publicam peças, mas carrinho, checkout e pagamento estão bloqueados. Abrir as vendas avisa por e-mail todos os artesãos aprovados e não pode ser desfeito por aqui.</p>
+      </div>
+      <%= button_to "Abrir vendas", admin_sales_opening_path, method: :post,
+            form: { data: { turbo_confirm: "Abrir as vendas agora? Os artesãos aprovados recebem o aviso por e-mail, e a comissão de lançamento passa a contar a partir de hoje." } },
+            class: "admin-button shrink-0 cursor-pointer" %>
+    </section>
+  <% end %>
+
   <section class="grid gap-4 md:grid-cols-3" aria-label="Resumo do marketplace">
     <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
       <div class="flex items-center justify-between gap-3">

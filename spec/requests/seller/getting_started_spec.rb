@@ -68,7 +68,7 @@ RSpec.describe "Seller getting started", type: :request do
 
     get seller_getting_started_path(etapa: "aprovacao")
 
-    expect(response.body).to include("8% nos 3 primeiros meses depois da aprovação do seu ateliê e 15% depois disso")
+    expect(response.body).to include("8% nos 3 primeiros meses de vendas do seu ateliê e 15% depois disso")
   end
 
   it "shows the launch commission with its end date to a recently approved seller" do

@@ -14,6 +14,15 @@ class StorefrontController < ApplicationController
 
   private
 
+  # Pré-cadastro: com as vendas fechadas, o servidor recusa o que levaria a um
+  # pedido (carrinho, checkout, pagamento). Esconder o botão não basta — o
+  # POST pode chegar direto pela rota.
+  def require_sales_open
+    return if PlatformSetting.sales_open?
+
+    redirect_back fallback_location: root_path, alert: "As vendas da EloShop ainda não abriram. Salve a peça nos favoritos para voltar a ela depois."
+  end
+
   # Carregado uma vez por request e reaproveitado em qualquer grid de
   # produtos (catálogo, PDP, relacionados) — evita N+1 de "este produto
   # está nos favoritos?" por card. Devolve o id do WishlistItem (para

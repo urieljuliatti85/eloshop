@@ -1,0 +1,6 @@
+# As suítes partem com as vendas abertas, como a loja depois do pré-cadastro;
+# os testes do pré-cadastro fecham explicitamente. Data bem antiga para que a
+# comissão de lançamento conte da aprovação, como antes da abertura existir.
+singleton:
+  id: 1
+  sales_opened_at: 2000-01-01 00:00:00

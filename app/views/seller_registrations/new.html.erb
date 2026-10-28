@@ -1,6 +1,8 @@
 <% content_for :title, "Venda seu artesanato online: cadastre seu ateliê | EloShop" %>
 <% content_for :meta_description, "Cadastre seu ateliê na EloShop e venda peças feitas à mão para todo o Brasil. O pagamento cai direto na sua conta do Mercado Pago, sem repasse manual." %>
-<div class="mx-auto w-full max-w-xl rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+<%= render "pre_launch_banner" unless sales_open? %>
+
+<div id="cadastro" class="mx-auto w-full max-w-xl scroll-mt-24 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
   <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Marketplace EloShop</p>
   <h1 class="mt-2 text-3xl font-bold text-ink">Cadastre seu ateliê</h1>
   <p class="mt-3 text-ink-muted">Seu cadastro ficará pendente até a validação da plataforma. Você poderá acessar o painel, mas só publicará produtos após a aprovação. <strong>Seu cadastro será aprovado após você ter conectado uma conta Mercado Pago. O botão estará logo na tela inicial!</strong></p>
@@ -9,7 +11,7 @@
     <p class="font-semibold text-ink">Antes de começar</p>
     <ul class="mt-2 list-disc space-y-1 pl-5">
       <li>Tenha em mãos uma <strong>conta de vendedor do Mercado Pago</strong>, com a identidade já verificada. É nela que você recebe suas vendas.</li>
-      <li>A comissão da EloShop é de <strong><%= fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS) %> nos 3 primeiros meses depois da aprovação</strong> do seu ateliê e <%= fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS) %> depois disso, sobre o valor dos produtos, sem o frete. Não há mensalidade, no momento.</li>
+      <li>A comissão da EloShop é de <strong><%= fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS) %> nos 3 primeiros meses de vendas</strong> do seu ateliê e <%= fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS) %> depois disso, sobre o valor dos produtos, sem o frete. Não há mensalidade, no momento.</li>
       <li>Separe fotos nítidas das suas peças, de preferência com luz natural e fundo neutro.</li>
       <li>Quer entender antes de se cadastrar? Veja <%= link_to "como funciona para quem vende", how_it_works_path(aba: "vende"), class: "font-semibold text-brand-700 underline" %>: comissão, pagamento e passo a passo.</li>
       <li>O cadastro leva poucos minutos. Dúvidas? Escreva para <a href="mailto:contato@eloshop.shop" class="font-semibold text-brand-700 underline">contato@eloshop.shop</a>.</li>

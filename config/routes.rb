@@ -11,6 +11,7 @@ Rails.application.routes.draw do
     get "financials", to: "financials#index", as: :financials
     get "financials/export", to: "financials#export", as: :financials_export
     post "financials/reconciliation", to: "financials#refresh_reconciliation", as: :financials_reconciliation
+    post "vendas/abrir", to: "sales_openings#create", as: :sales_opening
 
     resources :fraud_alerts, only: %i[index], path: "fraudes" do
       member { patch :resolve }

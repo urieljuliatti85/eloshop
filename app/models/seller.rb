@@ -122,10 +122,18 @@ class Seller < ApplicationRecord
 
   LAUNCH_FEE_PERIOD = 3.months
 
-  # Fim da comissão de lançamento: 3 meses depois da aprovação deste vendedor.
-  # Vendedor ainda não aprovado não tem prazo correndo.
+  # A comissão de lançamento conta dos 3 primeiros meses em que o vendedor
+  # pode vender: a aprovação dele ou a abertura das vendas da plataforma, o
+  # que vier por último. Aprovado durante o pré-cadastro não perde o prazo
+  # esperando a abertura. Sem um dos dois, o prazo ainda não começou.
+  def launch_fee_starts_at
+    sales_opened_at = PlatformSetting.sales_opened_at
+    [ approved_at, sales_opened_at ].max if approved_at.present? && sales_opened_at.present?
+  end
+
   def launch_fee_ends_at
-    approved_at + LAUNCH_FEE_PERIOD if approved_at.present?
+    starts_at = launch_fee_starts_at
+    starts_at + LAUNCH_FEE_PERIOD if starts_at.present?
   end
 
   def launch_fee_active?(at: Time.current)
