@@ -83,6 +83,13 @@
                   <li><strong>Destinatário:</strong> o cliente que fez esta compra. O nome e o endereço dele estão no quadro <strong>“Endereço de entrega”</strong> deste pedido.</li>
                 </ul>
               </li>
+              <li data-shipping-paid>
+                <% if shipment.shipping_cents.positive? %>
+                  O cliente escolheu <strong><%= shipment.carrier %> — <%= shipment.service %></strong> e pagou <strong><%= format_price(shipment.shipping_cents) %></strong> de frete por essa modalidade.
+                <% else %>
+                  Este pedido saiu com <strong>frete grátis</strong> para o cliente: a etiqueta é por sua conta.
+                <% end %>
+              </li>
               <li>Embale bem a peça e poste na agência ou ponto indicado na etiqueta.</li>
               <li>Volte aqui, cole o código de rastreio e clique em <strong>Marcar como enviado</strong>. O cliente recebe o código por e-mail.</li>
             </ol>
@@ -176,6 +183,7 @@
         <dl class="mt-5 space-y-2 border-t border-brand-100 pt-5 text-sm">
           <div class="flex justify-between gap-4"><dt class="text-ink-muted">Modalidade</dt><dd class="text-right font-semibold"><%= shipment.carrier %> — <%= shipment.service %></dd></div>
           <div class="flex justify-between gap-4"><dt class="text-ink-muted">Prazo estimado</dt><dd class="font-semibold"><%= shipping_estimate_label(shipment) %></dd></div>
+          <% unless shipment.local_pickup? %><div class="flex justify-between gap-4"><dt class="text-ink-muted">Frete pago pelo cliente</dt><dd class="font-semibold"><%= shipment.shipping_cents.positive? ? format_price(shipment.shipping_cents) : "Grátis" %></dd></div><% end %>
           <% if shipment.tracking_code.present? %><div class="flex justify-between gap-4"><dt class="text-ink-muted">Rastreamento</dt><dd class="font-semibold"><%= shipment.tracking_code %></dd></div><% end %>
         </dl>
       <% end %>
