@@ -45,12 +45,27 @@ RSpec.describe "Pre-registration (sales closed)", type: :request do
     close_sales
 
     get new_order_path
-    expect(response).to have_http_status(:redirect)
+    expect(response).to redirect_to(cart_path)
 
     expect do
       post orders_path, params: { address_id: address.id }
     end.not_to change(Order, :count)
+    expect(response).to redirect_to(cart_path)
     expect(flash[:alert]).to include("ainda não abriram")
+  end
+
+  # A tela de checkout aberta antes de as vendas fecharem manda o Referer
+  # /orders/new; voltar para ele era um redirecionamento para si mesmo.
+  it "does not loop back to the checkout page when it is the referer" do
+    sign_in_customer
+    post cart_items_path, params: { product_id: product.id, quantity: 1 }
+    close_sales
+
+    post orders_path, params: { address_id: address.id }, headers: { "Referer" => new_order_url }
+    expect(response).to redirect_to(cart_path)
+
+    get new_order_path, headers: { "Referer" => new_order_url }
+    expect(response).to redirect_to(cart_path)
   end
 
   it "refuses authorizing a payment" do

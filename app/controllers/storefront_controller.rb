@@ -17,10 +17,12 @@ class StorefrontController < ApplicationController
   # Pré-cadastro: com as vendas fechadas, o servidor recusa o que levaria a um
   # pedido (carrinho, checkout, pagamento). Esconder o botão não basta — o
   # POST pode chegar direto pela rota.
+  SALES_CLOSED_ALERT = "As vendas da EloShop ainda não abriram. Salve a peça nos favoritos para voltar a ela depois.".freeze
+
   def require_sales_open
     return if PlatformSetting.sales_open?
 
-    redirect_back fallback_location: root_path, alert: "As vendas da EloShop ainda não abriram. Salve a peça nos favoritos para voltar a ela depois."
+    redirect_back fallback_location: root_path, alert: SALES_CLOSED_ALERT
   end
 
   # Carregado uma vez por request e reaproveitado em qualquer grid de
