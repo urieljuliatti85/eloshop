@@ -16,8 +16,7 @@ class OrdersController < StorefrontController
     @addresses = Current.customer.addresses
     @shipping_quotes = @addresses.index_with { |address| shipping_quotes_for(address) }
     @selected_address = @addresses.find { |address| @shipping_quotes[address].present? }
-    @shipping_options = @shipping_quotes[@selected_address] || []
-    @shipping = @shipping_options.first
+    @shipping = @shipping_quotes[@selected_address]&.first
     @shipping_cents = @shipping&.shipping_cents
     checkout_started = session[:checkout_idempotency_key].blank?
     session[:checkout_idempotency_key] ||= SecureRandom.hex(20)
