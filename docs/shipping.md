@@ -129,6 +129,20 @@ termos dizem que o frete é definido pelo vendedor). Produto sem frete definido
 usa a cotação antes da tabela interna; frete grátis vence sempre. A escolha
 fica no cartão da SuperFrete, no ateliê.
 
+**Cotação real verificada a partir da Railway (2026-10-30).** Com um token
+manual de sandbox, `POST /api/v0/calculator` saindo do container de produção
+(o mesmo IP que o Melhor Envio bloqueava) devolveu, de 01001-000 para
+20040-020 com 0,5 kg: PAC R$ 23,51 em 2 dias e SEDEX R$ 34,57 em 1 dia,
+`company.name` "Correios", `has_error: false` — o formato que
+`Shipping::Providers::Superfrete` lê. O `price` já vem com o desconto da
+SuperFrete aplicado (o campo `discount` só informa quanto foi). CEP de origem
+que os Correios não reconhecem responde `400` com
+`correios.origin_postcode`: a cotação cai no frete do ateliê sem avisá-lo —
+melhoria futura. Credenciais OAuth de plataforma pedidas no mesmo dia pelo
+formulário da SuperFrete (prazo de até 24 horas úteis); o formulário pede que o
+redirect "aceite GET e retorne 200", e o callback responde 302 quando chega sem
+`code` válido — ajustar se o cadastro for recusado por isso.
+
 **Ainda não feito**: etiqueta (`cart` → `checkout`, pago pela carteira do
 ateliê; exige o CPF do cliente, que será coletado no checkout — decisão de
 2026-10-30) e rastreio por webhook (HMAC-SHA256 em `X-ME-Signature`). A
