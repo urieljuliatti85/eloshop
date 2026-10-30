@@ -14,7 +14,7 @@ RSpec.describe "API v1 content negotiation", type: :request do
   # `.html` que nunca existiu e devolvia 406 com a página de exceção do
   # Rails — HTML, não JSON — justo para quem estava conhecendo a API.
   it "serves JSON to a browser asking for HTML" do
-    get "/api/v1/products", headers: { "Accept" => BROWSER_ACCEPT }
+    get "/api/v1/products", headers: api_headers("Accept" => BROWSER_ACCEPT)
 
     expect(response).to have_http_status(:ok)
     expect(response.media_type).to eq("application/json")
@@ -23,7 +23,7 @@ RSpec.describe "API v1 content negotiation", type: :request do
 
   it "serves JSON on every public endpoint regardless of Accept" do
     %w[/api/v1/products /api/v1/sellers /api/v1/categories].each do |path|
-      get path, headers: { "Accept" => BROWSER_ACCEPT }
+      get path, headers: api_headers("Accept" => BROWSER_ACCEPT)
 
       expect(response).to have_http_status(:ok), "#{path} respondeu #{response.status}"
       expect(response.media_type).to eq("application/json"), "#{path} devolveu #{response.media_type}"
@@ -34,7 +34,7 @@ RSpec.describe "API v1 content negotiation", type: :request do
   # continuem funcionando.
   it "keeps serving JSON to clients that send no Accept or a wildcard" do
     [ nil, "*/*", "application/json" ].each do |accept|
-      get "/api/v1/products", headers: accept ? { "Accept" => accept } : {}
+      get "/api/v1/products", headers: api_headers(accept ? { "Accept" => accept } : {})
 
       expect(response).to have_http_status(:ok)
       expect(response.media_type).to eq("application/json")
@@ -44,7 +44,7 @@ RSpec.describe "API v1 content negotiation", type: :request do
   # O 404 da API é JSON (`BaseController`); pedir HTML não pode transformá-lo
   # na página de erro do Rails.
   it "answers a missing record with JSON even when HTML is requested" do
-    get "/api/v1/sellers/nao-existe", headers: { "Accept" => BROWSER_ACCEPT }
+    get "/api/v1/sellers/nao-existe", headers: api_headers("Accept" => BROWSER_ACCEPT)
 
     expect(response).to have_http_status(:not_found)
     expect(response.media_type).to eq("application/json")

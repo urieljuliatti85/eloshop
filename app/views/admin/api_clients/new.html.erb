@@ -1,0 +1,30 @@
+<div class="space-y-8">
+  <header>
+    <p class="admin-section-label mb-2">Acesso</p>
+    <h1>Novo cliente de API</h1>
+    <p class="mt-2 text-sm text-slate-500">O token é gerado na hora e aparece uma única vez.</p>
+  </header>
+
+  <%= form_with model: @api_client, url: admin_api_clients_path, class: "admin-form" do |form| %>
+    <% if @api_client.errors.any? %>
+      <div class="admin-flash admin-flash--danger">
+        <ul>
+          <% @api_client.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= form.label :name, "Nome" %>
+      <%= form.text_field :name, required: true, maxlength: 100, autocomplete: "off", class: "w-full" %>
+      <p class="text-sm text-slate-500">Quem vai usar o token, por exemplo "Parceiro X — integração de catálogo".</p>
+    </div>
+
+    <div class="flex gap-3">
+      <%= form.submit "Gerar token", class: "admin-button admin-button--brand" %>
+      <%= link_to "Cancelar", admin_api_clients_path, class: "admin-button admin-button--secondary" %>
+    </div>
+  <% end %>
+</div>

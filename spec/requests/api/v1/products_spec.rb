@@ -1,6 +1,8 @@
 require "swagger_helper"
 
 RSpec.describe "api/v1/products", type: :request do
+  let(:Authorization) { "Bearer #{api_token}" }
+
   PRODUCT_SCHEMA = {
     type: :object,
     properties: {
@@ -47,6 +49,8 @@ RSpec.describe "api/v1/products", type: :request do
                 description: "Slug da categoria; inclui as subcategorias"
       parameter name: :availability, in: :query, type: :string, required: false,
                 description: "Tipo de disponibilidade (standard, one_of_a_kind, made_to_order)"
+
+      documents_api_token_requirement
 
       response "200", "produtos ativos encontrados" do
         schema LIST_SCHEMA
@@ -266,6 +270,8 @@ RSpec.describe "api/v1/products", type: :request do
       parameter name: :slug, in: :path, type: :string
       parameter name: :seller_slug, in: :path, type: :string
       let(:seller_slug) { approved_seller.slug }
+
+      documents_api_token_requirement slug: "qualquer-produto"
 
       response "200", "produto encontrado" do
         schema PRODUCT_SCHEMA
