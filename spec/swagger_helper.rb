@@ -21,17 +21,12 @@ RSpec.configure do |config|
         title: 'API V1',
         version: 'v1'
       },
-      paths: {},
-      servers: [
-        {
-          url: 'https://{defaultHost}',
-          variables: {
-            defaultHost: {
-              default: 'www.example.com'
-            }
-          }
-        }
-      ]
+      paths: {}
+      # Sem `servers` de propósito: o OpenAPI 3 assume "/", a mesma origem de
+      # onde o swagger.yaml foi servido, então o "Try it out" do /api-docs
+      # chama localhost no desenvolvimento e eloshop.shop em produção. Não usar
+      # `url: '/'`: o rswag-specs concatena o path do servidor e geraria
+      # "//api/v1/...".
     }
   }
 

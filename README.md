@@ -63,7 +63,8 @@ bin/rails test:system                 # testes de sistema (Capybara + Selenium)
 
 ## Documentação de API
 
-Com o servidor rodando, a UI do Swagger fica em `/api-docs`. O arquivo
+Com o servidor rodando, a UI do Swagger fica em `/api-docs`, visível só para o
+admin da plataforma logado em `/session` (os demais recebem 404). O arquivo
 `swagger/v1/swagger.yaml` é gerado a partir dos specs em `spec/requests/`:
 
 ```bash
