@@ -1,6 +1,9 @@
 Rails.application.routes.draw do
-  mount Rswag::Ui::Engine => "/api-docs"
-  mount Rswag::Api::Engine => "/api-docs"
+  # A API v1 é pública, mas a documentação é só para o admin da plataforma.
+  constraints AdminSessionConstraint do
+    mount Rswag::Ui::Engine => "/api-docs"
+    mount Rswag::Api::Engine => "/api-docs"
+  end
   resource :session
   resources :passwords, param: :token
 

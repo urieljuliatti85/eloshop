@@ -13,4 +13,4 @@ Para regenerar `swagger/v1/swagger.yaml` a partir dos specs:
 bin/rails rswag:specs:swaggerize
 ```
 
-A UI do Swagger fica disponível em `/api-docs` com o servidor rodando.
+A UI do Swagger fica disponível em `/api-docs` com o servidor rodando, só para o admin da plataforma logado (os demais recebem 404).

@@ -20,6 +20,8 @@ Evitar checagens de autorização espalhadas de forma ad-hoc (`if current_user.a
 
 Decisão tomada na Fase 14 e estendida na Fase 22: implementação simples, sem gem dedicada. `User` tem os papéis `admin` e `seller`; `Admin::BaseController#require_admin!` protege a plataforma e `SellerPortal::BaseController#require_seller!` protege o painel do artesão.
 
+A documentação da API (`/api-docs`, Swagger UI e `swagger.yaml`) é restrita ao admin da plataforma por `AdminSessionConstraint`, uma restrição de rota em volta dos `mount` do rswag que lê a mesma sessão de `Authentication`; quem não passa recebe 404 do roteador. Fica no roteador porque os engines não passam pelos controllers da aplicação. A API v1 em si continua pública por desenho (só leitura do que a vitrine já mostra), então fechar a documentação não protege endpoint nenhum. O `public/api-docs/eloshop-swagger-init.js` é estático e fica fora da restrição; não carrega dado da API.
+
 O escopo do vendedor nunca vem de parâmetros da requisição. Produtos e pedidos começam em `Current.user.seller`; trocar um ID na URL por um recurso de outro vendedor resulta em 404. Vendedores `pending` ou `suspended` podem consultar o painel, mas o domínio bloqueia publicação e compra. A vitrine lista somente vendedores aprovados.
 
 ## Pagamentos
