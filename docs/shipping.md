@@ -82,6 +82,58 @@ dimensões ficam registradas para o próximo provedor que exigir cubagem. CEP
 inválido ou peso acima do limite de envio tornam o frete indisponível e impedem
 a criação do pedido.
 
+## SuperFrete — provedor de frete (2026-10-30)
+
+O Melhor Envio só libera IP **fixo, exclusivo e brasileiro** (resposta do suporte
+em 2026-10-30), e a Railway não tem região no Brasil nem IP de saída exclusivo.
+A SuperFrete aceita a Railway: do mesmo IP que o Melhor Envio bloqueia, a API
+respondeu `401` em JSON sem token. Documentação oficial:
+`superfrete.readme.io`.
+
+**Conexão do ateliê** (`SellerPortal::SuperfreteConnectionsController`,
+`Marketplace::SuperfreteOauth`): OAuth 2.0, que a SuperFrete reserva a
+"operações com múltiplas lojas" — credenciais de plataforma pedidas por
+formulário, um par por ambiente, com o redirect `/painel/superfrete/callback`
+idêntico ao cadastrado. Diferenças em relação ao Melhor Envio:
+
+* a autorização é rota com hash no app web (`/#/auth/authorize?client_id&redirect_uri&state`),
+  sem `response_type` nem `scope`; o `state` é opcional para eles e **exigido**
+  aqui (`SellerPortal::SuperfreteConnectionsController`: digest na sessão, prazo
+  de 10 minutos, comparação em tempo constante);
+* o token **não expira** e não há refresh — e dá acesso à carteira que paga as
+  etiquetas. Fica cifrado em `Seller#superfrete_access_token_ciphertext`; um
+  `401` numa cotação vira o evento `shipping.provider_unauthorized` (o ateliê
+  revogou do lado de lá) e o checkout segue com o frete dele. Desconectar na
+  EloShop apaga o token, mas a documentação não fala de revogação: o painel
+  orienta o ateliê a remover a integração também na SuperFrete;
+* no **sandbox**, a troca do token vai para uma Cloud Function
+  (`us-central1-sandbox-api-superfrete.cloudfunctions.net/...`), não para
+  `sandbox.superfrete.com` — os endereços por ambiente ficam em constantes;
+* a troca não devolve a conta: ela vem de `GET /api/v0/user` e fica gravada
+  (`superfrete_account_id`/`_email`). Reconectar com outra conta avisa que as
+  etiquetas passam a ser pagas por ela.
+
+**Único provedor**: o Melhor Envio foi removido no mesmo dia (ver a nota em
+"Etapa 1", abaixo). `Shipping::Providers.for` devolve a SuperFrete quando o
+ateliê a conectou e a chave do ambiente está ligada.
+
+**Cotação** (`Shipping::Providers::Superfrete`): `POST /api/v0/calculator` com
+`services: "1,2,17"` (PAC, SEDEX, Mini Envios — Jadlog, Loggi e J&T exigem
+ponto de coleta perto da origem e ficam de fora até haver demanda), produtos em
+cm/kg e seguro em reais. Serviços com `has_error` são descartados.
+
+**Quem decide o preço é o ateliê** (decisão de 2026-10-30): com frete definido
+no produto, vale esse frete; a cotação só passa na frente quando o ateliê
+escolhe no painel (`Seller#provider_quotes_preferred`, falso por padrão — os
+termos dizem que o frete é definido pelo vendedor). Produto sem frete definido
+usa a cotação antes da tabela interna; frete grátis vence sempre. A escolha
+fica no cartão da SuperFrete, no ateliê.
+
+**Ainda não feito**: etiqueta (`cart` → `checkout`, pago pela carteira do
+ateliê; exige o CPF do cliente, que será coletado no checkout — decisão de
+2026-10-30) e rastreio por webhook (HMAC-SHA256 em `X-ME-Signature`). A
+verificação ponta a ponta no sandbox depende das credenciais de plataforma.
+
 ## Endereço de origem do ateliê
 
 Desde 2026-09-06 o `Seller` tem endereço de origem (`origin_zip_code`,
@@ -109,6 +161,14 @@ escolhido, o que a documentação dele confirma e como a integração se divide 
 três etapas.
 
 ### Etapa 1 — cotação real (implementada em 2026-09-07)
+
+> **Melhor Envio removido em 2026-10-30.** O suporte respondeu que só libera IP
+> fixo, exclusivo e brasileiro, que a Railway não oferece; a integração nunca
+> cotou em produção. Provider, OAuth, conexão no painel e as colunas
+> `melhor_envio_*` saíram do código (o histórico fica no git). O que segue é
+> registro do que foi feito e aprendido; o provedor atual está em
+> "SuperFrete", acima. Continuam valendo as regras do `Shipping::Calculator`
+> descritas aqui (fallback, cache, escolha por id, frete grátis).
 
 Cada artesão conecta a própria conta do Melhor Envio pelo painel
 (`/painel/atelie`), por OAuth2, no mesmo arranjo já usado para o Mercado Pago:

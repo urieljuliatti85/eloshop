@@ -67,7 +67,7 @@ module Shipping
     test "falls back to the internal table when the provider fails" do
       cart = connected_seller_cart
       provider = Object.new
-      provider.define_singleton_method(:quotes) { |**| raise Providers::MelhorEnvio::Unavailable, "timeout" }
+      provider.define_singleton_method(:quotes) { |**| raise Providers::Unavailable, "timeout" }
 
       quotes = Calculator.new(cart: cart, address: addresses(:one), provider: provider).quotes
 
@@ -132,7 +132,7 @@ module Shipping
     end
 
     # Frete grátis é uma promessa do vendedor ao cliente, não uma estimativa
-    # de custo — vence mesmo quando o Melhor Envio devolve cotação real.
+    # de custo — vence mesmo quando o provedor devolve cotação real.
     test "free_shipping wins over a real carrier quote from the connected provider" do
       cart = connected_seller_cart
       cart.cart_items.first.product.update!(free_shipping: true)
@@ -280,6 +280,40 @@ module Shipping
 
     # Sem CEP de origem nenhuma cotação real funciona, qualquer que seja a
     # transportadora — e o endereço do ateliê ainda é opcional.
+    # Termos comerciais: o frete é definido pelo vendedor. A cotação só passa
+    # na frente quando o ateliê escolhe isso no painel.
+    test "the seller's own shipping wins over the provider quote by default" do
+      cart = connected_seller_cart
+      products(:one).update!(fixed_shipping_cents: 1800, fixed_shipping_estimated_days: 6)
+      provider = Object.new
+      provider.define_singleton_method(:quotes) { |**| raise "não deveria cotar" }
+
+      quote = Calculator.new(cart: cart, address: addresses(:one), provider: provider).quotes.sole
+
+      assert_equal Calculator::SELLER_DEFINED_SERVICE, quote.service
+      assert_equal 1800, quote.shipping_cents
+    end
+
+    test "the provider quote wins when the seller prefers it" do
+      cart = connected_seller_cart
+      sellers(:approved).update!(provider_quotes_preferred: true)
+      products(:one).update!(fixed_shipping_cents: 1800, fixed_shipping_estimated_days: 6)
+      provider = stub_provider([ Quote.new(carrier: "Correios", service: "PAC", shipping_cents: 2068, estimated_days: 8) ])
+
+      quote = Calculator.new(cart: cart, address: addresses(:one), provider: provider).quotes.sole
+
+      assert_equal [ "Correios", 2068 ], [ quote.carrier, quote.shipping_cents ]
+    end
+
+    test "the provider quote comes before the internal table when the product has no shipping defined" do
+      cart = connected_seller_cart
+      provider = stub_provider([ Quote.new(carrier: "Correios", service: "PAC", shipping_cents: 2068, estimated_days: 8) ])
+
+      quote = Calculator.new(cart: cart, address: addresses(:one), provider: provider).quotes.sole
+
+      assert_equal "Correios", quote.carrier
+    end
+
     test "does not call the provider when remote quotes are disabled in the environment" do
       cart = connected_seller_cart
       provider = Object.new
@@ -372,11 +406,7 @@ module Shipping
     # meio endereço não despacha nada.
     def connected_seller_cart(origin_zip_code: "01001000")
       seller = sellers(:approved)
-      seller.connect_melhor_envio!(
-        Marketplace::MelhorEnvioOauth::Credentials.new(
-          access_token: "token", refresh_token: "refresh", expires_at: 30.days.from_now
-        )
-      )
+      seller.connect_superfrete!(access_token: "token", account: Marketplace::SuperfreteOauth::Account.new(id: "sf-1", email: nil))
       origin = if origin_zip_code.present?
         { origin_zip_code: origin_zip_code, origin_street: "Rua do Ateliê", origin_number: "10",
           origin_neighborhood: "Centro", origin_city: "São Paulo", origin_state: "SP" }

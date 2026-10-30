@@ -393,40 +393,30 @@ class Seller < ApplicationRecord
     decrypt_credential(mercado_pago_refresh_token_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO)
   end
 
-  # Frete real via Melhor Envio (ADR 005, Etapa 1). Mesmo padrão do Mercado
-  # Pago: cada vendedor conecta a própria conta via OAuth, tokens cifrados.
-  # Sem user_id: a API do Melhor Envio não devolve identificador de conta no
-  # token exchange (ver Marketplace::MelhorEnvioOauth).
-  def melhor_envio_connected?
-    melhor_envio_access_token_ciphertext.present? && melhor_envio_refresh_token_ciphertext.present?
+  # Frete via SuperFrete (ADR 005, segundo provedor). O token não expira nem
+  # tem refresh, e dá acesso à carteira que paga as etiquetas: fica cifrado e
+  # nunca sai daqui em texto puro fora do provider. A conta (id e e-mail) vem
+  # de `GET /api/v0/user` e é o que o painel mostra ao ateliê.
+  def superfrete_connected?
+    superfrete_access_token_ciphertext.present?
   end
 
-  def connect_melhor_envio!(credentials, sandbox: false)
+  def connect_superfrete!(access_token:, account:, sandbox: false)
     update!(
-      melhor_envio_access_token_ciphertext: encrypt_credential(credentials.access_token, salt: CREDENTIAL_ENCRYPTION_SALT_MELHOR_ENVIO),
-      melhor_envio_refresh_token_ciphertext: encrypt_credential(credentials.refresh_token, salt: CREDENTIAL_ENCRYPTION_SALT_MELHOR_ENVIO),
-      melhor_envio_token_expires_at: credentials.expires_at,
-      melhor_envio_connected_at: Time.current,
-      melhor_envio_sandbox: sandbox
+      superfrete_access_token_ciphertext: encrypt_credential(access_token, salt: CREDENTIAL_ENCRYPTION_SALT_SUPERFRETE),
+      superfrete_account_id: account.id,
+      superfrete_account_email: account.email,
+      superfrete_connected_at: Time.current,
+      superfrete_sandbox: sandbox
     )
   end
 
-  def disconnect_melhor_envio!
-    update!(
-      melhor_envio_access_token_ciphertext: nil,
-      melhor_envio_refresh_token_ciphertext: nil,
-      melhor_envio_token_expires_at: nil,
-      melhor_envio_connected_at: nil,
-      melhor_envio_sandbox: false
-    )
+  def disconnect_superfrete!
+    update!(SUPERFRETE_DISCONNECTED)
   end
 
-  def melhor_envio_access_token
-    decrypt_credential(melhor_envio_access_token_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_MELHOR_ENVIO)
-  end
-
-  def melhor_envio_refresh_token
-    decrypt_credential(melhor_envio_refresh_token_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_MELHOR_ENVIO)
+  def superfrete_access_token
+    decrypt_credential(superfrete_access_token_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_SUPERFRETE)
   end
 
   # CPF nunca é lido de volta em texto plano fora do cadastro (write-only na
@@ -500,7 +490,15 @@ class Seller < ApplicationRecord
   private
 
   CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO = "seller-mercado-pago-oauth".freeze
-  CREDENTIAL_ENCRYPTION_SALT_MELHOR_ENVIO = "seller-melhor-envio-oauth".freeze
+  CREDENTIAL_ENCRYPTION_SALT_SUPERFRETE = "seller-superfrete-oauth".freeze
+
+  SUPERFRETE_DISCONNECTED = {
+    superfrete_access_token_ciphertext: nil,
+    superfrete_account_id: nil,
+    superfrete_account_email: nil,
+    superfrete_connected_at: nil,
+    superfrete_sandbox: false
+  }.freeze
   CREDENTIAL_ENCRYPTION_SALT_CPF = "seller-owner-cpf".freeze
 
   def assign_cpf

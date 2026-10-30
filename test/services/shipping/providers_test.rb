@@ -2,11 +2,11 @@ require "test_helper"
 
 module Shipping
   class ProvidersTest < ActiveSupport::TestCase
-    test "returns the Melhor Envio provider for a seller connected to it" do
+    test "returns the SuperFrete provider for a seller connected to it" do
       seller = sellers(:approved)
-      connect_melhor_envio(seller)
+      connect_superfrete(seller)
 
-      assert_instance_of Providers::MelhorEnvio, Providers.for(seller)
+      assert_instance_of Providers::Superfrete, Providers.for(seller)
     end
 
     test "returns nothing for a seller without a connected provider" do
@@ -16,7 +16,7 @@ module Shipping
 
     test "returns nothing when remote quotes are disabled in the environment" do
       seller = sellers(:approved)
-      connect_melhor_envio(seller)
+      connect_superfrete(seller)
 
       with_remote_quotes_enabled(false) do
         assert_not Providers.enabled?
@@ -25,15 +25,13 @@ module Shipping
     end
 
     test "every provider error is a Providers::Unavailable" do
-      assert_operator Providers::MelhorEnvio::Unavailable, :<, Providers::Unavailable
+      assert_operator Providers::Superfrete::Unavailable, :<, Providers::Unavailable
     end
 
     private
 
-    def connect_melhor_envio(seller)
-      seller.connect_melhor_envio!(
-        Marketplace::MelhorEnvioOauth::Credentials.new(access_token: "token", refresh_token: "refresh", expires_at: 30.days.from_now)
-      )
+    def connect_superfrete(seller)
+      seller.connect_superfrete!(access_token: "token", account: Marketplace::SuperfreteOauth::Account.new(id: "sf-1", email: nil))
     end
 
     def with_remote_quotes_enabled(value)

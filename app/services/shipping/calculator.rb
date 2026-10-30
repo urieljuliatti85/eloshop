@@ -36,16 +36,25 @@ module Shipping
     # a mesma opção quando o serviço mais barato também é o mais rápido.
     #
     # Frete grátis é uma promessa do vendedor ao cliente, não uma estimativa
-    # de custo — por isso vence mesmo quando há cotação real do provedor
-    # disponível, ao contrário do frete fixo (que só entra na ausência de
-    # cotação remota).
+    # de custo — por isso vence sempre, mesmo com cotação real disponível.
+    #
+    # Entre a cotação do provedor e o frete que o ateliê definiu no produto,
+    # quem escolhe é o ateliê (`Seller#provider_quotes_preferred`, falso por
+    # padrão): os termos comerciais dizem que o frete é definido pelo
+    # vendedor. Sem frete definido no produto, a cotação vem antes da tabela
+    # interna, que é só o último recurso.
     def quotes
       validate!
 
       delivery_quotes = if any_product_free_shipping?
         [ product_shipping_quote ]
       else
-        remote_quotes.presence || [ product_shipping_quote || fallback_quote ]
+        seller_defined = product_shipping_quote
+        if seller_defined && !seller.provider_quotes_preferred?
+          [ seller_defined ]
+        else
+          remote_quotes.presence || [ seller_defined || fallback_quote ]
+        end
       end
 
       all_products_allow_pickup? ? delivery_quotes + [ local_pickup_quote ] : delivery_quotes

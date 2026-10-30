@@ -1,7 +1,8 @@
 module Shipping
-  # Provedores de cotação de frete. Cada ateliê conecta no máximo um; o
-  # `Shipping::Calculator` pergunta aqui qual é, em vez de conhecer cada
-  # provedor pelo nome.
+  # Provedores de cotação de frete. Hoje só a SuperFrete (o Melhor Envio foi
+  # removido em 2026-10-30: só libera IP fixo, exclusivo e brasileiro, que a
+  # Railway não oferece). O `Shipping::Calculator` pergunta aqui qual é, em
+  # vez de conhecer o provedor pelo nome.
   module Providers
     # Falha de qualquer provedor: o Calculator registra e segue com o frete do
     # ateliê ou a tabela interna — a cotação real nunca derruba o checkout.
@@ -13,7 +14,7 @@ module Shipping
       return unless enabled?
       return unless seller
 
-      MelhorEnvio.new(seller: seller) if seller.melhor_envio_connected?
+      Superfrete.new(seller: seller) if seller.superfrete_connected?
     end
 
     # Chave por ambiente (`config.x.shipping.remote_quotes_enabled`). Em
