@@ -10,6 +10,17 @@ paths:
       tags:
       - Categories
       responses:
+        '401':
+          description: token ausente, inválido ou revogado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
         '200':
           description: categorias encontradas
           content:
@@ -77,6 +88,17 @@ paths:
         schema:
           type: string
       responses:
+        '401':
+          description: token ausente, inválido ou revogado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
         '200':
           description: produtos ativos encontrados
           content:
@@ -155,6 +177,17 @@ paths:
         schema:
           type: string
       responses:
+        '401':
+          description: token ausente, inválido ou revogado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
         '200':
           description: produto encontrado
           content:
@@ -217,6 +250,17 @@ paths:
       tags:
       - Sellers
       responses:
+        '401':
+          description: token ausente, inválido ou revogado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
         '200':
           description: ateliês encontrados
           content:
@@ -253,6 +297,17 @@ paths:
         schema:
           type: string
       responses:
+        '401':
+          description: token ausente, inválido ou revogado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
         '200':
           description: ateliê encontrado
           content:
@@ -281,3 +336,11 @@ paths:
                     type: string
                 required:
                 - error
+components:
+  securitySchemes:
+    bearer_auth:
+      type: http
+      scheme: bearer
+      description: Token emitido pelo admin em /admin/clientes-de-api.
+security:
+- bearer_auth: []

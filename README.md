@@ -63,8 +63,10 @@ bin/rails test:system                 # testes de sistema (Capybara + Selenium)
 
 ## Documentação de API
 
-Com o servidor rodando, a UI do Swagger fica em `/api-docs`, visível só para o
-admin da plataforma logado em `/session` (os demais recebem 404). O arquivo
+A API v1 exige um token emitido pelo admin em `/admin/clientes-de-api`, enviado
+como `Authorization: Bearer <token>`. Com o servidor rodando, a UI do Swagger
+fica em `/api-docs`: o admin logado em `/session` entra direto, e quem tem um
+token entra por HTTP Basic com o token como senha (o usuário é livre). O arquivo
 `swagger/v1/swagger.yaml` é gerado a partir dos specs em `spec/requests/`:
 
 ```bash

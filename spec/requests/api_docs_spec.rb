@@ -9,41 +9,63 @@ require "rails_helper"
 RSpec.describe "API docs (Swagger UI)", type: :request do
   DOC_PATHS = [ "/api-docs/index.html", "/api-docs/v1/swagger.yaml" ].freeze
 
-  # A API v1 é pública, mas a documentação não: só o admin da plataforma vê a
-  # página e a especificação. Os demais recebem 404 do roteador.
+  # Entra o admin logado ou quem tem um ApiClient ativo, por HTTP Basic com o
+  # token como senha. Os demais recebem 401 com o desafio Basic, para o
+  # navegador abrir a janela de login.
   describe "acesso" do
-    it "esconde a documentação de quem não está logado" do
+    def basic_auth(token, user: "cliente")
+      { "Authorization" => ActionController::HttpAuthentication::Basic.encode_credentials(user, token) }
+    end
+
+    def expect_basic_challenge
       DOC_PATHS.each do |path|
-        get path
-        expect(response).to have_http_status(:not_found), "esperava 404 em #{path}"
+        yield path
+        expect(response).to have_http_status(:unauthorized), "esperava 401 em #{path}"
+        expect(response.headers["WWW-Authenticate"]).to start_with("Basic")
       end
     end
 
-    it "esconde a documentação do vendedor" do
+    it "pede credencial a quem não está logado" do
+      expect_basic_challenge { |path| get path }
+    end
+
+    it "pede credencial ao vendedor" do
       sign_in_as(approved_seller.users.first)
 
-      DOC_PATHS.each do |path|
-        get path
-        expect(response).to have_http_status(:not_found), "esperava 404 em #{path}"
-      end
+      expect_basic_challenge { |path| get path }
     end
 
-    it "esconde a documentação do cliente logado" do
+    it "pede credencial ao cliente logado" do
       customer = Customer.create!(name: "Cliente", email: "cliente-docs@example.com", password: "password123")
       post customer_session_path, params: { email: customer.email, password: "password123" }
 
-      DOC_PATHS.each do |path|
-        get path
-        expect(response).to have_http_status(:not_found), "esperava 404 em #{path}"
-      end
+      expect_basic_challenge { |path| get path }
     end
 
-    it "esconde a documentação depois que o admin sai" do
+    it "pede credencial ao admin depois que ele sai" do
       sign_in_as(User.create!(email_address: "admin-docs-saida@eloshop.test", password: "password123"))
       sign_out
 
-      get "/api-docs/index.html"
-      expect(response).to have_http_status(:not_found)
+      expect_basic_challenge { |path| get path }
+    end
+
+    it "recusa token inválido ou revogado" do
+      revoked = ApiClient.create!(name: "Cliente revogado docs")
+      revoked.revoke!
+
+      [ "token-invalido", revoked.token ].each do |token|
+        expect_basic_challenge { |path| get path, headers: basic_auth(token) }
+      end
+    end
+
+    it "abre a documentação para o token ativo, com qualquer usuário" do
+      client = ApiClient.create!(name: "Cliente docs")
+
+      DOC_PATHS.each do |path|
+        get path, headers: basic_auth(client.token, user: "tanto-faz")
+        expect(response).to have_http_status(:ok), "esperava 200 em #{path}"
+      end
+      expect(client.reload.last_used_at).to be_present
     end
   end
 

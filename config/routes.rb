@@ -1,9 +1,8 @@
 Rails.application.routes.draw do
-  # A API v1 é pública, mas a documentação é só para o admin da plataforma.
-  constraints AdminSessionConstraint do
-    mount Rswag::Ui::Engine => "/api-docs"
-    mount Rswag::Api::Engine => "/api-docs"
-  end
+  # A documentação da API é do admin logado e de quem tem um ApiClient ativo
+  # (ver ApiDocsAuthentication); a API v1 exige o mesmo token.
+  mount ApiDocsAuthentication.new(Rswag::Ui::Engine) => "/api-docs"
+  mount ApiDocsAuthentication.new(Rswag::Api::Engine) => "/api-docs"
   resource :session
   resources :passwords, param: :token
 
@@ -72,6 +71,10 @@ Rails.application.routes.draw do
     resources :categories, except: %i[show]
 
     resources :coupons, except: %i[show]
+
+    resources :api_clients, path: "clientes-de-api", only: %i[index new create] do
+      member { patch :revoke }
+    end
 
     resources :mercado_pago_test_accounts, path: "contas-de-teste-mercado-pago", except: %i[show]
 

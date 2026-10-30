@@ -1,0 +1,21 @@
+<div class="space-y-8">
+  <header>
+    <p class="admin-section-label mb-2">Acesso</p>
+    <h1>Token de <%= @api_client.name %></h1>
+    <p class="mt-2 text-sm text-slate-500">Copie agora e entregue por um canal seguro. Ele não fica guardado e não aparece de novo; se perder, revogue e gere outro.</p>
+  </header>
+
+  <div class="admin-form space-y-4">
+    <div>
+      <label for="api_client_token">Token</label>
+      <input id="api_client_token" type="text" value="<%= @api_client.token %>" readonly class="w-full font-mono">
+    </div>
+
+    <div class="space-y-2 text-sm text-slate-600">
+      <p><strong>Na API v1:</strong> enviar o cabeçalho <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+      <p><strong>Na documentação</strong> (<%= link_to "/api-docs", "/api-docs", class: "underline" %>): o navegador pede usuário e senha. O usuário pode ser qualquer um; a senha é o token.</p>
+    </div>
+
+    <%= link_to "Voltar para os clientes", admin_api_clients_path, class: "admin-button admin-button--secondary" %>
+  </div>
+</div>
