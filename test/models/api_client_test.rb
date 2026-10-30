@@ -9,6 +9,21 @@ class ApiClientTest < ActiveSupport::TestCase
     assert_not_includes ApiClient.find(client.id).attributes.values, client.token
   end
 
+  test "o token começa com o prefixo da EloShop" do
+    client = ApiClient.create!(name: "Parceiro")
+
+    assert client.token.start_with?(ApiClient::TOKEN_PREFIX)
+    assert_operator client.token.delete_prefix(ApiClient::TOKEN_PREFIX).length, :>=, 32
+  end
+
+  test "token emitido antes do prefixo continua autenticando" do
+    legacy_token = SecureRandom.base58(32)
+    client = ApiClient.create!(name: "Parceiro antigo")
+    client.update_column(:token_digest, ApiClient.digest(legacy_token))
+
+    assert_equal client, ApiClient.authenticate(legacy_token)
+  end
+
   test "o token não volta depois de recarregar" do
     client = ApiClient.create!(name: "Parceiro")
 
