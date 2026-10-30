@@ -50,4 +50,21 @@ RSpec.describe "API v1 authentication", type: :request do
     expect(response).to have_http_status(:ok)
     expect(client.reload.last_used_at).to be_present
   end
+
+  it "identifica o cliente no log estruturado e no Sentry, pelo id" do
+    client = ApiClient.create!(name: "Cliente observado")
+    events = []
+    subscriber = Object.new
+    subscriber.define_singleton_method(:emit) { |event| events << event }
+    Rails.event.subscribe(subscriber)
+    allow(Sentry).to receive(:set_tags)
+
+    get "/api/v1/products", headers: { "Authorization" => "Bearer #{client.token}" }
+
+    completed = events.find { |event| event[:name] == "action_controller.request_completed" }
+    expect(completed[:context]).to include(api_client_id: client.id)
+    expect(Sentry).to have_received(:set_tags).with(api_client_id: client.id)
+  ensure
+    Rails.event.unsubscribe(subscriber)
+  end
 end

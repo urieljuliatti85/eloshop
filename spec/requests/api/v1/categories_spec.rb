@@ -29,6 +29,7 @@ RSpec.describe "api/v1/categories", type: :request do
       produces "application/json"
 
       documents_api_token_requirement
+      documents_rate_limit
 
       response "200", "categorias encontradas" do
         schema CATEGORY_LIST_SCHEMA

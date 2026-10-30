@@ -21,6 +21,22 @@ paths:
                     type: string
                 required:
                 - error
+        '429':
+          description: cota de requisições do token esgotada
+          headers:
+            Retry-After:
+              schema:
+                type: string
+              description: Segundos até a cota ser renovada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
         '200':
           description: categorias encontradas
           content:
@@ -60,7 +76,8 @@ paths:
       - name: page
         in: query
         required: false
-        description: Página da listagem (padrão 1)
+        description: 'Página da listagem: inteiro positivo, padrão 1. Além da última,
+          lista vazia'
         schema:
           type: integer
       - name: q
@@ -99,6 +116,36 @@ paths:
                     type: string
                 required:
                 - error
+        '429':
+          description: cota de requisições do token esgotada
+          headers:
+            Retry-After:
+              schema:
+                type: string
+              description: Segundos até a cota ser renovada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+        '400':
+          description: parâmetro inválido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  parameter:
+                    type: string
+                required:
+                - error
+                - parameter
         '200':
           description: produtos ativos encontrados
           content:
@@ -188,6 +235,22 @@ paths:
                     type: string
                 required:
                 - error
+        '429':
+          description: cota de requisições do token esgotada
+          headers:
+            Retry-After:
+              schema:
+                type: string
+              description: Segundos até a cota ser renovada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
         '200':
           description: produto encontrado
           content:
@@ -261,6 +324,22 @@ paths:
                     type: string
                 required:
                 - error
+        '429':
+          description: cota de requisições do token esgotada
+          headers:
+            Retry-After:
+              schema:
+                type: string
+              description: Segundos até a cota ser renovada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
         '200':
           description: ateliês encontrados
           content:
@@ -299,6 +378,22 @@ paths:
       responses:
         '401':
           description: token ausente, inválido ou revogado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+        '429':
+          description: cota de requisições do token esgotada
+          headers:
+            Retry-After:
+              schema:
+                type: string
+              description: Segundos até a cota ser renovada
           content:
             application/json:
               schema:

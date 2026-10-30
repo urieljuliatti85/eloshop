@@ -25,6 +25,24 @@ module ApiAuthenticationHelpers
         end
       end
     end
+
+    # Documenta e testa o 429: esgota a cota do token em outro endpoint antes
+    # da chamada, o que prova também que a cota é uma só para a API inteira.
+    def documents_rate_limit(**path_params)
+      response "429", "cota de requisições do token esgotada" do
+        schema type: :object, properties: { error: { type: :string } }, required: %w[error]
+        header "Retry-After", schema: { type: :string }, description: "Segundos até a cota ser renovada"
+
+        path_params.each { |name, value| let(name) { value } }
+        before do
+          Api::V1::BaseController::RATE_LIMIT.times { get "/api/v1/categories", headers: api_headers }
+        end
+
+        run_test! do |response|
+          expect(JSON.parse(response.body)).to eq("error" => "rate_limited")
+        end
+      end
+    end
   end
 end
 
