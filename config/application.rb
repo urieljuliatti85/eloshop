@@ -38,5 +38,10 @@ module Eloshop
     # mensagem de validação viraria "Translation missing" — o Rails traz as
     # dela apenas em inglês, e é de lá que elas continuam vindo.
     config.i18n.fallbacks = [ :en ]
+
+    # Cotação de frete em provedor externo (Shipping::Providers). Ligada fora
+    # de produção, onde os testes e o sandbox dependem dela; produção decide
+    # pela variável de ambiente (ver config/environments/production.rb).
+    config.x.shipping.remote_quotes_enabled = true
   end
 end

@@ -93,4 +93,9 @@ Rails.application.configure do
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+
+  # Desligada até ser ligada explicitamente: o lançamento usa o frete do
+  # ateliê, e um ateliê conectado a um app de sandbox não pode passar a cobrar
+  # preço de teste porque um provedor começou a aceitar as chamadas.
+  config.x.shipping.remote_quotes_enabled = ENV["SHIPPING_REMOTE_QUOTES_ENABLED"] == "true"
 end

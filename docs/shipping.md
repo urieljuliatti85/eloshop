@@ -133,6 +133,21 @@ vendedor no banco.
   destino e itens: trocar de endereço no checkout repete a mesma pergunta, e o
   rate limit do Melhor Envio não é documentado.
 
+**Provedor por ateliê e chave por ambiente (2026-10-30).** O `Calculator` não
+conhece mais o Melhor Envio pelo nome: pergunta a `Shipping::Providers.for(seller)`
+qual provedor o ateliê conectou, e todo erro de provedor é um
+`Shipping::Providers::Unavailable` (fallback, nunca erro de checkout). As
+cotações externas obedecem a `config.x.shipping.remote_quotes_enabled`: ligada
+fora de produção; em produção só com `SHIPPING_REMOTE_QUOTES_ENABLED=true` —
+desligada, o lançamento usa o frete do ateliê, e um ateliê conectado a um app de
+sandbox não passa a cobrar preço de teste porque um provedor começou a aceitar
+as chamadas. Com a chave desligada a conexão pelo painel também é recusada.
+`Checkout::CreateOrder` cota **antes** de abrir a transação: dentro dela, a
+chamada externa rodaria com os produtos travados (`lock!`), prendendo uma peça
+única para o próximo comprador enquanto a rede responde. O frete não depende do
+que a trava protege, e o valor continua recalculado no servidor pelo id da
+opção.
+
 `#quotes` devolve **a mais barata e a mais rápida** (uma só quando coincidem);
 `#call(quote_id:)` reencontra a escolhida. Os timeouts são curtos (3s para
 conectar, 5s para ler) porque isso roda dentro do checkout.

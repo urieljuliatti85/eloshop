@@ -42,10 +42,17 @@ module Checkout
     private
 
     def create_order!
+      # Cotado antes da transação, de propósito: a cotação pode chamar um
+      # provedor externo (timeouts de segundos), e dentro da transação ela
+      # rodaria com os produtos já travados — uma peça única ficaria presa
+      # para o próximo comprador enquanto a rede responde. O frete não
+      # depende de nada que a trava protege (estoque, preço do item); o valor
+      # continua recalculado no servidor a partir do id escolhido.
+      shipping = Shipping::Calculator.new(cart: @cart, address: @address).call(quote_id: @shipping_quote_id)
+
       Order.transaction do
         cart_items = lock_and_revalidate_cart_items!
         subtotal = subtotal_cents(cart_items)
-        shipping = Shipping::Calculator.new(cart: @cart, address: @address).call(quote_id: @shipping_quote_id)
         coupon = lock_and_revalidate_coupon!(subtotal)
         discount = coupon ? coupon.discount_cents_for(subtotal) : 0
 

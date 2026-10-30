@@ -46,12 +46,51 @@ module Checkout
       }.merge(attrs))
     end
 
+    # Troca o provedor que `Shipping::Providers.for` devolve, sem conexão
+    # real nem rede.
+    def with_shipping_provider(provider)
+      original = Shipping::Providers.method(:for)
+      Shipping::Providers.define_singleton_method(:for) { |_seller| provider }
+      yield
+    ensure
+      Shipping::Providers.define_singleton_method(:for, original)
+    end
+
     def build_coupon(**attrs)
       Coupon.create!({
         code: "PROMO#{SecureRandom.hex(4)}",
         discount_type: "percentage",
         percentage: 10
       }.merge(attrs))
+    end
+
+    # A cotação pode chamar um provedor externo. Feita com os produtos
+    # travados, uma peça única ficaria presa para o próximo comprador enquanto
+    # a rede responde.
+    test "quotes shipping before locking any row" do
+      product = build_product(stock_quantity: 1)
+      product.seller.update!(origin_zip_code: "01001000", origin_street: "Rua do Ateliê", origin_number: "10",
+        origin_neighborhood: "Centro", origin_city: "São Paulo", origin_state: "SP")
+      cart = build_cart_with_item(product, quantity: 1)
+
+      row_locks = []
+      quoted_while_locked = nil
+      provider = Object.new
+      provider.define_singleton_method(:quotes) do |**|
+        quoted_while_locked = row_locks.any?
+        [ Shipping::Quote.new(carrier: "Correios", service: "PAC", shipping_cents: 2068, estimated_days: 8) ]
+      end
+      track_locks = ->(*, payload) { row_locks << payload[:sql] if payload[:sql].to_s.include?("FOR UPDATE") }
+
+      order = with_shipping_provider(provider) do
+        ActiveSupport::Notifications.subscribed(track_locks, "sql.active_record") do
+          CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+        end
+      end
+
+      assert_equal false, quoted_while_locked
+      assert row_locks.any?, "o checkout deveria travar o produto depois de cotar"
+      assert_equal 2068, order.shipping_cents
     end
 
     test "creates the order and items, debits stock, and empties the cart" do

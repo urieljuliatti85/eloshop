@@ -2,6 +2,10 @@ module SellerPortal
   class MelhorEnvioConnectionsController < BaseController
     OAUTH_STATE_TTL = 10.minutes
 
+    # Com as cotações externas desligadas no ambiente, conectar não teria
+    # efeito — e em produção gravaria tokens de um app de sandbox.
+    before_action :require_remote_quotes_enabled, only: %i[create callback]
+
     def create
       state = SecureRandom.urlsafe_base64(32)
       session[:melhor_envio_oauth_state_digest] = Digest::SHA256.hexdigest(state)
@@ -33,6 +37,12 @@ module SellerPortal
     end
 
     private
+
+    def require_remote_quotes_enabled
+      return if Shipping::Providers.enabled?
+
+      redirect_to seller_atelier_path, alert: "A conexão com o Melhor Envio está indisponível no momento. O frete dos seus produtos segue o valor que você definiu."
+    end
 
     def oauth
       @oauth ||= Marketplace::MelhorEnvioOauth.new

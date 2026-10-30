@@ -12,7 +12,7 @@ module Shipping
     # conta única da plataforma cotando por todo mundo (ADR 005: a carteira
     # pré-paga é de cada artesão).
     class MelhorEnvio
-      class Unavailable < StandardError; end
+      class Unavailable < Providers::Unavailable; end
 
       PRODUCTION_HOST = "melhorenvio.com.br"
       SANDBOX_HOST = "sandbox.melhorenvio.com.br"
@@ -25,7 +25,7 @@ module Shipping
       READ_TIMEOUT = 5
 
       # O Melhor Envio pede o User-Agent com nome e contato da aplicação.
-      USER_AGENT = "EloShop (contato@eloshop.com.br)".freeze
+      USER_AGENT = "EloShop (contato@eloshop.shop)".freeze
 
       def initialize(seller:, access_token_service: Marketplace::MelhorEnvioAccessToken)
         @seller = seller
