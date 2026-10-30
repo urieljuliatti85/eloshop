@@ -13,9 +13,13 @@ require "rails_helper"
 # Testes estão fora da varredura: as suítes abrem as vendas no banco de teste
 # (`spec/rails_helper.rb`, fixture do Minitest), que nunca sobe.
 RSpec.describe "Guarda da abertura das vendas" do
-  SCANNED_PATHS = %w[app lib db config bin script].freeze
+  SCANNED_PATHS = %w[app lib db config script].freeze
   SCANNED_EXTENSIONS = %w[.rb .rake .erb .yml .sql].freeze
-  SCANNED_SCRIPTS = %w[bin/docker-entrypoint Dockerfile].freeze
+  # Lidos inteiros, sem filtro de extensão: os scripts de `bin/` não têm
+  # extensão (`bin/setup` roda o db:prepare) e `.railway/railway.ts` é a
+  # configuração do serviço — um `preDeployCommand` ali rodaria em todo deploy.
+  SCANNED_WHOLE_PATHS = %w[bin .railway].freeze
+  SCANNED_SCRIPTS = %w[Dockerfile Procfile*].freeze
 
   OPEN_SALES_CALLERS = %w[
     app/controllers/admin/sales_openings_controller.rb
@@ -44,7 +48,8 @@ RSpec.describe "Guarda da abertura das vendas" do
   def shipped_files
     files = SCANNED_PATHS.flat_map { |dir| Dir.glob(Rails.root.join(dir, "**", "*")) }
       .select { |path| File.file?(path) && SCANNED_EXTENSIONS.include?(File.extname(path)) }
-    files += SCANNED_SCRIPTS.map { |path| Rails.root.join(path).to_s }.select { |path| File.file?(path) }
+    files += SCANNED_WHOLE_PATHS.flat_map { |dir| Dir.glob(Rails.root.join(dir, "**", "*")) }.select { |path| File.file?(path) }
+    files += SCANNED_SCRIPTS.flat_map { |pattern| Dir.glob(Rails.root.join(pattern)) }.select { |path| File.file?(path) }
     files.map { |path| Pathname(path).relative_path_from(Rails.root).to_s } - [ "db/schema.rb" ]
   end
 
@@ -71,12 +76,17 @@ RSpec.describe "Guarda da abertura das vendas" do
 
     expect(seeds).not_to be_empty
     # Mais estrito que os demais: nos seeds nem a leitura tem motivo de estar.
-    only_seeds = shipped_files - seeds
-    expect(offenders([ /\bopen_sales!/, /\bsales_opened_at\b/ ], only_seeds)).to be_empty
+    everything_but_seeds = shipped_files - seeds
+    expect(offenders([ /\bopen_sales!/, /\bsales_opened_at\b/ ], everything_but_seeds)).to be_empty
   end
 
   # Se a varredura parasse de reconhecer as formas de escrita, os exemplos
   # acima passariam sem proteger nada.
+  it "varre a configuração de deploy e os scripts de bin sem extensão" do
+    expect(shipped_files).to include(".railway/railway.ts", "bin/setup", "bin/docker-entrypoint", "Dockerfile")
+    expect(%(preDeployCommand: "bin/rails runner 'PlatformSetting.open_sales!'")).to match(/\bopen_sales!/)
+  end
+
   it "reconhece as formas de escrita e ignora as leituras" do
     writes = [
       "PlatformSetting.instance.update!(sales_opened_at: Time.current)",
