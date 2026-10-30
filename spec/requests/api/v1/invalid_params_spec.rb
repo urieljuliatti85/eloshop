@@ -38,8 +38,8 @@ RSpec.describe "API v1 parâmetros inválidos da listagem", type: :request do
     expect(body["total_count"]).to be_positive
   end
 
-  it "aceita page e filtros vazios ou ausentes" do
-    get "/api/v1/products?page=1&q=&availability=", headers: api_headers
+  it "trata page e filtros vazios como ausentes" do
+    get "/api/v1/products?page=&q=&availability=", headers: api_headers
 
     expect(response).to have_http_status(:ok)
     expect(JSON.parse(response.body)["products"].map { |p| p["slug"] }).to include(product.slug)

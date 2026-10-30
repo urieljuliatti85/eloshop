@@ -5,7 +5,6 @@ module Api
       TEXT_FILTERS = %i[q seller category availability].freeze
 
       before_action :validate_listing_params, only: :index
-      helper_method :sales_open?
 
       def index
         scope = filtered_scope
@@ -44,7 +43,7 @@ module Api
       def validate_listing_params
         invalid = TEXT_FILTERS.find { |name| params.key?(name) && !params[name].is_a?(String) }
         invalid ||= :availability if params[:availability].present? && !Product.availability_types.key?(params[:availability])
-        invalid ||= :page if params.key?(:page) && requested_page.nil?
+        invalid ||= :page if params[:page].present? && requested_page.nil?
 
         render_invalid_parameter invalid.to_s if invalid
       end
@@ -53,15 +52,6 @@ module Api
       def requested_page
         page = Integer(params[:page], 10, exception: false) if params[:page].is_a?(String)
         page if page&.positive?
-      end
-
-      # `available_for_purchase?` diz se a peça é vendável; com as vendas da
-      # plataforma fechadas (pré-cadastro) a loja ainda recusa o carrinho, e a
-      # API não pode prometer o contrário. Lido uma vez por requisição, não por
-      # produto da página.
-      def sales_open?
-        @sales_open = PlatformSetting.sales_open? if @sales_open.nil?
-        @sales_open
       end
 
       # Um subconjunto dos filtros do catálogo do storefront, sobre o mesmo
