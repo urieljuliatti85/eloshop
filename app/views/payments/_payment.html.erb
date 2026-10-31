@@ -44,8 +44,15 @@
                     class: "mb-6 w-56 rounded-xl border border-gray-200" %>
     <% end %>
 
-    <p class="mb-2 text-sm font-semibold text-ink">Código copia-e-cola</p>
-    <p class="mb-6 break-all rounded-xl bg-gray-50 px-4 py-3 font-mono text-xs text-ink-muted"><%= payment.pix_qr_code %></p>
+    <div class="mb-6" data-controller="clipboard">
+      <p class="mb-2 text-sm font-semibold text-ink" id="pix-code-label">Código copia-e-cola</p>
+      <p class="break-all rounded-xl bg-gray-50 px-4 py-3 font-mono text-xs text-ink" aria-labelledby="pix-code-label" data-clipboard-target="source"><%= payment.pix_qr_code %></p>
+      <button type="button" data-action="clipboard#copy"
+              class="mt-3 inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-full bg-brand-600 px-6 text-sm font-semibold text-white hover:bg-brand-700 sm:w-auto">
+        Copiar código PIX
+      </button>
+      <p class="mt-2 text-sm text-ink" role="status" aria-live="polite" data-clipboard-target="status"></p>
+    </div>
 
     <% if payment.expires_at.present? %>
       <p class="text-sm text-ink-muted">Válido até <%= l payment.expires_at, format: :short %>.</p>
@@ -55,7 +62,7 @@
       Este é um gateway de pagamento simulado. Use os botões abaixo para simular a resposta do gateway.
     </p>
 
-    <div class="flex gap-4">
+    <div class="flex flex-wrap gap-4">
       <% %w[approved declined].each do |status| %>
         <%= form_with url: fake_gateway_webhook_path, method: :post do |form| %>
           <%= form.hidden_field :event_id, value: SecureRandom.hex(10) %>

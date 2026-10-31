@@ -1,5 +1,11 @@
 class SellerOrder < ApplicationRecord
+  has_paper_trail only: %i[status refunded_amount_cents platform_fee_refunded_cents]
+
   PLATFORM_FEE_RATE_BPS = 1_500
+  # Comissão de lançamento: vale nos primeiros meses depois da aprovação do
+  # vendedor (ver `Seller::LAUNCH_FEE_PERIOD`). O pedido grava a taxa que
+  # valeu no momento da compra em `platform_fee_rate_bps`.
+  LAUNCH_PLATFORM_FEE_RATE_BPS = 800
   BASIS_POINTS = 10_000
   MESSAGEABLE_STATUSES = %w[confirmed partially_refunded refunded].freeze
 
@@ -32,6 +38,13 @@ class SellerOrder < ApplicationRecord
     numerator = commission_base_cents * rate_bps
     quotient, remainder = numerator.divmod(BASIS_POINTS)
     quotient + (remainder >= BASIS_POINTS / 2 ? 1 : 0)
+  end
+
+  # O que o artesão recebe por este pedido depois de reembolsos: reembolso
+  # tira o valor devolvido ao cliente, mas devolve a parte proporcional da
+  # comissão. Mesma conta da conciliação do admin (Admin::FinancialsController).
+  def seller_net_amount_cents
+    seller_amount_cents - refunded_amount_cents + platform_fee_refunded_cents
   end
 
   def commission_base_cents

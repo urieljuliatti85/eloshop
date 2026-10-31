@@ -71,6 +71,21 @@ class ShipmentTest < ActiveSupport::TestCase
     assert_nil @shipment.reload.customer_reported_delivered_at
   end
 
+  # O cliente pode clicar de novo: a data do primeiro aviso fica, e o retorno
+  # `false` impede o controller de repetir e-mail e notificação ao artesão.
+  test "a repeated customer delivery report keeps the first date and returns false" do
+    @seller_order.update!(status: :confirmed)
+    @shipment.mark_shipped!
+
+    assert @shipment.report_delivered_by_customer!
+    first_report = @shipment.reload.customer_reported_delivered_at
+
+    travel 1.hour do
+      assert_not @shipment.report_delivered_by_customer!
+    end
+    assert_equal first_report, @shipment.reload.customer_reported_delivered_at
+  end
+
   test "the seller can still officially confirm delivery after the customer's report" do
     @seller_order.update!(status: :confirmed)
     @shipment.mark_shipped!

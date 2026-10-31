@@ -1,0 +1,9 @@
+<%# Ateliê que aparece na loja mas ainda não vende (vitrine do pré-cadastro,
+    ou aprovado que desconectou o Mercado Pago), com as vendas da plataforma
+    já abertas: os clientes veem as peças e não conseguem comprar. %>
+<section class="rounded-[1.75rem] border border-amber-300 bg-amber-50 px-7 py-6 text-amber-950" aria-labelledby="not-accepting-orders-title">
+  <h2 id="not-accepting-orders-title" class="text-lg font-bold">Sua loja está visível, mas ainda não recebe pedidos.</h2>
+  <p class="mt-2 max-w-2xl text-sm leading-6">As vendas da EloShop abriram. Conecte o Mercado Pago e aguarde a aprovação para começar a vender.</p>
+  <%= link_to "Ver primeiros passos", seller_getting_started_path,
+        class: "mt-4 inline-flex min-h-11 items-center rounded-full bg-amber-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-950" %>
+</section>

@@ -10,4 +10,4 @@ Disallow: /passwords
 Disallow: /wishlist
 Allow: /
 
-Sitemap: /sitemap.xml
+Sitemap: https://eloshop.shop/sitemap.xml

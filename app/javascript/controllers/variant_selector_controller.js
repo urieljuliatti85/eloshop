@@ -27,7 +27,8 @@ export default class extends Controller {
     }
 
     this.stockNoticeTarget.textContent = this.noticeFor(variant)
-    this.submitTarget.disabled = !variant || variant.stockQuantity <= 0
+    // Sem botão de compra no pré-cadastro (ver products/_sales_soon).
+    if (this.hasSubmitTarget) this.submitTarget.disabled = !variant || variant.stockQuantity <= 0
   }
 
   findVariant() {

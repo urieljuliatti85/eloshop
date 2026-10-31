@@ -13,4 +13,4 @@ Para regenerar `swagger/v1/swagger.yaml` a partir dos specs:
 bin/rails rswag:specs:swaggerize
 ```
 
-A UI do Swagger fica disponível em `/api-docs` com o servidor rodando.
+A UI do Swagger fica disponível em `/api-docs` com o servidor rodando, para o admin da plataforma logado ou por HTTP Basic com um token de `ApiClient` como senha. Toda spec rswag da API v1 define `let(:Authorization)` (o esquema `bearer_auth` é global no `swagger_helper.rb`) e chama `documents_api_token_requirement` para documentar o 401.

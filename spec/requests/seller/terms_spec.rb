@@ -12,6 +12,14 @@ RSpec.describe "Seller commercial terms", type: :request do
     expect(response.body).to include("chargebacks")
   end
 
+  it "states the launch commission and what changed in this version" do
+    get seller_terms_path
+
+    expect(response.body).to include("O que mudou nesta versão")
+    expect(response.body).to include("8% (oito por cento)")
+    expect(response.body).to include("15% (quinze por")
+  end
+
   it "shows the acceptance form to a signed-in seller" do
     sign_in_without_terms(user)
 

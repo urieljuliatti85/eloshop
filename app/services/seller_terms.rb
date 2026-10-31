@@ -1,8 +1,8 @@
 class SellerTerms
-  VERSION = "seller-marketplace-v1-2026-09-22".freeze
+  VERSION = "seller-marketplace-v2-2026-10-03".freeze
 
   TEXT = <<~TEXT.freeze
-    TERMOS COMERCIAIS DO MARKETPLACE ELOSHOP — VERSÃO 2026-09-22
+    TERMOS COMERCIAIS DO MARKETPLACE ELOSHOP — VERSÃO 2026-10-03
 
     1. Objeto e independência comercial
     A EloShop opera uma plataforma tecnológica e de marketplace para divulgação,
@@ -13,9 +13,14 @@ class SellerTerms
     garantia de volume mínimo de vendas.
 
     2. Comissão e base de cálculo
-    A comissão da EloShop é de 15% (quinze por cento) do subtotal dos produtos
-    efetivamente vendidos, após descontos aplicados ao pedido. O frete não
-    integra a base de cálculo da comissão. A comissão e os valores do pedido
+    A comissão da EloShop é de 8% (oito por cento) do subtotal dos produtos
+    efetivamente vendidos, após descontos aplicados ao pedido, durante os 3
+    (três) primeiros meses contados da data de aprovação do artesão pela
+    EloShop. Encerrado esse prazo, a comissão passa a ser de 15% (quinze por
+    cento) sobre a mesma base. A taxa aplicável é a vigente no momento da
+    compra e fica registrada no pedido; pedidos já realizados não mudam de
+    taxa. Não há mensalidade, no momento. O frete não integra a base de
+    cálculo da comissão. A comissão e os valores do pedido
     são calculados em centavos e registrados no pedido e no SellerOrder.
 
     3. Tarifas e recebimento

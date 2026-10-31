@@ -1,0 +1,15 @@
+<%# Tour guiado do painel numa bolinha flutuante, no vermelho da EloShop:
+    sempre à mão, sem ocupar um bloco da página. O rótulo fica em cima da
+    bolinha, dentro do mesmo botão (clicar no texto também abre o tour, e ele
+    é o nome acessível): quem ainda não fez vê "Faça o tour", quem já
+    concluiu vê "Refaça o tour". O `tour#start` é o mesmo botão da página
+    Primeiros passos. A posição fixa é de quem a renderiza (no painel
+    inicial, junto do "Voltar ao topo"). %>
+<% label = current_seller.tour_completed_at.present? ? "Refaça o tour" : "Faça o tour" %>
+<button type="button" data-action="tour#start"
+        class="group inline-flex cursor-pointer flex-col items-center gap-1.5 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-600">
+  <span class="rounded-full bg-white px-2.5 py-1 text-xs font-bold whitespace-nowrap text-brand-700 shadow-sm ring-1 ring-brand-100"><%= label %></span>
+  <span class="inline-flex size-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-[0_8px_24px_rgba(120,40,10,0.28)] ring-4 ring-white transition group-hover:bg-brand-700">
+    <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg>
+  </span>
+</button>

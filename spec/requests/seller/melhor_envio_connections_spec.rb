@@ -10,22 +10,24 @@ RSpec.describe "Seller Melhor Envio connection", type: :request do
     allow(Marketplace::MelhorEnvioOauth).to receive(:new).and_return(oauth)
   end
 
-  it "shows the connection action on the atelier page when OAuth is configured" do
-    get seller_atelier_path
+  [ true, false ].each do |configured|
+    it "shows the in-development notice instead of the connection action (OAuth configured: #{configured})" do
+      allow(oauth).to receive(:configured?).and_return(configured)
 
-    expect(response).to have_http_status(:ok)
-    connect_link = Nokogiri::HTML(response.body).at_css("a[href='#{seller_melhor_envio_connect_path}']")
-    expect(connect_link.text).to eq("Conectar Melhor Envio")
-    expect(connect_link["data-turbo"]).to eq("false")
+      get seller_atelier_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("estamos preparando soluções para facilitar as suas entregas")
+      expect(Nokogiri::HTML(response.body).at_css("a[href='#{seller_melhor_envio_connect_path}']")).to be_nil
+    end
   end
 
-  it "warns when the platform has not configured the application yet" do
-    allow(oauth).to receive(:configured?).and_return(false)
+  it "still lets an already connected seller disconnect" do
+    seller.connect_melhor_envio!(Marketplace::MelhorEnvioOauth::Credentials.new(access_token: "access", refresh_token: "refresh", expires_at: 30.days.from_now))
 
     get seller_atelier_path
 
-    expect(response.body).to include("aguarda a configuração da aplicação Melhor Envio")
-    expect(Nokogiri::HTML(response.body).at_css("a[href='#{seller_melhor_envio_connect_path}']")).to be_nil
+    expect(Nokogiri::HTML(response.body).at_css("form[action='#{seller_melhor_envio_connection_path}']")).to be_present
   end
 
   it "starts authorization with an unpredictable state" do

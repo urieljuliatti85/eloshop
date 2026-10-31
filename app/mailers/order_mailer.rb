@@ -67,4 +67,19 @@ class OrderMailer < ApplicationMailer
       subject: "Pedido ##{@order.id} marcado como entregue — EloShop"
     )
   end
+
+  # Avisa o comprador de que o reembolso foi solicitado ao meio de pagamento. A
+  # EloShop só garante a solicitação: o prazo para o valor aparecer é do PIX ou
+  # do cartão, então o texto não promete data.
+  def refund_processed(payment_refund)
+    @refund = payment_refund
+    @payment = payment_refund.payment
+    @order = @payment.order
+    @fully_refunded = @payment.refunded?
+
+    mail(
+      to: @order.customer.email,
+      subject: "Reembolso do pedido ##{@order.id} — EloShop"
+    )
+  end
 end

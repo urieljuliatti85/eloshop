@@ -48,7 +48,7 @@ class ReviewModerationTest < ApplicationSystemTestCase
     fill_in "E-mail", with: seller_user.email_address
     fill_in "Senha", with: "password123"
     click_button "Entrar"
-    assert_text "Crie, publique e acompanhe cada venda"
+    assert_text "O que fazer agora"
 
     visit seller_reviews_path
     assert_text "Chegou rápido e muito bem embalado"

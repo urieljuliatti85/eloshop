@@ -95,14 +95,14 @@ module Checkout
         product.lock!
 
         if cart_item.product_variant
-          raise Failed, "#{product.name} não está mais disponível." unless product.available_for_purchase?
+          raise Failed, "#{product.name} não está mais disponível. Remova do carrinho para continuar." unless product.available_for_purchase?
 
           lock_and_validate_variant!(cart_item)
         else
-          raise Failed, "#{product.name} não está mais disponível." unless product.available_for_purchase?
+          raise Failed, "#{product.name} não está mais disponível. Remova do carrinho para continuar." unless product.available_for_purchase?
 
           if !product.availability_type_made_to_order? && cart_item.quantity > product.stock_quantity
-            raise Failed, "Estoque insuficiente para #{product.name}."
+            raise Failed, "Estoque insuficiente para #{product.name}. Diminua a quantidade no carrinho."
           end
         end
       end
@@ -134,14 +134,16 @@ module Checkout
 
       label = "#{cart_item.product.name} (#{variant.to_label})"
 
-      raise Failed, "#{label} não está mais disponível." unless variant.available_for_purchase?
-      raise Failed, "Estoque insuficiente para #{label}." if cart_item.quantity > variant.stock_quantity
+      raise Failed, "#{label} não está mais disponível. Remova do carrinho para continuar." unless variant.available_for_purchase?
+      raise Failed, "Estoque insuficiente para #{label}. Diminua a quantidade no carrinho." if cart_item.quantity > variant.stock_quantity
     end
 
     def create_seller_order!(order, seller, shipping)
+      platform_fee_rate_bps = seller.platform_fee_rate_bps
       platform_fee_cents = SellerOrder.platform_fee_cents_for(
         subtotal_cents: order.subtotal_cents,
-        discount_cents: order.discount_cents
+        discount_cents: order.discount_cents,
+        rate_bps: platform_fee_rate_bps
       )
 
       order.seller_orders.create!(
@@ -152,6 +154,7 @@ module Checkout
         discount_cents: order.discount_cents,
         shipping_cents: shipping.shipping_cents,
         total_cents: order.total_cents,
+        platform_fee_rate_bps: platform_fee_rate_bps,
         platform_fee_cents: platform_fee_cents,
         seller_amount_cents: order.total_cents - platform_fee_cents
       )

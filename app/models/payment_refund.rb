@@ -1,4 +1,5 @@
 class PaymentRefund < ApplicationRecord
+  has_paper_trail ignore: %i[updated_at]
   belongs_to :payment
 
   enum :status, {

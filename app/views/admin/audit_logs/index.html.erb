@@ -1,0 +1,69 @@
+<div class="space-y-8">
+  <header>
+    <p class="admin-section-label mb-2">Plataforma</p>
+    <h1>Auditoria</h1>
+    <p class="mt-2 text-sm text-slate-500">
+      Quem mudou o quê, e quando, em artesãos, produtos, cupons, pedidos e reembolsos. Mudanças feitas pelo sistema
+      (webhooks, jobs, checkout) aparecem sem autor. Estoque e uso de cupom não são registrados.
+    </p>
+  </header>
+
+  <nav class="flex flex-wrap gap-2" aria-label="Filtrar por tipo">
+    <% all = @type.nil? %>
+    <%= link_to "Todos", admin_audit_logs_path(author: params[:author].presence), class: "admin-button #{all ? 'admin-button--primary' : 'admin-button--secondary'}", aria: { current: ("page" if all) } %>
+    <% Admin::AuditLogsController::TYPES.each do |type, label| %>
+      <% active = @type == type %>
+      <%= link_to label, admin_audit_logs_path(type: type, author: params[:author].presence), class: "admin-button #{active ? 'admin-button--primary' : 'admin-button--secondary'}", aria: { current: ("page" if active) } %>
+    <% end %>
+    <% if params[:author].present? %>
+      <%= link_to "Limpar filtro de autor", admin_audit_logs_path(type: @type), class: "admin-link self-center text-sm" %>
+    <% end %>
+  </nav>
+
+  <% if @versions.any? %>
+    <div class="admin-table-wrap">
+      <table>
+        <thead><tr><th>Quando</th><th>Quem</th><th>O quê</th><th>Mudanças</th></tr></thead>
+        <tbody>
+          <% @versions.each do |version| %>
+            <% author = @authors[version.whodunnit.to_s] %>
+            <% item = @items.dig(version.item_type, version.item_id) %>
+            <tr>
+              <td class="whitespace-nowrap"><%= l(version.created_at, format: :short) %></td>
+              <td>
+                <% if author %>
+                  <%= link_to author.email_address, admin_audit_logs_path(type: @type, author: author.id), class: "admin-link" %>
+                <% elsif version.whodunnit.present? %>
+                  <span class="text-slate-500">Usuário removido (#<%= version.whodunnit %>)</span>
+                <% else %>
+                  <span class="text-slate-500">Sistema</span>
+                <% end %>
+              </td>
+              <td>
+                <p class="font-semibold text-slate-900"><%= Admin::AuditLogsController::TYPES.fetch(version.item_type, version.item_type) %> #<%= version.item_id %></p>
+                <p class="text-sm text-slate-500">
+                  <%= audit_event_label(version.event) %><% if item.respond_to?(:name) %> · <%= item.name %><% end %>
+                </p>
+              </td>
+              <td>
+                <% changes = version.object_changes.to_h %>
+                <% if changes.any? %>
+                  <ul class="space-y-1 text-sm text-slate-600">
+                    <% changes.each do |field, (before, after)| %>
+                      <li><span class="font-semibold text-slate-900"><%= field %></span>: <%= audit_value(before) %> → <%= audit_value(after) %></li>
+                    <% end %>
+                  </ul>
+                <% else %>
+                  <span class="text-sm text-slate-500">—</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <%= render "admin/shared/pagination", pagination: @pagination %>
+  <% else %>
+    <div class="admin-empty-state">Nenhuma mudança registrada ainda.</div>
+  <% end %>
+</div>

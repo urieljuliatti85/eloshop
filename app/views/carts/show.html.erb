@@ -4,9 +4,11 @@
   <%# Título num cartão sólido, como as seções da home: sobre a paisagem
       direta o texto escuro perderia contraste em algumas regiões da foto. %>
   <div class="inline-block rounded-2xl bg-white/90 px-5 py-3 shadow-sm backdrop-blur-sm">
-    <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Sacola</p>
+    <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Sua compra</p>
     <h1 class="mt-1 text-4xl font-bold text-ink">Carrinho</h1>
   </div>
+
+  <%= render "pre_launch_banner" unless sales_open? %>
 
   <% if @cart.cart_items.empty? %>
     <div class="mt-8 inline-block rounded-2xl bg-white/90 px-5 py-4 shadow-sm backdrop-blur-sm">
@@ -19,7 +21,7 @@
           precisa de um fundo opaco próprio, senão o texto e as bordas finas
           (divide-y, border-gray) competem com a paisagem atrás. %>
       <div class="rounded-[2rem] bg-white/90 p-6 shadow-sm backdrop-blur-sm sm:p-8 lg:col-span-2">
-        <div class="hidden grid-cols-[88px_1fr_110px_140px_100px] gap-4 border-b border-gray-200 pb-4 text-xs font-semibold uppercase tracking-wider text-ink-muted sm:grid">
+        <div class="hidden grid-cols-[88px_1fr_110px_152px_100px] gap-4 border-b border-gray-200 pb-4 text-xs font-semibold uppercase tracking-wider text-ink-muted sm:grid">
           <span></span>
           <span>Produto</span>
           <span class="text-right">Preço</span>
@@ -29,15 +31,11 @@
 
         <div class="divide-y divide-gray-100">
           <% @cart.cart_items.includes({ product: :seller }, :product_variant).each do |item| %>
-            <div class="grid grid-cols-[88px_1fr] items-center gap-4 py-8 sm:grid-cols-[88px_1fr_110px_140px_100px]">
-              <div class="relative h-22 w-22 flex-none overflow-hidden rounded-2xl bg-mist-100">
+            <div class="grid grid-cols-[88px_1fr] items-center gap-x-4 gap-y-2 py-6 sm:grid-cols-[88px_1fr_110px_152px_100px]">
+              <div class="h-22 w-22 flex-none self-start overflow-hidden rounded-2xl bg-mist-100 max-sm:row-span-3">
                 <% if item.product.main_image.attached? %>
-                  <%= image_tag item.product.main_image, class: "h-full w-full object-cover", alt: item.product.name %>
+                  <%= image_tag item.product.main_image.variant(resize_to_fill: [ 176, 176 ]), class: "h-full w-full object-cover", alt: item.product.name, width: 88, height: 88 %>
                 <% end %>
-
-                <%= button_to "×", cart_item_path(item), method: :delete,
-                      class: "absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white text-ink shadow hover:bg-red-50 hover:text-red-700",
-                      form: { aria: { label: "Remover #{item.product.name}" } } %>
               </div>
 
               <div>
@@ -48,30 +46,39 @@
                 <% item.personalization_entries.each do |entry| %>
                   <p class="text-sm text-ink-muted"><%= entry[:label] %>: <%= entry[:value] %></p>
                 <% end %>
+                <% if (production = item.product.production_time_range) %>
+                  <p class="text-sm font-medium text-ink">Sob encomenda: produção de <%= production %></p>
+                <% end %>
                 <p class="mt-1 text-sm text-ink-muted sm:hidden">
                   <%= format_price(item.unit_price_cents) %>
                 </p>
+                <%= button_to "Remover", cart_item_path(item), method: :delete,
+                      form_class: "mt-1",
+                      class: "-ml-2 inline-flex min-h-11 cursor-pointer items-center rounded-full px-2 text-sm font-semibold text-ink-muted underline-offset-4 hover:text-red-700 hover:underline",
+                      aria: { label: "Remover #{item.product.name} do carrinho" } %>
               </div>
 
               <p class="hidden text-right text-sm text-ink-muted sm:block">
                 <%= format_price(item.unit_price_cents) %>
               </p>
 
-              <div class="flex items-center gap-3 sm:justify-center">
+              <div class="col-start-2 flex items-center gap-2 sm:col-start-auto sm:justify-center">
                 <% if item.quantity > 1 %>
                   <%= button_to "−", cart_item_path(item), method: :patch, params: { quantity: item.quantity - 1 },
-                        class: "flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-gray-300 text-ink hover:border-brand-500 hover:text-brand-600" %>
+                        aria: { label: "Diminuir a quantidade de #{item.product.name}" },
+                        class: "flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-gray-300 text-ink hover:border-brand-500 hover:text-brand-600" %>
                 <% else %>
-                  <span class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-100 text-gray-300">−</span>
+                  <span class="flex h-11 w-11 items-center justify-center rounded-full border border-gray-100 text-gray-300" aria-hidden="true">−</span>
                 <% end %>
 
-                <span class="w-6 text-center text-sm font-medium text-ink"><%= item.quantity %></span>
+                <span class="w-6 text-center text-sm font-medium text-ink"><span class="sr-only">Quantidade: </span><%= item.quantity %></span>
 
                 <%= button_to "+", cart_item_path(item), method: :patch, params: { quantity: item.quantity + 1 },
-                      class: "flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-gray-300 text-ink hover:border-brand-500 hover:text-brand-600" %>
+                      aria: { label: "Aumentar a quantidade de #{item.product.name}" },
+                      class: "flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-gray-300 text-ink hover:border-brand-500 hover:text-brand-600" %>
               </div>
 
-              <p class="text-right font-medium text-ink"><%= format_price(item.subtotal_cents) %></p>
+              <p class="text-right font-medium text-ink max-sm:col-start-2 max-sm:text-left"><span class="sr-only">Total do item: </span><%= format_price(item.subtotal_cents) %></p>
             </div>
           <% end %>
         </div>
@@ -93,7 +100,7 @@
             </p>
           <% else %>
             <%= form_with url: apply_coupon_cart_path, method: :post, class: "flex gap-2" do %>
-              <%= text_field_tag :code, nil, placeholder: "Cupom de desconto", class: "min-w-0 flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm" %>
+              <%= text_field_tag :code, nil, placeholder: "Cupom de desconto", aria: { label: "Código do cupom de desconto" }, class: "min-w-0 flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm" %>
               <%= submit_tag "Aplicar", class: "rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold hover:border-brand-500" %>
             <% end %>
           <% end %>
@@ -102,9 +109,16 @@
           <p class="mt-2 text-3xl font-bold text-ink">
             <%= number_to_currency((@cart.subtotal_cents - @cart.discount_cents) / 100.0) %>
           </p>
-          <p class="mt-1 text-sm text-ink-muted">Frete calculado no checkout.</p>
+          <p class="mt-1 text-sm text-ink-muted">Frete e prazo de entrega calculados pelo seu CEP na próxima etapa.</p>
+          <% if (production_max_days = @cart.production_time_max_days) %>
+            <p class="mt-2 text-sm text-ink">Há peça sob encomenda: o envio sai depois da produção, em até <%= production_max_days %> dias úteis.</p>
+          <% end %>
 
-          <%= link_to "Finalizar compra", new_order_path, class: "mt-8 block w-full rounded-full bg-brand-500 px-8 py-4 text-center text-sm font-semibold text-white hover:bg-brand-600" %>
+          <% if sales_open? %>
+            <%= link_to "Finalizar compra", new_order_path, class: "mt-8 block w-full rounded-full bg-brand-600 px-8 py-4 text-center text-sm font-semibold text-white hover:bg-brand-700" %>
+          <% else %>
+            <p class="mt-8 rounded-2xl bg-stone-100 px-4 py-3 text-center text-sm font-semibold text-stone-700">Vendas em breve</p>
+          <% end %>
         </div>
       </div>
     </div>

@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-22T00:00:00Z",
+  "title": "Design System: EloShop — Painel do Artesão",
+  "extensions": {
+    "scope": "Todo o painel do artesão (/painel), inclusive Primeiros passos. A vitrine e a administração da plataforma têm sistemas próprios.",
+    "colorMeta": {
+      "brand-600": {
+        "role": "primary",
+        "displayName": "Vermelho de Ação",
+        "canonical": "#df240c",
+        "tonalRamp": [
+          "#5c0f05",
+          "#8f1708",
+          "#b81e0a",
+          "#df240c",
+          "#f33920",
+          "#f88f81",
+          "#fbbeb6",
+          "#fde1dd",
+          "#fef2f0"
+        ]
+      },
+      "brand-700": {
+        "role": "primary",
+        "displayName": "Vermelho Profundo",
+        "canonical": "#b81e0a",
+        "tonalRamp": [
+          "#5c0f05",
+          "#8f1708",
+          "#b81e0a",
+          "#df240c",
+          "#f33920",
+          "#f88f81",
+          "#fbbeb6",
+          "#fde1dd",
+          "#fef2f0"
+        ]
+      },
+      "brand-50": {
+        "role": "neutral",
+        "displayName": "Rosado de Destaque",
+        "canonical": "#fef2f0"
+      },
+      "fundo-pessego": {
+        "role": "neutral",
+        "displayName": "Fundo Pêssego",
+        "canonical": "#fdf1e7"
+      },
+      "papel": {
+        "role": "neutral",
+        "displayName": "Papel",
+        "canonical": "#ffffff"
+      },
+      "tinta": {
+        "role": "neutral",
+        "displayName": "Tinta (stone-950)",
+        "canonical": "#0c0a09"
+      },
+      "texto": {
+        "role": "neutral",
+        "displayName": "Texto (stone-700)",
+        "canonical": "#44403c"
+      },
+      "feito": {
+        "role": "status",
+        "displayName": "Feito (emerald-600)",
+        "canonical": "#059669"
+      },
+      "atencao-texto": {
+        "role": "status",
+        "displayName": "Atenção (amber-900)",
+        "canonical": "#78350f"
+      },
+      "bloqueio-texto": {
+        "role": "status",
+        "displayName": "Bloqueio (red-800)",
+        "canonical": "#991b1b"
+      }
+    },
+    "shadows": {
+      "card": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+      "card-lg": "0 1px 2px rgba(120,40,10,0.03), 0 16px 40px rgba(120,40,10,0.05)"
+    },
+    "focus": "anel de 3px brand-200 em campos; contorno de 2px brand-600 afastado 2px em links e segmentos",
+    "breakpoints": {
+      "sm": "640px",
+      "lg": "1024px"
+    },
+    "motion": {
+      "color": "150ms cubic-bezier(0.4,0,0.2,1)"
+    }
+  },
+  "components": [
+    {
+      "name": "Botão principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Uma ação principal por tela.",
+      "html": "<button class=\"ds-btn ds-btn--primary\">Novo produto</button>",
+      "css": ".ds-btn { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:12px 24px; border-radius:9999px; font-family:ui-sans-serif, system-ui, sans-serif; font-size:.875rem; font-weight:700; cursor:pointer; transition:background-color 150ms; } .ds-btn--primary { border:0; background:#df240c; color:#fff; } .ds-btn--primary:hover { background:#b81e0a; } .ds-btn:focus-visible { outline:2px solid #df240c; outline-offset:2px; }"
+    },
+    {
+      "name": "Botão secundário",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Ações de apoio (ex.: Fazer tour pelo painel).",
+      "html": "<button class=\"ds-btn ds-btn--secondary\">Fazer tour pelo painel</button>",
+      "css": ".ds-btn { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:12px 24px; border-radius:9999px; font-family:ui-sans-serif, system-ui, sans-serif; font-size:.875rem; font-weight:700; cursor:pointer; } .ds-btn--secondary { border:1px solid #fbbeb6; background:transparent; color:#b81e0a; } .ds-btn--secondary:hover { background:#fef2f0; }"
+    },
+    {
+      "name": "Cartão",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Bloco de conteúdo do painel.",
+      "html": "<section class=\"ds-card\"><h2>Para começar a vender</h2><p>3 de 5 etapas concluídas</p></section>",
+      "css": ".ds-card { background:#fff; border:1px solid #fde1dd; border-radius:1rem; padding:24px; box-shadow:0 1px 2px 0 rgb(0 0 0 / .05); font-family:ui-sans-serif, system-ui, sans-serif; color:#0c0a09; } .ds-card h2 { margin:0; font-size:1.25rem; font-weight:700; } .ds-card p { margin:4px 0 0; font-size:.875rem; color:#57534e; }"
+    },
+    {
+      "name": "Campo",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo de formulário do painel (.seller-input).",
+      "html": "<label class=\"ds-label\">Nome do ateliê<input class=\"ds-input\" value=\"Ateliê do Barro\"></label>",
+      "css": ".ds-label { display:block; font-family:ui-sans-serif, system-ui, sans-serif; font-size:.875rem; font-weight:600; color:#44403c; } .ds-input { display:block; width:100%; margin-top:4px; padding:8px 12px; border:1px solid #d6d3d1; border-radius:.75rem; background:#fef9f8; font-size:.875rem; outline:none; } .ds-input:focus { border-color:#f33920; background:#fff; box-shadow:0 0 0 3px #fbbeb6; }"
+    },
+    {
+      "name": "Etiqueta de estado",
+      "kind": "badge",
+      "refersTo": "badge",
+      "description": "Estado em texto: Feito, Pendente, Obrigatório.",
+      "html": "<span class=\"ds-badge ds-badge--feito\">Feito</span> <span class=\"ds-badge ds-badge--bloqueio\">Obrigatório</span>",
+      "css": ".ds-badge { display:inline-flex; align-items:center; padding:2px 10px; border-radius:9999px; font-family:ui-sans-serif, system-ui, sans-serif; font-size:.75rem; font-weight:600; } .ds-badge--feito { background:#d1fae5; color:#065f46; } .ds-badge--bloqueio { background:#fee2e2; color:#991b1b; }"
+    },
+    {
+      "name": "Faixa de etapas",
+      "kind": "navigation",
+      "refersTo": "step-segment",
+      "description": "Primeiros passos: segmentos retos horizontais com traço de estado no topo.",
+      "html": "<ol class=\"ds-steps\"><li class=\"ds-step ds-step--feito\"><b>Etapa 1</b><span class=\"ds-tag ds-tag--feito\">Feito</span><span>Endereço do ateliê</span></li><li class=\"ds-step ds-step--atual\" aria-current=\"step\"><b>Etapa 2</b><span class=\"ds-tag ds-tag--atual\">Agora</span><span>Conta do Mercado Pago</span></li><li class=\"ds-step\"><b>Etapa 3</b><span>Chave PIX</span></li></ol>",
+      "css": ".ds-steps { display:flex; margin:0; padding:0; list-style:none; border:1px solid #fde1dd; background:#fff; font-family:ui-sans-serif, system-ui, sans-serif; } .ds-step { flex:1; display:flex; flex-direction:column; gap:6px; padding:12px; border-top:4px solid #e7e5e4; border-left:1px solid #fde1dd; font-size:.875rem; } .ds-step:first-child { border-left:0; } .ds-step b { font-size:.75rem; color:#78716c; } .ds-step--feito { border-top-color:#059669; color:#57534e; } .ds-step--feito b { color:#047857; } .ds-step--atual { border-top-color:#df240c; background:#fef2f0; font-weight:700; } .ds-step--atual b { color:#b81e0a; } .ds-tag { align-self:flex-start; padding:2px 6px; font-size:.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; } .ds-tag--feito { background:#d1fae5; color:#065f46; } .ds-tag--atual { background:#fde1dd; color:#b81e0a; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "A bancada organizada do ateliê",
+    "overview": "Ferramenta de trabalho usada no celular, na oficina: cartões brancos sobre fundo pêssego, um título forte por tela e uma ação principal vermelha. O mundo do caderno de encomendas, que vestia os Primeiros passos, foi retirado em 2026-10-22; o fluxo segue o padrão do painel.",
+    "keyCharacteristics": [
+      "Fundo pêssego, cartões brancos com borda brand-100",
+      "Vermelho só na ação principal e na etapa atual",
+      "Estado sempre em texto",
+      "Fonte do sistema",
+      "Faixa de etapas reta nos Primeiros passos"
+    ],
+    "rules": [
+      "Um botão vermelho cheio por tela",
+      "Estado em texto além da cor",
+      "Alvos de 44px e contraste AA"
+    ],
+    "dos": [
+      "Usar as classes seller-*",
+      "Escrever o estado em texto",
+      "Manter alvos de 44px"
+    ],
+    "donts": [
+      "Trazer de volta o caderno ou outro mundo por tela sem pedido",
+      "Usar vermelho de alerta fora do que bloqueia a venda",
+      "Arredondar a faixa de etapas",
+      "Carregar fonte ou script de CDN"
+    ]
+  }
+}

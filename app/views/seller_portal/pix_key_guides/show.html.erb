@@ -1,0 +1,56 @@
+<% content_for :title, "Cadastro da Chave Pix | #{current_seller.name}" %>
+
+<div class="space-y-6">
+  <header class="rounded-[2rem] bg-red-700 px-6 py-8 text-white shadow-sm sm:px-9 sm:py-10">
+    <p class="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-red-100">
+      <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-4" %> Atenção
+    </p>
+    <h1 class="mt-2 max-w-3xl text-3xl font-black tracking-tight sm:text-4xl">Cadastro da Chave Pix</h1>
+    <p class="mt-4 max-w-2xl text-sm leading-6 text-red-50 sm:text-base">Sem uma chave PIX na sua conta do Mercado Pago, o pagamento por PIX dos seus clientes é recusado. Pagamentos no cartão não dependem disso.</p>
+  </header>
+
+  <%# Abas por link (?passo=N): funcionam sem JavaScript e respeitam a CSP. %>
+  <section class="rounded-2xl border-2 border-red-300 bg-red-50 px-4 py-5 sm:px-6" aria-labelledby="pix-steps-title">
+    <h2 id="pix-steps-title" class="text-lg font-bold text-red-950">Como cadastrar, passo a passo</h2>
+    <p class="mt-1 text-sm text-red-900">A chave precisa estar na <strong>mesma conta do Mercado Pago</strong> que você conectou à EloShop. Os nomes e telas do app podem mudar um pouco.</p>
+
+    <nav class="mt-4 flex flex-wrap gap-2" aria-label="Passos do cadastro da chave Pix">
+      <% @steps.each_index do |index| %>
+        <% number = index + 1 %>
+        <%= link_to "Passo #{number}", seller_pix_key_guide_path(passo: number),
+              class: "inline-flex min-h-11 items-center rounded-full px-4 text-sm font-bold #{number == @step ? 'bg-red-700 text-white' : 'border border-red-300 bg-white text-red-700 hover:bg-red-100'}",
+              aria: (number == @step ? { current: "step" } : {}) %>
+      <% end %>
+    </nav>
+
+    <% step = @steps[@step - 1] %>
+    <article class="mt-5 grid gap-5 sm:grid-cols-[minmax(0,16rem)_1fr] sm:items-start">
+      <%= image_tag "pix_key/passo-#{@step}.jpeg", alt: "Tela do app do Mercado Pago no passo #{@step}: #{step[:title]}", width: 740, height: 1600, class: "w-full max-w-xs rounded-2xl border-2 border-red-300 shadow-sm" %>
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.16em] text-red-700">Passo <%= @step %> de <%= @steps.size %></p>
+        <h3 class="mt-1 text-2xl font-black text-red-950"><%= step[:title] %></h3>
+        <p class="mt-2 text-sm leading-6 text-red-900 sm:text-base"><%= step[:text] %></p>
+        <div class="mt-5 flex flex-wrap gap-3">
+          <% if @step > 1 %>
+            <%= link_to "← Passo anterior", seller_pix_key_guide_path(passo: @step - 1), class: "inline-flex min-h-11 items-center rounded-full border-2 border-red-700 px-5 text-sm font-bold text-red-800 hover:bg-red-100" %>
+          <% end %>
+          <% if @step < @steps.size %>
+            <%= link_to "Próximo passo →", seller_pix_key_guide_path(passo: @step + 1), class: "inline-flex min-h-11 items-center rounded-full bg-red-700 px-5 text-sm font-bold text-white hover:bg-red-800" %>
+          <% elsif !current_seller.pix_key_confirmed_at? %>
+            <%= button_to "Já cadastrei minha chave PIX", seller_pix_key_confirmation_path, method: :post, class: "inline-flex min-h-11 cursor-pointer items-center rounded-full bg-red-700 px-5 text-sm font-bold text-white hover:bg-red-800" %>
+          <% end %>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <% if current_seller.pix_key_confirmed_at? %>
+    <section class="rounded-2xl border-2 border-red-300 bg-red-50 px-6 py-5" aria-labelledby="pix-confirmed-title">
+      <h2 id="pix-confirmed-title" class="text-lg font-bold text-red-950">Você declarou que a chave PIX está cadastrada</h2>
+      <p class="mt-1 text-sm leading-6 text-red-900">A EloShop não consegue conferir a chave no Mercado Pago. Se ela foi removida, reative o aviso.</p>
+      <%= button_to "Reativar o aviso", seller_pix_key_confirmation_path, method: :delete, class: "mt-4 inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border-2 border-red-700 px-6 py-3 text-sm font-bold text-red-800 hover:bg-red-100" %>
+    </section>
+  <% else %>
+    <%= render "seller_portal/mercado_pago_connections/pix_key_notice", guide_link: false %>
+  <% end %>
+</div>

@@ -1,4 +1,6 @@
 class WishlistItemsController < StorefrontController
+  before_action :require_sales_open, only: :move_to_cart
+
   def create
     item = Current.customer.wishlist_items.find_or_initialize_by(product_id: params[:product_id])
 

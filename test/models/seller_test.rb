@@ -9,6 +9,21 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.approved_at
   end
 
+  test "name_availability detects slug collisions and suggests a free name" do
+    Seller.create!(name: "Ateliê da Lua", owner_full_name: "Ana Lua", cpf: "11144477735")
+
+    assert_equal({ valid: true, available: true, slug: "atelie-do-sol" }, Seller.name_availability("Ateliê do Sol"))
+
+    taken = Seller.name_availability("  atelie DA lua ")
+    assert_equal false, taken[:available]
+    assert_equal "atelie DA lua 2", taken[:suggestion]
+
+    Seller.create!(name: "Ateliê da Lua 2", owner_full_name: "Bia Lua", cpf: "52998224725")
+    assert_equal "Ateliê da Lua 3", Seller.name_availability("Ateliê da Lua")[:suggestion]
+
+    assert_equal({ valid: false, available: false }, Seller.name_availability("!!!"))
+  end
+
   test "accepted_current_terms_ids matches terms_accepted? for every seller" do
     accepted_seller = sellers(:approved)
     accepted_user = User.create!(email_address: "terms-ok-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: accepted_seller)
@@ -24,6 +39,51 @@ class SellerTest < ActiveSupport::TestCase
     assert_not_includes ids, pending_seller.id
     assert accepted_seller.terms_accepted?
     assert_not pending_seller.terms_accepted?
+  end
+
+  test "launch fee is 8% until 3 months after approval and 15% afterwards" do
+    seller = sellers(:approved)
+    seller.update!(approved_at: Time.zone.local(2026, 10, 3, 12))
+
+    assert_equal Time.zone.local(2027, 1, 3, 12), seller.launch_fee_ends_at
+    assert_equal 800, seller.platform_fee_rate_bps(at: Time.zone.local(2026, 10, 3, 12))
+    assert_equal 800, seller.platform_fee_rate_bps(at: Time.zone.local(2027, 1, 3, 11, 59))
+    assert_predicate seller, :launch_fee_active?
+    assert_equal 1_500, seller.platform_fee_rate_bps(at: Time.zone.local(2027, 1, 3, 12))
+    assert_not seller.launch_fee_active?(at: Time.zone.local(2027, 6, 1))
+  end
+
+  test "a seller approved during pre-registration starts the launch fee when sales open" do
+    PlatformSetting.instance.update!(sales_opened_at: nil)
+    seller = sellers(:approved)
+    seller.update!(approved_at: Time.zone.local(2026, 10, 28, 12))
+
+    assert_nil seller.launch_fee_ends_at
+    assert_not seller.launch_fee_active?
+    assert_equal 1_500, seller.platform_fee_rate_bps
+
+    PlatformSetting.instance.update!(sales_opened_at: Time.zone.local(2026, 11, 15, 9))
+
+    assert_equal Time.zone.local(2026, 11, 15, 9), seller.launch_fee_starts_at
+    assert_equal Time.zone.local(2027, 2, 15, 9), seller.launch_fee_ends_at
+    assert_equal 800, seller.platform_fee_rate_bps(at: Time.zone.local(2027, 2, 15, 8, 59))
+  end
+
+  test "a seller approved after sales opened starts the launch fee on approval" do
+    PlatformSetting.instance.update!(sales_opened_at: Time.zone.local(2026, 11, 15, 9))
+    seller = sellers(:approved)
+    seller.update!(approved_at: Time.zone.local(2026, 12, 1, 10))
+
+    assert_equal Time.zone.local(2026, 12, 1, 10), seller.launch_fee_starts_at
+  end
+
+  test "a seller that was never approved has no launch period running" do
+    seller = sellers(:pending)
+
+    assert_nil seller.approved_at
+    assert_nil seller.launch_fee_ends_at
+    assert_not seller.launch_fee_active?
+    assert_equal 1_500, seller.platform_fee_rate_bps
   end
 
   test "approval and suspension preserve explicit status" do
@@ -184,8 +244,26 @@ class SellerTest < ActiveSupport::TestCase
     seller = Seller.new(name: "Sem dono")
 
     assert_not seller.valid?
-    assert_includes seller.errors[:owner_full_name], "can't be blank"
-    assert_includes seller.errors[:cpf], "can't be blank"
+    assert_includes seller.errors[:owner_full_name], "não pode ficar em branco"
+    assert_includes seller.errors[:cpf], "não pode ficar em branco"
+  end
+
+  test "formats a CPF progressively and keeps more than 11 digits unmasked" do
+    assert_equal "123.456.789-09", Seller.format_cpf("12345678909")
+    assert_equal "123.456.789-09", Seller.format_cpf("123.456.789-09")
+    assert_equal "123.4", Seller.format_cpf("1234")
+    assert_equal "123", Seller.format_cpf("123")
+    assert_equal "123.456.789-0", Seller.format_cpf("1234567890")
+    assert_equal "", Seller.format_cpf(nil)
+    assert_equal "123456789012", Seller.format_cpf("123456789012")
+  end
+
+  test "a blank name reports only the name, not the URL derived from it" do
+    seller = Seller.new(name: "", owner_full_name: "Fulana", cpf: "52998224725")
+
+    assert_not seller.valid?
+    assert_predicate seller.errors[:name], :any?
+    assert_empty seller.errors[:slug]
   end
 
   test "rejects a CPF with an invalid checksum" do
@@ -275,6 +353,84 @@ class SellerTest < ActiveSupport::TestCase
     assert_not_equal seller.mercado_pago_access_token_ciphertext, seller.melhor_envio_access_token_ciphertext
     assert_equal "seller-access-token", seller.mercado_pago_access_token
     assert_equal "melhor-envio-access-token", seller.melhor_envio_access_token
+  end
+
+  test "a pending seller is not publicly listed until the admin showcases it" do
+    seller = sellers(:pending)
+
+    assert_not_predicate seller, :publicly_listed?
+    assert_not_includes Seller.publicly_listed, seller
+
+    seller.showcase!
+
+    assert_predicate seller, :showcased?
+    assert_predicate seller, :pending?
+    assert_predicate seller, :publicly_listed?
+    assert_includes Seller.publicly_listed, seller
+    assert_not_predicate seller, :mercado_pago_connected?
+  end
+
+  test "unshowcasing takes a pending seller back out of the store" do
+    seller = sellers(:pending)
+    seller.showcase!
+
+    seller.unshowcase!
+
+    assert_not_predicate seller, :showcased?
+    assert_not_includes Seller.publicly_listed, seller
+  end
+
+  test "only a pending seller can be showcased or unshowcased" do
+    approved = sellers(:approved)
+    suspended = sellers(:other).tap(&:suspend!)
+
+    assert_raises(Seller::VerificationRequired) { approved.showcase! }
+    assert_raises(Seller::VerificationRequired) { approved.unshowcase! }
+    assert_raises(Seller::VerificationRequired) { suspended.showcase! }
+  end
+
+  test "a hidden or suspended seller is never publicly listed, even when showcased" do
+    seller = sellers(:pending)
+    seller.showcase!
+
+    seller.hide!
+    assert_not_predicate seller, :publicly_listed?
+    assert_not_includes Seller.publicly_listed, seller
+
+    seller.unhide!
+    seller.suspend!
+    assert_nil seller.showcased_at
+    assert_not_predicate seller, :publicly_listed?
+  end
+
+  test "approval keeps the seller listed after disconnecting Mercado Pago, without selling" do
+    seller = sellers(:pending)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.approve!(kyc_level_6_confirmed: true)
+    assert_not_nil seller.showcased_at
+
+    seller.disconnect_mercado_pago!
+
+    assert_predicate seller, :pending?
+    assert_predicate seller, :publicly_listed?
+  end
+
+  test "approval preserves the showcase date of a seller already in the store" do
+    seller = sellers(:pending)
+    seller.showcase!
+    showcased_at = seller.showcased_at
+
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.approve!(kyc_level_6_confirmed: true)
+
+    assert_equal showcased_at, seller.showcased_at
+  end
+
+  test "showcasing does not start the launch fee period" do
+    seller = sellers(:pending)
+    seller.showcase!
+
+    assert_nil seller.launch_fee_starts_at
   end
 
   private
@@ -479,5 +635,235 @@ class SellerTest < ActiveSupport::TestCase
     seller.disconnect_mercado_pago!
 
     assert_nil seller.reload.mercado_pago_test_account
+  end
+
+  test "getting_started_steps reflects address, Mercado Pago, PIX key, first product and approval" do
+    seller = Seller.create!(name: "Ateliê dos passos", owner_full_name: "Ana Passos", cpf: "11144477735")
+
+    assert_equal({ address: false, mercado_pago: false, pix_key: false, product: false, approval: false }, seller.getting_started_steps)
+
+    seller.update!(
+      origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
+      origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP",
+      mercado_pago_user_id: "123456", mercado_pago_access_token_ciphertext: "a", mercado_pago_refresh_token_ciphertext: "r",
+      mercado_pago_connected_at: Time.current, status: :approved, approved_at: Time.current,
+      pix_key_confirmed_at: Time.current
+    )
+    seller.products.create!(name: "Primeira peça", sku: "PASSOS-1", price_cents: 5_000, stock_quantity: 1)
+
+    assert_equal({ address: true, mercado_pago: true, pix_key: true, product: true, approval: true }, seller.getting_started_steps)
+  end
+
+  test "setup_steps keeps a connected but not accepted Mercado Pago account as pending" do
+    seller = Seller.create!(name: "Ateliê não aceito", owner_full_name: "Ana Aceite", cpf: "11144477735")
+    seller.update!(
+      mercado_pago_user_id: "123456", mercado_pago_access_token_ciphertext: "a", mercado_pago_refresh_token_ciphertext: "r",
+      mercado_pago_connected_at: Time.current, mercado_pago_live_mode: false, mercado_pago_test_account: true
+    )
+
+    assert seller.getting_started_steps[:mercado_pago], "a página Primeiros passos vê a conexão"
+    assert_not seller.setup_steps[:mercado_pago], "o painel cobra a conta real"
+
+    seller.update!(mercado_pago_live_mode: true, mercado_pago_test_account: false)
+    assert seller.setup_steps[:mercado_pago]
+  end
+
+  test "public_page_available? is true only for an approved seller that is not hidden" do
+    seller = Seller.create!(name: "Ateliê da página", owner_full_name: "Ana Página", cpf: "11144477735")
+    assert_not seller.public_page_available?, "pendente responde 404"
+
+    seller.update!(status: :approved, approved_at: Time.current)
+    assert seller.public_page_available?
+
+    seller.hide!
+    assert_not seller.public_page_available?, "escondido tem página de indisponível"
+
+    seller.unhide!
+    seller.update!(status: :suspended)
+    assert_not seller.public_page_available?, "suspenso tem página de indisponível"
+  end
+
+  test "theme images accept png, jpeg and webp up to 5MB" do
+    seller = sellers(:approved)
+    seller.logo.attach(io: StringIO.new("img"), filename: "logo.png", content_type: "image/png")
+    seller.cover_image.attach(io: StringIO.new("img"), filename: "capa.webp", content_type: "image/webp")
+
+    assert_predicate seller, :valid?
+  end
+
+  test "theme images reject other content types and files over 5MB" do
+    seller = sellers(:approved)
+    seller.logo.attach(io: StringIO.new("<svg/>"), filename: "logo.svg", content_type: "image/svg+xml")
+    seller.cover_image.attach(io: StringIO.new("x" * (Seller::THEME_IMAGE_MAX_BYTES + 1)), filename: "capa.png", content_type: "image/png")
+
+    assert_not_predicate seller, :valid?
+    assert_includes seller.errors[:logo].join, "PNG, JPEG ou WEBP"
+    assert_includes seller.errors[:cover_image].join, "5MB"
+  end
+
+  test "footer_text is stripped, blank becomes nil and is capped" do
+    seller = sellers(:approved)
+    seller.footer_text = "  Feito à mão.  "
+    assert_equal "Feito à mão.", seller.footer_text
+
+    seller.footer_text = "   "
+    assert_nil seller.footer_text
+
+    seller.footer_text = "a" * (Seller::FOOTER_TEXT_MAX_LENGTH + 1)
+    assert_not_predicate seller, :valid?
+  end
+
+  test "theme options default to the original storefront look and accept only catalog keys" do
+    seller = sellers(:approved)
+    assert_equal SellerTheme::DEFAULTS[:palette], seller.theme_palette
+    assert_equal SellerTheme::DEFAULTS[:layout], seller.theme_layout
+
+    seller.theme_palette = "neon"
+    assert_not seller.valid?
+    assert seller.errors[:theme_palette].any?
+
+    seller.theme_palette = "oceano"
+    seller.valid?
+    assert_empty seller.errors[:theme_palette]
+  end
+
+  test "every preset sets every theme option, and only to existing keys" do
+    SellerTheme::PRESETS.each do |key, preset|
+      assert SellerTheme::PALETTES.key?(preset[:palette]), key
+      assert SellerTheme::FONTS.key?(preset[:font]), key
+      assert SellerTheme::LAYOUTS.key?(preset[:layout]), key
+      assert SellerTheme::HEROES.key?(preset[:hero]), key
+      assert SellerTheme::CORNERS.key?(preset[:corners]), key
+      assert SellerTheme::CARD_STYLES.key?(preset[:card_style]), key
+      assert SellerTheme::BACKGROUNDS.key?(preset[:background]), key
+      assert SellerTheme::ORNAMENTS.key?(preset[:ornament]), key
+      assert SellerTheme::IMAGE_RATIOS.key?(preset[:image_ratio]), key
+      assert SellerTheme::HEADING_FONTS.key?(preset[:heading_font]), key
+    end
+  end
+
+  # O editor aplica cada chave do tema como um campo `theme_<chave>`: uma
+  # chave sem coluna seria ignorada em silêncio.
+  test "every preset key maps to a seller theme column" do
+    SellerTheme::PRESETS.each_value do |preset|
+      (preset.keys - [ :label ]).each { |key| assert Seller.column_names.include?("theme_#{key}"), key }
+    end
+  end
+
+  test "background, ornament and photo ratio default to the plain storefront and accept only catalog keys" do
+    seller = sellers(:approved)
+    assert_equal "branco", seller.theme_background
+    assert_equal "nenhum", seller.theme_ornament
+    assert_equal "quadrada", seller.theme_image_ratio
+
+    seller.assign_attributes(theme_background: "neon", theme_ornament: "url(evil)", theme_image_ratio: "16:9")
+    assert_not seller.valid?
+    assert seller.errors[:theme_background].any?
+    assert seller.errors[:theme_ornament].any?
+    assert seller.errors[:theme_image_ratio].any?
+  end
+
+  test "heading font defaults to the text font and accepts only catalog keys" do
+    seller = sellers(:approved)
+    assert_equal "igual", seller.theme_heading_font
+    assert_includes SellerTheme.css_variables(palette: "oliva", font: "classica"), "--atelier-heading-font:var(--atelier-font)"
+
+    seller.theme_heading_font = "Comic Sans; color:red"
+    assert_not seller.valid?
+    assert seller.errors[:theme_heading_font].any?
+  end
+
+  # A CSP só admite fonte do próprio app: cada fonte de título precisa de um
+  # @font-face com o arquivo em app/assets/fonts, ou cairia no fallback.
+  test "every custom heading font is self-hosted" do
+    css = Rails.root.join("app/assets/tailwind/application.css").read
+    SellerTheme::HEADING_FONTS.each_value do |heading|
+      next unless heading[:stack]
+
+      family = heading[:stack][/\A'([^']+)'/, 1]
+      face = css[/@font-face \{[^}]*font-family: "#{family}";[^}]*\}/]
+      assert face, "#{family}: falta @font-face"
+      file = face[/url\("([^"]+)"\)/, 1]
+      assert Rails.root.join("app/assets/fonts", file).exist?, "#{family}: falta #{file}"
+    end
+  end
+
+  # No fundo escuro (o início do degradê misturado a quase preto), o destaque
+  # vira o tom claro da paleta; ele e os textos claros do `atelier-dark`
+  # precisam do contraste AA, também sobre o card com fundo.
+  test "the dark background keeps page text readable for every palette" do
+    mix = ->(color, share, base) do
+      color.delete("#").scan(/../).zip(base.delete("#").scan(/../))
+           .map { |a, b| format("%02x", (a.to_i(16) * share + b.to_i(16) * (1 - share)).round) }.join.prepend("#")
+    end
+    SellerTheme::PALETTES.each do |key, palette|
+      page = mix.(palette[:from], SellerTheme::DARK_FROM_SHARE / 100.0, SellerTheme::DARK_BASE)
+      card = mix.(palette[:to], 0.22, "#1c1917")
+      [ palette[:soft], "#f5f1ec", "#c9c2b9" ].each do |text|
+        assert_operator SellerTheme.contrast_ratio(text, page), :>=, 4.5, "#{key}: #{text} na página"
+        assert_operator SellerTheme.contrast_ratio(text, card), :>=, 4.5, "#{key}: #{text} no card"
+      end
+    end
+  end
+
+  test "the dark background swaps the on-page accent and the card tone" do
+    light = SellerTheme.css_variables(palette: "oliva", font: "moderna", background: "branco")
+    dark = SellerTheme.css_variables(palette: "oliva", font: "moderna", background: "escuro")
+
+    assert_includes light, "--atelier-accent-on-page:var(--atelier-accent)"
+    assert_includes dark, "--atelier-accent-on-page:var(--atelier-soft)"
+    assert_not_equal light[/--atelier-card:[^;]*/], dark[/--atelier-card:[^;]*/]
+    assert SellerTheme.dark?("escuro")
+    assert_not SellerTheme.dark?("papel")
+  end
+
+  test "the plain background and no ornament add no styles" do
+    assert_nil SellerTheme.page_background_style("branco")
+    assert_nil SellerTheme.ornament_style("nenhum")
+    assert_nil SellerTheme.ornament_style("desconhecido")
+  end
+
+  # O SVG vai inteiro codificado dentro de `url()`: aspas, `#` ou parênteses
+  # soltos fechariam a declaração antes da hora.
+  test "textures and ornaments are fully encoded data URIs" do
+    styles = SellerTheme::BACKGROUNDS.keys.filter_map { |key| SellerTheme.page_background_style(key) } +
+             SellerTheme::ORNAMENTS.keys.filter_map { |key| SellerTheme.ornament_style(key) }
+    urls = styles.flat_map { |style| style.scan(/url\(([^)]*)\)/).flatten }
+
+    assert_not_empty urls
+    urls.each do |url|
+      assert url.start_with?("data:image/svg+xml,%3Csvg"), url
+      assert_no_match(/["'#<> ]/, url)
+    end
+  end
+
+  # O filtro do editor não pode esconder um tema de vez nem apontar para um
+  # tema que não existe.
+  test "preset filters point to existing presets and reach every preset" do
+    SellerTheme::PRESET_CATEGORIES.each do |key, category|
+      assert_not_empty category[:presets], key
+      category[:presets].each { |preset| assert SellerTheme::PRESETS.key?(preset), "#{key}: #{preset}" }
+    end
+    SellerTheme::PRESETS.each_key { |key| assert_not_empty SellerTheme.preset_filters(key), key }
+  end
+
+  test "dark presets also fall under the dark background filter" do
+    assert_includes SellerTheme.preset_filters("luz_de_vela"), "bem_estar"
+    assert_includes SellerTheme.preset_filters("luz_de_vela"), SellerTheme::DARK_PRESETS_FILTER
+    assert_not_includes SellerTheme.preset_filters("ciranda"), SellerTheme::DARK_PRESETS_FILTER
+  end
+
+  test "presets have distinct names" do
+    labels = SellerTheme::PRESETS.values.pluck(:label)
+    assert_equal labels.uniq, labels
+  end
+
+  # O texto branco do topo cai sobre o fim do degradê (`to`) e o da faixa de
+  # aviso sobre o `accent`: as duas cores seguem a mesma regra da cor própria.
+  test "every palette keeps white text readable on its accent and gradient end" do
+    SellerTheme::PALETTES.each do |key, palette|
+      assert_operator SellerTheme.contrast_ratio(palette[:accent]), :>=, SellerTheme::MIN_ACCENT_CONTRAST, "#{key}: accent"
+      assert_operator SellerTheme.contrast_ratio(palette[:to]), :>=, SellerTheme::MIN_ACCENT_CONTRAST, "#{key}: to"
+    end
   end
 end

@@ -3,6 +3,7 @@ module SellerPortal
     layout "seller"
 
     before_action :require_seller!
+    before_action :set_paper_trail_whodunnit
     before_action :require_current_terms!
 
     helper_method :current_seller
@@ -20,6 +21,15 @@ module SellerPortal
       oauth = Marketplace::MercadoPagoOauth.new
       @mercado_pago_oauth_configured = oauth.configured?
       @mercado_pago_oauth_sandbox = oauth.sandbox?
+    end
+
+    # Primeiros passos como o painel inicial os mostra (`dashboard/_setup`),
+    # contados por `Seller#setup_steps`. A etapa aberta vem da URL
+    # (`?etapa=`); sem ela, a primeira pendente.
+    def set_getting_started_block(step_slug = nil)
+      @getting_started_steps = current_seller.setup_steps
+      @getting_started_current_step = GettingStartedController::STEP_SLUGS.key(step_slug) || @getting_started_steps.key(false)
+      set_mercado_pago_oauth_state
     end
 
     # Estado do OAuth do Melhor Envio (ADR 005) para o banner de frete real,

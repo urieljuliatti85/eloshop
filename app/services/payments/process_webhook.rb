@@ -18,6 +18,7 @@ module Payments
 
       payment = nil
       confirmed = false
+      chargeback_alert = nil
       ActiveRecord::Base.transaction do
         payment = Payment.find_by(external_id: @external_id)
         raise OrderNotFound, "pagamento não encontrado para external_id=#{@external_id}" unless payment
@@ -29,12 +30,14 @@ module Payments
         )
 
         confirmed = apply_status!(payment)
+        chargeback_alert = Fraud::RecordChargeback.new(payment).call if @status == "charged_back"
       end
 
       # Fora da transação de propósito: enfileirar dentro dela colocaria o
       # job na fila antes do commit, e o worker poderia lê-lo (banco `queue`
       # separado, ver CLAUDE.md) antes de o pedido existir para ele.
       notify_confirmation(payment.order) if confirmed
+      Fraud::Notifier.call([ chargeback_alert ]) if chargeback_alert
       Analytics::Funnel.track("payment_failed", seller: payment.order.seller_order.seller) if @status == "declined"
 
       Rails.event.notify(
@@ -110,7 +113,18 @@ module Payments
         body: "Seu pedido ##{order.id} foi confirmado.",
         url: Rails.application.routes.url_helpers.order_path(order)
       )
-      order.seller_orders.each { |seller_order| NotifySellerOfOrderJob.perform_later(seller_order) }
+      order.seller_orders.each do |seller_order|
+        NotifySellerOfOrderJob.perform_later(seller_order)
+        # Mesmo ponto idempotente do aviso ao cliente: só chega aqui o evento
+        # que de fato confirmou o pedido (ver `apply_status!`).
+        Notification.create!(
+          recipient: seller_order.seller,
+          kind: :order_confirmed,
+          title: "Você vendeu!",
+          body: "O pagamento do pedido ##{order.id} foi confirmado. Prepare a peça e o envio.",
+          url: Rails.application.routes.url_helpers.seller_order_path(order)
+        )
+      end
       RecordOrderAnalyticsJob.perform_later(order)
     end
   end

@@ -1,0 +1,34 @@
+<% file_class = "mt-2 block w-full rounded-xl border border-dashed border-stone-300 bg-brand-50/30 p-3 text-sm file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-stone-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white" %>
+<%
+  images = [
+    { name: :logo, label: "Logo", size: [ 96, 96 ], current_alt: "Logo atual do ateliê", remove: "Remover logo",
+      thumb: "size-16 rounded-full", hint: "PNG, JPEG ou WEBP, até 5 MB. Imagem quadrada funciona melhor." },
+    { name: :cover_image, label: "Capa (topo da vitrine)", size: [ 640, 240 ], current_alt: "Capa atual do ateliê", remove: "Remover capa",
+      thumb: "h-24 w-full max-w-sm rounded-xl", hint: "PNG, JPEG ou WEBP, até 5 MB. Imagem larga. Sem capa, usamos a foto da peça mais recente. Só aparece no topo \"Com capa\"." },
+    { name: :about_image, label: "Foto do ateliê (seção Sobre)", size: [ 320, 240 ], current_alt: "Foto atual do ateliê", remove: "Remover foto",
+      thumb: "h-24 rounded-xl", hint: "PNG, JPEG ou WEBP, até 5 MB." }
+  ]
+%>
+<% images.each do |image| %>
+  <% attachment = current_seller.public_send(image[:name]) %>
+  <div data-image-field>
+    <%= form.label image[:name], image[:label], class: "seller-label" %>
+    <% if attachment.attached? && attachment.blob.persisted? %>
+      <div class="mt-2 flex flex-wrap items-center gap-4">
+        <%= image_tag attachment.variant(resize_to_fill: image[:size]), alt: image[:current_alt], class: "#{image[:thumb]} border border-stone-200 object-cover" %>
+        <label class="flex min-h-11 items-center gap-2 text-sm text-stone-600">
+          <%= check_box_tag "remove_#{image[:name]}", "1", false, class: "size-5" %> <%= image[:remove] %>
+        </label>
+      </div>
+    <% end %>
+    <%= form.file_field image[:name], accept: Seller::THEME_IMAGE_CONTENT_TYPES.join(","), data: { action: "change->theme-editor#pickImage invalid->theme-editor#revealInvalid" },
+          aria: { describedby: "#{image[:name]}_hint" }, class: file_class %>
+    <%# Miniatura local do arquivo escolhido (ainda não enviado). %>
+    <div data-role="picked" hidden class="mt-2 flex flex-wrap items-center gap-3 text-xs text-stone-600">
+      <img alt="" class="<%= image[:thumb] %> border border-stone-200 object-cover">
+      <span>Nova imagem escolhida. Vai ao ar quando você salvar.</span>
+    </div>
+    <p data-role="image-error" role="alert" hidden class="mt-1 text-sm font-semibold text-red-700"></p>
+    <p id="<%= image[:name] %>_hint" class="mt-1 text-xs text-stone-500"><%= image[:hint] %></p>
+  </div>
+<% end %>

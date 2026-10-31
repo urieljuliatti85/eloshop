@@ -2,9 +2,16 @@
 
 require "zlib"
 
-# Catálogo inicial (produtos com descrição e imagem). Idempotente: pode ser
-# executado de novo sem duplicar SKUs. Em produção só cria o que ainda não
-# existe — não sobrescreve preço, estoque nem texto de produtos já cadastrados.
+# Seed de DESENVOLVIMENTO e teste: catálogo de exemplo (produtos com descrição
+# e imagem), o vendedor "EloShop" e as contas abaixo. Idempotente: pode ser
+# executado de novo sem duplicar SKUs.
+#
+# Não faz nada em produção. O que a produção recebe a cada boot vive em
+# `db/seeds/categories.rb` (só categorias, estritamente aditivo), chamado
+# direto pelo `bin/docker-entrypoint`; as duas coisas não se misturam para que
+# produto, vendedor ou senha de exemplo nunca cheguem lá.
+return unless Rails.env.local?
+
 #
 # Contas de desenvolvimento — um usuário por papel do sistema, todas com a
 # senha `password123`:
@@ -179,7 +186,6 @@ cozinha = Category.find_or_create_by!(name: "Cozinha", parent: casa)
 moda = find_or_create_named!(Category, "Moda")
 acessorios = Category.find_or_create_by!(name: "Acessórios", parent: moda)
 presentes = find_or_create_named!(Category, "Presentes")
-load Rails.root.join("db/seeds/categories.rb")
 
 tags = {
   "feito-a-mao" => find_or_create_named!(Tag, "feito-a-mao"),

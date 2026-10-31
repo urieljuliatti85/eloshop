@@ -21,16 +21,18 @@
             <p class="text-sm text-ink-muted">
               <% if product.has_variants? %>a partir de <% end %><%= format_price(product.starting_price_cents) %>
             </p>
-            <% unless product.available_for_purchase? %>
+            <% if seller_not_accepting_orders?(product) %>
+              <p class="mt-1 text-sm font-medium text-ink-muted">Este ateliê está se preparando para começar a vender</p>
+            <% elsif !product_shown_as_available?(product) %>
               <p class="mt-1 text-sm font-medium text-red-700">Indisponível no momento</p>
             <% end %>
           </div>
 
           <div>
-            <% if product.available_for_purchase? && product.directly_purchasable? %>
+            <% if product.available_for_purchase? && product.directly_purchasable? && sales_open? %>
               <%= button_to "Mover para o carrinho", move_to_cart_wishlist_item_path(item), method: :post,
                     class: "w-full rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-ink hover:border-brand-500 hover:text-brand-600 cursor-pointer" %>
-            <% elsif product.available_for_purchase? %>
+            <% elsif product_shown_as_available?(product) %>
               <%= link_to "Escolher opções", product_path(product.seller, product.slug),
                     class: "block w-full rounded-full border border-gray-300 px-4 py-2 text-center text-sm font-medium text-ink hover:border-brand-500 hover:text-brand-600" %>
             <% end %>

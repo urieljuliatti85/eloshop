@@ -20,6 +20,10 @@ Evitar checagens de autorização espalhadas de forma ad-hoc (`if current_user.a
 
 Decisão tomada na Fase 14 e estendida na Fase 22: implementação simples, sem gem dedicada. `User` tem os papéis `admin` e `seller`; `Admin::BaseController#require_admin!` protege a plataforma e `SellerPortal::BaseController#require_seller!` protege o painel do artesão.
 
+A API v1 e a documentação (`/api-docs`, Swagger UI e `swagger.yaml`) exigem um token de `ApiClient`, emitido e revogado pelo admin em `/admin/clientes-de-api`. O token aparece uma única vez, na criação (a resposta vai com `Cache-Control: no-store` e não passa pelo flash, que gravaria no cookie); o banco guarda só o SHA-256, buscado por índice único — sem sal nem hash lento porque o token é aleatório de 256 bits, sem dicionário a atacar. Revogar marca `revoked_at` e o token para de valer na hora; `last_used_at` é gravado no máximo uma vez por minuto.
+
+Na API, o token vai como `Authorization: Bearer <token>` (`Api::V1::BaseController`); sem token válido a resposta é 401 em JSON com `WWW-Authenticate: Bearer`. A sessão de `User`, nem a do admin, vale na API: a API tem uma porta só. Na documentação, `ApiDocsAuthentication` (middleware em volta dos `mount` do rswag, porque os engines não passam pelos controllers) deixa entrar o admin logado, pela mesma sessão de `Authentication`, ou HTTP Basic com o token como senha; os demais recebem 401 com o desafio Basic, para o navegador abrir a janela de login. É middleware e não restrição de rota porque a restrição só sabe responder 404. O `public/api-docs/eloshop-swagger-init.js` é estático e fica fora da autenticação; não carrega dado da API.
+
 O escopo do vendedor nunca vem de parâmetros da requisição. Produtos e pedidos começam em `Current.user.seller`; trocar um ID na URL por um recurso de outro vendedor resulta em 404. Vendedores `pending` ou `suspended` podem consultar o painel, mas o domínio bloqueia publicação e compra. A vitrine lista somente vendedores aprovados.
 
 ## Pagamentos
@@ -72,7 +76,7 @@ Considerar sempre, em toda funcionalidade que recebe entrada externa:
 
 ## Rate limiting
 
-Decidido na Fase 18, usando o `rate_limit` nativo do Rails (sem gem como Rack::Attack — não se justifica com essa quantidade de regras). Todos os endpoints sensíveis a força bruta/abuso têm limite: login de admin e de cliente, cadastro de cliente, reset de senha, contato, aplicar cupom (adivinhação de código) e criar pedido (checkout). Webhook de pagamento é deliberadamente **não** limitado por IP — a autenticidade é garantida pelo segredo verificado (`Gateways::FakeGateway#verify_webhook`, comparação timing-safe), e um webhook real pode legitimamente vir sempre do mesmo IP do gateway com retries.
+Decidido na Fase 18, usando o `rate_limit` nativo do Rails (sem gem como Rack::Attack — não se justifica com essa quantidade de regras). Todos os endpoints sensíveis a força bruta/abuso têm limite: login de admin e de cliente, cadastro de cliente, reset de senha, contato, aplicar cupom (adivinhação de código) e criar pedido (checkout). Criar pedido e autorizar pagamento têm um **segundo limite por cliente** (5 em 30 minutos, `by: Current.customer.id`), além do de IP: carding distribuído troca de IP a cada tentativa e nunca chega ao limite por IP, mas a conta é uma só. Cada tentativa é uma cobrança real no Mercado Pago. Webhook de pagamento é deliberadamente **não** limitado por IP — a autenticidade é garantida pelo segredo verificado (`Gateways::FakeGateway#verify_webhook`, comparação timing-safe), e um webhook real pode legitimamente vir sempre do mesmo IP do gateway com retries.
 
 ## Sessões
 
@@ -95,4 +99,26 @@ O Google Analytics é opt-in: nenhum recurso externo é carregado antes do aceit
 | `unshipped_paid_order` | pedido pago sem envio após 7 dias corridos (+ prazo de produção máximo, se sob encomenda) | sim, quando o envio é marcado |
 | `shipped_without_tracking` | envio marcado há mais de 7 dias sem rastreio (retirada local fica de fora) | sim, quando o rastreio é informado |
 
-O prazo de 7 dias é decisão de negócio (`Fraud::SellerScan::SHIPPING_GRACE`). Ficam para depois, por dependerem de limiares calibrados com dados reais: pico de vendas de vendedor novo, taxa de reembolso por vendedor e chargeback.
+O prazo de 7 dias é decisão de negócio (`Fraud::SellerScan::SHIPPING_GRACE`). **Chargeback** não vem do scan: chega pelo webhook. `charged_back` do Mercado Pago tem status próprio (antes virava `declined` e era ignorado em pagamento já pago, além de contar um `payment_failed` falso). `Payments::ProcessWebhook` chama `Fraud::RecordChargeback`, que abre o alerta `chargeback` do vendedor (ou acrescenta o pedido ao alerta aberto, sem repetir o aviso) e `Fraud::Notifier` envia o e-mail e o Sentry. **Pagamento, pedido, comissão e repasse não mudam sozinhos**: quem arca com o valor é decisão de negócio. O alerta só fecha manualmente. O tópico de contestações (`topic_chargebacks_wh`) é tratado em `Gateways::MercadoPago#webhook_event`: o corpo traz `data.payment_id`, sem consulta à API (o `data.id` do corpo é o id da contestação, não do pagamento), e a assinatura é calculada sobre o `data.id` da query string. Depende de o webhook do app `EloShop Marketplace Oficial` estar inscrito em "Contestações" (Suas integrações > Webhooks).
+
+Ficam para depois, por dependerem de limiares calibrados com dados reais: pico de vendas de vendedor novo e taxa de reembolso por vendedor.
+
+## Confirmação do formulário de contato
+
+O formulário de contato é aberto, e o e-mail do destinatário é só o que a pessoa digitou. Por isso `ContactMailer#confirmation` ("Recebemos sua mensagem", resposta em até 2 dias úteis) tem **texto fixo**: nome, assunto e mensagem digitados nunca voltam no e-mail, para o formulário não servir de canal de spam ou golpe contra terceiros. `ContactsController` manda **no máximo uma confirmação por e-mail por hora** (chave do `Rails.cache` com o hash SHA-256 do endereço, nunca o endereço), além do `rate_limit` de 5 envios por IP em 10 minutos; a mensagem em si chega sempre a `contato@`.
+
+## Recuperação de senha
+
+Admin e vendedor usam `PasswordsController` (`/passwords`) e o comprador usa `CustomerPasswordsController` (`/recuperar-senha`), com o mesmo desenho: o link leva o token assinado do `has_secure_password` (`password_reset_token`, 15 minutos) e carrega o hash da senha atual, então **deixa de valer assim que a senha muda**. O token de uma conta não serve na tela da outra (cada modelo assina com o seu escopo). O pedido sempre responde o mesmo texto, exista ou não a conta, e só enfileira o e-mail quando existe (`PasswordsMailer#customer_reset`), com `rate_limit` de 5 pedidos em 10 minutos por IP. Redefinir a senha encerra todas as sessões abertas do comprador, e uma senha em branco é recusada, porque o `has_secure_password` a ignora em silêncio e a tela diria "redefinida" sem ter mudado nada.
+
+
+## Auditoria de ações (PaperTrail)
+
+A tabela `versions` (gem `paper_trail`, só `object_changes` em `jsonb`) registra **quem mudou o quê e quando** nas entidades sensíveis: `Seller`, `Product`, `Coupon`, `Order`, `SellerOrder` e `PaymentRefund`. `whodunnit` é o id do `User` da sessão (admin ou vendedor), definido por `set_paper_trail_whodunnit` em `Admin::BaseController` e `SellerPortal::BaseController` a partir de `ApplicationController#user_for_paper_trail`. Mudanças feitas por webhook, job ou checkout ficam com `whodunnit` vazio — foi o sistema.
+
+Duas regras que não se deduzem do código:
+
+* **`Seller` usa lista permitida (`only:`), nunca `ignore:`.** A tabela guarda tokens OAuth cifrados, CPF e endereço; com `ignore:`, uma coluna sensível nova passaria a ser copiada para `versions` sem ninguém perceber. `test/models/auditing_test.rb` falha se um token, o CPF ou o endereço aparecerem lá.
+* **`Product#stock_quantity` e `Coupon#uses_count` não são versionados**: mudam a cada compra, dentro do `Checkout::CreateOrder`, e só gerariam ruído e escrita extra numa transação que já trava linhas.
+
+O histórico aparece para o admin em `/admin/auditoria` (`Admin::AuditLogsController`, só leitura, filtros por tipo e autor, paginado). Ainda não há política de retenção da tabela `versions`.

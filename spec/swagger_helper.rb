@@ -22,16 +22,20 @@ RSpec.configure do |config|
         version: 'v1'
       },
       paths: {},
-      servers: [
-        {
-          url: 'https://{defaultHost}',
-          variables: {
-            defaultHost: {
-              default: 'www.example.com'
-            }
-          }
+      # Toda a API v1 exige um token emitido pelo admin (`ApiClient`). Global
+      # para o "Authorize" do Swagger UI valer em todas as chamadas; cada spec
+      # rswag define `let(:Authorization)`.
+      components: {
+        securitySchemes: {
+          bearer_auth: { type: :http, scheme: :bearer, description: 'Token emitido pelo admin em /admin/clientes-de-api.' }
         }
-      ]
+      },
+      security: [ { bearer_auth: [] } ]
+      # Sem `servers` de propósito: o OpenAPI 3 assume "/", a mesma origem de
+      # onde o swagger.yaml foi servido, então o "Try it out" do /api-docs
+      # chama localhost no desenvolvimento e eloshop.shop em produção. Não usar
+      # `url: '/'`: o rswag-specs concatena o path do servidor e geraria
+      # "//api/v1/...".
     }
   }
 

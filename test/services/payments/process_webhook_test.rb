@@ -2,10 +2,12 @@ require "test_helper"
 
 module Payments
   class ProcessWebhookTest < ActiveSupport::TestCase
-    def build_order_with_payment
+    include ActionMailer::TestHelper
+
+    def build_order_with_payment(product_name: "P")
       customer = Customer.create!(name: "Cliente", email: "#{SecureRandom.hex(4)}@example.com", password: "password123")
       address = customer.addresses.create!(street: "Rua", number: "1", neighborhood: "B", city: "C", state: "SP", zip_code: "00000-000")
-      product = Product.create!(seller: sellers(:approved), name: "P", sku: "SKU-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active")
+      product = Product.create!(seller: sellers(:approved), name: product_name, sku: "SKU-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active")
       cart = Cart.create!(session_token: SecureRandom.hex(10))
       cart.cart_items.create!(product: product, quantity: 1)
       order = Checkout::CreateOrder.new(cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
@@ -72,6 +74,45 @@ module Payments
       assert_no_difference -> { admin.notifications.payment_declined.count } do
         ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: payment.external_id, status: "declined").call
       end
+    end
+
+    test "charged_back event opens a chargeback alert without touching payment, order or funnel" do
+      order, payment = build_order_with_payment
+      ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: payment.external_id, status: "approved").call
+      seller = order.seller_order.seller
+
+      assert_enqueued_emails 1 do
+        assert_no_difference -> { FunnelEvent.where(event_name: "payment_failed").count } do
+          ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: payment.external_id, status: "charged_back").call
+        end
+      end
+
+      alert = seller.fraud_alerts.open.find_by!(rule: "chargeback")
+      assert_equal [ order.id ], alert.detail["order_ids"]
+      assert payment.reload.paid?
+      assert order.reload.confirmed?
+    end
+
+    test "a second chargeback of the same seller joins the open alert without notifying again" do
+      order, payment = build_order_with_payment
+      other_order, other_payment = build_order_with_payment(product_name: "Outra peça")
+      ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: payment.external_id, status: "charged_back").call
+
+      assert_no_enqueued_emails do
+        ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: other_payment.external_id, status: "charged_back").call
+      end
+
+      alert = order.seller_order.seller.fraud_alerts.open.where(rule: "chargeback").sole
+      assert_equal [ order.id, other_order.id ].sort, alert.detail["order_ids"]
+    end
+
+    test "the same charged_back event_id twice creates a single alert" do
+      order, payment = build_order_with_payment
+      event_id = SecureRandom.hex(10)
+
+      2.times { ProcessWebhook.new(event_id: event_id, external_id: payment.external_id, status: "charged_back").call }
+
+      assert_equal 1, order.seller_order.seller.fraud_alerts.where(rule: "chargeback").count
     end
 
     test "the same event_id processed twice has no additional effect" do

@@ -1,0 +1,31 @@
+<%# Contadores: o editor atualiza o `data-role="count"` de cada campo com
+    `maxlength` (o servidor valida o mesmo limite). %>
+<% counter = ->(id, used, max) { tag.span("#{used}/#{max}", id: "#{id}_count", data: { role: "count" }, class: "tabular-nums") } %>
+  <div data-counted>
+    <%= form.label :notice_text, "Faixa de aviso (acima do topo)", class: "seller-label" %>
+    <%= form.text_field :notice_text, aria: { describedby: "notice_text_count" }, maxlength: Seller::NOTICE_TEXT_MAX_LENGTH, placeholder: "Ex.: Prazo de produção atual: 7 dias úteis", class: "seller-input min-h-11" %>
+    <p class="mt-1 flex justify-between gap-3 text-xs text-stone-500"><span>Opcional.</span><%= counter.("notice_text", current_seller.notice_text.to_s.length, Seller::NOTICE_TEXT_MAX_LENGTH) %></p>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <%= form.label :instagram_handle, "Instagram", class: "seller-label" %>
+      <%= form.text_field :instagram_handle, placeholder: "@seuatelie", class: "seller-input min-h-11" %>
+    </div>
+    <div>
+      <%= form.label :whatsapp_number, "WhatsApp", class: "seller-label" %>
+      <%= form.text_field :whatsapp_number, inputmode: "numeric", placeholder: "5548999999999", class: "seller-input min-h-11" %>
+    </div>
+  </div>
+  <p class="-mt-4 text-xs text-stone-500">Opcionais. Se preencher, o link aparece publicamente na vitrine; o número do WhatsApp fica visível a qualquer visitante. Use DDI + DDD + número.</p>
+  <div data-counted>
+    <%= form.label :about_text, "Sobre o ateliê", class: "seller-label" %>
+    <%= form.text_area :about_text, aria: { describedby: "about_text_count" }, rows: 5, maxlength: Seller::ABOUT_TEXT_MAX_LENGTH, class: "seller-input" %>
+    <p class="mt-1 flex justify-between gap-3 text-xs text-stone-500"><span>Sua história e seu processo.</span><%= counter.("about_text", current_seller.about_text.to_s.length, Seller::ABOUT_TEXT_MAX_LENGTH) %></p>
+  </div>
+
+  <div data-counted>
+    <%= form.label :footer_text, "Mensagem do rodapé", class: "seller-label" %>
+    <%= form.text_area :footer_text, aria: { describedby: "footer_text_count" }, rows: 3, maxlength: Seller::FOOTER_TEXT_MAX_LENGTH, class: "seller-input" %>
+    <p class="mt-1 flex justify-between gap-3 text-xs text-stone-500"><span>Aparece no fim da vitrine.</span><%= counter.("footer_text", current_seller.footer_text.to_s.length, Seller::FOOTER_TEXT_MAX_LENGTH) %></p>
+  </div>

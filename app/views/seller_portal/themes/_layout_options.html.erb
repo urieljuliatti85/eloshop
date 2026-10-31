@@ -1,0 +1,84 @@
+<% short = ->(label) { label.split(" (").first } %>
+  <fieldset>
+    <legend class="text-sm font-semibold text-stone-700">Catálogo</legend>
+    <div class="mt-3 grid grid-cols-3 gap-2">
+      <% SellerTheme::LAYOUTS.each do |key, label| %>
+        <%= theme_choice(form, :theme_layout, key, short.(label)) do %>
+          <% if key == "destaque" %>
+            <span class="grid w-14 grid-cols-4 gap-0.5">
+              <span class="col-span-2 row-span-2 aspect-square rounded-[2px] bg-stone-400"></span>
+              <% 4.times do %><span class="aspect-square rounded-[2px] bg-stone-300"></span><% end %>
+            </span>
+          <% else %>
+            <% columns = key == "ampla" ? 3 : 4 %>
+            <span class="grid w-14 gap-0.5 <%= columns == 3 ? "grid-cols-3" : "grid-cols-4" %>">
+              <% (columns * 2).times do %><span class="aspect-square rounded-[2px] bg-stone-300"></span><% end %>
+            </span>
+          <% end %>
+        <% end %>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend class="text-sm font-semibold text-stone-700">Topo</legend>
+    <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <% SellerTheme::HEROES.each do |key, label| %>
+        <%= theme_choice(form, :theme_hero, key, short.(label)) do %>
+          <% case key %>
+          <% when "capa" %>
+            <span class="block h-11 w-20 rounded-md bg-gradient-to-br from-stone-500 to-stone-800"></span>
+          <% when "compacto" %>
+            <span class="block h-5 w-20 rounded-md bg-stone-700"></span>
+          <% when "dividido" %>
+            <span class="flex h-11 w-20 overflow-hidden rounded-md">
+              <span class="flex-1 bg-stone-700"></span><span class="flex-1 bg-gradient-to-br from-stone-300 to-stone-500"></span>
+            </span>
+          <% when "editorial" %>
+            <span class="flex w-20 flex-col gap-1">
+              <span class="block h-2.5 w-14 rounded-sm bg-stone-800"></span>
+              <span class="block h-6 w-20 rounded-md bg-gradient-to-br from-stone-300 to-stone-500"></span>
+            </span>
+          <% else %>
+            <span class="block h-3 w-20 rounded bg-stone-700"></span>
+          <% end %>
+        <% end %>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend class="text-sm font-semibold text-stone-700">Cantos</legend>
+    <div class="mt-3 grid grid-cols-3 gap-2">
+      <% { "retos" => "rounded-none", "suaves" => "rounded-lg", "arredondados" => "rounded-3xl" }.each do |key, radius| %>
+        <%= theme_choice(form, :theme_corners, key, SellerTheme::CORNERS[key]) do %>
+          <span class="block size-9 border-2 border-stone-500 bg-white <%= radius %>"></span>
+        <% end %>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend class="text-sm font-semibold text-stone-700">Cards de peça</legend>
+    <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <% { "limpo" => "bg-white", "borda" => "bg-white border border-stone-400", "sombra" => "bg-white shadow-[0_3px_8px_rgba(0,0,0,0.25)]", "fundo" => "bg-stone-200" }.each do |key, frame| %>
+        <%= theme_choice(form, :theme_card_style, key, short.(SellerTheme::CARD_STYLES[key])) do %>
+          <span class="flex h-11 w-9 flex-col gap-1 rounded-md p-1 <%= frame %>">
+            <span class="block flex-1 rounded-[3px] bg-stone-300"></span>
+            <span class="block h-1 rounded bg-stone-400"></span>
+          </span>
+        <% end %>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend class="text-sm font-semibold text-stone-700">Foto das peças</legend>
+    <div class="mt-3 grid grid-cols-3 gap-2">
+      <% { "quadrada" => "h-9 w-9", "retrato" => "h-10 w-8", "paisagem" => "h-8 w-11" }.each do |key, size| %>
+        <%= theme_choice(form, :theme_image_ratio, key, short.(SellerTheme::IMAGE_RATIOS[key])) do %>
+          <span class="block rounded-[3px] bg-stone-300 <%= size %>"></span>
+        <% end %>
+      <% end %>
+    </div>
+  </fieldset>

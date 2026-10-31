@@ -274,7 +274,7 @@ RSpec.describe "Admin products", type: :request do
     it "publishes a draft product" do
       sign_in_as(user)
       product = Product.create!(seller: approved_seller, name: "Vaso publicar", sku: "PUB-001", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: "draft",
-        weight_grams: 500, length_cm: 20, width_cm: 15, height_cm: 10)
+        category: Category.create!(name: "Categoria publicar"), weight_grams: 500, length_cm: 20, width_cm: 15, height_cm: 10, fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 6)
 
       patch publish_admin_product_path(product)
 
@@ -370,6 +370,63 @@ RSpec.describe "Admin products", type: :request do
 
       follow_redirect!
       expect(response.body).to include("1 produto(s) escondido(s). 1 não puderam ser alterados")
+    end
+  end
+
+  describe "required field markers" do
+    before { sign_in_as(user) }
+
+    it "marks seller, name and price as required, but not the SKU" do
+      get new_admin_product_path
+
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("form[data-controller='required-fields'][novalidate]")).to be_present
+      %w[product_seller_id product_name product_price].each do |id|
+        expect(doc.at_css("##{id}")["required"]).to be_present
+        expect(doc.at_css("label[for='#{id}'] [data-required-fields-target='marker']")).to be_present
+      end
+    end
+
+    it "explains why to pick a category" do
+      get new_admin_product_path
+
+      expect(response.body).to include("para publicar, escolha uma categoria")
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("label[for='product_category_id'] [data-required-fields-target='marker']")).to be_present
+      expect(doc.at_css("#product_category_id")["data-publish-required"]).to be_present
+    end
+
+    it "does not require the SKU" do
+      get new_admin_product_path
+
+      expect(Nokogiri::HTML(response.body).at_css("#product_sku")["required"]).to be_nil
+    end
+
+    it "makes the production time required only for made to order" do
+      get new_admin_product_path
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("#product_production_time_min_days")["required"]).to be_nil
+      expect(doc.at_css("label[for='product_production_time_min_days'] [data-required-fields-target='marker']")["hidden"]).to be_present
+
+      product = Product.create!(seller: Seller.create!(name: "Ateliê Sob Encomenda", owner_full_name: "Proprietário Teste", cpf: "13444462727", status: :approved, approved_at: Time.current),
+                                name: "Prato", sku: "PRATO-1", price_cents: 5_000, availability_type: :made_to_order,
+                                production_time_min_days: 3, production_time_max_days: 7)
+      get edit_admin_product_path(product)
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("#product_production_time_max_days")["required"]).to be_present
+      expect(doc.at_css("label[for='product_production_time_max_days'] [data-required-fields-target='marker']")["hidden"]).to be_nil
+    end
+
+    it "marks weight and dimensions as required to publish, without blocking the save" do
+      get new_admin_product_path
+
+      doc = Nokogiri::HTML(response.body)
+      %w[product_weight_grams product_length_cm product_width_cm product_height_cm].each do |id|
+        field = doc.at_css("##{id}")
+        expect(field["required"]).to be_nil
+        expect(field["data-publish-required"]).to eq("true")
+        expect(doc.at_css("label[for='#{id}'] [data-required-fields-target='marker']")).to be_present
+      end
     end
   end
 end

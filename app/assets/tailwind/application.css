@@ -18,31 +18,130 @@
      fundo dos cards do catálogo). */
   --color-sand-50: #faf3ea;
   --color-sand-100: #f9f1e7;
+  /* Divisores e bordas dos cards da vitrine do ateliê. Sem ela definida, o
+     `border-sand-200` não gerava CSS e as linhas saíam na cor do texto. */
+  --color-sand-200: #ecdcc6;
   --color-mist-100: #f4f5f7;
+
+  /* Serifada de destaque da loja (números e títulos editoriais, como os
+     cartões de "Como funciona"). A Fraunces já é servida abaixo. */
+  --font-craft: "Fraunces", Georgia, serif;
+}
+
+/* Fontes servidas pelo app (a CSP só permite font-src 'self'); ver
+   app/assets/fonts/CREDITS.md. O Propshaft reescreve o url() com digest. */
+@font-face {
+  font-family: "Caveat";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("caveat-600-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("fraunces-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Serif Display";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("dm-serif-display-400-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("space-grotesk-latin.woff2") format("woff2");
+}
+
+/* Vitrine do ateliê (SellerTheme). Títulos na fonte de título do tema; sem
+   negrito sintético, porque Caveat e DM Serif Display têm um peso só e o
+   negrito falso borra o desenho delas. */
+.atelier-heading {
+  font-family: var(--atelier-heading-font, inherit);
+  font-synthesis-weight: none;
+}
+
+/* Fundo escuro: o texto da vitrine usa `ink`, `ink-muted` e `sand-200` do
+   tema, então basta trocar essas cores dentro do contêiner. O que continua
+   claro volta às cores originais: a foto do card (com os selos "Peça única",
+   "Indisponível" e o botão de carrinho), toda superfície branca (favoritos,
+   compartilhar) e a caixa de denúncia (`atelier-light`). */
+.atelier-dark {
+  color-scheme: dark;
+  --color-ink: #f5f1ec;
+  --color-ink-muted: #c9c2b9;
+  --color-sand-200: rgb(255 255 255 / 0.16);
+  --color-brand-600: #f88f81;
+}
+.atelier-dark .aspect-square,
+.atelier-dark .bg-white,
+.atelier-dark .atelier-light {
+  color-scheme: light;
+  --color-ink: #1d2026;
+  --color-ink-muted: #6b7280;
+  --color-sand-200: #ecdcc6;
+  --color-brand-600: #df240c;
 }
 
 @layer components {
+  /* Topo do site inteiro (loja, painel do artesão e administração) com a
+     borda de baixo serrilhada, como tecido cortado com tesoura de picotar.
+     Dois zigue-zagues em gradiente: o de baixo, 1px mais baixo e no rosa da
+     marca (brand-200), vira o traço; o de cima, na cor do fundo do topo, é o
+     recorte. Por isso o topo precisa de fundo sólido, igual a
+     `--topo-fundo` (branco por padrão; a administração define o seu). */
+  /* Selo picotado: círculo com a borda recortada em dentes, como roseta de
+     tecido. Usado na inicial do ateliê no topo do painel; o recorte come
+     ~2,5% do raio (32 dentes rasos: com menos e mais fundos virava selo de
+     promoção). */
+  .painel-roseta { clip-path: polygon(50.0% 0.0%, 54.7% 2.7%, 59.8% 1.0%, 63.8% 4.5%, 69.1% 3.8%, 72.4% 8.1%, 77.8% 8.4%, 80.1% 13.3%, 85.4% 14.6%, 86.7% 19.9%, 91.6% 22.2%, 91.9% 27.6%, 96.2% 30.9%, 95.5% 36.2%, 99.0% 40.2%, 97.3% 45.3%, 100.0% 50.0%, 97.3% 54.7%, 99.0% 59.8%, 95.5% 63.8%, 96.2% 69.1%, 91.9% 72.4%, 91.6% 77.8%, 86.7% 80.1%, 85.4% 85.4%, 80.1% 86.7%, 77.8% 91.6%, 72.4% 91.9%, 69.1% 96.2%, 63.8% 95.5%, 59.8% 99.0%, 54.7% 97.3%, 50.0% 100.0%, 45.3% 97.3%, 40.2% 99.0%, 36.2% 95.5%, 30.9% 96.2%, 27.6% 91.9%, 22.2% 91.6%, 19.9% 86.7%, 14.6% 85.4%, 13.3% 80.1%, 8.4% 77.8%, 8.1% 72.4%, 3.8% 69.1%, 4.5% 63.8%, 1.0% 59.8%, 2.7% 54.7%, 0.0% 50.0%, 2.7% 45.3%, 1.0% 40.2%, 4.5% 36.2%, 3.8% 30.9%, 8.1% 27.6%, 8.4% 22.2%, 13.3% 19.9%, 14.6% 14.6%, 19.9% 13.3%, 22.2% 8.4%, 27.6% 8.1%, 30.9% 3.8%, 36.2% 4.5%, 40.2% 1.0%, 45.3% 2.7%); }
+
+  .topo-serrilhado { --topo-fundo: var(--color-white); position: relative; background-color: var(--topo-fundo); }
+  .topo-serrilhado::before,
+  .topo-serrilhado::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 7px;
+    pointer-events: none;
+    background-size: 14px 14px;
+    background-repeat: repeat-x;
+  }
+  .topo-serrilhado::before {
+    top: calc(100% + 1px);
+    background-image:
+      linear-gradient(135deg, var(--color-brand-200) 25%, transparent 25%),
+      linear-gradient(225deg, var(--color-brand-200) 25%, transparent 25%);
+  }
+  .topo-serrilhado::after {
+    top: 100%;
+    background-image:
+      linear-gradient(135deg, var(--topo-fundo) 25%, transparent 25%),
+      linear-gradient(225deg, var(--topo-fundo) 25%, transparent 25%);
+  }
+
+  /* Flash no visual do cartão da vitrine (banner do Instagram na home):
+     vermelho da marca, pesponto branco tracejado por dentro, etiqueta em
+     pílula. Sucesso e erro se distinguem pelo ícone e pelo título da pílula,
+     e o erro num vermelho mais fechado. */
   .app-flash {
-    @apply fixed left-4 right-4 top-4 z-50 mx-auto flex max-w-xl items-center gap-4 overflow-hidden rounded-3xl border bg-white px-5 py-5 pr-14 text-left shadow-[0_22px_55px_rgba(15,23,42,0.18)] sm:left-auto sm:right-6 sm:top-6 sm:mx-0 sm:gap-5 sm:px-6 sm:py-6 sm:pr-16;
+    @apply fixed left-4 right-4 top-4 z-50 mx-auto flex max-w-xl flex-col items-start gap-3 overflow-hidden rounded-[1.75rem] px-7 py-7 pr-16 text-left text-white shadow-[0_22px_55px_rgba(15,23,42,0.28)] sm:left-auto sm:right-6 sm:top-6 sm:mx-0;
   }
-  .app-flash--success { @apply border-emerald-100; }
-  .app-flash--error { @apply border-red-100; }
-  .app-flash__badge {
-    @apply grid size-14 shrink-0 place-items-center text-white sm:size-16;
-    clip-path: polygon(50% 0%, 62% 7%, 75% 7%, 84% 16%, 93% 25%, 93% 38%, 100% 50%, 93% 62%, 93% 75%, 84% 84%, 75% 93%, 62% 93%, 50% 100%, 38% 93%, 25% 93%, 16% 84%, 7% 75%, 7% 62%, 0% 50%, 7% 38%, 7% 25%, 16% 16%, 25% 7%, 38% 7%);
-  }
-  .app-flash--success .app-flash__badge { @apply bg-emerald-500; }
-  .app-flash--error .app-flash__badge { @apply bg-red-500; }
-  .app-flash__badge svg { @apply size-8 sm:size-9; }
-  .app-flash__title { @apply text-lg font-bold tracking-tight text-slate-950 sm:text-xl; }
-  .app-flash__message { @apply mt-1 text-sm leading-relaxed text-slate-600 sm:text-base; }
-  .app-flash__close { @apply absolute right-3 top-3 grid size-11 cursor-pointer place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2; }
-  .app-flash--success .app-flash__close { @apply focus-visible:outline-emerald-500; }
-  .app-flash--error .app-flash__close { @apply focus-visible:outline-red-500; }
+  .app-flash--success { @apply bg-brand-600; }
+  .app-flash--error { @apply bg-brand-700; }
+  .app-flash__stitch { @apply pointer-events-none absolute inset-2 rounded-[1.4rem] border-2 border-dashed border-white/45; }
+  .app-flash__pill { @apply relative flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em]; }
+  .app-flash__pill svg { @apply size-4; }
+  .app-flash__message { @apply relative text-base font-semibold leading-relaxed sm:text-lg; }
+  .app-flash__close { @apply absolute right-4 top-4 grid size-11 cursor-pointer place-items-center rounded-full text-white/80 transition hover:bg-white/15 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white; }
   .app-flash__close svg { @apply size-6; }
-  .app-flash__accent { @apply absolute inset-x-0 bottom-0 h-1.5 bg-gradient-to-r; }
-  .app-flash--success .app-flash__accent { @apply from-emerald-300 via-emerald-500 to-emerald-300; }
-  .app-flash--error .app-flash__accent { @apply from-red-300 via-red-500 to-red-300; }
 
   .admin-body { @apply min-h-screen bg-[#eee9df] text-slate-900 antialiased; }
   .admin-shell { @apply min-h-screen lg:grid lg:grid-cols-[17rem_minmax(0,1fr)]; }
@@ -60,7 +159,7 @@
   .admin-nav-link { @apply flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 no-underline transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400; }
   .admin-nav-link--active { @apply bg-white text-slate-950 shadow-sm hover:bg-white hover:text-slate-950; }
   .admin-sidebar-footer { @apply mt-8 space-y-1.5 border-t border-white/10 pt-5; }
-  .admin-mobile-header { @apply sticky top-0 z-40 flex items-center justify-between bg-[#101b20] px-4 py-3 shadow-lg lg:hidden; }
+  .admin-mobile-header { @apply sticky top-0 z-40 flex items-center justify-between px-4 py-3 lg:hidden; --topo-fundo: #101b20; }
   .admin-mobile-menu summary { @apply flex size-11 cursor-pointer list-none flex-col items-center justify-center gap-1.5 rounded-xl border border-white/15 text-white; }
   .admin-mobile-menu summary::-webkit-details-marker { @apply hidden; }
   .admin-mobile-menu summary span { @apply block h-0.5 w-5 rounded-full bg-current; }
@@ -70,7 +169,7 @@
       linear-gradient(180deg, rgba(16, 12, 10, 0.85) 0%, rgba(16, 12, 10, 0.5) 55%, rgba(16, 12, 10, 0.85) 100%),
       url("admin-sidebar-bg.jpg");
   }
-  .admin-topbar { @apply hidden h-20 items-center justify-between border-b border-slate-200/80 bg-[#f8f6f0]/95 px-6 backdrop-blur lg:flex lg:px-9; }
+  .admin-topbar { @apply hidden h-20 items-center justify-between px-6 lg:flex lg:px-9; --topo-fundo: #f8f6f0; }
   .admin-eyebrow { @apply text-[0.65rem] font-bold uppercase tracking-[0.22em] text-brand-600; }
   .admin-user-chip { @apply flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm; }
   .admin-user-avatar { @apply grid size-9 shrink-0 place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-700; }
@@ -111,6 +210,78 @@
   .admin-flash { @apply mb-6 rounded-xl border px-4 py-3 text-sm font-medium shadow-sm; }
   .admin-flash--danger { @apply border-rose-200 bg-rose-50 text-rose-800; }
   .admin-empty-state { @apply rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center text-sm text-slate-500; }
+  /* Painel do artesão: componentes extraídos das views de seller_portal
+     (antes repetidos à mão). Mesmo visual de antes; mudar aqui muda o painel inteiro. */
+  .seller-card { @apply rounded-2xl border border-brand-100 bg-white p-6 shadow-sm; }
+  .seller-card-lg { @apply rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8; }
+  .seller-label { @apply mb-1 block text-sm font-semibold text-stone-700; }
+  .seller-input { @apply w-full rounded-xl border border-stone-300 bg-brand-50/30 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:bg-white focus:ring-3 focus:ring-brand-200; }
+  .seller-badge { @apply inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold; }
+  .seller-button { @apply inline-flex min-h-11 cursor-pointer items-center rounded-full px-6 py-3 text-sm font-bold transition; }
+  .seller-button--primary { @apply bg-brand-600 text-white hover:bg-brand-700; }
+  .seller-button--secondary { @apply border border-brand-200 text-brand-700 hover:bg-brand-50; }
+
+  /* Campo obrigatório vazio (controller required-fields). O `!` vence o
+     estilo de input do admin e o focus:border da vitrine. */
+  input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { @apply border-red-500! focus:border-red-500! focus:ring-red-100!; }
+  .field-error { @apply mt-1 text-xs font-medium text-red-600; }
+
+  /* Fluxo de vantagens da aba "Quem vende" (/como-funciona). A cor fica
+     numa placa atrás do conteúdo (.processo__placa), com cantos
+     arredondados e um pesponto tracejado por dentro, o ornamento de feito à
+     mão. No celular, um carrossel. Do `lg` em diante, cada placa
+     inclina em perspectiva (lado esquerdo mais alto, cantos ainda
+     arredondados), com uma placa mais escura deslocada atrás. Só a placa
+     inclina: o texto continua reto. A perspectiva estreita a placa, por isso
+     ela é mais larga que o conteúdo (`right` negativo) e entra por baixo da
+     seguinte, que vem depois no DOM e fica por cima; o conteúdo nunca passa
+     da borda visível. A última não se estende, para não sair do quadro. */
+  /* Abaixo do `lg`, a lista é a faixa de um carrossel (carousel_controller):
+     rolagem com snap, indo até a borda do quadro areia (o `-mx` desfaz o
+     padding dele e o `px` mantém a primeira placa alinhada ao título), com
+     a seguinte aparecendo na borda. */
+  .processo { @apply -mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-6 px-6 pb-2 [scrollbar-width:none] sm:-mx-10 sm:scroll-px-10 sm:px-10 lg:mx-0 lg:gap-0 lg:overflow-visible lg:px-0 lg:pt-3 lg:pb-0 lg:pl-3; }
+  .processo__passo { @apply relative isolate w-[82%] min-w-0 shrink-0 snap-start sm:w-[46%] lg:w-auto lg:flex-1 lg:shrink; }
+  .processo__placa { @apply absolute inset-0 -z-10 rounded-[1.5rem]; }
+  .processo__placa--frente::after { content: ""; position: absolute; inset: 0.6rem; border: 2px dashed rgb(255 255 255 / 0.32); border-radius: 1rem; }
+  .processo__placa--sombra { @apply hidden lg:block; }
+  .processo__conteudo { @apply relative flex h-full flex-col px-7 pt-7 pb-14; }
+  .processo__seta { @apply absolute bottom-6 left-0 h-3.5 w-16 bg-white/90; clip-path: polygon(0 0, 78% 0, 100% 50%, 78% 100%, 0 100%); }
+  @media (width >= 64rem) {
+    .processo__passo { filter: drop-shadow(-12px 8px 16px rgb(60 15 5 / 0.28)); }
+    .processo__placa { right: -4.5rem; border-radius: 1.75rem; transform-origin: left center; transform: perspective(56rem) rotateY(20deg); }
+    .processo__placa--sombra { transform: translate(-0.75rem, -0.75rem) perspective(56rem) rotateY(20deg); }
+    .processo__passo:last-child .processo__placa { right: 0; }
+    .processo__conteudo { min-height: 20rem; justify-content: center; padding: 3.25rem 1.5rem 4.5rem 2rem; }
+    .processo__passo:last-child .processo__conteudo { padding-right: 3rem; }
+  }
+
+  /* Etapas de "Como funciona" (aba Quem vende), no modelo de um fluxo de
+     seis passos: selo hexagonal numerado sobre uma linha, conector e um
+     hexágono contornado com o ícone. A cor de cada passo vem de `--passo`
+     (style no item). Bordas e linhas são costuradas, como as placas do
+     destaque: pesponto tracejado dentro dos hexágonos (SVG, porque
+     clip-path não aceita borda tracejada), conector em linha tracejada,
+     fita com costura nas duas bordas no desktop e pesponto por dentro dos
+     cartões do celular. Do `lg` em diante, as seis colunas lado a lado sobre
+     a fita; abaixo disso, um carrossel (carousel_controller) de cartões com
+     rolagem e snap, o próximo aparecendo na borda. */
+  .fluxo__desenho { @apply absolute inset-0 size-full overflow-visible; }
+  .fluxo__costura { fill: none; stroke: color-mix(in srgb, var(--passo) 55%, white); stroke-width: 1.6; stroke-dasharray: 5 4; stroke-linecap: round; stroke-linejoin: round; }
+  .fluxo__costura--clara { stroke: rgb(255 255 255 / 0.7); }
+  .fluxo__selo { @apply relative grid h-16 w-[4.6rem] place-items-center; }
+  .fluxo__selo-fundo { fill: var(--passo); }
+  .fluxo__selo-numero { @apply relative text-xl font-bold tabular-nums text-white; }
+  .fluxo__conector { @apply relative h-8 w-0; border-left: 2px dashed var(--passo); }
+  .fluxo__conector::after { content: ""; position: absolute; bottom: -3px; left: -1px; width: 7px; height: 7px; border-radius: 9999px; transform: translateX(-50%); background: var(--passo); }
+  .fluxo__icone { @apply relative mt-1 grid h-28 w-32 place-items-center; color: var(--passo); }
+  .fluxo__icone-contorno { fill: #fff; stroke: var(--passo); stroke-width: 2.5; stroke-linejoin: round; }
+  .fluxo__cartao { position: relative; }
+  .fluxo__cartao::after { content: ""; position: absolute; inset: 0.55rem; border: 1.5px dashed color-mix(in srgb, var(--passo) 40%, white); border-radius: 1.1rem; pointer-events: none; }
+  @media (width >= 64rem) {
+    .fluxo__cartao::after { content: none; }
+    .fluxo__lista::before { content: ""; position: absolute; top: 2.5rem; left: 6%; right: 6%; height: 1rem; transform: translateY(-50%); border-radius: 9999px; background: var(--color-sand-100); border-block: 2px dashed var(--color-sand-200); }
+  }
 }
 
 /* Fundo fotográfico das páginas que usam a paisagem quente da marca (hoje

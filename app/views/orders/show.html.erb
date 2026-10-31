@@ -10,14 +10,18 @@
       <p class="mt-2 text-sm text-ink-muted"><%= @order.customer.name %> · <%= l(@order.created_at, format: :short) %></p>
     </div>
     <div class="flex flex-wrap gap-2">
-      <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800"><%= t(@order.status, scope: "orders.statuses") %></span>
-      <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold <%= seller_order_fulfillment_badge_classes(@seller_order) %>"><%= seller_order_fulfillment_label(@seller_order) %></span>
+      <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold <%= order_status_badge_classes(@order) %>"><%= t(@order.status, scope: "orders.statuses") %></span>
+      <%# Enquanto o pagamento não entra, o estado de entrega repetia o mesmo
+          "Aguardando pagamento" do selo ao lado. %>
+      <% unless @order.pending? %>
+        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold <%= seller_order_fulfillment_badge_classes(@seller_order) %>"><%= seller_order_fulfillment_label(@seller_order) %></span>
+      <% end %>
     </div>
   </header>
 
   <% if payment %>
     <p class="mt-4 inline-block rounded-full bg-mist-100 px-4 py-2 text-sm text-ink">
-      Pago com <span class="font-semibold"><%= payment_method_label(payment) %></span>
+      <%= payment_summary_label(payment) %>
     </p>
   <% end %>
 
@@ -52,7 +56,7 @@
         <% complete = step[:state] == :complete %>
         <li class="relative rounded-2xl border p-4 <%= current ? 'border-brand-400 bg-brand-50' : complete ? 'border-emerald-200 bg-emerald-50/60' : 'border-stone-200 bg-stone-50' %>" aria-current="<%= current ? 'step' : 'false' %>">
           <div class="flex items-center gap-3">
-            <span class="grid size-8 shrink-0 place-items-center rounded-full text-sm font-black <%= current ? 'bg-brand-500 text-white' : complete ? 'bg-emerald-600 text-white' : 'bg-stone-200 text-stone-500' %>" aria-hidden="true"><%= complete ? "✓" : "•" %></span>
+            <span class="grid size-8 shrink-0 place-items-center rounded-full text-sm font-black <%= current ? 'bg-brand-600 text-white' : complete ? 'bg-emerald-600 text-white' : 'bg-stone-200 text-stone-500' %>" aria-hidden="true"><%= complete ? "✓" : "•" %></span>
             <p class="font-semibold <%= step[:state] == :upcoming ? 'text-stone-500' : 'text-stone-950' %>"><%= step[:label] %></p>
           </div>
           <% if step[:time] %>
@@ -89,7 +93,7 @@
 
   <div class="mb-8 mt-6 flex flex-wrap gap-3">
     <% if @order.pending? %>
-      <%= link_to "Pagar agora", new_order_payment_path(@order), class: "inline-block w-fit rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600" %>
+      <%= link_to "Pagar agora", new_order_payment_path(@order), class: "inline-block w-fit rounded-full bg-brand-600 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-700" %>
     <% end %>
 
     <% if @order.pending? || @order.confirmed? %>
@@ -101,7 +105,7 @@
     <% if @seller_order.shipment&.shipped? && @seller_order.shipment.customer_reported_delivered_at.blank? %>
       <%= button_to(@seller_order.shipment.local_pickup? ? "Confirmar retirada" : "Confirmar recebimento",
             deliver_order_path(@order), method: :patch,
-            class: "inline-block w-fit rounded-full bg-brand-500 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-600",
+            class: "inline-block w-fit rounded-full bg-brand-600 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-700",
             form: { data: { turbo_confirm: @seller_order.shipment.local_pickup? ? "Avisar o ateliê que você retirou o pedido?" : "Avisar o ateliê que você recebeu o pedido?" } }) %>
     <% elsif @seller_order.shipment&.shipped? %>
       <p class="inline-flex items-center rounded-full bg-emerald-50 px-6 py-3 text-sm font-semibold text-emerald-800">
@@ -152,7 +156,9 @@
     </div>
     <% if @order.shipment %>
       <div class="flex justify-between text-ink-muted">
-        <span><%= @order.shipment.service %></span>
+        <%# Só o transporte: o prazo de produção de cada peça sob encomenda
+            aparece no item, e o envio começa depois dele. %>
+        <span>Transporte · <%= @order.shipment.service %><%= " (depois da produção)" if @order.order_items.any? { |item| item.production_time_snapshot.present? } %></span>
         <span><%= shipping_estimate_label(@order.shipment) %></span>
       </div>
     <% end %>

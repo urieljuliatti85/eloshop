@@ -1,9 +1,13 @@
-<header class="sticky top-0 z-10 border-b border-gray-100 bg-white/90 backdrop-blur"
+<%# Borda de baixo serrilhada (.topo-serrilhado), a mesma do painel do
+    artesão e da administração. O recorte precisa de fundo sólido, por isso o
+    topo deixou de ser branco translúcido com desfoque; a borda cinza virou o
+    traço dos dentes. %>
+<header class="topo-serrilhado sticky top-0 z-10"
         data-controller="mobile-menu"
         data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
-  <div class="container mx-auto flex items-center justify-between gap-6 px-5 py-4">
+  <div class="container mx-auto flex items-center justify-between gap-3 px-5 py-4 md:gap-6">
     <%= link_to root_path, class: "flex items-center" do %>
-      <%= image_tag "logo.png", alt: "EloShop", class: "h-9" %>
+      <%= image_tag "logo-header.png", alt: "EloShop", class: "h-9 w-auto", width: 108, height: 36 %>
     <% end %>
 
     <nav class="hidden items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-medium text-ink md:flex">
@@ -33,6 +37,15 @@
               class: "rounded-full px-4 py-2 transition #{active ? 'bg-white text-brand-600 shadow-sm' : 'hover:bg-white hover:shadow-sm'}",
               aria: { current: ("page" if active) } %>
       <% end %>
+      <%# Instagram é a última pílula e sai do site (nova aba). Até o `xl` só o
+          ícone, para as pílulas não quebrarem linha; o nome acessível diz o
+          destino e que abre outra aba. %>
+      <%= link_to eloshop_instagram_url, target: "_blank", rel: "noopener",
+            class: "flex items-center gap-1.5 rounded-full px-3 py-2 transition hover:bg-white hover:text-brand-600 hover:shadow-sm xl:px-4",
+            aria: { label: "Instagram da EloShop (abre em nova aba)" } do %>
+        <%= instagram_icon("size-4") %>
+        <span class="hidden xl:inline">Instagram</span>
+      <% end %>
     </nav>
 
     <%# Em telas estreitas os rótulos de conta saem do topo (a 390px "Criar
@@ -41,7 +54,10 @@
     <%# Mesma pílula do menu de navegação ao lado: borda, fundo cinza e cantos
         arredondados, para os dois blocos do topo lerem como um par. No mobile
         a moldura sai — lá dentro ficam só o carrinho e o hambúrguer. %>
-    <div class="flex items-center gap-1 text-sm md:gap-0.5 md:rounded-full md:border md:border-gray-200 md:bg-gray-50 md:px-2 md:py-1">
+    <%# Sem espaço entre os ícones no celular: com o cliente logado são cinco
+        alvos de 44px (Instagram, sino, sacola, busca e menu), e a 390px eles
+        só cabem ao lado do logo assim. %>
+    <div class="flex items-center text-sm md:gap-0.5 md:rounded-full md:border md:border-gray-200 md:bg-gray-50 md:px-2 md:py-1">
       <%# Quem está logado aparece pelo primeiro nome, com a inicial no avatar
           — mesma identificação que o painel do artesão já usa. O nome abre um
           painel com os dados da conta e seus destinos.
@@ -136,6 +152,14 @@
         <%= link_to "Quero comprar", new_customer_session_path, class: "hidden rounded-full px-4 py-2 font-medium text-ink transition hover:bg-white hover:shadow-sm md:inline-block" %>
       <% end %>
 
+      <%# Instagram no topo do celular, ao lado do sino (ou da sacola, para quem
+          não está logado). No desktop ele é a última pílula do menu. %>
+      <%= link_to eloshop_instagram_url, target: "_blank", rel: "noopener",
+            class: "flex h-11 w-11 items-center justify-center text-ink transition hover:text-brand-600 md:hidden",
+            aria: { label: "Instagram da EloShop (abre em nova aba)" } do %>
+        <%= instagram_icon("h-6 w-6") %>
+      <% end %>
+
       <%# Mesmo padrão do menu de conta e da busca ao lado: um botão abre um
           painel flutuante via account-menu (Stimulus), sem recarregar a
           página. Sem JavaScript o sino ainda funciona como link comum para
@@ -156,7 +180,7 @@
               <path d="M9.5 16a2.5 2.5 0 0 0 5 0" stroke-linecap="round" />
             </svg>
             <% if unread_count.positive? %>
-              <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-semibold text-white">
+              <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-xs font-semibold text-white">
                 <%= unread_count %>
               </span>
             <% end %>
@@ -197,7 +221,7 @@
             <path d="M9.5 16a2.5 2.5 0 0 0 5 0" stroke-linecap="round" />
           </svg>
           <% if unread_count.positive? %>
-            <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-semibold text-white">
+            <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-xs font-semibold text-white">
               <%= unread_count %>
             </span>
           <% end %>
@@ -212,7 +236,7 @@
         </svg>
         <% if Current.cart&.cart_items&.any? %>
           <%# Sobre o ícone o badge flutua no canto; ao lado do rótulo, fica em linha. %>
-          <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-semibold text-white md:static">
+          <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-xs font-semibold text-white md:static">
             <%= Current.cart.cart_items.sum(:quantity) %>
           </span>
         <% end %>
@@ -238,7 +262,7 @@
             <%= form.search_field :q, value: params[:q], placeholder: "Buscar produtos", id: nil,
                   class: "w-full rounded-full border border-gray-200 bg-sand-50 px-4 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-brand-500 focus:outline-none",
                   data: { header_search_target: "input" } %>
-            <%= form.submit "Buscar", class: "cursor-pointer rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600" %>
+            <%= form.submit "Buscar", class: "cursor-pointer rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700" %>
           <% end %>
         </div>
       </div>

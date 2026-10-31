@@ -12,15 +12,75 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased">
-    <header class="sticky top-0 z-40 border-b border-brand-100 bg-white/90 backdrop-blur">
+  <%# Abas inferiores do celular (layouts/_seller_mobile_tabs): os Primeiros
+      passos enquanto o cadastro não está pronto, o trabalho do dia depois.
+      Não no editor de tema, que tem a própria barra de ações no rodapé. Com
+      elas, `--seller-tabs-height` (só abaixo de `sm`) abre espaço no fim do
+      conteúdo e sobe o que é fixo embaixo. %>
+  <% mobile_tabs = controller_name != "themes" %>
+
+  <%# Tour guiado: abre sozinho enquanto o vendedor não o concluiu e também por
+      qualquer elemento com `data-action="tour#start"` (ver Primeiros passos). %>
+  <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased <%= 'max-sm:[--seller-tabs-height:4rem]' if mobile_tabs %>"
+        data-controller="tour"
+        data-tour-steps-value="<%= seller_tour_steps.to_json %>"
+        data-tour-complete-url-value="<%= seller_tour_completion_path %>"
+        data-tour-auto-value="<%= current_seller.tour_completed_at.nil? %>">
+    <%# Navegação do painel: lista única, usada na barra lateral (lg+) e no
+        painel do hambúrguer (celular). Antes era uma faixa horizontal com
+        rolagem lateral, e "Novo produto" ficava fora da tela sem indício de
+        arrastar. %>
+    <%# Agrupada em três: o trabalho do dia, o catálogo e a configuração da
+        conta (que se faz uma vez). "Novo produto" continua item de menu porque
+        o tour guiado localiza seus passos pelos links daqui. %>
+    <% nav_groups = [
+         [ "Operação", [
+           [ "Visão geral", seller_root_path ],
+           [ "Pedidos", seller_orders_path ],
+           [ "Mensagens", seller_messages_path ],
+           [ "Avaliações", seller_reviews_path ]
+         ] ],
+         [ "Catálogo", [
+           [ "Produtos", seller_products_path ],
+           [ "Novo produto", new_seller_product_path ]
+         ] ],
+         [ "Configuração", [
+           [ "Primeiros passos", seller_getting_started_path ],
+           [ "Dados do Ateliê", seller_atelier_path ],
+           [ "Editar Tema e Visual do Ateliê", edit_seller_theme_path ],
+           [ "Conta Vendedor no Mercado Pago", seller_mercado_pago_guide_path ],
+           [ "Cadastro da Chave Pix", seller_pix_key_guide_path ]
+         ] ]
+       ] %>
+    <% nav_items = nav_groups.flat_map(&:last) %>
+    <%# A área atual é o item de caminho mais longo que prefixa a URL (assim
+        /painel/produtos/12/editar marca "Produtos" e /painel/produtos/novo
+        marca "Novo produto"); a raiz só vale por igualdade. As mensagens de um
+        pedido moram sob /pedidos, mas pertencem a "Mensagens". %>
+    <% active_nav_path = if controller_name == "order_messages"
+         seller_messages_path
+       else
+         nav_items.map(&:last)
+                  .select { |path| path == seller_root_path ? request.path == path : request.path.start_with?(path) }
+                  .max_by(&:length)
+       end %>
+    <%# "Ver a loja" leva à página do próprio ateliê (/artesaos/:slug). Enquanto
+        ela não existe (cadastro pendente, suspenso ou escondido), cai na loja
+        geral: a página própria responderia 404 ou "indisponível". %>
+    <% store_path = current_seller.public_page_available? ? seller_path(current_seller) : products_path %>
+    <%# Borda de baixo serrilhada (.topo-serrilhado), a mesma do site todo: o
+        recorte precisa de fundo sólido, por isso o topo deixou de ser
+        translúcido com desfoque. %>
+    <header class="topo-serrilhado sticky top-0 z-40"
+            data-controller="mobile-menu"
+            data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
       <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6 lg:flex-nowrap lg:px-8">
         <%= link_to seller_root_path, class: "flex min-h-11 shrink-0 items-center gap-3", aria: { label: "Início do painel" } do %>
-          <%= image_tag "logo.png", alt: "EloShop", class: "h-7 w-auto" %>
+          <%= image_tag "logo-header.png", alt: "EloShop", class: "h-7 w-auto", width: 84, height: 28 %>
           <span class="hidden border-l border-brand-200 pl-3 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-brand-600 sm:block">Ateliê</span>
         <% end %>
 
-        <%= form_with url: seller_products_path, method: :get, class: "order-3 flex w-full min-w-0 items-center rounded-full border border-brand-200 bg-brand-50/60 px-4 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100 lg:order-none lg:mx-5 lg:flex-1" do %>
+        <%= form_with url: seller_products_path, method: :get, class: "order-3 flex w-full min-w-0 items-center rounded-full border border-brand-200 bg-brand-50/60 px-4 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-200 lg:order-none lg:mx-5 lg:flex-1" do %>
           <label for="seller-search" class="sr-only">Buscar no seu catálogo</label>
           <%= search_field_tag :q, params[:q], id: "seller-search", placeholder: "Buscar no seu catálogo", class: "min-h-10 w-full border-0 bg-transparent px-0 text-sm outline-none focus:ring-0" %>
           <button type="submit" class="grid size-11 shrink-0 cursor-pointer place-items-center text-brand-500" aria-label="Buscar">
@@ -28,15 +88,15 @@
           </button>
         <% end %>
 
-        <div class="ml-auto flex shrink-0 items-center gap-3 sm:gap-5">
-          <%= link_to "Ver loja", products_path, class: "hidden min-h-11 items-center text-xs font-semibold text-stone-600 hover:text-brand-600 sm:inline-flex" %>
+        <div class="ml-auto flex shrink-0 items-center gap-2 sm:gap-5">
+          <%= link_to "Ver a loja", store_path, class: "inline-flex min-h-11 items-center whitespace-nowrap text-xs font-semibold text-stone-600 hover:text-brand-600" %>
 
           <% recent_notifications = current_seller.notifications.chronological.limit(5)
              unread_count = current_seller.notifications.unread.count %>
           <div class="relative" data-controller="account-menu"
                data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
             <button type="button"
-                    class="relative grid size-9 cursor-pointer place-items-center rounded-full text-stone-600 transition hover:bg-brand-50 hover:text-brand-600"
+                    class="relative grid size-11 cursor-pointer place-items-center rounded-full text-stone-600 transition hover:bg-brand-50 hover:text-brand-600"
                     aria-expanded="false" aria-haspopup="true"
                     aria-label="Notificações"
                     data-account-menu-target="button"
@@ -46,18 +106,33 @@
                 <path d="M9.5 16a2.5 2.5 0 0 0 5 0" stroke-linecap="round" />
               </svg>
               <% if unread_count.positive? %>
-                <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-xs font-semibold text-white">
+                <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-xs font-semibold text-white">
                   <%= unread_count %>
                 </span>
               <% end %>
             </button>
 
-            <div class="absolute right-0 top-full z-20 mt-3 w-80 overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-lg"
+            <%# Celular: folha que sobe da base da tela, com fundo escurecido que
+                fecha ao toque; antes era um painel de 20rem preso ao sininho, que
+                fica no meio do cabeçalho e saía pela esquerda em 320-390px. Do
+                `sm` em diante volta a ser o painel flutuante sob o sininho. O
+                alvo `panel` é o conjunto (fundo + folha), então abrir/fechar
+                continua sendo só o `hidden` do account-menu. O `fixed` só é
+                relativo à tela porque o cabeçalho não tem `backdrop-blur`
+                abaixo de `sm` (backdrop-filter vira contêiner do `fixed`). %>
+            <div class="fixed inset-0 z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:z-20 sm:mt-3 sm:w-80"
                  data-account-menu-target="panel" hidden>
-              <p class="border-b border-brand-100 px-4 py-3 text-sm font-semibold text-stone-900">Notificações</p>
+              <div class="absolute inset-0 bg-stone-900/40 sm:hidden" data-action="click->account-menu#close" aria-hidden="true"></div>
+              <div class="absolute inset-x-0 bottom-0 flex max-h-[75vh] flex-col overflow-hidden rounded-t-2xl border-t border-brand-100 bg-white pb-[env(safe-area-inset-bottom)] shadow-lg sm:static sm:max-h-none sm:rounded-2xl sm:border sm:pb-0">
+              <div class="flex items-center justify-between border-b border-brand-100 px-4 py-3">
+                <p class="text-sm font-semibold text-stone-900">Notificações</p>
+                <button type="button" class="grid size-11 -my-2 -mr-2 cursor-pointer place-items-center rounded-full text-stone-500 hover:bg-brand-50 sm:hidden" aria-label="Fechar notificações" data-action="account-menu#close">
+                  <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke-linecap="round"/></svg>
+                </button>
+              </div>
 
               <% if recent_notifications.any? %>
-                <ul class="max-h-96 overflow-y-auto">
+                <ul class="min-h-0 flex-1 overflow-y-auto sm:max-h-96">
                   <% recent_notifications.each do |notification| %>
                     <li>
                       <%= button_to mark_as_read_seller_notification_path(notification), method: :patch,
@@ -73,76 +148,103 @@
               <% end %>
 
               <div class="border-t border-brand-100">
-                <%= link_to "Ver todas", seller_notifications_path, class: "block px-4 py-2.5 text-center text-sm font-medium text-brand-600 hover:bg-brand-50" %>
+                <%= link_to "Ver todas", seller_notifications_path, class: "block px-4 py-3 text-center text-sm font-medium text-brand-600 hover:bg-brand-50" %>
+              </div>
               </div>
             </div>
           </div>
 
           <div class="hidden h-7 w-px bg-brand-100 sm:block"></div>
           <div class="text-right">
-            <p class="max-w-36 truncate text-sm font-bold text-stone-900"><%= current_seller.name %></p>
-            <p class="text-[0.65rem] font-semibold uppercase tracking-wider text-brand-600"><%= t(current_seller.status, scope: "sellers.statuses") %></p>
+            <p class="max-w-24 truncate sm:max-w-36 text-sm font-bold text-stone-900"><%= current_seller.name %></p>
+            <%# Estado da conta em texto legível: o vermelho fica para o que pede ação
+                (a conta suspensa), não para "Aprovado". %>
+            <p class="text-xs font-semibold <%= { "approved" => "text-emerald-700", "pending" => "text-amber-700", "suspended" => "text-red-700" }.fetch(current_seller.status, "text-stone-600") %>"><%= t(current_seller.status, scope: "sellers.statuses") %></p>
           </div>
-          <span class="grid size-9 place-items-center rounded-full bg-brand-600 text-sm font-bold text-white" aria-hidden="true"><%= current_seller.name.first.upcase %></span>
-          <%= button_to seller_logout_path, method: :delete, class: "grid size-11 cursor-pointer place-items-center rounded-full border border-brand-200 text-stone-600 transition hover:border-brand-400 hover:text-brand-600", form: { aria: { label: "Sair" } } do %>
+          <span class="painel-roseta hidden size-10 place-items-center bg-brand-600 text-sm font-bold text-white sm:grid" aria-hidden="true"><%= current_seller.name.first.upcase %></span>
+          <%= button_to seller_logout_path, method: :delete, class: "hidden size-11 cursor-pointer place-items-center rounded-full border border-brand-200 text-stone-600 transition hover:border-brand-400 hover:text-brand-600 sm:grid", aria: { label: "Sair" } do %>
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/></svg>
           <% end %>
+
+          <button type="button"
+                  class="grid size-11 cursor-pointer place-items-center text-stone-900 hover:text-brand-600 lg:hidden"
+                  aria-expanded="false" aria-controls="seller-nav-panel" aria-label="Abrir menu do painel"
+                  data-mobile-menu-target="button"
+                  data-action="mobile-menu#toggle">
+            <%# Risco do meio mais curto e na cor da marca, mesmo vocabulário de
+                acabamento da borda serrilhada do topo. %>
+            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <path d="M4 7h16M4 17h16" />
+              <path d="M10 12h10" class="text-brand-600" stroke="currentColor" />
+            </svg>
+          </button>
         </div>
       </div>
 
-      <%# O gradiente na borda direita é a única pista de que a nav tem mais
-          itens fora da tela no celular: sem ele "Dados do Ateliê" parecia o
-          último e "Novo produto" ficava escondido sem indício de arrastar. %>
-      <div class="relative mx-auto max-w-7xl">
-        <nav class="flex gap-2 overflow-x-auto px-4 pb-3 text-xs font-semibold sm:px-6 lg:px-8" aria-label="Navegação do painel">
-          <% [
-            ["Visão geral", seller_root_path],
-            ["Primeiros passos", seller_getting_started_path],
-            ["Conta Vendedor no Mercado Pago", seller_mercado_pago_guide_path],
-            ["Produtos", seller_products_path],
-            ["Pedidos", seller_orders_path],
-            ["Mensagens", seller_messages_path],
-            ["Avaliações", seller_reviews_path],
-            ["Dados do Ateliê", seller_atelier_path],
-            ["Novo produto", new_seller_product_path]
-          ].each do |label, path| %>
-            <% active = current_page?(path) || (label == "Mensagens" && controller_name == "order_messages") %>
-            <%# min-h-11: no celular estes são os alvos de toque principais do
-                painel, e a altura do texto sozinha ficava abaixo de 40px. %>
-            <%= link_to path,
-                  class: "inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 transition #{active ? 'bg-brand-500 text-white shadow-sm' : 'text-stone-600 hover:bg-brand-50 hover:text-brand-700'}",
-                  aria: (active ? { current: "page" } : {}) do %>
-              <%= label %>
-              <%# Passo obrigatório: sem a conta conectada não há publicação. O
-                  texto carrega o significado (não só a cor) para leitores de tela. %>
-              <% if path == seller_mercado_pago_guide_path %>
-                <% case current_seller.mercado_pago_account_state %>
-                <% when :ready %>
-                  <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-emerald-800">✓ Conectado</span>
-                <% when :not_accepted %>
-                  <span class="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-white">
-                    <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
-                    Conta não aceita
-                  </span>
-                <% else %>
-                  <span class="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[0.65rem] font-bold uppercase text-white">
-                    <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
-                    Obrigatório
-                  </span>
-                <% end %>
-              <% end %>
+      <%# Celular e tablet: painel do hambúrguer, fechado ao carregar. Sem
+          JavaScript ele não abre; a barra horizontal só existe a partir de lg. %>
+      <div id="seller-nav-panel" class="border-t border-brand-100 bg-white lg:hidden" data-mobile-menu-target="panel" hidden>
+        <nav class="mx-auto flex max-w-7xl flex-col px-4 sm:px-6" aria-label="Navegação do painel">
+          <%= link_to store_path, class: "flex min-h-11 items-center gap-2 border-b border-brand-100 py-1 text-base font-semibold text-stone-900" do %>
+            Ver a loja
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          <% end %>
+          <% nav_groups.each do |group, items| %>
+            <p class="pb-1 pt-4 text-xs font-semibold text-stone-500"><%= group %></p>
+            <% items.each do |label, path| %>
+              <%= render "layouts/seller_nav_link", label: label, path: path, mobile: true, active: path == active_nav_path %>
             <% end %>
           <% end %>
         </nav>
-        <div class="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white via-white/90 to-transparent shadow-[inset_-12px_0_10px_-10px_rgba(28,25,23,0.15)] lg:hidden" aria-hidden="true"></div>
+        <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 pb-5 pt-3 sm:px-6">
+          <p class="px-1 text-sm text-stone-500"><span class="font-semibold text-stone-900"><%= current_seller.name %></span> · <%= t(current_seller.status, scope: "sellers.statuses") %></p>
+          <%= button_to "Sair", seller_logout_path, method: :delete, class: "w-full cursor-pointer rounded-full bg-stone-900 px-5 py-3 text-base font-semibold text-white" %>
+        </div>
       </div>
     </header>
 
     <%= render "layouts/flash_message", message: flash[:notice], variant: :success %>
     <%= render "layouts/flash_message", message: flash[:alert], variant: :error %>
 
-    <main class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-      <div class="seller-content"><%= yield %></div>
-    </main>
+    <% setup_steps = current_seller.setup_steps %>
+    <%# Pré-cadastro: todo ateliê vê quando as vendas abrem; a frase muda
+        conforme os primeiros passos estejam completos. Suspenso fica de fora:
+        o problema dele não é passo faltando. %>
+    <% if !sales_open? && !current_seller.suspended? %>
+      <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <%= render "seller_portal/shared/pre_launch_banner", ready: setup_steps.values.all? %>
+      </div>
+    <% elsif sales_open? && current_seller.publicly_listed? && !current_seller.approved? %>
+      <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <%= render "seller_portal/shared/not_accepting_orders_banner" %>
+      </div>
+    <% end %>
+
+    <%# Telas largas: barra lateral fixa à esquerda; o conteúdo ocupa o resto. %>
+    <div class="mx-auto flex w-full max-w-7xl gap-8 px-4 pt-6 pb-[calc(1.5rem+var(--seller-tabs-height,0px))] sm:px-6 lg:px-8 lg:py-8">
+      <aside class="hidden w-60 shrink-0 lg:block">
+        <nav class="sticky top-24 flex flex-col gap-1.5 text-sm font-semibold" aria-label="Navegação do painel">
+          <% nav_groups.each_with_index do |(group, items), index| %>
+            <p class="px-4 pb-1 text-xs font-semibold text-stone-500 <%= index.zero? ? '' : 'pt-5' %>"><%= group %></p>
+            <% items.each do |label, path| %>
+              <%= render "layouts/seller_nav_link", label: label, path: path, mobile: false, active: path == active_nav_path %>
+            <% end %>
+          <% end %>
+        </nav>
+      </aside>
+
+      <main class="min-w-0 flex-1">
+        <div class="seller-content"><%= yield %></div>
+      </main>
+    </div>
+
+    <% if mobile_tabs %>
+      <% if setup_steps.values.include?(false) %>
+        <%= render "layouts/seller_mobile_tabs", label: "Primeiros passos", tabs: seller_setup_tabs(setup_steps) %>
+      <% else %>
+        <%= render "layouts/seller_mobile_tabs", label: "Atalhos do ateliê",
+              tabs: seller_work_tabs(active_nav_path, @to_prepare_count || current_seller.seller_orders_to_prepare.count) %>
+      <% end %>
+    <% end %>
   </body>
 </html>

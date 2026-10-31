@@ -20,7 +20,7 @@ module SellerPortal
 
     private
 
-    # Nome, dados do proprietário e endereço de origem. `slug` já está nas
+    # Nome, dados do proprietário, endereço de origem. O tema da vitrine tem controller próprio (ThemesController). `slug` já está nas
     # URLs públicas dos produtos, e trocá-lo quebraria links compartilhados;
     # `status` é decisão da plataforma. CPF em branco não apaga o já
     # cadastrado: `Seller#cpf=` só atribui quando o valor vem presente.

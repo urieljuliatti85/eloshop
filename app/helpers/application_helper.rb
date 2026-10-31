@@ -12,6 +12,21 @@ module ApplicationHelper
     "credits#show" => { path: "/creditos", title: "Créditos" }
   }.freeze
 
+  # Perfil oficial da EloShop no Instagram: menu do topo e banner da home.
+  ELOSHOP_INSTAGRAM_URL = "https://www.instagram.com/eloshop__".freeze
+  ELOSHOP_INSTAGRAM_HANDLE = "@eloshop__".freeze
+
+  def eloshop_instagram_url = ELOSHOP_INSTAGRAM_URL
+  def eloshop_instagram_handle = ELOSHOP_INSTAGRAM_HANDLE
+
+  # Ícone do Instagram (contorno), herda a cor do texto.
+  def instagram_icon(css_class)
+    tag.svg(viewBox: "0 0 24 24", class: css_class, fill: "none", stroke: "currentColor", "stroke-width": 1.8,
+            "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": true) do
+      safe_join([ tag.rect(x: 3, y: 3, width: 18, height: 18, rx: 5), tag.circle(cx: 12, cy: 12, r: 4), tag.circle(cx: 17.5, cy: 6.5, r: 0.6, fill: "currentColor") ])
+    end
+  end
+
   def google_analytics_measurement_id
     measurement_id = ENV["GOOGLE_ANALYTICS_MEASUREMENT_ID"].to_s.strip.upcase
     measurement_id if measurement_id.match?(GOOGLE_ANALYTICS_MEASUREMENT_ID_PATTERN)
@@ -71,6 +86,56 @@ module ApplicationHelper
     number_to_currency(cents / 100r)
   end
 
+  # "8%" / "12,5%": taxa em basis points como o vendedor lê.
+  def fee_rate_label(rate_bps)
+    number_to_percentage(rate_bps.fdiv(100), precision: 2, strip_insignificant_zeros: true, separator: ",")
+  end
+
+  # Comissão que vale para este vendedor, em uma frase que cabe depois de
+  # "a EloShop recebe ...": enquanto vale a de lançamento ela diz até quando e
+  # quanto passa a ser; antes da aprovação ou da abertura das vendas o prazo
+  # ainda não começou.
+  def seller_commission_text(seller)
+    launch = fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS)
+    standard = fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS)
+    ends_at = seller.launch_fee_ends_at
+
+    if ends_at.nil?
+      "#{launch} nos 3 primeiros meses de vendas do seu ateliê e #{standard} depois disso"
+    elsif Time.current < ends_at
+      "#{launch} (comissão de lançamento, até #{ends_at.strftime("%d/%m/%Y")}; depois, #{standard})"
+    else
+      standard
+    end
+  end
+
+  # Memoizado por request: o mesmo grid pergunta uma vez por card.
+  def sales_open?
+    @sales_open = PlatformSetting.sales_open? if @sales_open.nil?
+    @sales_open
+  end
+
+  # Como a peça se apresenta na loja. Enquanto as vendas estão fechadas, a de
+  # um ateliê que só está na vitrine aparece igual à de um aprovado ("Vendas
+  # em breve" para todos); aberta a loja, ela passa a dizer que o ateliê ainda
+  # não recebe pedidos. A decisão de compra continua em
+  # `Product#available_for_purchase?` — isto só escolhe a mensagem.
+  def product_shown_as_available?(product)
+    blocker = product.purchase_blocker
+    blocker.nil? || (blocker == :seller_not_accepting_orders && !sales_open?)
+  end
+
+  def seller_not_accepting_orders?(product)
+    sales_open? && product.purchase_blocker == :seller_not_accepting_orders
+  end
+
+  # Ateliê que aparece na loja mas ainda não vende (vitrine do pré-cadastro, ou
+  # aprovado que desconectou o Mercado Pago). O público é avisado antes e
+  # depois da abertura das vendas, até a aprovação.
+  def seller_preparing_to_sell?(seller)
+    seller.publicly_listed? && !seller.approved?
+  end
+
   # Valor para dentro de um campo de formulário: "89,90", sem "R$" e sem
   # separador de milhar — o que o usuário edita, e o que `MoneyAttribute`
   # lê de volta.
@@ -80,10 +145,33 @@ module ApplicationHelper
     number_with_precision(cents / 100r, precision: 2, separator: ",", delimiter: "")
   end
 
+  # Asterisco de campo obrigatório. `visible: false` renderiza oculto: o
+  # `required-fields` o revela quando a regra condicional passa a valer
+  # (ex.: prazo de produção só é obrigatório para peça sob encomenda).
+  def required_marker(visible: true)
+    tag.span("*", class: "ml-0.5 text-red-600", aria: { hidden: true }, hidden: !visible, data: { required_fields_target: "marker" })
+  end
+
+  # Campo exigido só para publicar (o rascunho salva sem ele): texto em vez de
+  # asterisco, para não se confundir com "obrigatório para salvar".
+  def publish_marker
+    tag.span("Para publicar", data: { publish_marker: true }, class: "ml-1 inline-block whitespace-nowrap rounded-full bg-stone-100 px-2 py-0.5 align-middle text-xs font-semibold text-stone-600")
+  end
+
   def shipping_estimate_label(shipping)
     return "Retirada combinada com o ateliê" if shipping.local_pickup?
 
     "Até #{shipping.estimated_days} dias úteis"
+  end
+
+  # Prazo mostrado antes de pagar. Com peça sob encomenda, o transporte só
+  # começa depois da produção (docs/shipping.md): somar os dois evita prometer
+  # "até 8 dias" por uma peça que leva 12 só para ficar pronta.
+  def checkout_delivery_estimate_label(shipping, production_max_days)
+    return shipping_estimate_label(shipping) if production_max_days.blank?
+    return "Retirada depois da produção (até #{production_max_days} dias úteis)" if shipping.local_pickup?
+
+    "Até #{production_max_days + shipping.estimated_days} dias úteis (produção de até #{production_max_days} + transporte de até #{shipping.estimated_days})"
   end
 
   # Compartilhado entre cliente, painel do vendedor e admin — os três mostram
@@ -95,6 +183,28 @@ module ApplicationHelper
     parts << "#{payment.installments}×" if payment.installments > 1
     parts << "#{payment.card_brand.humanize} •••• #{payment.card_last_four}" if payment.card_last_four.present?
     parts.join(" · ")
+  end
+
+  ORDER_STATUS_BADGE_CLASSES = {
+    "pending" => "bg-amber-100 text-amber-900",
+    "confirmed" => "bg-emerald-100 text-emerald-800",
+    "cancelled" => "bg-stone-100 text-stone-700",
+    "partially_refunded" => "bg-stone-100 text-stone-700",
+    "refunded" => "bg-stone-100 text-stone-700"
+  }.freeze
+
+  def order_status_badge_classes(order)
+    ORDER_STATUS_BADGE_CLASSES.fetch(order.status)
+  end
+
+  # "Pago com PIX" só depois de o dinheiro entrar: num pedido ainda pendente a
+  # mesma frase contradizia o selo "Aguardando pagamento" logo acima.
+  def payment_summary_label(payment)
+    if payment.paid? || payment.partially_refunded? || payment.refunded?
+      safe_join([ "Pago com ", tag.span(payment_method_label(payment), class: "font-semibold") ])
+    else
+      safe_join([ "Forma de pagamento escolhida: ", tag.span(payment_method_label(payment), class: "font-semibold") ])
+    end
   end
 
   SELLER_ORDER_FULFILLMENT_BADGE_CLASSES = {

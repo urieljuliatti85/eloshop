@@ -25,6 +25,11 @@ class FraudAlert < ApplicationRecord
       title: "Envio marcado sem código de rastreio",
       explanation: "Envio marcado há mais de 7 dias sem código de rastreio (retirada local fica de fora). Fecha sozinho quando o código é informado.",
       auto_resolvable: true
+    },
+    "chargeback" => {
+      title: "Chargeback em pedido do ateliê",
+      explanation: "O comprador contestou a cobrança no cartão e o Mercado Pago avisou. O pedido e o repasse não mudam sozinhos: quem arca com o valor é decisão sua. Só o admin fecha.",
+      auto_resolvable: false
     }
   }.freeze
 

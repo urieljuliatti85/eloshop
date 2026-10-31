@@ -1,4 +1,8 @@
 class Seller < ApplicationRecord
+  # Lista permitida (`only`), nunca `ignore`: a tabela tem tokens cifrados, CPF e
+  # endereço, que não podem ir parar em `versions` se alguém criar uma coluna nova.
+  has_paper_trail only: %i[name slug status approved_at showcased_at hidden_at mercado_pago_user_id mercado_pago_connected_at mercado_pago_live_mode]
+
   class VerificationRequired < StandardError; end
 
   enum :status, {
@@ -10,6 +14,38 @@ class Seller < ApplicationRecord
   ORIGIN_ADDRESS_FIELDS = %i[
     origin_zip_code origin_street origin_number origin_neighborhood origin_city origin_state
   ].freeze
+
+  # Tema da vitrine pública: logo, capa e uma mensagem de rodapé. Tudo
+  # opcional — sem capa a vitrine usa a foto da peça mais recente.
+  THEME_IMAGE_CONTENT_TYPES = %w[image/png image/jpeg image/webp].freeze
+  THEME_IMAGE_MAX_BYTES = 5.megabytes
+  FOOTER_TEXT_MAX_LENGTH = 300
+  ABOUT_TEXT_MAX_LENGTH = 1000
+  NOTICE_TEXT_MAX_LENGTH = 140
+
+  # Opções visuais (paleta, fonte, layout, topo, fundo...): chaves de SellerTheme.
+  validates :theme_palette, inclusion: { in: SellerTheme::PALETTES.keys }
+  validates :theme_font, inclusion: { in: SellerTheme::FONTS.keys }
+  validates :theme_layout, inclusion: { in: SellerTheme::LAYOUTS.keys }
+  validates :theme_hero, inclusion: { in: SellerTheme::HEROES.keys }
+  validates :theme_corners, inclusion: { in: SellerTheme::CORNERS.keys }
+  validates :theme_card_style, inclusion: { in: SellerTheme::CARD_STYLES.keys }
+  validates :theme_background, inclusion: { in: SellerTheme::BACKGROUNDS.keys }
+  validates :theme_ornament, inclusion: { in: SellerTheme::ORNAMENTS.keys }
+  validates :theme_image_ratio, inclusion: { in: SellerTheme::IMAGE_RATIOS.keys }
+  validates :theme_heading_font, inclusion: { in: SellerTheme::HEADING_FONTS.keys }
+  validate :theme_accent_color_readable
+  validates :theme_sections, presence: true
+  validate :theme_sections_known
+  validates :about_text, length: { maximum: ABOUT_TEXT_MAX_LENGTH }
+  validates :notice_text, length: { maximum: NOTICE_TEXT_MAX_LENGTH }
+  validates :instagram_handle, format: { with: /\A[A-Za-z0-9._]{1,30}\z/, message: "é inválido" }, allow_nil: true
+  validates :whatsapp_number, format: { with: /\A\d{10,13}\z/, message: "deve ter DDD e número (10 a 13 dígitos)" }, allow_nil: true
+  before_validation :ensure_catalog_section
+
+  has_one_attached :logo
+  has_one_attached :cover_image
+  has_one_attached :about_image
 
   has_many :users, dependent: :restrict_with_error
   has_many :seller_terms_acceptances, dependent: :restrict_with_error
@@ -27,16 +63,43 @@ class Seller < ApplicationRecord
     SellerTermsAcceptance.where(terms_version: SellerTerms.version).select(:seller_id)
   end
 
-  # Composto com Seller.approved onde a visibilidade pública é decidida
+  # Composto em Seller.publicly_listed, onde a visibilidade pública é decidida
   # (Product.publicly_visible, Product#available_for_purchase?) — esconder
   # não muda o status do vendedor, é um filtro à parte.
   scope :visible, -> { where(hidden_at: nil) }
 
+  # Fonte única de "o ateliê aparece na loja?": aprovado, ou liberado na
+  # vitrine pelo admin durante o pré-cadastro, sempre fora do escondido.
+  # Aparecer não é vender: a compra continua exigindo `approved?` (ver
+  # Product#purchase_blocker). Suspenso nunca aparece, e `suspend!` também
+  # limpa a vitrine.
+  scope :publicly_listed, -> {
+    visible.where(status: :approved).or(visible.where(status: :pending).where.not(showcased_at: nil))
+  }
+
+  # Nome livre para um novo ateliê? A unicidade é do slug, então "Ateliê da Ana"
+  # e "atelie da ana" colidem. Devolve a sugestão mais próxima quando não é.
+  def self.name_availability(name)
+    base = name.to_s.strip.parameterize
+    return { valid: false, available: false } if base.blank?
+
+    taken = where("slug = :base OR slug LIKE :prefix", base: base, prefix: "#{sanitize_sql_like(base)}-%").pluck(:slug).to_set
+    return { valid: true, available: true, slug: base } unless taken.include?(base)
+
+    suffix = (2..).find { |n| taken.exclude?("#{base}-#{n}") }
+    { valid: true, available: false, slug: base, suggestion: "#{name.to_s.strip} #{suffix}" }
+  end
+
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 
   validates :name, presence: true
-  validates :slug, presence: true, uniqueness: true
+  # Sem nome, o slug (derivado dele) também falta: o erro do nome já diz o
+  # que corrigir, e repetir "URL do ateliê" confundia quem nem vê esse campo.
+  validates :slug, presence: true, unless: -> { name.blank? }
+  validates :slug, uniqueness: true
   validates :mercado_pago_user_id, uniqueness: true, allow_blank: true
+  validates :footer_text, length: { maximum: FOOTER_TEXT_MAX_LENGTH }
+  validate :theme_images_allowed
   # Só exigido na criação: vendedores cadastrados antes deste campo existir
   # não têm o dado, e bloquear todo update (approve!, connect_mercado_pago!
   # etc.) até eles preencherem derrubaria o painel para quem já opera.
@@ -50,6 +113,14 @@ class Seller < ApplicationRecord
 
   # O CEP é guardado só com dígitos: o vendedor digita com traço ou sem, e o
   # cálculo de frete compara com o CEP de destino, que já chega assim.
+  normalizes :footer_text, with: ->(text) { text.to_s.strip.presence }
+  normalizes :about_text, with: ->(text) { text.to_s.strip.presence }
+  normalizes :notice_text, with: ->(text) { text.to_s.squish.presence }
+  normalizes :theme_accent_color, with: ->(color) { color.to_s.strip.downcase.presence }
+  # Aceita "@loja", "loja" ou a URL do perfil: guarda só o usuário.
+  normalizes :instagram_handle, with: ->(handle) { handle.to_s.strip.sub(%r{\A(https?://)?(www\.)?instagram\.com/}i, "").delete_prefix("@").chomp("/").presence }
+  normalizes :whatsapp_number, with: ->(number) { number.to_s.gsub(/\D/, "").presence }
+  normalizes :theme_sections, with: ->(sections) { Array(sections).map(&:to_s).reject(&:blank?).uniq }
   normalizes :origin_zip_code, with: ->(zip) { zip.to_s.gsub(/\D/, "").presence }
 
   # Endereço opcional enquanto o frete real não está ligado: os vendedores já
@@ -61,12 +132,65 @@ class Seller < ApplicationRecord
   validates :origin_zip_code, presence: true, if: :origin_address_started?
   validates :origin_state, length: { is: 2 }, allow_blank: true
 
+  LAUNCH_FEE_PERIOD = 3.months
+
+  # A comissão de lançamento conta dos 3 primeiros meses em que o vendedor
+  # pode vender: a aprovação dele ou a abertura das vendas da plataforma, o
+  # que vier por último. Aprovado durante o pré-cadastro não perde o prazo
+  # esperando a abertura. Sem um dos dois, o prazo ainda não começou.
+  def launch_fee_starts_at
+    sales_opened_at = PlatformSetting.sales_opened_at
+    [ approved_at, sales_opened_at ].max if approved_at.present? && sales_opened_at.present?
+  end
+
+  def launch_fee_ends_at
+    starts_at = launch_fee_starts_at
+    starts_at + LAUNCH_FEE_PERIOD if starts_at.present?
+  end
+
+  def launch_fee_active?(at: Time.current)
+    ends_at = launch_fee_ends_at
+    ends_at.present? && at < ends_at
+  end
+
+  # Taxa que vale para uma venda feita agora. O checkout grava o resultado no
+  # `SellerOrder`, então mudar de faixa não altera pedidos já criados.
+  def platform_fee_rate_bps(at: Time.current)
+    launch_fee_active?(at: at) ? SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS : SellerOrder::PLATFORM_FEE_RATE_BPS
+  end
+
   def approve!(kyc_level_6_confirmed: false)
     unless mercado_pago_connected? && approvable_account? && kyc_level_6_confirmed
       raise VerificationRequired, "Conecte uma conta Mercado Pago de produção e confirme o KYC nível 6 antes da aprovação."
     end
 
-    update!(status: :approved, approved_at: Time.current)
+    now = Time.current
+    update!(status: :approved, approved_at: now, showcased_at: showcased_at || now)
+  end
+
+  # Libera o ateliê pendente para aparecer na loja sem o Mercado Pago, depois
+  # da revisão do admin. Aprovado já aparece (e esconder é `hide!`); suspenso
+  # precisa ser reaprovado.
+  def showcase!
+    raise VerificationRequired, "Só um ateliê pendente pode ser liberado na vitrine." unless pending?
+
+    update!(showcased_at: showcased_at || Time.current)
+  end
+
+  def unshowcase!
+    raise VerificationRequired, "Só um ateliê pendente pode ser retirado da vitrine." unless pending?
+
+    update!(showcased_at: nil)
+  end
+
+  def showcased?
+    showcased_at.present?
+  end
+
+  def publicly_listed?
+    return false if suspended? || hidden?
+
+    approved? || showcased?
   end
 
   # Exigir conta real é a regra em produção, onde aprovar um vendedor de teste
@@ -94,6 +218,7 @@ class Seller < ApplicationRecord
     update!(
       status: :suspended,
       approved_at: nil,
+      showcased_at: nil,
       mercado_pago_user_id: nil,
       mercado_pago_access_token_ciphertext: nil,
       mercado_pago_refresh_token_ciphertext: nil,
@@ -116,6 +241,14 @@ class Seller < ApplicationRecord
 
   def unhide!
     update!(hidden_at: nil)
+  end
+
+  # A página pública /artesaos/:slug só existe para ateliê que aparece na loja
+  # (ver SellersController#show): pendente fora da vitrine responde 404, e
+  # suspenso ou escondido têm uma página de "indisponível". O "Ver a loja" do
+  # painel usa isto para não mandar o vendedor a um beco.
+  def public_page_available?
+    publicly_listed?
   end
 
   def hidden?
@@ -142,6 +275,35 @@ class Seller < ApplicationRecord
   # salvaguarda existe para evitar.
   def mercado_pago_real_account?
     mercado_pago_live_mode? && mercado_pago_test_account == false
+  end
+
+  # Etapas para começar a vender, na ordem da página "Primeiros passos". É a
+  # fonte única: a página e o cartão do painel inicial leem daqui, para os dois
+  # nunca discordarem sobre o que já está pronto. `pix_key` é declaração do
+  # vendedor (o Mercado Pago não permite consultar se há chave PIX).
+  def getting_started_steps
+    {
+      address: origin_address_complete?,
+      mercado_pago: mercado_pago_connected?,
+      pix_key: pix_key_confirmed_at.present?,
+      product: products.exists?,
+      approval: approved?
+    }
+  end
+
+  # Pagos e ainda não despachados: o mesmo `:preparing` da linha do tempo do
+  # pedido. É o "preparar e enviar" do painel inicial e da aba Pedidos.
+  def seller_orders_to_prepare
+    seller_orders.where(status: %w[confirmed partially_refunded]).joins(:shipment).merge(Shipment.pending)
+  end
+
+  # As mesmas etapas como o painel do artesão as cobra (bloco do painel
+  # inicial e abas do celular): conta do Mercado Pago conectada mas não
+  # aceita conta como pendente, porque é ela que o artesão precisa corrigir.
+  def setup_steps
+    steps = getting_started_steps
+    steps[:mercado_pago] = false if mercado_pago_account_state == :not_accepted
+    steps
   end
 
   def mercado_pago_connected?
@@ -199,6 +361,8 @@ class Seller < ApplicationRecord
     update!(connection_attributes)
   end
 
+  # Volta para `pending`, mas não mexe em `showcased_at`: o ateliê continua
+  # na loja e só para de vender até reconectar e ser reaprovado.
   def disconnect_mercado_pago!
     update!(
       mercado_pago_user_id: nil,
@@ -293,7 +457,19 @@ class Seller < ApplicationRecord
     digits = decrypted_cpf
     return nil if digits.blank?
 
-    "#{digits[0..2]}.#{digits[3..5]}.#{digits[6..8]}-#{digits[9..10]}"
+    self.class.format_cpf(digits)
+  end
+
+  # "12345678909" → "123.456.789-09", e progressivo para o que ainda está
+  # incompleto ("1234" → "123.4"), igual à máscara do cadastro
+  # (cpf_input_controller.js). Mais de 11 dígitos volta sem máscara, para a
+  # tela de erro mostrar o que foi digitado em vez de cortar em silêncio.
+  def self.format_cpf(value)
+    digits = value.to_s.gsub(/\D/, "")
+    return digits if digits.length > 11
+
+    formatted = [ digits[0, 3], digits[3, 3], digits[6, 3] ].compact_blank.join(".")
+    digits.length > 9 ? "#{formatted}-#{digits[9, 2]}" : formatted
   end
 
   def to_param
@@ -306,6 +482,19 @@ class Seller < ApplicationRecord
 
   def latest_terms_acceptance
     seller_terms_acceptances.order(accepted_at: :desc).first
+  end
+
+  # As peças da vitrine pública (e da pré-visualização do tema), já com o que
+  # os cards usam carregado. preload, e não includes: a capa arrasta as
+  # tabelas do Active Storage e o plano estourava o jit_above_cost no
+  # catálogo (ver Fase 17). `personalization_options` entra porque o card
+  # pergunta se a peça aceita compra rápida e isso era 1 query por card.
+  def storefront_products
+    products.publicly_visible
+      .order(created_at: :desc)
+      .preload(:seller, :product_variants, :personalization_options, category: :parent)
+      .preload_main_image
+      .load
   end
 
   private
@@ -358,5 +547,36 @@ class Seller < ApplicationRecord
 
   def assign_slug
     self.slug = name.parameterize
+  end
+
+  # Sem o catálogo a vitrine não tem sentido; mantê-lo aqui evita que um
+  # formulário adulterado (ou lista vazia) esconda as peças.
+  def ensure_catalog_section
+    self.theme_sections = theme_sections + [ "catalog" ] unless theme_sections.include?("catalog")
+  end
+
+  def theme_sections_known
+    unknown = theme_sections - SellerTheme::SECTIONS.keys
+    errors.add(:theme_sections, "tem seção desconhecida") if unknown.any?
+  end
+
+  def theme_accent_color_readable
+    return if theme_accent_color.blank?
+
+    if !theme_accent_color.match?(SellerTheme::HEX_COLOR)
+      errors.add(:theme_accent_color, "deve ser uma cor no formato #rrggbb")
+    elsif SellerTheme.contrast_ratio(theme_accent_color) < SellerTheme::MIN_ACCENT_CONTRAST
+      errors.add(:theme_accent_color, "é clara demais: o texto sobre ela ficaria difícil de ler. Escolha uma cor mais escura")
+    end
+  end
+
+  def theme_images_allowed
+    %i[logo cover_image about_image].each do |name|
+      image = public_send(name)
+      next unless image.attached?
+
+      errors.add(name, "deve ser um arquivo PNG, JPEG ou WEBP") unless THEME_IMAGE_CONTENT_TYPES.include?(image.content_type)
+      errors.add(name, "deve ter no máximo 5MB") if image.byte_size > THEME_IMAGE_MAX_BYTES
+    end
   end
 end

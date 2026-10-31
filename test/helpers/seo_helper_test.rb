@@ -17,6 +17,17 @@ class SeoHelperTest < ActionView::TestCase
     assert_equal product_url(product.seller, product.slug), data["itemListElement"][2]["item"]
   end
 
+  test "seller_breadcrumb_structured_data lists home, shop and seller in order" do
+    seller = products(:one).seller
+
+    data = JSON.parse(seller_breadcrumb_structured_data(seller))
+
+    assert_equal "BreadcrumbList", data["@type"]
+    assert_equal [ 1, 2, 3 ], data["itemListElement"].map { |item| item["position"] }
+    assert_equal seller.name, data["itemListElement"][2]["name"]
+    assert_equal seller_url(seller.slug), data["itemListElement"][2]["item"]
+  end
+
   test "og_image_dimensions returns nil when attachment has no image metadata yet" do
     product = products(:one)
     product.main_image.attach(

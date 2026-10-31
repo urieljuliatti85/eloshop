@@ -5,6 +5,8 @@ module Admin
     layout "admin"
 
     before_action :require_admin!
+    # Depois do login: o `before_action` padrão do PaperTrail roda antes de a sessão ser retomada.
+    before_action :set_paper_trail_whodunnit
 
     private
 

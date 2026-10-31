@@ -1,0 +1,27 @@
+<p>Olá, <%= @order.customer.name %>!</p>
+
+<p>
+  <% if @fully_refunded %>
+    Solicitamos o <strong>reembolso total</strong> do seu pedido <strong>#<%= @order.id %></strong>.
+  <% else %>
+    Solicitamos um <strong>reembolso parcial</strong> do seu pedido <strong>#<%= @order.id %></strong>.
+  <% end %>
+</p>
+
+<p>
+  Valor reembolsado agora: <strong><%= format_price(@refund.amount_cents) %></strong><br>
+  <% unless @fully_refunded %>
+    Total já reembolsado neste pedido: <%= format_price(@payment.refunded_amount_cents) %> de <%= format_price(@payment.amount_cents) %><br>
+  <% end %>
+  Forma de pagamento: <%= payment_method_label(@payment) %>
+</p>
+
+<p>O prazo para o valor aparecer depende do meio de pagamento e do seu banco ou operadora do cartão. Se passar de alguns dias e você não vir o valor, responda este e-mail com o número do pedido que verificamos.</p>
+
+<p>
+  <a href="<%= order_url(@order) %>" style="display: inline-block; background-color: #c2410c; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+    Ver meu pedido
+  </a>
+</p>
+
+<p>Equipe EloShop</p>

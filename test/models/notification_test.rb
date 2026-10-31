@@ -35,8 +35,8 @@ class NotificationTest < ActiveSupport::TestCase
     notification = Notification.new(recipient: @customer)
 
     assert_not notification.valid?
-    assert_includes notification.errors[:kind], "can't be blank"
-    assert_includes notification.errors[:title], "can't be blank"
-    assert_includes notification.errors[:body], "can't be blank"
+    assert_includes notification.errors[:kind], "não pode ficar em branco"
+    assert_includes notification.errors[:title], "não pode ficar em branco"
+    assert_includes notification.errors[:body], "não pode ficar em branco"
   end
 end

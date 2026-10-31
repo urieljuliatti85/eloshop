@@ -23,7 +23,7 @@ class NotifySellerOfOrderJobTest < ActiveJob::TestCase
 
     email = ActionMailer::Base.deliveries.last
     assert_includes email.to, recipient
-    assert_match "/painel/orders/#{seller_order.order_id}", email.body.to_s
+    assert_match "/painel/orders/#{seller_order.order_id}", email.text_part.body.to_s
   end
 
   # Um ateliê aprovado pode não ter usuário vinculado (criado pelo admin, por

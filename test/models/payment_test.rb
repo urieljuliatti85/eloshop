@@ -33,19 +33,19 @@ class PaymentTest < ActiveSupport::TestCase
   test "invalid without gateway" do
     payment = Payment.new(order: orders(:one), external_id: "x", amount_cents: 100)
     assert_not payment.valid?
-    assert_includes payment.errors[:gateway], "can't be blank"
+    assert_includes payment.errors[:gateway], "não pode ficar em branco"
   end
 
   test "invalid without external_id" do
     payment = Payment.new(order: orders(:one), gateway: "fake", amount_cents: 100)
     assert_not payment.valid?
-    assert_includes payment.errors[:external_id], "can't be blank"
+    assert_includes payment.errors[:external_id], "não pode ficar em branco"
   end
 
   test "invalid with negative amount_cents" do
     payment = Payment.new(order: orders(:one), gateway: "fake", external_id: "x", amount_cents: -1)
     assert_not payment.valid?
-    assert_includes payment.errors[:amount_cents], "must be greater than or equal to 0"
+    assert_includes payment.errors[:amount_cents], "deve ser maior ou igual a 0"
   end
 
   test "defaults to pending status" do

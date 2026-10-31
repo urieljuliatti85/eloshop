@@ -61,9 +61,9 @@ Qualquer produto pode ter campos de personalização em texto livre (ex.: nome g
 
 ## Imagens
 
-Usar Active Storage. O produto tem uma imagem principal (`main_image`) claramente definida como capa — não depende da ordem acidental dos anexos.
+Usar Active Storage. O produto tem uma imagem principal (`main_image`) claramente definida como capa — não depende da ordem acidental dos anexos. **As fotos são reduzidas no envio** (`Images::Optimizer`, chamado por `ProductGalleryUploads` nos cadastros do vendedor e do admin): no máximo 2.400 px no lado maior, qualidade 85, orientação EXIF aplicada e metadados removidos (inclusive localização). PNG sem transparência vira JPEG; PNG com transparência segue PNG. Antes o site guardava o original inteiro, e fotos de celular (2 a 5 MB) enchiam o volume de 500 MB da Railway e eram recusadas acima de 5 MB. Agora se aceita até 20 MB de arquivo bruto; o limite de 5 MB do `Product` vale para o arquivo já otimizado. Se a imagem não abrir, ou a versão reduzida não ficar menor, o original segue e as validações do produto decidem. O volume de imagens fica em `RAILS_STORAGE_PATH`; ver `docs/architecture.md` sobre o limite do plano.
 
-Galeria de fotos adicionais `(Fase 15)`: `has_many_attached :images`, até 8 fotos por produto, validadas (tipo, tamanho) antes de anexar. `main_image` sempre aparece primeiro; a ordem do restante segue a ordem de upload.
+Galeria de fotos adicionais `(Fase 15)`: `has_many_attached :images`, até 2 fotos por produto (`Product::IMAGES_MAX_COUNT`; produtos antigos com mais fotos continuam como estão, só não aceitam acréscimo), validadas (tipo, tamanho) antes de anexar. `main_image` sempre aparece primeiro; a ordem do restante segue a ordem de upload.
 
 Imagens de detalhe/escala/processo/embalagem como categorias distintas de foto, e otimizações de performance (variantes de imagem, thumbnails, lazy loading, CDN) continuam pós-MVP e devem ser tratadas quando o volume de catálogo justificar.
 
@@ -84,6 +84,15 @@ Uma categoria pode ser **desabilitada** (`categories.active = false`) pelo admin
 O catálogo também aceita `q` (nome ou descrição), `tag`, `material`, `technique`, `availability`, `min_price`, `max_price` e `personalizable=1`. Todos os filtros são combináveis e os valores são recalculados no servidor; `q` usa `ILIKE` do PostgreSQL.
 
 A vitrine também aceita `sort` e `per_page`, expostos na barra "Ordenar por" / "Mostrar". Os dois são listas fechadas no `ProductsController` (`SORT_OPTIONS` e `PER_PAGE_OPTIONS`), porque viram `ORDER BY` e `LIMIT`: valor fora da lista cai no padrão (`recentes`, 12 por página) em vez de chegar ao SQL. A paginação preserva os demais parâmetros da query string; trocar ordenação ou tamanho de página volta para a primeira página.
+
+### Filtro de categorias e autocomplete da vitrine
+
+`/produtos` abre com uma **busca** e, logo abaixo, a **faixa de categorias**. O dropdown no começo da busca escolhe a categoria (ela e as filhas, como o filtro do catálogo) em que a busca vale; "Todas as categorias" é o padrão. Sem JavaScript é um formulário GET comum.
+
+* **Faixa de categorias:** um único botão, **"Ver todos"**, que abre o menu com todas as categorias. Antes eram "Todos" e uma pílula por categoria de topo (com dropdown nas que têm filhas), que ocupavam duas linhas com a árvore completa e foram removidas. A página abre sem categoria, mostrando todos os produtos; "Todos os produtos", primeiro item do menu, volta a essa listagem.
+* **Menu "Ver todos":** `products/_category_browser`. Primeiro "Todos os produtos" e depois todas as categorias de topo em uma coluna. No desktop, escolher uma abre as filhas ao lado, à direita (submenu lateral); o mouse e as setas trocam a categoria em foco, e o painel já abre mostrando as filhas da categoria atual (ou da primeira). No celular não há largura para uma segunda coluna: tocar numa categoria expande as filhas por baixo dela, e um segundo toque recolhe. Abrir/fechar o painel é do `account-menu`; a escolha e o teclado (↑ ↓ → ←, Esc) são do `category_flyout_controller.js`.
+* **Hashtags:** a faixa de tags (`#feito-a-mao`…) saiu da vitrine. O filtro `?tag=` segue funcionando no servidor (links já compartilhados), só não há mais controle visível para ele.
+* **Autocomplete de produtos:** `GET /produtos/sugestoes?q=&category=` devolve JSON com até 8 produtos (`name`, `category`, `url`), a partir de 2 caracteres, com a mesma busca (`Product.matching_query`) e a mesma visibilidade (`publicly_visible`, categoria desabilitada fora) da listagem. Categoria desconhecida ou desabilitada devolve lista vazia. A rota é pública e limitada a 60 requisições por minuto por IP (`rate_limit`), porque dispara uma consulta por pausa de digitação. O `product_autocomplete_controller.js` espera 200 ms, cancela a requisição anterior (resposta velha não sobrescreve a nova), preenche o DOM por `textContent` (nunca HTML) e segue o padrão ARIA de combobox (setas, Enter, Esc). Enter sem escolher uma sugestão roda a busca normal na categoria escolhida.
 
 A partir da Fase 11, a busca deve considerar nome, descrição, categoria, tags, materiais e técnicas, começando com os recursos de busca do próprio PostgreSQL. Não introduzir um mecanismo de busca externo (ex.: Elasticsearch) antes de existir necessidade real e medida.
 

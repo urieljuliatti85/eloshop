@@ -1,116 +1,91 @@
 <% content_for :title, "Visão geral | #{current_seller.name}" %>
 
-<div class="space-y-8">
-  <%# No topo, acima do hero: o hero ocupa a primeira tela inteira, e avisos
-      abaixo dele passavam despercebidos sem rolar a página. A ordem importa:
-      "Cadastro em análise" remete ao aviso da conta, que fica acima dele. %>
-  <% unless current_seller.mercado_pago_account_state == :ready %>
-    <%= render "seller_portal/mercado_pago_connections/required_banner" %>
+<div class="space-y-8" data-controller="back-to-menu">
+  <%# Sem botão "Novo produto" no topo: o atalho já está no menu lateral, e
+      o topo é dos Primeiros passos e do menu desta página. %>
+  <header>
+    <h1 class="text-3xl font-black tracking-tight text-stone-950">Visão geral</h1>
+    <p class="mt-1 text-sm text-stone-600"><%= current_seller.name %></p>
+  </header>
+
+  <% setup_pending = !@getting_started_steps.values.all? %>
+
+  <%# Atalhos para as áreas desta página. "Primeiros passos" só enquanto o
+      bloco existe. Cada área tem `scroll-mt` para o topo fixo do painel não
+      cobrir o título ao pular para ela. %>
+  <% sections = [
+    ([ "Primeiros passos", "primeiros-passos" ] if setup_pending),
+    [ "O que fazer agora", "o-que-fazer-agora" ],
+    [ "Seus números", "seus-numeros" ],
+    [ "Produtos recentes", "produtos-recentes" ],
+    [ "Últimos pedidos", "ultimos-pedidos" ]
+  ].compact %>
+  <nav id="nesta-pagina" aria-label="Nesta página" class="-mt-4 scroll-mt-40 sm:scroll-mt-28" data-back-to-menu-target="menu">
+    <ul class="flex flex-wrap gap-2">
+      <% sections.each do |label, anchor| %>
+        <li><a href="#<%= anchor %>" class="inline-flex min-h-11 items-center rounded-full border border-brand-100 bg-white px-4 text-sm font-semibold text-stone-700 transition hover:border-brand-300 hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><%= label %></a></li>
+      <% end %>
+    </ul>
+  </nav>
+
+  <%# Enquanto falta alguma etapa, os Primeiros passos ficam no topo, acima
+      até do trabalho do dia. O frame
+      existe mesmo com o cadastro pronto: quem conclui a última etapa por
+      dentro dele recebe o frame vazio, em vez de um erro de conteúdo ausente. %>
+  <%= turbo_frame_tag "primeiros-passos", data: { turbo_action: "advance" }, class: (setup_pending ? "block scroll-mt-40 sm:scroll-mt-28" : "hidden") do %>
+    <%= render "seller_portal/dashboard/setup", steps: @getting_started_steps, current: @getting_started_current_step if setup_pending %>
   <% end %>
+  <%= render "seller_portal/dashboard/todo" %>
 
-  <% unless current_seller.approved? %>
-    <section class="rounded-2xl border border-amber-300 bg-amber-50 px-6 py-5">
-      <p class="text-xs font-bold uppercase tracking-[0.16em] text-amber-700">Ação necessária</p>
-      <h2 class="mt-1 text-xl font-bold text-amber-950">Cadastro em análise</h2>
-      <%# Enquanto não há conta aceita, o próximo passo é da vendedora, não da
-          plataforma: o admin nem consegue aprovar (`approve!`). %>
-      <% if current_seller.mercado_pago_account_state == :ready %>
-        <p class="mt-2 text-sm text-amber-800">A plataforma ainda precisa concluir a validação. Produtos não podem ser publicados enquanto o cadastro estiver <%= t(current_seller.status, scope: "sellers.statuses").downcase %>.</p>
-      <% else %>
-        <p class="mt-2 text-sm text-amber-800">Conecte uma Conta Vendedor real do Mercado Pago (aviso acima) para a plataforma poder analisar o cadastro. Produtos não podem ser publicados enquanto o cadastro estiver <%= t(current_seller.status, scope: "sellers.statuses").downcase %>.</p>
-      <% end %>
-    </section>
-  <% end %>
-
-  <%= render "seller_portal/mercado_pago_connections/banner" %>
-
-  <section class="grid min-h-[31rem] gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,0.78fr)]">
-    <article class="group relative isolate min-h-[25rem] overflow-hidden rounded-[2rem] bg-[#7a2410] text-white shadow-sm lg:min-h-full">
-      <% if @featured_product&.main_image&.attached? %>
-        <%= image_tag @featured_product.main_image.variant(resize_to_fill: [1200, 760]), alt: @featured_product.name, class: "absolute inset-0 -z-20 h-full w-full object-cover transition duration-700 group-hover:scale-[1.02]" %>
-        <div class="absolute inset-0 -z-10 bg-gradient-to-r from-black/75 via-black/35 to-transparent"></div>
-      <% else %>
-        <div class="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_75%_25%,#fbbeb6_0,transparent_27%),radial-gradient(circle_at_75%_72%,#f6604c_0,transparent_28%),linear-gradient(135deg,#7a2410,#df240c)]"></div>
-        <div class="absolute right-[12%] top-[12%] -z-10 size-40 rotate-6 border-[1.25rem] border-white/15 sm:size-64"></div>
-        <div class="absolute bottom-[8%] right-[32%] -z-10 size-28 -rotate-12 border-[0.8rem] border-[#fbbeb6]/30 sm:size-44"></div>
-      <% end %>
-
-      <div class="flex h-full max-w-2xl flex-col justify-end p-7 sm:p-10 lg:p-12">
-        <p class="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[#fde1dd]">Seu ateliê na EloShop</p>
-        <h1 class="max-w-xl text-4xl font-black leading-[0.98] tracking-tight sm:text-5xl lg:text-6xl">Crie, publique e acompanhe cada venda.</h1>
-        <p class="mt-5 max-w-lg text-sm leading-6 text-white/80 sm:text-base">Tudo que você precisa para transformar peças autorais em uma vitrine viva — sem perder de vista estoque, pedidos e recebimentos.</p>
-        <div class="mt-7 flex flex-wrap gap-3">
-          <%= link_to "Adicionar nova peça", new_seller_product_path, class: "rounded-full bg-white px-6 py-3 text-sm font-bold text-[#7a2410] transition hover:bg-[#fef2f0]" %>
-          <%= link_to "Gerenciar catálogo", seller_products_path, class: "rounded-full border border-white/40 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10" %>
-        </div>
-      </div>
-    </article>
-
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-      <%= link_to seller_products_path, class: "group relative min-h-56 overflow-hidden rounded-[2rem] bg-[#ead9b8] p-7 text-[#7a2410] shadow-sm" do %>
-        <span class="text-xs font-bold uppercase tracking-[0.18em]">Catálogo</span>
-        <strong class="mt-4 block max-w-56 text-3xl leading-none">Dê destaque às suas histórias.</strong>
-        <span class="mt-6 inline-flex border-b-2 border-current pb-1 text-sm font-bold">Ver produtos</span>
-        <span class="absolute -bottom-12 -right-8 size-44 rounded-full bg-[#d09a63] transition duration-500 group-hover:scale-110"></span>
-        <span class="absolute bottom-8 right-10 grid size-20 rotate-6 place-items-center border-8 border-white/65 text-3xl">✦</span>
-      <% end %>
-
-      <%= link_to seller_orders_path, class: "group relative min-h-56 overflow-hidden rounded-[2rem] bg-[#fde1dd] p-7 text-[#7a2410] shadow-sm" do %>
-        <span class="text-xs font-bold uppercase tracking-[0.18em]">Operação</span>
-        <strong class="mt-4 block text-3xl leading-none"><%= @pending_orders_count %> <%= @pending_orders_count == 1 ? "pedido espera" : "pedidos esperam" %> por você.</strong>
-        <span class="mt-6 inline-flex border-b-2 border-current pb-1 text-sm font-bold">Acompanhar pedidos</span>
-        <svg viewBox="0 0 120 120" class="absolute -bottom-7 -right-5 size-36 text-[#f88f81] transition duration-500 group-hover:-translate-y-2" fill="none" stroke="currentColor" stroke-width="12" aria-hidden="true"><path d="M25 42h70l-8 58H33L25 42Z"/><path d="M42 44V30a18 18 0 0 1 36 0v14"/></svg>
-      <% end %>
-    </div>
-  </section>
-
-  <section aria-labelledby="numbers-title">
+  <%# Estoque baixo não entra aqui: já é uma linha de "O que fazer agora". %>
+  <section id="seus-numeros" class="scroll-mt-40 sm:scroll-mt-28" aria-labelledby="numbers-title">
     <div class="mb-4 flex items-end justify-between gap-4">
-      <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Hoje no ateliê</p><h2 id="numbers-title" class="mt-1 text-2xl font-bold">Seus números</h2></div>
-      <p class="hidden text-sm text-stone-500 sm:block">Visão acumulada da operação</p>
+      <h2 id="numbers-title" class="text-2xl font-bold">Seus números</h2>
+      <p class="text-sm text-stone-500">Desde a abertura do ateliê</p>
     </div>
-    <div class="grid gap-px overflow-hidden rounded-2xl border border-brand-100 bg-brand-100 sm:grid-cols-2 lg:grid-cols-5">
+    <div class="grid gap-px overflow-hidden rounded-2xl border border-brand-100 bg-brand-100 sm:grid-cols-2 lg:grid-cols-4">
       <% [
         ["Produtos", @products_count],
-        ["Publicados", @active_products_count],
-        ["Estoque baixo", @low_stock_count],
+        ["Publicados", @active_products_count, "de #{@products_count} #{@products_count == 1 ? 'produto' : 'produtos'}"],
         ["Pedidos", @orders_count],
-        ["Líquido em vendas", format_price(@seller_revenue_cents)]
-      ].each do |label, value| %>
-        <div class="bg-white px-5 py-6"><p class="text-xs font-semibold uppercase tracking-wider text-stone-500"><%= label %></p><p class="mt-2 text-2xl font-black tracking-tight text-stone-950"><%= value %></p></div>
+        ["Líquido em vendas", format_price(@seller_revenue_cents), "Já sem a comissão da EloShop"]
+      ].each do |label, value, note| %>
+        <%# "Publicados" no verde do status "Publicado": o que está à venda. %>
+        <% published = label == "Publicados" %>
+        <div class="bg-white px-5 py-6"><p class="text-xs font-semibold uppercase tracking-wider text-stone-500"><%= label %></p><p class="mt-2 text-2xl font-black tracking-tight <%= published ? 'text-emerald-700' : 'text-stone-950' %>"><%= value %></p><% if note %><p class="mt-1 text-xs text-stone-500"><%= note %></p><% end %></div>
       <% end %>
     </div>
   </section>
 
   <section class="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
-    <div class="rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8">
+    <div id="produtos-recentes" class="seller-card-lg scroll-mt-40 sm:scroll-mt-28">
       <div class="flex items-center justify-between gap-4">
-        <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Sua coleção</p><h2 class="mt-1 text-2xl font-bold">Produtos recentes</h2></div>
+        <h2 class="text-2xl font-bold">Produtos recentes</h2>
         <%= link_to "Ver todos", seller_products_path, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-600" %>
       </div>
 
       <% if @recent_products.any? %>
         <div class="mt-6 grid gap-4 sm:grid-cols-2">
           <% @recent_products.each do |product| %>
-            <%= link_to seller_product_path(product), class: "group flex min-w-0 items-center gap-4 rounded-2xl border border-brand-100 p-3 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md" do %>
-              <span class="grid size-20 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#eee7da] text-2xl text-stone-400">
-                <% if product.main_image.attached? %><%= image_tag product.main_image.variant(resize_to_fill: [240, 240]), alt: product.name, class: "h-full w-full object-cover" %><% else %>✦<% end %>
-              </span>
-              <span class="min-w-0"><strong class="block truncate text-sm text-stone-950"><%= product.name %></strong><span class="mt-1 block text-xs text-stone-500"><%= t(product.status, scope: "products.statuses") %> · <%= product.stock_quantity %> em estoque</span><span class="mt-2 block text-sm font-bold"><%= format_price(product.price_cents) %></span></span>
+            <%# Peça publicada (à venda) com borda verde: o mesmo verde do selo
+                "Publicado" da lista de produtos, que diz o status em texto. %>
+            <%= link_to seller_product_path(product), class: "group flex min-w-0 items-center gap-4 rounded-2xl border p-3 transition hover:-translate-y-0.5 hover:shadow-md #{product.active? ? 'border-emerald-300 bg-emerald-50/40 hover:border-emerald-400' : 'border-brand-100 hover:border-brand-300'}" do %>
+              <%= render "seller_portal/products/thumbnail", product: product, large: true %>
+              <span class="min-w-0"><strong class="block truncate text-sm text-stone-950"><%= product.name %></strong><span class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1"><%= seller_product_status_badge(product) %><span class="text-xs text-stone-600"><%= product.stock_quantity %> em estoque</span></span><span class="mt-2 block text-sm font-bold"><%= format_price(product.price_cents) %></span></span>
             <% end %>
           <% end %>
         </div>
       <% else %>
-        <div class="mt-6 rounded-2xl border border-dashed border-stone-300 px-6 py-10 text-center"><p class="font-semibold">Sua primeira peça começa aqui.</p><%= link_to "Cadastrar produto", new_seller_product_path, class: "mt-3 inline-block text-sm font-bold text-brand-600 underline underline-offset-4" %></div>
+        <div class="mt-6 rounded-2xl border border-dashed border-stone-300 px-6 py-10 text-center"><p class="font-semibold">Sua primeira peça começa aqui.</p><%= link_to "Novo produto", new_seller_product_path, class: "mt-3 inline-block text-sm font-bold text-brand-600 underline underline-offset-4" %></div>
       <% end %>
     </div>
 
-    <div class="rounded-[2rem] bg-[#5c1a0b] p-6 text-white shadow-sm sm:p-8">
-      <div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-[0.16em] text-[#d8bd8d]">Últimas vendas</p><h2 class="mt-1 text-2xl font-bold">Pedidos</h2></div><%= link_to "Ver todos", seller_orders_path, class: "inline-flex min-h-11 items-center text-sm font-bold text-white/80 underline underline-offset-4 hover:text-white" %></div>
+    <div id="ultimos-pedidos" class="scroll-mt-40 rounded-[2rem] bg-[#5c1a0b] p-6 text-white shadow-sm sm:scroll-mt-28 sm:p-8">
+      <div class="flex items-center justify-between gap-4"><h2 class="text-2xl font-bold">Últimos pedidos</h2><%= link_to "Ver todos", seller_orders_path, class: "inline-flex min-h-11 items-center text-sm font-bold text-white/80 underline underline-offset-4 hover:text-white" %></div>
       <% if @recent_seller_orders.any? %>
         <ol class="mt-5 divide-y divide-white/15">
           <% @recent_seller_orders.each do |seller_order| %>
-            <li><%= link_to seller_order_path(seller_order.order), class: "flex items-center justify-between gap-4 py-4 first:pt-0" do %><span><strong class="block text-sm">Pedido #<%= seller_order.order_id %></strong><span class="mt-1 block text-xs text-white/60"><%= seller_order.order.customer.name %> · <%= l(seller_order.created_at.to_date, format: :short) %></span></span><span class="text-right"><strong class="block text-sm"><%= format_price(seller_order.seller_amount_cents) %></strong><span class="mt-1 block text-xs text-[#d8bd8d]"><%= t(seller_order.status, scope: "seller_orders.statuses") %></span></span><% end %></li>
+            <li><%= link_to seller_order_path(seller_order.order), class: "flex items-center justify-between gap-4 py-4 first:pt-0" do %><span><strong class="block text-sm">Pedido #<%= seller_order.order_id %></strong><span class="mt-1 block text-xs text-white/60"><%= seller_order.order.customer.name %> · <%= l(seller_order.created_at.to_date, format: :short) %></span></span><span class="text-right"><strong class="block text-sm"><%= format_price(seller_order.seller_net_amount_cents) %></strong><span class="mt-1 block text-xs text-[#d8bd8d]"><%= t(seller_order.status, scope: "seller_orders.statuses") %></span></span><% end %></li>
           <% end %>
         </ol>
       <% else %>
@@ -118,4 +93,17 @@
       <% end %>
     </div>
   </section>
+
+  <%# Botões flutuantes, num contêiner só para ficarem alinhados (e, último
+      filho, sem a margem do `space-y`). Alinhados pela base: o "Voltar ao
+      topo" (`mb-1.5`) fica centrado na bolinha, abaixo do rótulo do tour. O "Voltar ao topo" volta ao menu de qualquer
+      ponto da página no celular: fica no fim (ordem de leitura) e só aparece
+      (back_to_menu_controller) quando o menu sai da tela. %>
+  <div class="fixed right-4 bottom-[calc(1rem+var(--seller-tabs-height,0px))] z-30 flex items-end gap-3 sm:right-6 sm:bottom-6">
+    <a href="#nesta-pagina" hidden data-back-to-menu-target="button" class="mb-1.5 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-stone-950 px-4 text-sm font-bold text-white shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 sm:hidden">
+      <svg viewBox="0 0 20 20" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 15V5m-5 5 5-5 5 5"/></svg>
+      <span>Voltar ao topo</span>
+    </a>
+    <%= render "seller_portal/tours/bubble" %>
+  </div>
 </div>

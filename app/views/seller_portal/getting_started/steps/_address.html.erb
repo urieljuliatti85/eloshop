@@ -1,0 +1,25 @@
+<p class="max-w-[68ch] text-base leading-7 text-stone-700 mt-4">Esse é o endereço de origem das suas encomendas. Ele ajuda a EloShop a identificar de onde o produto será enviado e será usado nas integrações de frete quando elas estiverem disponíveis.</p>
+<p class="max-w-[68ch] text-base leading-7 text-stone-700 mt-3">O endereço não substitui o endereço de entrega do cliente e não altera a página pública do produto.</p>
+<div class="mt-4 max-w-[68ch]"><%= render "seller_portal/shared/shipping_in_development" %></div>
+<%# No painel inicial (`inline: true`) o endereço é preenchido aqui mesmo,
+    dentro do Turbo Frame do bloco; na página Primeiros passos, o link leva
+    à edição do ateliê. %>
+<% if local_assigns[:inline] %>
+  <%= form_with model: current_seller, url: seller_origin_address_path, method: :patch, class: "mt-6 space-y-4 border-t border-brand-100 pt-5" do |form| %>
+    <% if current_seller.errors.any? %>
+      <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
+        <ul class="list-inside list-disc">
+          <% current_seller.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <%= render "seller_portal/ateliers/origin_address_fields", form: form %>
+    <%= form.submit(done ? "Salvar endereço" : "Salvar e continuar", class: "seller-button seller-button--primary w-full cursor-pointer justify-center sm:w-auto") %>
+  <% end %>
+<% else %>
+<div class="mt-6 flex flex-col gap-3 border-t border-brand-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
+  <%= link_to(done ? "Revisar endereço" : "Cadastrar endereço", edit_seller_atelier_path, class: (done ? "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" : "seller-button seller-button--primary justify-center")) %>
+</div>
+<% end %>

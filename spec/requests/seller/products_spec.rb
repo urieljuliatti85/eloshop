@@ -36,6 +36,34 @@ RSpec.describe "Seller products", type: :request do
   # sobre o crescimento: o total muda quando a página muda, a inclinação não
   # pode voltar. Diferente do admin, este painel tem tráfego proporcional ao
   # número de artesãos.
+  it "lists each product with its price, stock badge and a labeled checkbox" do
+    own_product
+
+    get seller_products_path
+
+    expect(response.body).to include("R$ 50,00", "Estoque baixo: 2", "Selecionar Vaso próprio", "Sem foto")
+  end
+
+  it "shows an empty state with the way to create the first product" do
+    get seller_products_path
+
+    expect(response.body).to include("Sua primeira peça começa aqui.", new_seller_product_path)
+    expect(response.body).not_to include("Selecionar todos")
+  end
+
+  it "does not issue more queries on the product list when products are added" do
+    own_product
+    get seller_products_path
+    before = count_queries { get seller_products_path }
+
+    3.times { |i| Product.create!(seller: seller, name: "Peça #{i}", sku: "MAIS-#{i}", price_cents: 4_000, stock_quantity: 5) }
+
+    get seller_products_path
+    after = count_queries { get seller_products_path }
+
+    expect(after).to eq(before)
+  end
+
   it "does not issue more queries on the product form when categories are added" do
     top = Category.create!(name: "Casa")
     child = Category.create!(name: "Decoração", parent: top)
@@ -100,6 +128,59 @@ RSpec.describe "Seller products", type: :request do
     expect(response).to redirect_to(seller_product_path(own_product))
   end
 
+  describe "photo optimization on upload" do
+    # Ruído puro não comprime: um JPEG de ~9 MB, como uma foto grande de celular.
+    def big_phone_photo
+      image = Vips::Image.gaussnoise(3600, 2700, sigma: 55, mean: 128).cast(:uchar)
+      file = Tempfile.new([ "celular", ".jpg" ])
+      file.binmode
+      image.bandjoin([ image, image ]).write_to_file(file.path, Q: 100)
+      file
+    end
+
+    it "accepts a phone photo above the 5 MB limit and stores a reduced copy" do
+      file = big_phone_photo
+      expect(file.size).to be > Product::MAIN_IMAGE_MAX_BYTES
+
+      expect do
+        post seller_products_path, params: {
+          product: { name: "Peça com foto grande", sku: "BIGPHOTO-001", price: "40,00", currency: "BRL", stock_quantity: 1,
+                     main_image: Rack::Test::UploadedFile.new(file.path, "image/jpeg", original_filename: "IMG_0001.jpg") }
+        }
+      end.to change(seller.products, :count).by(1)
+
+      stored = seller.products.find_by!(sku: "BIGPHOTO-001").main_image.blob
+      expect(stored.byte_size).to be < Product::MAIN_IMAGE_MAX_BYTES
+      expect(stored.filename.to_s).to eq("IMG_0001.jpg")
+      expect(Vips::Image.new_from_buffer(stored.download, "").size.max).to be <= Images::Optimizer::MAX_DIMENSION
+    end
+
+    it "also reduces the gallery photos added later" do
+      file = big_phone_photo
+
+      patch seller_product_path(own_product), params: {
+        product: { images: [ Rack::Test::UploadedFile.new(file.path, "image/jpeg", original_filename: "galeria.jpg") ] }
+      }
+
+      expect(own_product.images.reload.count).to eq(1)
+      expect(own_product.images.first.blob.byte_size).to be < Product::MAIN_IMAGE_MAX_BYTES
+    end
+
+    it "still rejects a file above the raw limit" do
+      file = Tempfile.new([ "enorme", ".jpg" ])
+      file.binmode
+      file.write("0" * (Images::Optimizer::RAW_UPLOAD_MAX_BYTES + 1))
+      file.flush
+
+      expect do
+        post seller_products_path, params: {
+          product: { name: "Peça enorme", sku: "HUGE-001", price: "40,00", currency: "BRL", stock_quantity: 1,
+                     main_image: Rack::Test::UploadedFile.new(file.path, "image/jpeg") }
+        }
+      end.not_to change(seller.products, :count)
+    end
+  end
+
   it "cannot publish while seller approval is pending" do
     seller.update!(status: :pending, approved_at: nil)
 
@@ -148,13 +229,53 @@ RSpec.describe "Seller products", type: :request do
     expect(own_product.reload.fixed_shipping_cents).to be_nil
   end
 
-  it "publishes once name, price and shipping dimensions are set" do
-    own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10)
+  it "publishes once name, price, shipping dimensions and shipping price are set" do
+    own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10, category: Category.create!(name: "Categoria publicar"),
+      fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 6)
 
     patch publish_seller_product_path(own_product)
 
     expect(response).to redirect_to(seller_product_path(own_product))
     expect(own_product.reload).to be_active
+  end
+
+  it "refuses to publish without a seller-defined shipping price" do
+    own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10, category: Category.create!(name: "Categoria frete"))
+
+    patch publish_seller_product_path(own_product)
+
+    expect(own_product.reload).to be_draft
+    expect(flash[:alert]).to include("frete")
+  end
+
+  it "saves both shipping bands through the update form" do
+    patch seller_product_path(own_product), params: { product: {
+      fixed_shipping: "20,00", fixed_shipping_estimated_days: "5",
+      fixed_shipping_interstate: "35,00", fixed_shipping_interstate_estimated_days: "9"
+    } }
+
+    own_product.reload
+    expect([ own_product.fixed_shipping_cents, own_product.fixed_shipping_estimated_days ]).to eq([ 2000, 5 ])
+    expect([ own_product.fixed_shipping_interstate_cents, own_product.fixed_shipping_interstate_estimated_days ]).to eq([ 3500, 9 ])
+  end
+
+  it "lists published products without a seller-defined shipping price" do
+    own_product.update_columns(status: "active")
+
+    get seller_products_path
+
+    warning = Nokogiri::HTML(response.body).at_css("[data-products-without-shipping]")
+    expect(warning).to be_present
+    expect(warning.text).to include(own_product.name)
+  end
+
+  it "refuses to publish without a category" do
+    own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10)
+
+    patch publish_seller_product_path(own_product)
+
+    expect(own_product.reload).to be_draft
+    expect(flash[:alert]).to include("categoria")
   end
 
   it "accepts weight and dimensions through the update form" do
@@ -235,5 +356,89 @@ RSpec.describe "Seller products", type: :request do
     patch bulk_unpublish_seller_products_path, params: { product_ids: [ other_product.id ] }
 
     expect(other_product.reload).to be_active
+  end
+
+  describe "required field markers" do
+    it "marks name and price as required with the red-border controller" do
+      get new_seller_product_path
+
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("form[data-controller='required-fields'][novalidate]")).to be_present
+      %w[product_name product_price].each do |id|
+        field = doc.at_css("##{id}")
+        expect(field["required"]).to be_present
+        expect(field["data-required-fields-target"]).to eq("field")
+        expect(doc.at_css("label[for='#{id}'] [data-required-fields-target='marker']")).to be_present
+      end
+    end
+
+    it "hides the production time markers unless the product is made to order" do
+      get new_seller_product_path
+
+      doc = Nokogiri::HTML(response.body)
+      %w[product_production_time_min_days product_production_time_max_days].each do |id|
+        expect(doc.at_css("##{id}")["required"]).to be_nil
+        expect(doc.at_css("label[for='#{id}'] [data-required-fields-target='marker']")["hidden"]).to be_present
+      end
+    end
+
+    it "marks the production time as required for a made to order product" do
+      own_product.update!(availability_type: :made_to_order, production_time_min_days: 3, production_time_max_days: 7)
+
+      get edit_seller_product_path(own_product)
+
+      doc = Nokogiri::HTML(response.body)
+      %w[product_production_time_min_days product_production_time_max_days].each do |id|
+        expect(doc.at_css("##{id}")["required"]).to be_present
+        expect(doc.at_css("label[for='#{id}'] [data-required-fields-target='marker']")["hidden"]).to be_nil
+      end
+    end
+
+    # "Para publicar" em texto, e não o asterisco de "obrigatório para salvar":
+    # o rascunho salva sem a categoria.
+    it "marks the category as required to publish, and explains why" do
+      get new_seller_product_path
+
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("label[for='product_category_id']").text).to start_with("Categoria")
+      expect(doc.at_css("label[for='product_category_id'] [data-publish-marker]").text).to eq("Para publicar")
+      expect(doc.at_css("label[for='product_category_id'] [data-required-fields-target='marker']")).to be_nil
+      expect(doc.at_css("#product_category_id")["data-required-fields-target"]).to eq("field")
+      expect(doc.at_css("#product_category_id")["data-publish-required"]).to be_present
+      expect(doc.at_css("#product_category_id")["required"]).to be_nil
+      expect(response.body).to include("É como o cliente encontra o seu produto.")
+    end
+
+    it "hides the production time fields unless the product is made to order" do
+      get new_seller_product_path
+      group = Nokogiri::HTML(response.body).at_css("#product_production_time_min_days").ancestors("[data-required-fields-target='group']").first
+      expect(group.has_attribute?("hidden")).to be(true)
+
+      own_product.update!(availability_type: :made_to_order, production_time_min_days: 3, production_time_max_days: 7)
+      get edit_seller_product_path(own_product)
+      group = Nokogiri::HTML(response.body).at_css("#product_production_time_min_days").ancestors("[data-required-fields-target='group']").first
+      expect(group.has_attribute?("hidden")).to be(false)
+    end
+
+    it "does not mark the SKU as required" do
+      get new_seller_product_path
+
+      doc = Nokogiri::HTML(response.body)
+      expect(doc.at_css("#product_sku")["required"]).to be_nil
+      expect(doc.at_css("label[for='product_sku'] [data-required-fields-target='marker']")).to be_nil
+    end
+
+    it "marks weight and dimensions as required to publish, without blocking the save" do
+      get new_seller_product_path
+
+      doc = Nokogiri::HTML(response.body)
+      %w[product_weight_grams product_length_cm product_width_cm product_height_cm].each do |id|
+        field = doc.at_css("##{id}")
+        expect(field["required"]).to be_nil
+        expect(field["data-publish-required"]).to eq("true")
+        expect(doc.at_css("label[for='#{id}'] [data-publish-marker]")).to be_present
+      end
+      expect(response.body).to include("pode salvar como rascunho sem ele")
+    end
   end
 end

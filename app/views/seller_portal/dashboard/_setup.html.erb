@@ -1,0 +1,53 @@
+<%# Primeiros passos no topo do painel inicial enquanto falta alguma etapa.
+    Tudo acontece aqui: a faixa troca a etapa aberta dentro do Turbo Frame
+    `primeiros-passos` (a URL vira `/painel?etapa=…`), o endereço é
+    preenchido no próprio bloco e a chave PIX é confirmada sem sair do
+    /painel. Só saem daqui o OAuth do Mercado Pago, o formulário de produto e
+    os guias com imagens. O tour fica na bolinha flutuante da página
+    (`tours/_bubble`). As etapas e a aberta vêm de
+    `BaseController#set_getting_started_block`. %>
+<% account_state = current_seller.mercado_pago_account_state
+   titles = SellerPortal::GettingStartedController::STEP_TITLES
+   short_titles = SellerPortal::GettingStartedController::STEP_SHORT_TITLES
+   slugs = SellerPortal::GettingStartedController::STEP_SLUGS
+   done = steps[current]
+   number = steps.keys.index(current) + 1
+   # A próxima pendente depois desta; se não houver, a primeira pendente antes dela.
+   next_pending = steps.keys.drop(number).find { |step| !steps[step] } || steps.key(false)
+   next_pending = nil if next_pending == current
+   not_accepted = current == :mercado_pago && account_state == :not_accepted %>
+<section class="seller-card-lg space-y-5" aria-labelledby="setup-title">
+  <div class="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-4">
+    <h2 id="setup-title" class="text-2xl font-bold text-stone-950">Primeiros passos</h2>
+    <p class="text-sm text-stone-600"><%= steps.values.count(true) %> de <%= steps.size %> etapas concluídas</p>
+  </div>
+
+  <%= render "seller_portal/getting_started/strip", steps: steps, current_step: current, caption: false,
+        step_path: ->(slug) { seller_root_path(etapa: slug) } %>
+
+  <div class="border-l-4 <%= done ? 'border-emerald-600' : 'border-brand-600' %> bg-brand-50/40 px-4 py-5 sm:px-6">
+    <p class="text-xs font-bold uppercase tracking-wide <%= done ? 'text-emerald-700' : 'text-brand-700' %>"><%= done ? "Feito" : "Agora" %> · etapa <%= number %> de <%= steps.size %></p>
+    <h3 id="current-step-title" class="mt-1 flex flex-wrap items-center gap-2 text-xl font-bold leading-tight text-stone-950">
+      <%= not_accepted ? "Conta do Mercado Pago não aceita" : titles[current] %>
+      <% if current == :mercado_pago && account_state == :not_connected %><span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-800">Obrigatório</span><% end %>
+    </h3>
+
+    <% if not_accepted %>
+      <p class="mt-4 max-w-[68ch] text-base leading-7 text-stone-700">Conta de teste ou não confirmada como real não pode ser aprovada. Conecte a sua Conta Vendedor real.</p>
+      <div class="mt-6 border-t border-brand-100 pt-5">
+        <%= link_to "Ver como corrigir", seller_mercado_pago_guide_path, data: { turbo_frame: "_top" }, class: "seller-button seller-button--primary justify-center" %>
+      </div>
+    <% else %>
+      <% if current == :mercado_pago && !done && @mercado_pago_oauth_configured && @mercado_pago_oauth_sandbox %>
+        <p class="mt-3 text-sm text-amber-700"><strong>Ambiente de teste:</strong> conecte uma conta TESTUSER do tipo Vendedor.</p>
+      <% end %>
+      <%= render "seller_portal/getting_started/steps/#{current}", done: done, inline: true %>
+    <% end %>
+
+    <% if done && next_pending %>
+      <p class="mt-6 border-t border-brand-100 pt-5">
+        <%= link_to "Próxima etapa: #{short_titles[next_pending]}", seller_root_path(etapa: slugs[next_pending]), class: "seller-button seller-button--primary" %>
+      </p>
+    <% end %>
+  </div>
+</section>

@@ -10,18 +10,16 @@
       <h2 class="mt-1 text-2xl font-bold">Melhor Envio</h2>
     <% if current_seller.melhor_envio_connected? %>
       <p class="mt-2 text-sm leading-6 text-stone-600">Conta conectada em <%= l(current_seller.melhor_envio_connected_at, format: :short) %>. Ambiente: <%= current_seller.melhor_envio_sandbox? ? "teste" : "produção" %>. O frete dos seus pedidos passa a ser cotado em tempo real.</p>
-    <% elsif @melhor_envio_oauth_configured %>
-      <p class="mt-2 text-sm leading-6 text-stone-600">Conecte sua conta do Melhor Envio para cotar o frete real dos seus pedidos. Sem conexão, o frete usa a tabela padrão da EloShop.</p>
     <% else %>
-      <p class="mt-2 text-sm leading-6 text-amber-700">A conexão aguarda a configuração da aplicação Melhor Envio pela plataforma.</p>
+      <%# A conexão fica fechada enquanto a integração está em desenvolvimento
+          (WAF do provedor, docs/shipping.md); quem já conectou ainda pode desconectar. %>
+      <div class="mt-3"><%= render "seller_portal/shared/shipping_in_development" %></div>
     <% end %>
     </div>
   </div>
   <div class="relative shrink-0">
     <% if current_seller.melhor_envio_connected? %>
       <%= button_to "Desconectar", seller_melhor_envio_connection_path, method: :delete, class: "rounded-full border border-red-200 px-6 py-3 text-sm font-bold text-red-700 hover:bg-red-50", form: { data: { turbo_confirm: "Desconectar a conta? O frete volta a usar a tabela padrão." } } %>
-    <% elsif @melhor_envio_oauth_configured %>
-      <%= link_to "Conectar Melhor Envio", seller_melhor_envio_connect_path, class: "inline-flex rounded-full bg-[#7a2410] px-6 py-3 text-sm font-bold text-white hover:bg-[#4a1508]", data: { turbo: false } %>
     <% end %>
   </div>
 </section>

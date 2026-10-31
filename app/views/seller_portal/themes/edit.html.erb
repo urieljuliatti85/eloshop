@@ -1,0 +1,79 @@
+<% content_for :title, "Tema da vitrine | #{current_seller.name}" %>
+
+<%
+  card = "rounded-[2rem] border border-brand-100 bg-white shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)]"
+  tabs = [
+    [ "temas", "Temas" ],
+    [ "estilo", "Estilo" ],
+    [ "layout", "Layout" ],
+    [ "secoes", "Seções" ],
+    [ "imagens", "Imagens" ],
+    [ "textos", "Textos" ]
+  ]
+  # Salvamento recusado: abre a aba do primeiro campo com erro.
+  tab_of = {
+    logo: "imagens", cover_image: "imagens", about_image: "imagens",
+    notice_text: "textos", about_text: "textos", footer_text: "textos", instagram_handle: "textos", whatsapp_number: "textos",
+    theme_palette: "estilo", theme_font: "estilo", theme_accent_color: "estilo", theme_background: "estilo", theme_ornament: "estilo", theme_heading_font: "estilo",
+    theme_layout: "layout", theme_hero: "layout", theme_corners: "layout", theme_card_style: "layout", theme_image_ratio: "layout",
+    theme_sections: "secoes"
+  }
+  initial_tab = tab_of[current_seller.errors.attribute_names.first] || "temas"
+  theme_panels = { "temas" => "presets", "estilo" => "style", "layout" => "layout_options", "secoes" => "sections", "imagens" => "images", "textos" => "texts" }
+%>
+
+<div class="pb-28 lg:pb-0" data-controller="theme-editor"
+     data-theme-editor-preview-url-value="<%= preview_seller_theme_path %>"
+     data-theme-editor-presets-value="<%= SellerTheme::PRESETS.to_json %>"
+     data-theme-editor-min-contrast-value="<%= SellerTheme::MIN_ACCENT_CONTRAST %>"
+     data-theme-editor-initial-tab-value="<%= initial_tab %>"
+     data-theme-editor-max-image-bytes-value="<%= Seller::THEME_IMAGE_MAX_BYTES %>"
+     data-theme-editor-image-types-value="<%= Seller::THEME_IMAGE_CONTENT_TYPES.to_json %>"
+     data-theme-editor-open-class="fixed inset-0 z-50 flex flex-col bg-stone-100 p-3 lg:p-6">
+  <header class="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-3xl font-black tracking-tight">Tema da vitrine</h1>
+      <p class="mt-1 max-w-xl text-sm text-stone-500">Escolha uma seção, ajuste e veja o resultado na vitrine de verdade. Nada vai ao ar até você salvar.</p>
+    </div>
+    <p data-theme-editor-target="dirty" hidden class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900" role="status">Alterações não salvas</p>
+  </header>
+
+  <%= form_with model: current_seller, url: seller_theme_path, method: :patch,
+        data: { theme_editor_target: "form", action: "input->theme-editor#changed change->theme-editor#changed submit->theme-editor#submitted" },
+        class: "grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[9.5rem_minmax(0,22rem)_minmax(0,1fr)]" do |form| %>
+    <aside class="lg:sticky lg:top-6 lg:self-start">
+      <div role="tablist" aria-orientation="vertical" aria-label="Seções do editor"
+           class="grid grid-cols-3 gap-1 rounded-[1.5rem] border border-brand-100 bg-white/70 p-1.5 lg:flex lg:flex-col">
+        <% tabs.each do |key, label| %>
+          <button type="button" role="tab" id="tab-<%= key %>" aria-controls="panel-<%= key %>" aria-selected="<%= key == initial_tab %>" tabindex="<%= key == initial_tab ? 0 : -1 %>"
+                  data-theme-editor-target="tab" data-key="<%= key %>" data-action="theme-editor#selectTab keydown->theme-editor#tabKey"
+                  class="min-h-11 cursor-pointer rounded-2xl px-2 text-center text-sm font-semibold text-stone-600 transition hover:bg-white aria-selected:bg-stone-900 aria-selected:text-white lg:w-full lg:px-4 lg:text-left">
+            <%= label %>
+          </button>
+        <% end %>
+      </div>
+      <div class="mt-4 hidden lg:block">
+        <%= render "seller_portal/themes/actions", form: form, bar_class: "flex flex-col gap-2" %>
+        <%= link_to "Abrir minha vitrine", seller_path(current_seller.slug), target: "_blank", rel: "noopener",
+              class: "mt-3 flex min-h-11 items-center justify-center text-sm font-semibold text-brand-700 underline underline-offset-4" %>
+      </div>
+    </aside>
+
+    <div class="space-y-4">
+      <%= render "seller_portal/themes/errors" %>
+      <div class="<%= card %> overflow-hidden">
+        <% theme_panels.each do |key, partial| %>
+          <section role="tabpanel" id="panel-<%= key %>" aria-labelledby="tab-<%= key %>" data-theme-editor-target="panel" data-key="<%= key %>" <%= "hidden" unless initial_tab == key %> class="space-y-6 p-5">
+            <%= render "seller_portal/themes/#{partial}", form: form %>
+          </section>
+        <% end %>
+      </div>
+    </div>
+
+    <%= render "seller_portal/themes/preview" %>
+
+    <div class="lg:hidden">
+      <%= render "seller_portal/themes/actions", form: form %>
+    </div>
+  <% end %>
+</div>

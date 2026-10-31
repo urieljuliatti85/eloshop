@@ -20,14 +20,14 @@ class CouponTest < ActiveSupport::TestCase
   test "invalid without a code" do
     coupon = build_coupon(code: nil)
     assert_not coupon.valid?
-    assert_includes coupon.errors[:code], "can't be blank"
+    assert_includes coupon.errors[:code], "não pode ficar em branco"
   end
 
   test "invalid with a duplicate code" do
     build_coupon(code: "DUPLICADO").save!
     duplicate = build_coupon(code: "duplicado")
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:code], "has already been taken"
+    assert_includes duplicate.errors[:code], "já está em uso"
   end
 
   test "upcases the code before saving" do
@@ -39,7 +39,7 @@ class CouponTest < ActiveSupport::TestCase
   test "invalid percentage coupon without a percentage" do
     coupon = build_coupon(percentage: nil)
     assert_not coupon.valid?
-    assert_includes coupon.errors[:percentage], "can't be blank"
+    assert_includes coupon.errors[:percentage], "não pode ficar em branco"
   end
 
   test "invalid percentage coupon above 100" do
@@ -50,13 +50,13 @@ class CouponTest < ActiveSupport::TestCase
   test "invalid percentage coupon with an amount_cents set" do
     coupon = build_coupon(amount_cents: 500)
     assert_not coupon.valid?
-    assert_includes coupon.errors[:amount_cents], "must be blank"
+    assert_includes coupon.errors[:amount_cents], "deve ficar em branco"
   end
 
   test "invalid fixed coupon without amount_cents" do
     coupon = build_coupon(discount_type: "fixed", percentage: nil)
     assert_not coupon.valid?
-    assert_includes coupon.errors[:amount_cents], "can't be blank"
+    assert_includes coupon.errors[:amount_cents], "não pode ficar em branco"
   end
 
   test "valid_for? is false when inactive" do

@@ -1,5 +1,9 @@
 module SeoHelper
   DEFAULT_TITLE = "EloShop — Artesanato e produtos feitos à mão"
+  # Cartão de compartilhamento (1200x630, o tamanho que WhatsApp, Instagram e
+  # Facebook recomendam) usado quando a página não tem imagem própria.
+  DEFAULT_OG_IMAGE = "og-card.jpg"
+  DEFAULT_OG_IMAGE_SIZE = [ 1200, 630 ].freeze
   DEFAULT_DESCRIPTION = "Loja online de artesanato e peças feitas à mão: cerâmica, madeira, tecido e muito mais, direto de quem produz."
 
   def page_title
@@ -8,6 +12,36 @@ module SeoHelper
 
   def page_description
     content_for(:meta_description).presence || DEFAULT_DESCRIPTION
+  end
+
+  def page_og_image
+    content_for(:og_image).presence || image_url(DEFAULT_OG_IMAGE)
+  end
+
+  # Só declara as dimensões da imagem da página quando o Active Storage já as
+  # conhece; sem isso, declarar o tamanho do cartão padrão para outra imagem
+  # seria mentir ao rastreador.
+  def page_og_image_size
+    return DEFAULT_OG_IMAGE_SIZE if content_for(:og_image).blank?
+
+    [ content_for(:og_image_width).presence, content_for(:og_image_height).presence ]
+  end
+
+  # Nome digitado pelo vendedor pode trazer espaços duplos ou nas pontas; no
+  # <title> e nos resumos de busca isso aparece como buraco no texto.
+  def product_page_title(product)
+    "#{product.name.to_s.squish} | EloShop"
+  end
+
+  # Usa a descrição escrita pelo vendedor (sem quebras de linha, que o Google
+  # mostraria como espaços soltos). Sem ela, monta um resumo com o que é
+  # sempre verdade: nome, ateliê e preço.
+  def product_meta_description(product)
+    text = product.description.to_s.squish.presence ||
+      "#{product.name.to_s.squish}, peça artesanal feita à mão pelo ateliê #{product.seller.name}. " \
+      "#{format_price(product.starting_price_cents)} na EloShop."
+
+    truncate(text, length: 160)
   end
 
   def canonical_url
@@ -94,14 +128,51 @@ module SeoHelper
   # JSON-LD do rastro de navegação (schema.org/BreadcrumbList) do produto,
   # espelhando o breadcrumb visual em app/views/products/show.html.erb.
   def product_breadcrumb_structured_data(product)
+    breadcrumb_structured_data(product.name, product_url(product.seller, product.slug))
+  end
+
+  # Mesmo rastro para a página do ateliê (app/views/sellers/show.html.erb).
+  def seller_breadcrumb_structured_data(seller)
+    breadcrumb_structured_data(seller.name, seller_url(seller.slug))
+  end
+
+  # Rastro da categoria na loja: Início → Loja → ancestrais → categoria. Cada
+  # nível aponta para a listagem filtrada que o sitemap já publica.
+  def category_breadcrumb_structured_data(category, tree)
+    path = [ category ]
+    while (parent = tree.parent(path.first))
+      path.unshift(parent)
+    end
+
+    trail = path.map { |c| [ c.name, products_url(category: c.slug) ] }
+    breadcrumb_structured_data(trail)
+  end
+
+  # JSON-LD da vitrine (schema.org/ItemList) com as peças da página atual.
+  def catalog_item_list_structured_data(products)
+    data = {
+      "@context" => "https://schema.org/",
+      "@type" => "ItemList",
+      "itemListElement" => products.each_with_index.map do |product, index|
+        { "@type" => "ListItem", "position" => index + 1, "url" => product_url(product.seller, product.slug) }
+      end
+    }
+
+    json_escape(data.to_json).html_safe
+  end
+
+  private
+
+  def breadcrumb_structured_data(leaf_name_or_trail, leaf_url = nil)
+    trail = leaf_name_or_trail.is_a?(Array) ? leaf_name_or_trail : [ [ leaf_name_or_trail, leaf_url ] ]
+    items = [ [ "Início", root_url ], [ "Loja", products_url ] ] + trail
+
     data = {
       "@context" => "https://schema.org/",
       "@type" => "BreadcrumbList",
-      "itemListElement" => [
-        { "@type" => "ListItem", "position" => 1, "name" => "Início", "item" => root_url },
-        { "@type" => "ListItem", "position" => 2, "name" => "Loja", "item" => products_url },
-        { "@type" => "ListItem", "position" => 3, "name" => product.name, "item" => product_url(product.seller, product.slug) }
-      ]
+      "itemListElement" => items.each_with_index.map do |(name, url), index|
+        { "@type" => "ListItem", "position" => index + 1, "name" => name, "item" => url }
+      end
     }
 
     json_escape(data.to_json).html_safe

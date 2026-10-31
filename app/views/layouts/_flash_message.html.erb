@@ -5,23 +5,23 @@
        aria-live="<%= is_error ? 'assertive' : 'polite' %>"
        aria-atomic="true"
        data-controller="flash">
-    <div class="app-flash__badge" aria-hidden="true">
+    <span class="app-flash__stitch" aria-hidden="true"></span>
+
+    <p class="app-flash__pill">
       <% if is_error %>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
           <path d="M12 6v8"/>
           <path d="M12 18h.01"/>
         </svg>
       <% else %>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="m5 12 4 4L19 6"/>
         </svg>
       <% end %>
-    </div>
+      <%= t("flash.#{variant}.title") %>
+    </p>
 
-    <div class="min-w-0 flex-1">
-      <p class="app-flash__title"><%= t("flash.#{variant}.title") %></p>
-      <p class="app-flash__message"><%= message %></p>
-    </div>
+    <p class="app-flash__message"><%= message %></p>
 
     <button type="button"
             class="app-flash__close"
@@ -31,7 +31,5 @@
         <path d="M6 6l12 12M18 6 6 18"/>
       </svg>
     </button>
-
-    <span class="app-flash__accent" aria-hidden="true"></span>
   </div>
 <% end %>

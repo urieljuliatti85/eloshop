@@ -26,6 +26,40 @@ class Admin::AnalyticsControllerTest < ActionDispatch::IntegrationTest
     assert_select "code", text: "GOOGLE_ANALYTICS_MEASUREMENT_ID"
   end
 
+  test "lists, for clicks, completions and failures, each atelier with its name and e-mail" do
+    approved = sellers(:approved)
+    other = sellers(:other)
+    Analytics::Funnel.track("seller_mp_connect_started", seller: approved)
+    Analytics::Funnel.track("seller_mp_connect_started", seller: other)
+    Analytics::Funnel.track("seller_mp_connect_completed", seller: approved)
+    Analytics::Funnel.track("seller_mp_connect_failed", seller: other)
+    sign_in_as(users(:one))
+
+    with_env("GOOGLE_ANALYTICS_PROPERTY_ID" => nil, "GOOGLE_ANALYTICS_CREDENTIALS_JSON" => nil, "GOOGLE_ANALYTICS_MEASUREMENT_ID" => nil) do
+      get admin_analytics_path
+    end
+
+    assert_response :success
+    assert_select "h2", text: "Conexão com o Mercado Pago"
+    assert_select "article", text: /Cliques em conectar.*EloShop.*seller@example\.com.*Outro Ateliê.*other-seller@example\.com/m
+    assert_select "article", text: /Conexões concluídas.*EloShop.*seller@example\.com/m
+    assert_select "article", text: /Falhas na conexão.*Outro Ateliê.*other-seller@example\.com/m
+    assert_select "article a[href=?]", admin_seller_path(approved), minimum: 1
+    assert_select "strong", text: "50%"
+  end
+
+  test "says so when nobody clicked, completed or failed" do
+    sign_in_as(users(:one))
+
+    with_env("GOOGLE_ANALYTICS_PROPERTY_ID" => nil, "GOOGLE_ANALYTICS_CREDENTIALS_JSON" => nil, "GOOGLE_ANALYTICS_MEASUREMENT_ID" => nil) do
+      get admin_analytics_path
+    end
+
+    assert_response :success
+    assert_select "p", text: "Nenhum clique no período."
+    assert_select "p", text: "Nenhuma falha no período."
+  end
+
   test "shows the aggregate report without exposing service account credentials" do
     snapshot = analytics_snapshot
     report = Object.new
@@ -46,6 +80,8 @@ class Admin::AnalyticsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".admin-stat-value", text: "18"
     assert_select ".admin-stat-value", text: "45"
     assert_select "td", text: "Catálogo"
+    assert_select "h2", text: "Origem do tráfego"
+    assert_select "td", text: "Acesso direto"
     assert_not_includes response.body, "service-account-secret"
   end
 
@@ -76,6 +112,9 @@ class Admin::AnalyticsControllerTest < ActionDispatch::IntegrationTest
       ],
       top_pages: [
         Analytics::GoogleAnalyticsReport::PageRow.new(path: "/catalogo", title: "Catálogo", page_views: 20, active_users: 7)
+      ],
+      sources: [
+        Analytics::GoogleAnalyticsReport::SourceRow.new(source: "(direct)", medium: "(none)", sessions: 9, active_users: 6)
       ],
       fetched_at: Time.zone.parse("2026-09-22 12:00:00")
     )

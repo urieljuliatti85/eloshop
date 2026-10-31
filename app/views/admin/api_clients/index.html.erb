@@ -1,0 +1,39 @@
+<div class="space-y-8">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="admin-section-label mb-2">Acesso</p>
+      <h1>Clientes de API</h1>
+      <p class="mt-2 text-sm text-slate-500">Quem pode chamar a API v1 e ler a <%= link_to "documentação", "/api-docs", class: "underline" %>. Cada cliente tem o próprio token.</p>
+    </div>
+    <%= link_to "Novo cliente", new_admin_api_client_path, class: "admin-button admin-button--brand" %>
+  </header>
+
+  <div class="admin-table-wrap">
+    <table>
+      <thead><tr><th>Nome</th><th>Desde</th><th>Último uso</th><th>Situação</th><th><span class="sr-only">Ações</span></th></tr></thead>
+      <tbody>
+        <% if @api_clients.empty? %>
+          <tr><td colspan="5" class="text-sm text-slate-500">Nenhum cliente ainda. Sem cliente, ninguém chama a API.</td></tr>
+        <% end %>
+        <% @api_clients.each do |api_client| %>
+          <tr>
+            <td class="font-semibold text-slate-900"><%= api_client.name %></td>
+            <td><%= l(api_client.created_at.to_date, format: :short) %></td>
+            <td><%= api_client.last_used_at ? l(api_client.last_used_at, format: :short) : "Nunca" %></td>
+            <td><%= api_client.revoked? ? "Revogado em #{l(api_client.revoked_at.to_date, format: :short)}" : "Ativo" %></td>
+            <td>
+              <div class="flex justify-end">
+                <% unless api_client.revoked? %>
+                  <%= button_to "Revogar", revoke_admin_api_client_path(api_client), method: :patch,
+                        class: "admin-button admin-button--danger",
+                        form: { data: { turbo_confirm: "Revogar o acesso de #{api_client.name}? O token para de funcionar na hora e não volta." } } %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= render "admin/shared/pagination", pagination: @pagination %>
+</div>

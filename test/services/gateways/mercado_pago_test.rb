@@ -190,9 +190,36 @@ module Gateways
       assert_equal @order.customer.email, body.dig("payer", "email")
     end
 
+    test "find_payment_for returns the charge that carries the order number as external_reference" do
+      payload = { "results" => [
+        { "id" => 999, "status" => "approved", "external_reference" => "999999" },
+        { "id" => 1234567, "status" => "in_process", "external_reference" => @order.id.to_s }
+      ] }
+
+      captured = stub_request(payload) do
+        found = @gateway.find_payment_for(order: @order)
+
+        assert_equal "1234567", found.external_id
+        assert_equal "pending", found.status
+      end
+
+      assert_includes captured.path, "/v1/payments/search?external_reference=#{@order.id}"
+    end
+
+    test "find_payment_for returns nil when no charge matches, and raises when it cannot ask" do
+      stub_request({ "results" => [] }) do
+        assert_nil @gateway.find_payment_for(order: @order)
+      end
+
+      stub_error_response(code: "500", body: "{}", content_type: "application/json") do
+        assert_raises(MercadoPago::RequestFailed) { @gateway.find_payment_for(order: @order) }
+      end
+    end
+
     test "payment_status translates gateway vocabulary into the domain's" do
       { "approved" => "approved", "authorized" => "approved", "rejected" => "declined",
-        "cancelled" => "declined", "in_process" => "pending", "refunded" => "refunded" }.each do |remoto, esperado|
+        "cancelled" => "declined", "in_process" => "pending", "refunded" => "refunded",
+        "charged_back" => "charged_back" }.each do |remoto, esperado|
         stub_request("status" => remoto) do
           assert_equal esperado, @gateway.payment_status(external_id: "1"), "status #{remoto}"
         end
@@ -230,6 +257,51 @@ module Gateways
 
       assert_equal "refund-1", captured["X-Idempotency-Key"]
       assert_equal 5.0, JSON.parse(captured.body)["amount"]
+    end
+
+    # Pedido #54 (2026-10-07): o reembolso voltou 400 `bad_request` e só o
+    # `cause` dizia que a conta do artesão não tinha saldo disponível.
+    test "refund without available balance raises InsufficientFunds with the release date" do
+      refund_body = { "error" => "bad_request", "cause" => [ { "description" => "Collector hasn't enough available money" } ] }.to_json
+      details_body = { "status" => "approved", "money_release_date" => "2026-10-20T12:00:00.000-03:00" }.to_json
+      fake_http = Object.new
+      fake_http.define_singleton_method(:request) do |req|
+        ok = req.method == "GET"
+        response = Net::HTTPResponse.send(:response_class, ok ? "200" : "400").new("1.1", ok ? "200" : "400", "x")
+        response.define_singleton_method(:body) { ok ? details_body : refund_body }
+        response
+      end
+      @gateway.instance_variable_set(:@http, fake_http)
+
+      erro = assert_raises(MercadoPago::InsufficientFunds) do
+        @gateway.refund(payment: payments(:one), amount_cents: 500, idempotency_key: "refund-no-balance")
+      end
+
+      assert_kind_of MercadoPago::RequestRejected, erro
+      assert_equal Time.zone.parse("2026-10-20T12:00:00.000-03:00"), erro.release_date
+    ensure
+      @gateway.remove_instance_variable(:@http) if @gateway.instance_variable_defined?(:@http)
+    end
+
+    test "refund without balance still raises InsufficientFunds when the release date lookup fails" do
+      body = { "error" => "bad_request", "cause" => [ { "description" => "Collector hasn't enough available money" } ] }.to_json
+      stub_error_response(code: "400", body: body, content_type: "application/json") do
+        erro = assert_raises(MercadoPago::InsufficientFunds) do
+          @gateway.refund(payment: payments(:one), amount_cents: 500, idempotency_key: "refund-no-balance-2")
+        end
+
+        assert_nil erro.release_date
+      end
+    end
+
+    test "other 400 on refund is a plain RequestRejected" do
+      stub_error_response(code: "400", body: { "error" => "bad_request", "cause" => [ { "description" => "other" } ] }.to_json, content_type: "application/json") do
+        erro = assert_raises(MercadoPago::RequestRejected) do
+          @gateway.refund(payment: payments(:one), amount_cents: 500, idempotency_key: "refund-other")
+        end
+
+        assert_not_kind_of MercadoPago::InsufficientFunds, erro
+      end
     end
 
     test "refund maps a rejected response to failed" do
@@ -282,6 +354,31 @@ module Gateways
           assert_not_equal pendente[:event_id], aprovado[:event_id]
         end
       end
+    end
+
+    # O tópico de contestações manda o id da contestação em `data.id` e o do
+    # pagamento em `data.payment_id`; a assinatura usa o `data.id` da query.
+    test "webhook_event for a chargeback notification uses the payment id and needs no API call" do
+      request = chargeback_request(payment_id: "81034165129", chargeback_id: "217000061307271000")
+
+      assert @gateway.verify_webhook(request)
+      event = @gateway.webhook_event(request)
+
+      assert_equal "81034165129", event[:external_id]
+      assert_equal "charged_back", event[:status]
+      assert_equal "mp-chargeback-217000061307271000-1720427447", event[:event_id]
+    end
+
+    test "webhook_event for a chargeback notification without a payment id is ignored" do
+      request = chargeback_request(payment_id: nil, chargeback_id: "1")
+
+      assert_nil @gateway.webhook_event(request)
+    end
+
+    test "verify_webhook rejects a chargeback notification signed for another id" do
+      request = chargeback_request(payment_id: "1", chargeback_id: "2", signed_id: "999")
+
+      assert_not @gateway.verify_webhook(request)
     end
 
     # O log de erro existe desde 2026-09-08 justamente porque "respondeu 500"
@@ -427,6 +524,19 @@ module Gateways
       yield
     ensure
       @gateway.remove_instance_variable(:@http) if @gateway.instance_variable_defined?(:@http)
+    end
+
+    def chargeback_request(payment_id:, chargeback_id:, signed_id: "114544942708", request_id: "req-1", ts: "1700000000")
+      digest = OpenSSL::HMAC.hexdigest("SHA256", WEBHOOK_SECRET, "id:#{signed_id};request-id:#{request_id};ts:#{ts};")
+
+      ActionDispatch::TestRequest.create("QUERY_STRING" => "data.id=114544942708&type=topic_chargebacks_wh").tap do |request|
+        request.headers["X-Signature"] = "ts=#{ts},v1=#{digest}"
+        request.headers["X-Request-Id"] = request_id
+        request.params.merge!(
+          "type" => "topic_chargebacks_wh", "id" => "114544942708", "version" => "1720427447",
+          "data" => { "id" => chargeback_id, "payment_id" => payment_id }.compact
+        )
+      end
     end
 
     def signed_request(signature: nil, data_id: "12345", request_id: "req-1", ts: "1700000000")

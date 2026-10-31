@@ -1,0 +1,9 @@
+<%# Ateliê que aparece na loja mas ainda não recebe pagamento (vitrine do
+    pré-cadastro, ou aprovado que desconectou o Mercado Pago), com as vendas
+    da plataforma já abertas. O bloqueio de verdade está no servidor
+    (Product#available_for_purchase?); isto só não oferece o que vai ser
+    recusado. %>
+<div class="flex flex-col gap-2">
+  <button type="button" disabled class="w-full cursor-not-allowed rounded-full bg-stone-200 px-6 py-3 text-sm font-semibold text-stone-600">Ateliê em preparação</button>
+  <p class="text-sm text-ink-muted">Este ateliê está se preparando para começar a vender. Salve a peça nos favoritos para voltar a ela depois.</p>
+</div>

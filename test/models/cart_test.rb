@@ -19,4 +19,15 @@ class CartTest < ActiveSupport::TestCase
     cart = Cart.create!(session_token: "empty-cart")
     assert_equal 0, cart.subtotal_cents
   end
+
+  test "production_time_max_days is nil when nothing in the cart is made to order" do
+    assert_nil carts(:one).production_time_max_days
+  end
+
+  # O envio só sai quando a peça mais demorada fica pronta.
+  test "production_time_max_days is the longest lead time among made-to-order pieces" do
+    products(:one).update!(availability_type: :made_to_order, stock_quantity: 0, production_time_min_days: 7, production_time_max_days: 12)
+
+    assert_equal 12, carts(:one).production_time_max_days
+  end
 end

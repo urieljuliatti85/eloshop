@@ -1,10 +1,12 @@
 <% content_for :title, "Conta Vendedor no Mercado Pago | #{current_seller.name}" %>
 
 <% state = current_seller.mercado_pago_account_state %>
-<%# Os textos abaixo não citam botões do app do Mercado Pago: os nomes das
+<%# Os passos abaixo não citam botões do app do Mercado Pago: os nomes das
     telas mudam e não há como validá-los daqui. O que é estável (o tipo de
     conta exigido, os documentos, o prazo) está descrito; o resto aponta para
-    a central de ajuda. %>
+    a central de ajuda. Exceção deliberada: o aviso da chave PIX traz os
+    nomes das telas (vindos do blog do próprio MP), porque sem a chave o PIX
+    é recusado e o vendedor precisa de um caminho concreto. %>
 <div class="space-y-8">
   <header class="overflow-hidden rounded-[2rem] bg-[#5c1a0b] px-6 py-8 text-white shadow-sm sm:px-9 sm:py-10">
     <p class="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#fbbeb6]">
@@ -21,6 +23,13 @@
     <p class="mt-4 max-w-2xl text-sm leading-6 text-white/75 sm:text-base">Na EloShop você monta seu ateliê, cadastra as peças e cuida dos pedidos. Mas quem recebe o dinheiro é o <strong>Mercado Pago</strong>. Quando um cliente paga, o valor vai direto para a sua conta lá, já descontada a comissão da EloShop. Sem essa conta conectada, seus produtos não podem ser publicados.</p>
   </header>
 
+  <%# Com a conta conectada, é aqui que o vendedor reconecta ou desconecta
+      (o painel só mostra o box enquanto não há conexão). Sem conexão o passo 4
+      abaixo já tem o botão de conectar, então o box não se repete. %>
+  <% if current_seller.mercado_pago_connected? %>
+    <%= render "seller_portal/mercado_pago_connections/banner" %>
+  <% end %>
+
   <% if state == :not_accepted %>
     <p class="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900"><strong>A conta conectada não pode ser aprovada.</strong> Você conectou uma conta de teste ou uma conta que não conseguimos confirmar como real. Desconecte-a no painel e conecte a sua Conta Vendedor (ou Conta Negócio) real, seguindo os passos abaixo.</p>
   <% end %>
@@ -29,64 +38,68 @@
     <p class="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900"><strong>Ambiente de teste:</strong> aqui a conexão é feita com uma conta de teste (TESTUSER) do tipo Vendedor. Ela não permite aprovação nem vendas reais. Em produção, vale o passo a passo abaixo com a sua conta real.</p>
   <% end %>
 
+  <%= render "seller_portal/mercado_pago_connections/pix_key_notice" %>
+
   <ol class="space-y-5" aria-label="Passo a passo para ativar os recebimentos">
-    <li class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
+    <li class="seller-card">
       <h2 class="text-lg font-bold"><span class="text-brand-600">1.</span> Crie sua conta no Mercado Pago</h2>
       <p class="mt-2 text-sm leading-6 text-stone-600">Baixe o app do Mercado Pago (Android ou iOS) e crie sua conta com seus dados. Ela precisa ser uma <strong>Conta Vendedor (ou Conta Negócio)</strong>: uma conta usada só para comprar não serve. Se você já tem conta, pode usá-la e ir para o passo 2.</p>
       <p class="mt-3 text-sm"><%= link_to "Criar conta no Mercado Pago", "https://www.mercadopago.com.br/hub/registration/landing", target: "_blank", rel: "noopener noreferrer", class: "font-semibold text-brand-700 underline" %></p>
     </li>
 
-    <li class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
+    <li class="seller-card">
       <h2 class="text-lg font-bold"><span class="text-brand-600">2.</span> Configure como Conta Vendedor (ou Conta Negócio)</h2>
       <p class="mt-2 text-sm leading-6 text-stone-600"><strong>Se você ainda não tem conta:</strong> baixe o app do Mercado Pago, crie sua conta e escolha a opção de vender e receber pagamentos (Conta Negócio ou perfil de vendas). Você vai informar seu CPF ou CNPJ e não precisa de CNPJ para começar.</p>
       <p class="mt-2 text-sm leading-6 text-stone-600"><strong>Se já tem uma conta pessoal:</strong> abra as configurações do app e ative o perfil de vendas. Os nomes das opções podem mudar; se não encontrar, consulte a central de ajuda do Mercado Pago.</p>
       <p class="mt-3 text-sm"><%= link_to "Central de ajuda do Mercado Pago", "https://www.mercadopago.com.br/ajuda", target: "_blank", rel: "noopener noreferrer", class: "font-semibold text-brand-700 underline" %></p>
     </li>
 
-    <li class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
+    <li class="seller-card">
       <h2 class="text-lg font-bold"><span class="text-brand-600">3.</span> Confirme sua identidade</h2>
       <p class="mt-2 text-sm leading-6 text-stone-600">O Mercado Pago pede uma foto da frente e do verso de um documento oficial com foto (RG ou CNH, por exemplo) e uma selfie, tudo feito no app. Use um lugar bem iluminado e sem flash. A análise costuma levar de poucos minutos a 2 dias úteis.</p>
       <p class="mt-2 text-sm leading-6 text-stone-600">Seus documentos ficam só no Mercado Pago: a EloShop nunca vê nem guarda essas imagens. Se o Mercado Pago pedir mais alguma informação, siga o que ele pedir.</p>
       <p class="mt-3 text-sm"><%= link_to "Como o Mercado Pago valida sua identidade", "https://www.mercadopago.com.br/ajuda/33107", target: "_blank", rel: "noopener noreferrer", class: "font-semibold text-brand-700 underline" %></p>
     </li>
 
-    <li class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
+    <li class="seller-card">
       <h2 class="text-lg font-bold"><span class="text-brand-600">4.</span> Conecte sua conta à EloShop</h2>
-      <p class="mt-2 text-sm leading-6 text-stone-600">Clique em <strong>Conectar Mercado Pago</strong>, entre na sua conta lá e autorize a EloShop a cobrar em seu nome. Você pode desfazer a conexão quando quiser, mas seus produtos saem do ar até reconectar.</p>
+      <p class="mt-2 text-sm leading-6 text-stone-600">Clique em <strong>Conectar Mercado Pago</strong>, entre na sua conta lá e autorize a EloShop a cobrar em seu nome. O e-mail da conta do Mercado Pago pode ser diferente do e-mail do seu cadastro na EloShop. Você pode desfazer a conexão quando quiser, mas seus produtos saem do ar até reconectar.</p>
       <div class="mt-4">
         <% if state == :ready %>
           <p class="inline-flex items-center rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-800">✓ Conta conectada</p>
         <% elsif state == :not_accepted %>
           <p class="text-sm leading-6 text-amber-800">Conta conectada, mas não aceita. Desconecte-a em <%= link_to "Dados do Ateliê", seller_atelier_path, class: "font-semibold underline" %> e conecte a conta real.</p>
         <% elsif @mercado_pago_oauth_configured %>
-          <%= link_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, class: "inline-flex min-h-11 items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-600", data: { turbo: false } %>
+          <%= link_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, class: "seller-button seller-button--primary", data: { turbo: false } %>
         <% else %>
           <p class="text-sm text-amber-700">A conexão aguarda a configuração da aplicação Mercado Pago pela plataforma.</p>
         <% end %>
       </div>
     </li>
 
-    <li class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
+    <li class="seller-card">
       <h2 class="text-lg font-bold"><span class="text-brand-600">5.</span> Aguarde a aprovação</h2>
       <p class="mt-2 text-sm leading-6 text-stone-600">Nossa equipe confere se a conta é real e se a verificação de identidade está concluída. Depois disso, você pode publicar suas peças.</p>
     </li>
   </ol>
 
-  <section class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm" aria-labelledby="good-to-know-title">
+  <section class="seller-card" aria-labelledby="good-to-know-title">
     <h2 id="good-to-know-title" class="text-lg font-bold">Bom saber</h2>
     <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-stone-600">
       <li>Use a sua conta <strong>real</strong>. Contas de teste não recebem de verdade.</li>
       <li>É preciso ser maior de idade.</li>
-      <li>Como funciona o dinheiro: o Mercado Pago desconta a tarifa dele e a EloShop retém <strong><%= number_to_percentage(@platform_fee_percentage, precision: 2, strip_insignificant_zeros: true) %></strong> da venda, sobre os produtos e sem contar o frete. O restante cai na sua conta automaticamente.</li>
+      <li><strong>Cadastre uma chave PIX na sua conta do Mercado Pago.</strong> Sem ela, os pagamentos por PIX dos seus clientes são recusados.</li>
+      <li>Como funciona o dinheiro: o Mercado Pago desconta a tarifa dele e a EloShop retém <strong><%= seller_commission_text(current_seller) %></strong> da venda, sobre os produtos e sem contar o frete. O restante cai na sua conta automaticamente.</li>
       <li>Nota fiscal e impostos são de responsabilidade do vendedor.</li>
     </ul>
   </section>
 
-  <section class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm" aria-labelledby="faq-title">
+  <section class="seller-card" aria-labelledby="faq-title">
     <h2 id="faq-title" class="text-lg font-bold">Perguntas frequentes</h2>
     <dl class="mt-3 space-y-4 text-sm leading-6">
       <div><dt class="font-semibold text-stone-900">Preciso ter CNPJ?</dt><dd class="text-stone-600">Não, para começar basta o CPF. A Conta Negócio também é aceita, se você preferir.</dd></div>
       <div><dt class="font-semibold text-stone-900">Posso usar a conta pessoal que já tenho?</dt><dd class="text-stone-600">Sim, desde que ela esteja configurada como Conta Vendedor (ou Conta Negócio). Se ela só compra, ative essa opção antes de conectar.</dd></div>
+      <div><dt class="font-semibold text-stone-900">Preciso usar o mesmo e-mail da EloShop no Mercado Pago?</dt><dd class="text-stone-600">Não. O e-mail pode ser outro: a conexão é feita pela conta do Mercado Pago, não pelo e-mail. O que importa é que a conta seja sua e esteja configurada como Conta Vendedor (ou Conta Negócio).</dd></div>
       <div><dt class="font-semibold text-stone-900">A EloShop vê meus documentos?</dt><dd class="text-stone-600">Não. A verificação é feita só pelo Mercado Pago.</dd></div>
       <div><dt class="font-semibold text-stone-900">Quanto tempo demora?</dt><dd class="text-stone-600">O cadastro leva cerca de 10 minutos. A análise do Mercado Pago leva de poucos minutos a 2 dias úteis.</dd></div>
     </dl>

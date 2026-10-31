@@ -24,12 +24,49 @@ RSpec.describe "Storefront home", type: :request do
     it "sets its own title, description and site structured data" do
       get root_path
 
-      expect(response.body).to include("<title>EloShop | Artesanato feito à mão direto de ateliês independentes</title>")
+      expect(response.body).to include("<title>EloShop | Onde artesãos vendem e você compra peças feitas à mão</title>")
       expect(response.body).to include("compre direto do artesão")
       expect(response.body).to include('"@type":"Organization"')
       expect(response.body).to include('"@type":"WebSite"')
       expect(response.body).to include('"@type":"SearchAction"')
       expect(response.body).to include("/produtos?q={search_term_string}")
+    end
+
+    it "opens the carousel with the EloShop Instagram banner, opening in a new tab" do
+      get root_path
+
+      doc = Nokogiri::HTML(response.body)
+      slides = doc.css("[data-carousel-target='slide']")
+      expect(slides.map { |slide| slide["aria-label"] }).to eq([ "1 de 3", "2 de 3", "3 de 3" ])
+      expect(doc.css("[data-carousel-target='dot']").size).to eq(3)
+
+      banner = slides.first
+      expect(banner.text.squish).to include(
+        "Sejam muito bem-vindos ao nosso espaço dedicado ao artesanato!",
+        "Confira o nosso Instagram e acompanhe novidades, processos criativos dos nossos artesãos, entre outros.",
+        "@eloshop__"
+      )
+      link = banner.at_css("a[href='https://www.instagram.com/eloshop__']")
+      expect(link["target"]).to eq("_blank")
+      expect(link["rel"]).to eq("noopener")
+      expect(link["aria-label"]).to include("abre em nova aba")
+    end
+
+    it "puts the Instagram as the last pill of the desktop menu and as an icon in the mobile top bar" do
+      get root_path
+
+      doc = Nokogiri::HTML(response.body)
+      desktop = doc.at_css("header nav.md\\:flex").css("a").last
+      mobile = doc.css("header a.md\\:hidden[href='https://www.instagram.com/eloshop__']")
+      expect(mobile.size).to eq(1)
+      [ desktop, mobile.first ].each do |link|
+        expect(link["href"]).to eq("https://www.instagram.com/eloshop__")
+        expect(link["target"]).to eq("_blank")
+        expect(link["aria-label"]).to eq("Instagram da EloShop (abre em nova aba)")
+      end
+      # Não se repete no menu do hambúrguer.
+      hamburger = doc.at_css("header [data-mobile-menu-target='panel']")
+      expect(hamburger.css("a[href='https://www.instagram.com/eloshop__']")).to be_empty
     end
 
     # O carrossel é progressivo: os dois banners vêm no HTML e continuam
@@ -73,6 +110,15 @@ RSpec.describe "Storefront home", type: :request do
       banner_link = html.css("a").find { |a| a.text.strip == "Veja como funciona" }
       expect(footer_link["href"]).to eq(how_it_works_path(aba: "vende"))
       expect(banner_link["href"]).to eq(how_it_works_path(aba: "vende"))
+    end
+
+    it "shares a card image and Twitter Card tags so links preview with a picture" do
+      get root_path
+
+      expect(response.body).to match(%r{<meta property="og:image" content="http://www\.example\.com/assets/og-card-[0-9a-f]+\.jpg">})
+      expect(response.body).to include('<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">')
+      expect(response.body).to include('<meta name="twitter:card" content="summary_large_image">')
+      expect(response.body).to match(%r{<meta name="twitter:image" content="http://www\.example\.com/assets/og-card-[0-9a-f]+\.jpg">})
     end
 
     it "sets its own canonical URL" do

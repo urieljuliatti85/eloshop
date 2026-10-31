@@ -31,8 +31,24 @@ RSpec.describe "Storefront products", type: :request do
     it "sets a generic title and description on the unfiltered catalog" do
       get products_path
 
-      expect(response.body).to include("<title>Loja | EloShop")
+      expect(response.body).to include("<title>Comprar artesanato feito à mão: peças únicas de ateliês | EloShop</title>")
       expect(response.body).to include('<meta name="description"')
+    end
+
+    it "describes the unfiltered catalog with its own text, not the site default" do
+      get products_path
+
+      expect(response.body).to include('<meta name="description" content="Compre peças artesanais feitas à mão')
+      expect(response.body).not_to include(SeoHelper::DEFAULT_DESCRIPTION)
+    end
+
+    it "shares a card image and Twitter Card tags so links preview with a picture" do
+      get products_path
+
+      expect(response.body).to match(%r{<meta property="og:image" content="http://www\.example\.com/assets/og-card-[0-9a-f]+\.jpg">})
+      expect(response.body).to include('<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">')
+      expect(response.body).to include('<meta name="twitter:card" content="summary_large_image">')
+      expect(response.body).to match(%r{<meta name="twitter:image" content="http://www\.example\.com/assets/og-card-[0-9a-f]+\.jpg">})
     end
 
     it "orders by price when the shopper picks a price sort" do
@@ -119,6 +135,30 @@ RSpec.describe "Storefront products", type: :request do
 
       expect(response.body).to include("<title>#{category.breadcrumb_name} | EloShop")
     end
+
+    it "publishes an ItemList and the category breadcrumb as structured data" do
+      parent = Category.create!(name: "Casa SEO")
+      category = parent.children.create!(name: "Cozinha SEO")
+      product = Product.create!(seller: approved_seller, name: "Tigela categoria seo", sku: "STORE-006", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active, category: category)
+
+      get products_path(category: category.slug)
+
+      blocks = response.body.scan(%r{<script[^>]*application/ld\+json[^>]*>(.*?)</script>}m).flatten.map { |json| JSON.parse(json) }
+      list = blocks.find { |b| b["@type"] == "ItemList" }
+      crumbs = blocks.find { |b| b["@type"] == "BreadcrumbList" }
+
+      expect(list["itemListElement"].map { |i| i["url"] }).to eq([ product_url(product.seller, product.slug) ])
+      expect(crumbs["itemListElement"].map { |i| i["name"] }).to eq([ "Início", "Loja", "Casa SEO", "Cozinha SEO" ])
+    end
+
+    it "omits the breadcrumb outside a category" do
+      Product.create!(seller: approved_seller, name: "Peça sem categoria", sku: "STORE-007", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+
+      get products_path
+
+      expect(response.body).to include("ItemList")
+      expect(response.body).not_to include("BreadcrumbList")
+    end
   end
 
   describe "GET /produtos/:slug" do
@@ -161,6 +201,44 @@ RSpec.describe "Storefront products", type: :request do
       expect(response.body).to include(%(<link rel="canonical" href="#{product_url(product.seller, product.slug)}">))
       expect(response.body).to include('<meta property="og:type" content="product">')
       expect(response.body).to include('<meta property="og:title" content="Vaso SEO | EloShop">')
+    end
+
+    it "shares the product photo, not the generic card, when the product has one" do
+      product = Product.create!(seller: approved_seller, name: "Vaso com foto", sku: "STORE-OG1", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+      product.main_image.attach(fixture_file_upload("sample.png", "image/png"))
+
+      get product_path(product.seller, product.slug)
+
+      expect(response.body).to match(%r{<meta property="og:image" content="[^"]*/rails/active_storage/blobs/[^"]+">})
+      expect(response.body).to match(%r{<meta name="twitter:image" content="[^"]*/rails/active_storage/blobs/[^"]+">})
+      expect(response.body).not_to include("og-card")
+    end
+
+    it "collapses stray spaces in the product name inside the title" do
+      product = Product.create!(seller: approved_seller, name: "  Vaso   azul ", sku: "STORE-SEO2", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+
+      get product_path(product.seller, product.slug)
+
+      expect(response.body).to include("<title>Vaso azul | EloShop</title>")
+    end
+
+    it "builds a fallback description from name, atelier and price when the product has none" do
+      product = Product.create!(seller: approved_seller, name: "Vaso sem texto", sku: "STORE-SEO3", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+
+      get product_path(product.seller, product.slug)
+
+      expect(response.body).to include(%(<meta name="description" content="Vaso sem texto, peça artesanal feita à mão pelo ateliê #{approved_seller.name}. R$ 89,90 na EloShop.">))
+    end
+
+    it "keeps the seller's own description, flattened to one line and capped at 160 characters" do
+      product = Product.create!(seller: approved_seller, name: "Vaso com texto", sku: "STORE-SEO4", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active,
+        description: "Primeira linha.\n\nSegunda linha. #{'Texto longo. ' * 30}")
+
+      get product_path(product.seller, product.slug)
+
+      content = response.body[/<meta name="description" content="([^"]*)"/, 1]
+      expect(content).to start_with("Primeira linha. Segunda linha.")
+      expect(content.length).to be <= 160
     end
 
     it "includes Product structured data (JSON-LD)" do

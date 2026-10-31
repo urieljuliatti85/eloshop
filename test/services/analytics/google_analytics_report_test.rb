@@ -40,7 +40,8 @@ class Analytics::GoogleAnalyticsReportTest < ActiveSupport::TestCase
     client = FakeClient.new([
       response(row(metrics: %w[12 18 45])),
       response(row(dimensions: [ "20260922" ], metrics: %w[8 21])),
-      response(row(dimensions: [ "/catalogo", "Catálogo" ], metrics: %w[20 7]))
+      response(row(dimensions: [ "/catalogo", "Catálogo" ], metrics: %w[20 7])),
+      response(row(dimensions: [ "instagram", "referral" ], metrics: %w[9 6]))
     ])
     report = configured_report(client)
 
@@ -54,8 +55,11 @@ class Analytics::GoogleAnalyticsReportTest < ActiveSupport::TestCase
     assert_equal 21, snapshot.daily.first.page_views
     assert_equal "/catalogo", snapshot.top_pages.first.path
     assert_equal 20, snapshot.top_pages.first.page_views
+    assert_equal "instagram", snapshot.sources.first.source
+    assert_equal "referral", snapshot.sources.first.medium
+    assert_equal 9, snapshot.sources.first.sessions
     assert_equal snapshot, cached_snapshot
-    assert_equal 3, client.requests.length
+    assert_equal 4, client.requests.length
     assert_equal "properties/123456", client.requests.first[:request][:property]
     assert_equal 5, client.requests.first[:timeout]
   end

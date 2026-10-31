@@ -84,10 +84,34 @@ RSpec.describe "Orders", type: :request do
       get new_order_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Ateliê · Entrega padrão")
+      expect(response.body).to include("Ateliê · Frete definido pelo ateliê")
       expect(response.body).to include("Até 8 dias úteis · R$ 20,00")
       expect(response.body).to include("Ateliê · Retirada no ateliê")
       expect(response.body).to include("Retirada combinada com o ateliê · R$ 0,00")
+    end
+
+    # A estimativa mostrava só o transporte ("Até 8 dias úteis") para uma
+    # peça que leva até 12 dias só para ficar pronta.
+    it "adds the production lead time of made-to-order pieces to the delivery estimate" do
+      product.update!(
+        availability_type: :made_to_order,
+        stock_quantity: 0,
+        production_time_min_days: 7,
+        production_time_max_days: 12,
+        fixed_shipping_cents: 2000,
+        fixed_shipping_estimated_days: 8,
+        local_pickup_enabled: true
+      )
+      sign_in_customer
+      add_to_cart
+      customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+
+      get new_order_path
+
+      expect(response.body).to include("Sob encomenda: produção de 7 a 12 dias úteis")
+      expect(response.body).to include("Até 20 dias úteis (produção de até 12 + transporte de até 8) · R$ 20,00")
+      expect(response.body).to include("Retirada depois da produção (até 12 dias úteis)")
+      expect(response.body).not_to include("Até 8 dias úteis · R$ 20,00")
     end
   end
 
@@ -115,6 +139,63 @@ RSpec.describe "Orders", type: :request do
       post orders_path, params: { address_id: address.id }
 
       expect(Cart.find(cart_id).cart_items).to be_empty
+    end
+
+    # O servidor escolhe a faixa pelo estado do endereço: o ateliê é do ES,
+    # então um cliente de SP paga a faixa "outros estados" e um do ES paga a
+    # faixa do estado — o navegador só envia o endereço.
+    it "charges the seller-defined band that matches the customer's state" do
+      approved_seller.update!(origin_zip_code: "29018120", origin_street: "Rua do Ateliê", origin_number: "10",
+        origin_neighborhood: "Centro", origin_city: "Vitória", origin_state: "ES")
+      product.update!(fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 5,
+        fixed_shipping_interstate_cents: 3500, fixed_shipping_interstate_estimated_days: 9)
+      sign_in_customer
+      add_to_cart(quantity: 2)
+      other_state = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      same_state = customer.addresses.create!(street: "Rua Vitória", number: "2", neighborhood: "Centro", city: "Vitória", state: "ES", zip_code: "29018-120")
+
+      post orders_path, params: { address_id: other_state.id }
+
+      expect(Order.last.shipping_cents).to eq(7000)
+
+      add_to_cart
+      post orders_path, params: { address_id: same_state.id }
+
+      expect(Order.last.shipping_cents).to eq(2000)
+    end
+
+    it "compares states regardless of case and surrounding spaces" do
+      approved_seller.update!(origin_zip_code: "29018120", origin_street: "Rua do Ateliê", origin_number: "10",
+        origin_neighborhood: "Centro", origin_city: "Vitória", origin_state: "ES")
+      approved_seller.update_columns(origin_state: "es")
+      product.update!(fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 5,
+        fixed_shipping_interstate_cents: 3500, fixed_shipping_interstate_estimated_days: 9)
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Vitória", number: "2", neighborhood: "Centro", city: "Vitória", state: "ES", zip_code: "29018-120")
+      address.update_columns(state: " es ")
+
+      post orders_path, params: { address_id: address.id }
+
+      expect(Order.last.shipping_cents).to eq(2000)
+    end
+
+    # A opção tem o mesmo id nos dois estados ("Frete definido pelo ateliê"):
+    # o preço vem do endereço enviado, nunca do que a página mostrou antes.
+    it "prices the seller-defined option by the submitted address, not by the option id" do
+      approved_seller.update!(origin_zip_code: "29018120", origin_street: "Rua do Ateliê", origin_number: "10",
+        origin_neighborhood: "Centro", origin_city: "Vitória", origin_state: "ES")
+      product.update!(fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 5,
+        fixed_shipping_interstate_cents: 3500, fixed_shipping_interstate_estimated_days: 9)
+      sign_in_customer
+      add_to_cart
+      same_state = customer.addresses.create!(street: "Rua Vitória", number: "2", neighborhood: "Centro", city: "Vitória", state: "ES", zip_code: "29018-120")
+      other_state = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      quote_id = Shipping::Calculator.new(cart: Cart.last, address: same_state).quotes.first.id
+
+      post orders_path, params: { address_id: other_state.id, shipping_quote_id: quote_id }
+
+      expect(Order.last.shipping_cents).to eq(3500)
     end
 
     # O formulário devolve o identificador da opção, nunca o preço: uma opção
@@ -177,6 +258,16 @@ RSpec.describe "Orders", type: :request do
       expect(response).to redirect_to(cart_path)
     end
 
+    it "rate limits checkout attempts per customer even when the IP changes" do
+      sign_in_customer
+
+      5.times { |i| post orders_path, params: { address_id: 0 }, headers: { "X-Real-IP" => "203.0.113.#{i + 1}" } }
+      post orders_path, params: { address_id: 0 }, headers: { "X-Real-IP" => "203.0.113.99" }
+
+      follow_redirect!
+      expect(response.body).to include("Muitas tentativas")
+    end
+
     it "rate limits repeated checkout attempts" do
       sign_in_customer
 
@@ -219,6 +310,23 @@ RSpec.describe "Orders", type: :request do
       expect(response.body).to include("Em preparação")
       expect(response.body).to include("Enviado")
       expect(response.body).to include("Entregue")
+    end
+
+    # O pedido pendente dizia "Aguardando pagamento" duas vezes e, logo
+    # abaixo, "Pago com PIX" — antes de o cliente pagar.
+    it "does not claim the order was paid while the payment is pending" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      post orders_path, params: { address_id: address.id }
+      order = Order.last
+      post order_payment_path(order), params: { payment_method: "pix" }
+
+      get order_path(order)
+
+      expect(response.body).not_to include("Pago com")
+      expect(response.body).to include("Forma de pagamento escolhida:")
+      expect(response.body.scan("Aguardando pagamento").size).to eq(1)
     end
 
     it "shows shipment details after the seller marks the order as shipped" do
@@ -329,6 +437,26 @@ RSpec.describe "Orders", type: :request do
       expect(response).to redirect_to(order_path(order))
       expect(shipment.reload).to be_shipped
       expect(shipment.customer_reported_delivered_at).to be_present
+
+      notification = Notification.find_by!(recipient: order.seller_order.seller, kind: "delivery_reported")
+      expect(notification.title).to eq("Cliente recebeu o pedido")
+      expect(notification.url).to eq(seller_order_path(order))
+    end
+
+    # Clicar de novo não repete o e-mail nem a notificação ao ateliê.
+    it "notifies the seller only on the first report" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      post orders_path, params: { address_id: address.id }
+      order = Order.last
+      order.confirm!
+      create_shipment_for(order).mark_shipped!
+      patch deliver_order_path(order)
+
+      expect { patch deliver_order_path(order) }.not_to have_enqueued_job(NotifySellerOfDeliveryJob)
+      expect(Notification.where(recipient: order.seller_order.seller, kind: "delivery_reported").count).to eq(1)
+      expect(response).to redirect_to(order_path(order))
     end
 
     it "does not accept the report for an order whose shipment has not been marked as shipped yet" do

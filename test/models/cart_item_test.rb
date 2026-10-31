@@ -9,7 +9,7 @@ class CartItemTest < ActiveSupport::TestCase
   test "invalid with quantity zero or negative" do
     item = CartItem.new(cart: carts(:one), product: products(:one), quantity: 0)
     assert_not item.valid?
-    assert_includes item.errors[:quantity], "must be greater than 0"
+    assert_includes item.errors[:quantity], "deve ser maior que 0"
   end
 
   test "invalid when the product is not active" do
@@ -33,7 +33,7 @@ class CartItemTest < ActiveSupport::TestCase
   test "invalid when the same product is added twice to the same cart" do
     duplicate = CartItem.new(cart: cart_items(:one).cart, product: cart_items(:one).product, quantity: 1)
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:product_id], "has already been taken"
+    assert_includes duplicate.errors[:product_id], "já está em uso"
   end
 
   test "invalid when the cart already contains a product from another seller" do
@@ -76,6 +76,30 @@ class CartItemTest < ActiveSupport::TestCase
     item = CartItem.new(cart: carts(:one), product: products(:with_variants), product_variant: product_variants(:two), quantity: 1)
     assert_not item.valid?
     assert_includes item.errors[:product_variant], "não está disponível para compra"
+  end
+
+  test "invalid with an available variant when the seller is only showcased, without Mercado Pago" do
+    seller = sellers(:pending)
+    seller.showcase!
+    product = products(:with_variants)
+    product.update_columns(seller_id: seller.id)
+
+    item = CartItem.new(cart: carts(:one), product: product.reload, product_variant: product_variants(:one), quantity: 1)
+
+    assert_not item.valid?
+    assert_includes item.errors[:product_variant], "não está disponível para compra"
+  end
+
+  test "invalid without variants when the seller is only showcased, without Mercado Pago" do
+    seller = sellers(:pending)
+    seller.showcase!
+    product = products(:one)
+    product.update_columns(seller_id: seller.id)
+
+    item = CartItem.new(cart: carts(:one), product: product.reload, quantity: 1)
+
+    assert_not item.valid?
+    assert_includes item.errors[:product], "não está disponível para compra"
   end
 
   test "invalid when quantity exceeds the variant's stock" do
@@ -183,6 +207,6 @@ class CartItemTest < ActiveSupport::TestCase
     )
 
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:product_id], "has already been taken"
+    assert_includes duplicate.errors[:product_id], "já está em uso"
   end
 end

@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
-  mount Rswag::Ui::Engine => "/api-docs"
-  mount Rswag::Api::Engine => "/api-docs"
+  # A documentação da API é do admin logado e de quem tem um ApiClient ativo
+  # (ver ApiDocsAuthentication); a API v1 exige o mesmo token.
+  mount ApiDocsAuthentication.new(Rswag::Ui::Engine) => "/api-docs"
+  mount ApiDocsAuthentication.new(Rswag::Api::Engine) => "/api-docs"
   resource :session
   resources :passwords, param: :token
 
@@ -11,10 +13,13 @@ Rails.application.routes.draw do
     get "financials", to: "financials#index", as: :financials
     get "financials/export", to: "financials#export", as: :financials_export
     post "financials/reconciliation", to: "financials#refresh_reconciliation", as: :financials_reconciliation
+    post "vendas/abrir", to: "sales_openings#create", as: :sales_opening
 
     resources :fraud_alerts, only: %i[index], path: "fraudes" do
       member { patch :resolve }
     end
+
+    get "auditoria", to: "audit_logs#index", as: :audit_logs
 
     resources :sellers, only: %i[index show] do
       member do
@@ -22,6 +27,8 @@ Rails.application.routes.draw do
         patch :suspend
         patch :hide
         patch :unhide
+        patch :showcase
+        patch :unshowcase
       end
     end
 
@@ -67,6 +74,10 @@ Rails.application.routes.draw do
 
     resources :coupons, except: %i[show]
 
+    resources :api_clients, path: "clientes-de-api", only: %i[index new create] do
+      member { patch :revoke }
+    end
+
     resources :mercado_pago_test_accounts, path: "contas-de-teste-mercado-pago", except: %i[show]
 
     resources :orders, only: %i[index show] do
@@ -81,7 +92,11 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :products, only: :index, path: "produtos"
+  resources :products, only: :index, path: "produtos" do
+    # Autocomplete da busca da vitrine. Declarada antes de `produtos/:slug`
+    # (legacy_show) para "sugestoes" não ser lido como slug de produto.
+    get :sugestoes, action: :suggestions, on: :collection, as: :suggestions
+  end
   # A vitrine pública do ateliê ocupa o mesmo prefixo que já identificava o
   # vendedor na URL do produto.
   resources :sellers, only: %i[index show], param: :slug, path: "artesaos" do
@@ -95,6 +110,7 @@ Rails.application.routes.draw do
   get "produtos/:slug", to: "products#legacy_show", as: :legacy_product
 
   get "seja-um-artesao", to: "seller_registrations#new", as: :new_seller_registration
+  get "seja-um-artesao/nome", to: "seller_registrations#name_availability", as: :seller_registration_name_availability
   post "seja-um-artesao", to: "seller_registrations#create", as: :seller_registration
 
   scope module: :seller_portal, as: :seller, path: "painel" do
@@ -103,13 +119,26 @@ Rails.application.routes.draw do
     delete "sair", to: "sessions#destroy", as: :logout
 
     root to: "dashboard#index"
-    get "primeiros-passos", to: "getting_started#show", as: :getting_started
+    # Uma etapa por tela; sem etapa na URL, abre a próxima pendente.
+    get "primeiros-passos(/:etapa)", to: "getting_started#show", as: :getting_started,
+      constraints: { etapa: /endereco|mercado-pago|chave-pix|primeira-peca|aprovacao/ }
+    # Endereço de origem preenchido dentro dos Primeiros passos do painel inicial.
+    resource :origin_address, only: :update, controller: "origin_addresses", path: "primeiros-passos/endereco"
+    post "tour/concluir", to: "tours#complete", as: :tour_completion
+    resource :pix_key_confirmation, only: %i[create destroy], path: "chave-pix"
+    get "cadastro-chave-pix", to: "pix_key_guides#show", as: :pix_key_guide
     get "conta-vendedor-mercado-pago", to: "mercado_pago_guides#show", as: :mercado_pago_guide
     get "termos-comerciais", to: "terms#show", as: :terms
     post "termos-comerciais", to: "terms#accept"
     # Dados do próprio ateliê. Sempre a partir de `current_seller`, nunca de
     # um id na URL — é a regra do painel inteiro.
     resource :atelier, only: %i[show edit update], controller: "ateliers", path: "atelie"
+
+    # Tema da vitrine pública (logo, capa, rodapé, paleta, fonte e layout).
+    resource :theme, only: %i[edit update], controller: "themes", path: "atelie/tema" do
+      # A vitrine real com o rascunho aplicado, para o iframe do editor.
+      get :preview
+    end
 
     get "atelie/cep/:cep", to: "postal_codes#show", as: :atelier_postal_code, constraints: { cep: /\d{5}-?\d{3}/ }
     get "atelie/enderecos", to: "postal_codes#index", as: :atelier_postal_codes
@@ -191,8 +220,11 @@ Rails.application.routes.draw do
   get "politica-de-privacidade", to: "privacy_policy#show", as: :privacy_policy
   get "trocas-e-devolucoes", to: "returns_policy#show", as: :returns_policy
 
+  get "customers/disponibilidade-email", to: "customers#email_availability", as: :customer_email_availability
   resources :customers, only: %i[new create]
   resource :customer_session, only: %i[new create destroy]
+  # Recuperação de senha do comprador (admin e vendedor usam /passwords).
+  resources :customer_passwords, only: %i[new create edit update], param: :token, path: "recuperar-senha"
 
   # Área do cliente: os destinos da conta sob um prefixo só, para o menu do
   # topo e o painel terem para onde apontar.

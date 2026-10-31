@@ -3,22 +3,39 @@
 <div class="space-y-8">
   <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Seu ateliê</p>
-      <h1 class="mt-1 text-3xl font-black tracking-tight">Dados do ateliê</h1>
+      <h1 class="text-3xl font-black tracking-tight">Dados do ateliê</h1>
       <p class="mt-2 text-sm text-stone-500">Como o seu ateliê aparece na loja e como você recebe pelas vendas.</p>
     </div>
-    <%= link_to "Editar dados", edit_seller_atelier_path, class: "rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-600" %>
+    <%= link_to "Editar dados", edit_seller_atelier_path, class: "seller-button seller-button--primary w-fit" %>
   </header>
 
-  <section class="rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8">
+  <%# Vitrine do pré-cadastro: o ateliê pendente sabe que vender exige terminar
+      os primeiros passos, e que a EloShop pode liberar a vitrine antes disso
+      (Seller#showcase!). Aprovado já vende; suspenso tem outro problema. %>
+  <% if current_seller.pending? %>
+    <section class="rounded-[1.75rem] border border-amber-300 bg-amber-50 px-7 py-6 text-amber-950" aria-labelledby="showcase-notice-title">
+      <h2 id="showcase-notice-title" class="text-lg font-bold">Para vender, você precisa terminar todo o processo.</h2>
+      <p class="mt-2 max-w-2xl text-sm leading-6">
+        <% if current_seller.showcased? %>
+          Enquanto isso, já liberamos a sua vitrine (cadastro de produtos) para que as pessoas vejam seus produtos, adicionem aos favoritos e façam uma lista de desejos, até você ativar a loja por completo.
+        <% else %>
+          Enquanto isso, nós liberaremos a sua vitrine (cadastro de produtos) para que as pessoas vejam seus produtos, adicionem aos favoritos e façam uma lista de desejos, até você ativar a loja por completo.
+        <% end %>
+      </p>
+      <%= link_to "Ver primeiros passos", seller_getting_started_path,
+            class: "mt-4 inline-flex min-h-11 items-center rounded-full bg-amber-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-950" %>
+    </section>
+  <% end %>
+
+  <section class="seller-card-lg">
     <dl class="grid gap-6 sm:grid-cols-2">
       <div>
-        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">Nome</dt>
+        <dt class="text-sm text-stone-500">Nome</dt>
         <dd class="mt-1 text-lg font-bold text-stone-950"><%= current_seller.name %></dd>
       </div>
 
       <div>
-        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">Situação</dt>
+        <dt class="text-sm text-stone-500">Situação</dt>
         <dd class="mt-2">
           <% seller_status_classes = { "pending" => "bg-amber-100 text-amber-800", "approved" => "bg-emerald-100 text-emerald-800", "suspended" => "bg-rose-100 text-rose-800" } %>
           <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-bold <%= seller_status_classes[current_seller.status] %>"><%= t(current_seller.status, scope: "sellers.statuses") %></span>
@@ -30,7 +47,7 @@
           últimos dígitos, o suficiente para o vendedor reconhecer o próprio
           cadastro sem reexpor o documento inteiro (ver Seller#masked_cpf). %>
       <div>
-        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">Nome do proprietário</dt>
+        <dt class="text-sm text-stone-500">Nome do proprietário</dt>
         <dd class="mt-1 text-lg font-bold text-stone-950">
           <% if current_seller.owner_full_name.present? %>
             <%= current_seller.owner_full_name %>
@@ -41,7 +58,7 @@
       </div>
 
       <div>
-        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">CPF</dt>
+        <dt class="text-sm text-stone-500">CPF</dt>
         <dd class="mt-1 text-lg font-bold text-stone-950">
           <% if current_seller.masked_cpf.present? %>
             <%= current_seller.masked_cpf %>
@@ -54,7 +71,7 @@
       <%# Sem endereço o frete real não tem origem — o aviso é para o vendedor
           saber o que falta antes de a plataforma ligar o cálculo. %>
       <div class="sm:col-span-2">
-        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">De onde você envia</dt>
+        <dt class="text-sm text-stone-500">De onde você envia</dt>
         <dd class="mt-1">
           <% if current_seller.origin_address_complete? %>
             <p class="text-stone-950">
@@ -66,22 +83,43 @@
             </p>
           <% else %>
             <p class="text-stone-500">Ainda não informado. É o endereço usado para calcular o frete das suas vendas.</p>
-            <%= link_to "Cadastrar endereço", edit_seller_atelier_path, class: "mt-3 inline-flex min-h-11 items-center rounded-full bg-brand-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-600" %>
+            <%= link_to "Cadastrar endereço", edit_seller_atelier_path, class: "mt-3 inline-flex min-h-11 items-center rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700" %>
           <% end %>
+        </dd>
+      </div>
+
+      <div class="sm:col-span-2">
+        <dt class="text-sm text-stone-500">Aparência da vitrine</dt>
+        <dd class="mt-2 space-y-3">
+          <% if current_seller.cover_image.attached? %>
+            <%= image_tag current_seller.cover_image.variant(resize_to_fill: [ 640, 240 ]), alt: "Capa do ateliê", class: "h-24 w-full max-w-sm rounded-xl object-cover" %>
+          <% end %>
+          <div class="flex items-center gap-3">
+            <% if current_seller.logo.attached? %>
+              <%= image_tag current_seller.logo.variant(resize_to_fill: [ 96, 96 ]), alt: "Logo do ateliê", class: "size-12 rounded-full object-cover" %>
+            <% end %>
+            <p class="text-sm text-stone-600">
+              <%= current_seller.footer_text.presence || "Sem mensagem de rodapé." %>
+            </p>
+          </div>
+          <% unless current_seller.logo.attached? || current_seller.cover_image.attached? %>
+            <p class="text-sm text-stone-500">Sem logo nem capa: a vitrine usa a foto da sua peça mais recente.</p>
+          <% end %>
+          <%= link_to "Personalizar vitrine", edit_seller_theme_path, class: "inline-flex min-h-11 items-center text-sm font-medium text-brand-600 underline underline-offset-4 hover:text-brand-700" %>
         </dd>
       </div>
 
       <%# O slug não é editável: ele já está nas URLs públicas dos produtos, e
           trocá-lo quebraria links que alguém compartilhou. %>
       <div class="sm:col-span-2">
-        <dt class="text-xs font-semibold uppercase tracking-wider text-brand-600">Endereço na loja</dt>
+        <dt class="text-sm text-stone-500">Endereço na loja</dt>
         <dd class="mt-1">
-          <% if current_seller.approved? %>
+          <% if current_seller.public_page_available? %>
             <%# break-all porque a URL é uma palavra só: sem isso ela estoura
                 a largura do celular em vez de quebrar em duas linhas. %>
             <%= link_to seller_url(current_seller.slug), seller_path(current_seller.slug), class: "inline-flex min-h-11 items-center break-all font-medium text-brand-600 underline underline-offset-4 hover:text-brand-700" %>
           <% else %>
-            <span class="text-stone-500">A vitrine fica pública quando o ateliê for aprovado.</span>
+            <span class="text-stone-500">A vitrine fica pública quando a EloShop liberar o ateliê na loja.</span>
           <% end %>
         </dd>
       </div>

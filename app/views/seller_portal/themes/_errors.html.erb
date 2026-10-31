@@ -1,0 +1,10 @@
+<% if current_seller.errors.any? %>
+  <div class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
+    <p class="font-semibold">Não foi possível salvar:</p>
+    <ul class="mt-1 list-inside list-disc">
+      <% current_seller.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>

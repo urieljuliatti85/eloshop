@@ -20,7 +20,27 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
     )
   end
 
+  # No painel inicial só a etapa atual dos Primeiros passos é detalhada; com
+  # o endereço feito, a etapa atual é a conta do Mercado Pago.
+  def fill_address!
+    seller.update!(
+      origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
+      origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP"
+    )
+  end
+
   describe "GET /painel/conta-vendedor-mercado-pago" do
+    it "shows the PIX key warning until the seller confirms the key" do
+      sign_in_as(user)
+
+      get seller_mercado_pago_guide_path
+      expect(response.body).to include("precisa ter uma chave PIX cadastrada", "Já cadastrei minha chave PIX")
+
+      seller.update_column(:pix_key_confirmed_at, Time.current)
+      get seller_mercado_pago_guide_path
+      expect(response.body).not_to include("precisa ter uma chave PIX cadastrada")
+    end
+
     it "redirects unauthenticated visitors to the seller login" do
       get seller_mercado_pago_guide_path
 
@@ -49,6 +69,14 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
       )
     end
 
+    it "says the Mercado Pago e-mail can differ from the signup e-mail" do
+      sign_in_as(user)
+
+      get seller_mercado_pago_guide_path
+
+      expect(response.body).to include("Preciso usar o mesmo e-mail da EloShop no Mercado Pago?")
+    end
+
     it "shows the connected state instead of the connect button" do
       connect_seller!
       sign_in_as(user)
@@ -56,7 +84,48 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
       get seller_mercado_pago_guide_path
 
       expect(response.body).to include("Conta conectada")
-      expect(response.body).not_to include(seller_mercado_pago_connect_path)
+      # O botão de conectar do passo 4 dá lugar ao box com Reconectar/Desconectar
+      # (o texto "Conectar Mercado Pago" segue na explicação do passo; o que some
+      # é o link com esse rótulo).
+      labels = Nokogiri::HTML(response.body).css("a").map { |node| node.text.squish }
+      expect(labels).not_to include("Conectar Mercado Pago")
+      expect(labels).to include("Reconectar")
+    end
+
+    it "offers Reconectar and Desconectar in the 'Recebimentos e verificação' box when connected" do
+      connect_seller!
+      sign_in_as(user)
+
+      get seller_mercado_pago_guide_path
+
+      doc = Nokogiri::HTML(response.body)
+      box = doc.css("section").find { |node| node.text.include?("Recebimentos e verificação") }
+      expect(box).to be_present
+      expect(box.text.squish).to include("Conta conectada em", "Identificador: 123456")
+      expect(box.at_css("a[href='#{seller_mercado_pago_connect_path}']").text.squish).to eq("Reconectar")
+      disconnect = box.at_css("form[action='#{seller_mercado_pago_connection_path}']")
+      expect(disconnect.at_css("input[name='_method']")["value"]).to eq("delete")
+      expect(disconnect.text.squish).to include("Desconectar")
+    end
+
+    it "does not repeat the box when there is no connection: step 4 already has the connect button" do
+      sign_in_as(user)
+
+      get seller_mercado_pago_guide_path
+
+      expect(response.body).not_to include("Recebimentos e verificação")
+      labels = Nokogiri::HTML(response.body).css("a").map { |node| node.text.squish }
+      expect(labels).to include("Conectar Mercado Pago")
+      expect(labels).not_to include("Reconectar")
+    end
+
+    it "also shows the box when the connected account is not accepted, so it can be disconnected" do
+      connect_seller!(test_account: true)
+      sign_in_as(user)
+
+      get seller_mercado_pago_guide_path
+
+      expect(response.body).to include("Recebimentos e verificação", "Desconectar")
     end
   end
 
@@ -67,6 +136,7 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
     [ true, nil ].each do |test_account|
       it "warns instead of showing connected when test_account is #{test_account.inspect}" do
         connect_seller!(test_account: test_account)
+        fill_address!
         sign_in_as(user)
 
         get seller_root_path
@@ -102,36 +172,36 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
 
   describe "navigation and dashboard banner" do
     it "flags the step as mandatory until the account is connected" do
+      fill_address!
       sign_in_as(user)
 
       get seller_root_path
 
-      expect(response.body).to include("Conta Vendedor no Mercado Pago", "Obrigatório", "Passo obrigatório")
+      setup = Nokogiri::HTML(response.body).at_css("section[aria-labelledby='setup-title']").text.squish
+      expect(setup).to include("Conecte sua conta do Mercado Pago", "Obrigatório", "Conectar Mercado Pago")
       expect(response.body).to include(seller_mercado_pago_guide_path)
     end
 
-    # O hero ocupa a primeira tela: abaixo dele o passo obrigatório passava
-    # despercebido sem rolar a página.
-    it "shows the mandatory banner above the hero" do
+    # Enquanto o cadastro não está pronto, a etapa obrigatória fica acima do
+    # resumo, e não abaixo, onde passava despercebida.
+    it "shows the mandatory step above the work summary while setup is pending" do
+      fill_address!
       sign_in_as(user)
 
       get seller_root_path
 
-      expect(response.body.index("Passo obrigatório")).to be < response.body.index("Crie, publique e acompanhe cada venda")
+      expect(response.body.index("Conecte sua conta do Mercado Pago")).to be < response.body.index('id="o-que-fazer-agora"')
     end
 
-    it "keeps every notice above the hero, in reading order" do
+    it "keeps the account steps in reading order inside the setup block" do
+      seller.update!(status: :pending, approved_at: nil)
       sign_in_as(user)
 
       get seller_root_path
 
-      body = response.body
-      hero = body.index("Crie, publique e acompanhe cada venda")
-      order = [ "Passo obrigatório", "Cadastro em análise", "Recebimentos e verificação" ].map { |text| body.index(text) }
-
-      expect(order).to all(be_present)
-      expect(order).to eq(order.sort)
-      expect(order.last).to be < hero
+      strip = Nokogiri::HTML(response.body).css("section[aria-labelledby='setup-title'] ol[aria-label='Etapas para preparar o ateliê'] li")
+      titles = strip.map { |step| step.at_css(".sr-only").text.squish }
+      expect(titles.index("Etapa 2: Conta do Mercado Pago")).to be < titles.index("Etapa 5: Aprovação e recebimento")
     end
 
     it "replaces the warning with a connected label once connected" do

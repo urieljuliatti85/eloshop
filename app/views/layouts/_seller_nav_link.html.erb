@@ -1,0 +1,41 @@
+<%# Um item da navegação do painel. Usado na barra lateral (lg+) e no painel
+    do hambúrguer (celular), que só diferem no formato do alvo de toque.
+    min-h-11: no celular estes são os alvos de toque principais do painel.
+    `active` vem do layout; a área atual usa tinta escura, não vermelho, para
+    o vermelho ficar reservado ao que pede ação. %>
+<%= link_to path,
+      class: (mobile ?
+        "flex min-h-11 items-center justify-between gap-3 border-b border-brand-100 py-1 text-base #{active ? 'font-bold text-stone-950' : 'font-medium text-stone-700'}" :
+        "flex min-h-11 flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-xl px-4 py-2 transition #{active ? 'bg-stone-900 text-white shadow-sm' : 'text-stone-700 hover:bg-brand-50 hover:text-brand-700'}"),
+      aria: (active ? { current: "page" } : {}) do %>
+  <span><%= label %></span>
+  <%# Passos obrigatórios da conta: o selo carrega o significado em texto (não
+      só a cor) para leitores de tela, e some do vermelho quando está resolvido. %>
+  <% if path == seller_mercado_pago_guide_path %>
+    <% case current_seller.mercado_pago_account_state %>
+    <% when :ready %>
+      <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">✓ Conectado</span>
+    <% when :not_accepted %>
+      <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-900">
+        <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
+        Conta não aceita
+      </span>
+    <% else %>
+      <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-800">
+        <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
+        Obrigatório
+      </span>
+    <% end %>
+  <% elsif path == seller_pix_key_guide_path %>
+    <%# Sem a chave o PIX é recusado; a EloShop só sabe que ela existe quando o
+        vendedor declara (`pix_key_confirmed_at`). %>
+    <% if current_seller.pix_key_confirmed_at? %>
+      <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">✓ Cadastrada</span>
+    <% else %>
+      <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-800">
+        <%= render "seller_portal/mercado_pago_guides/alert_icon", class_name: "size-3" %>
+        Pendente
+      </span>
+    <% end %>
+  <% end %>
+<% end %>

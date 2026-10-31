@@ -29,14 +29,14 @@ RSpec.describe Product, type: :model do
       product = described_class.new(valid_attributes.except(:name).merge(name: nil))
 
       expect(product).not_to be_valid
-      expect(product.errors[:name]).to include("can't be blank")
+      expect(product.errors[:name]).to include("não pode ficar em branco")
     end
 
-    it "requires a sku" do
+    it "generates a sku when it is blank" do
       product = described_class.new(valid_attributes.except(:sku).merge(sku: nil))
 
-      expect(product).not_to be_valid
-      expect(product.errors[:sku]).to include("can't be blank")
+      expect(product).to be_valid
+      expect(product.sku).to be_present
     end
 
     it "rejects duplicate slug" do
@@ -44,7 +44,7 @@ RSpec.describe Product, type: :model do
       duplicate = described_class.new(valid_attributes.merge(slug: "vaso-artesanal-azul", sku: "OUTRO-SKU"))
 
       expect(duplicate).not_to be_valid
-      expect(duplicate.errors[:slug]).to include("has already been taken")
+      expect(duplicate.errors[:slug]).to include("já está em uso")
     end
 
     it "rejects duplicate sku" do
@@ -52,21 +52,21 @@ RSpec.describe Product, type: :model do
       duplicate = described_class.new(valid_attributes.merge(sku: "UNICO-001", slug: "vaso-dois"))
 
       expect(duplicate).not_to be_valid
-      expect(duplicate.errors[:sku]).to include("has already been taken")
+      expect(duplicate.errors[:sku]).to include("já está em uso")
     end
 
     it "rejects negative price_cents" do
       product = described_class.new(valid_attributes.merge(price_cents: -1, slug: nil, sku: "NEG-PRICE"))
 
       expect(product).not_to be_valid
-      expect(product.errors[:price_cents]).to include("must be greater than or equal to 0")
+      expect(product.errors[:price_cents]).to include("deve ser maior ou igual a 0")
     end
 
     it "rejects negative stock_quantity" do
       product = described_class.new(valid_attributes.merge(stock_quantity: -1, slug: nil, sku: "NEG-STOCK"))
 
       expect(product).not_to be_valid
-      expect(product.errors[:stock_quantity]).to include("must be greater than or equal to 0")
+      expect(product.errors[:stock_quantity]).to include("deve ser maior ou igual a 0")
     end
 
     it "assigns slug from name when slug is blank" do
@@ -147,7 +147,7 @@ RSpec.describe Product, type: :model do
 
   describe "status transitions" do
     it "publishes a draft product to active" do
-      product = described_class.create!(valid_attributes.merge(slug: "vaso-draft", sku: "STATUS-001", status: :draft))
+      product = described_class.create!(valid_attributes.merge(slug: "vaso-draft", sku: "STATUS-001", status: :draft, category: Category.create!(name: "Categoria rascunho"), fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 6))
 
       product.publish!
 
@@ -184,7 +184,7 @@ RSpec.describe Product, type: :model do
     end
 
     it "allows a standard product to return to active after sold_out" do
-      product = described_class.create!(valid_attributes.merge(slug: "vaso-restock", sku: "STATUS-006", status: :active, stock_quantity: 1))
+      product = described_class.create!(valid_attributes.merge(slug: "vaso-restock", sku: "STATUS-006", status: :active, stock_quantity: 1, category: Category.create!(name: "Categoria restock"), fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 6))
       product.update!(status: "sold_out")
 
       product.publish!
@@ -209,7 +209,7 @@ RSpec.describe Product, type: :model do
       product = described_class.new(valid_attributes.merge(slug: "peca-unica-1", sku: "UNICA-001", availability_type: "one_of_a_kind", stock_quantity: 2))
 
       expect(product).not_to be_valid
-      expect(product.errors[:stock_quantity]).to include("must be less than or equal to 1")
+      expect(product.errors[:stock_quantity]).to include("deve ser menor ou igual a 1")
 
       valid = described_class.new(valid_attributes.merge(slug: "peca-unica-2", sku: "UNICA-002", availability_type: "one_of_a_kind", stock_quantity: 1))
       expect(valid).to be_valid
@@ -232,8 +232,8 @@ RSpec.describe Product, type: :model do
       product = described_class.new(valid_attributes.merge(slug: "encomenda-2", sku: "ENCOMENDA-001", availability_type: "made_to_order"))
 
       expect(product).not_to be_valid
-      expect(product.errors[:production_time_min_days]).to include("can't be blank")
-      expect(product.errors[:production_time_max_days]).to include("can't be blank")
+      expect(product.errors[:production_time_min_days]).to include("não pode ficar em branco")
+      expect(product.errors[:production_time_max_days]).to include("não pode ficar em branco")
     end
 
     it "rejects a max lead time smaller than the minimum" do

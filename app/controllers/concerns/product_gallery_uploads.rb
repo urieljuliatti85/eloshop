@@ -1,7 +1,24 @@
 module ProductGalleryUploads
   extend ActiveSupport::Concern
 
+  included do
+    before_action :optimize_uploaded_images, only: %i[create update]
+  end
+
   private
+
+  # Reduz as fotos antes de qualquer outra leitura dos parâmetros, para o
+  # `Product` validar (5 MB) o arquivo já otimizado e não o original do
+  # celular. Ver Images::Optimizer.
+  def optimize_uploaded_images
+    product_params = params[:product]
+    return unless product_params.respond_to?(:key?)
+
+    product_params[:main_image] = Images::Optimizer.call(product_params[:main_image]) if product_params[:main_image].respond_to?(:tempfile)
+    return unless product_params[:images].is_a?(Array)
+
+    product_params[:images] = product_params[:images].map { |file| file.respond_to?(:tempfile) ? Images::Optimizer.call(file) : file }
+  end
 
   # A galeria acumula fotos ao longo das edições. Active Storage não executa
   # as validações do Product ao chamar attach, então validamos os novos

@@ -15,7 +15,7 @@ class OrderEventTest < ActiveSupport::TestCase
     event = OrderEvent.new(order: build_order)
 
     assert_not event.valid?
-    assert_includes event.errors[:kind], "can't be blank"
+    assert_includes event.errors[:kind], "não pode ficar em branco"
   end
 
   test "is not a failure without an error_class" do

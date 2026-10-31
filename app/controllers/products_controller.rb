@@ -13,7 +13,46 @@ class ProductsController < StorefrontController
   }.freeze
   DEFAULT_SORT = "recentes"
 
+  # Quantas sugestões o autocomplete devolve, e quantos caracteres a busca
+  # precisa antes de consultar o banco (uma letra só devolveria quase o catálogo).
+  SUGGESTION_LIMIT = 8
+  SUGGESTION_MIN_LENGTH = 2
+
   allow_unauthenticated_customer_access
+
+  # O autocomplete dispara uma requisição por pausa de digitação; o limite
+  # impede que a rota pública vire um jeito barato de martelar a busca.
+  rate_limit to: 60, within: 1.minute, only: :suggestions, with: -> { head :too_many_requests }
+
+  # Sugestões de produto para o autocomplete, dentro da categoria escolhida no
+  # dropdown (ela e as filhas, como o filtro do catálogo). Mesma regra de
+  # visibilidade e mesma busca por texto da vitrine: só aparece o que o
+  # cliente poderia ver em /produtos?q=.
+  def suggestions
+    query = params[:q].to_s.strip
+    return render(json: { suggestions: [] }) if query.length < SUGGESTION_MIN_LENGTH
+
+    tree = Category::Tree.load
+    scope = Product.publicly_visible.matching_query(query).order(:name).limit(SUGGESTION_LIMIT)
+
+    if params[:category].present?
+      category = tree.visible.find { |candidate| candidate.slug == params[:category] }
+      return render(json: { suggestions: [] }) unless category
+
+      scope = scope.where(category_id: tree.self_and_descendant_ids(category))
+    end
+
+    products = scope.preload(:seller, :category)
+    render json: {
+      suggestions: products.map do |product|
+        {
+          name: product.name,
+          category: product.category && tree.breadcrumb_name(product.category),
+          url: product_path(product.seller, product.slug)
+        }
+      end
+    }
+  end
 
   def index
     Analytics::Funnel.track("view_catalog")
@@ -26,12 +65,11 @@ class ProductsController < StorefrontController
     # nível, por categoria (medido: 5 das 24 queries do catálogo filtrado).
     @category_tree = Category::Tree.load
     @categories = @category_tree.visible
-    @tags = Tag.order(:name)
     @materials = Material.order(:name)
     @techniques = Technique.order(:name)
     # Só ateliês com peça à venda: oferecer no filtro um artesão que devolve
     # lista vazia é um beco.
-    @sellers = Seller.approved.where(id: Product.publicly_visible.select(:seller_id)).order(:name)
+    @sellers = Seller.publicly_listed.where(id: Product.publicly_visible.select(:seller_id)).order(:name)
     @category = find_category!(params[:category]) if params[:category].present?
     scope = scope.where(category_id: @category_tree.self_and_descendant_ids(@category)) if @category
     scope = scope.matching_query(params[:q]) if params[:q].present?
@@ -67,7 +105,7 @@ class ProductsController < StorefrontController
       # associação vira sua própria query pequena, o plano nunca chega ao
       # limiar do JIT e a ação cai para ~10 ms.
       .preload(:seller, :product_variants, :personalization_options, category: :parent)
-      .preload(main_image_attachment: :blob)
+      .preload_main_image
       .limit(@per_page)
       .offset((@page - 1) * @per_page)
       # A view pergunta `@products.any?` antes de renderizar a grade; sem
@@ -78,7 +116,7 @@ class ProductsController < StorefrontController
   def show
     # category: :parent porque a PDP usa breadcrumb_name, que sobe a árvore de
     # categorias — cada nível seria outra query.
-    seller = Seller.approved.find_by!(slug: params[:seller_slug])
+    seller = Seller.publicly_listed.find_by!(slug: params[:seller_slug])
     @product = seller.products.publicly_visible.includes(:product_variants, category: :parent).find_by!(slug: params[:slug])
     Analytics::Funnel.track("view_product", product: @product, seller: seller)
     # preload, e não includes: mesmo mecanismo do catálogo (ver comentário em
@@ -89,7 +127,7 @@ class ProductsController < StorefrontController
     # estimado de 529.762, 5x o limiar) contra ~13 ms com preload.
     @related_products = @product.related_products
       .preload(:seller, :product_variants, :personalization_options, category: :parent)
-      .preload(main_image_attachment: :blob)
+      .preload_main_image
       .load
     # `.load` porque o parcial pergunta `reviews.any?` antes de iterar; sem
     # isso, a pergunta é um SELECT ... LIMIT 1 a mais.

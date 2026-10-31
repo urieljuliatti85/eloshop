@@ -4,7 +4,7 @@ class PersonalizationOptionTest < ActiveSupport::TestCase
   test "invalid without label" do
     option = PersonalizationOption.new(personalization_options(:name_engraving).attributes.except("id", "label"))
     assert_not option.valid?
-    assert_includes option.errors[:label], "can't be blank"
+    assert_includes option.errors[:label], "não pode ficar em branco"
   end
 
   test "invalid with duplicate label for the same product" do
@@ -14,7 +14,7 @@ class PersonalizationOptionTest < ActiveSupport::TestCase
       max_length: 10
     )
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:label], "has already been taken"
+    assert_includes duplicate.errors[:label], "já está em uso"
   end
 
   test "the same label can be used by different products" do
@@ -25,6 +25,6 @@ class PersonalizationOptionTest < ActiveSupport::TestCase
   test "invalid with a non-positive max_length" do
     option = PersonalizationOption.new(product: products(:one), label: "Cor da linha", max_length: 0)
     assert_not option.valid?
-    assert_includes option.errors[:max_length], "must be greater than 0"
+    assert_includes option.errors[:max_length], "deve ser maior que 0"
   end
 end

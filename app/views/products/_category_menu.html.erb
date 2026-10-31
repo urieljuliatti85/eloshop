@@ -1,0 +1,8 @@
+<%# Navegação por categoria da vitrine: um único botão, "Ver todos", que abre o
+    menu com todas as categorias (e, no desktop, as filhas ao lado, à direita).
+    Antes eram "Todos" e uma pílula por categoria de topo, que ocupavam duas
+    linhas com a árvore completa. "Todos os produtos" — voltar à listagem sem
+    categoria, que é também como a página abre — vive dentro do menu. %>
+<nav aria-label="Categorias" class="relative flex flex-wrap gap-2">
+  <%= render "category_browser" %>
+</nav>

@@ -4,19 +4,19 @@ class ReviewTest < ActiveSupport::TestCase
   test "invalid without a rating" do
     review = Review.new(customer: customers(:one), product: products(:one), comment: "Muito bom")
     assert_not review.valid?
-    assert_includes review.errors[:rating], "can't be blank"
+    assert_includes review.errors[:rating], "não pode ficar em branco"
   end
 
   test "invalid with a rating outside 1..5" do
     review = Review.new(customer: customers(:one), product: products(:one), rating: 6, comment: "Muito bom")
     assert_not review.valid?
-    assert_includes review.errors[:rating], "is not included in the list"
+    assert_includes review.errors[:rating], "não está incluído na lista"
   end
 
   test "invalid without a comment" do
     review = Review.new(customer: customers(:one), product: products(:one), rating: 5)
     assert_not review.valid?
-    assert_includes review.errors[:comment], "can't be blank"
+    assert_includes review.errors[:comment], "não pode ficar em branco"
   end
 
   test "invalid when the same customer reviews the same product twice" do

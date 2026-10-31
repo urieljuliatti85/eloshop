@@ -21,9 +21,22 @@ module Gateways
     # fora (tempo esgotado, conflito de idempotência e limite de taxa): ali a
     # operação pode ter acontecido, e quem chama deve manter a tentativa aberta.
     class RequestRejected < RequestFailed; end
+
+    # Reembolso recusado porque a conta que recebeu o pagamento ainda não tem
+    # saldo disponível (o dinheiro do cartão fica retido até a liberação).
+    # `release_date` é a previsão do próprio Mercado Pago, quando ele informa.
+    class InsufficientFunds < RequestRejected
+      attr_reader :release_date
+
+      def initialize(message = nil, release_date: nil)
+        super(message)
+        @release_date = release_date
+      end
+    end
     TRANSIENT_CLIENT_ERRORS = %w[408 409 429].freeze
 
     API_HOST = "api.mercadopago.com"
+    CHARGEBACK_TOPIC = "topic_chargebacks_wh".freeze
     OPEN_TIMEOUT = 5
     READ_TIMEOUT = 15
 
@@ -39,7 +52,7 @@ module Gateways
       "rejected" => "declined",
       "cancelled" => "declined",
       "refunded" => "refunded",
-      "charged_back" => "declined"
+      "charged_back" => "charged_back"
     }.freeze
 
     def initialize(access_token: nil,
@@ -75,6 +88,21 @@ module Gateways
     # A notificação do Mercado Pago não carrega o status de forma confiável —
     # ela avisa "o pagamento X mudou" e espera que a aplicação consulte. Sem
     # isso, bastaria forjar um POST para marcar um pedido como pago.
+    # Procura no Mercado Pago uma cobrança deste pedido pelo `external_reference`
+    # (o número do pedido, enviado em toda cobrança). Devolve `nil` quando não
+    # existe, e levanta `RequestFailed` quando a consulta falha: quem chama não
+    # deve concluir "não existe" sem ter conseguido perguntar.
+    def find_payment_for(order:)
+      response = get(
+        "/v1/payments/search?external_reference=#{order.id}&sort=date_created&criteria=desc&limit=5",
+        access_token: access_token_for(order)
+      )
+      found = Array(response["results"]).find { |result| result["external_reference"].to_s == order.id.to_s }
+      return nil unless found
+
+      RemotePayment.new(external_id: found["id"].to_s, status: STATUS_MAP.fetch(found["status"].to_s, "pending"))
+    end
+
     def payment_status(external_id:)
       payment_details(external_id: external_id)[:status]
     end
@@ -99,6 +127,8 @@ module Gateways
         external_id: response["id"].to_s,
         status: refund_status(response["status"])
       )
+    rescue InsufficientFunds => e
+      raise InsufficientFunds.new(e.message, release_date: release_date_for(payment))
     end
 
     # Autenticidade via HMAC-SHA256 sobre um manifesto montado com o id do
@@ -112,7 +142,7 @@ module Gateways
       received = signature[:v1]
       return false if timestamp.blank? || received.blank?
 
-      data_id = request.params.dig("data", "id") || request.params["data.id"]
+      data_id = signed_data_id(request)
       manifest = "id:#{data_id};request-id:#{request.headers['X-Request-Id']};ts:#{timestamp};"
       expected = OpenSSL::HMAC.hexdigest("SHA256", @webhook_secret, manifest)
 
@@ -124,6 +154,8 @@ module Gateways
     # o mesmo pagamento várias vezes conforme ele muda, e usar só o id do
     # pagamento faria a segunda notificação ser descartada como duplicata.
     def webhook_event(request)
+      return chargeback_event(request) if request.params["type"] == CHARGEBACK_TOPIC
+
       external_id = request.params.dig("data", "id") || request.params["data.id"]
       return nil if external_id.blank?
 
@@ -138,6 +170,28 @@ module Gateways
     end
 
     private
+
+    # O manifesto da assinatura usa o `data.id` da query string. Na notificação
+    # de contestação ele difere do `data.id` do corpo (id da contestação, não
+    # o do recurso), então a query tem prioridade; no tópico de pagamento os
+    # dois coincidem.
+    def signed_data_id(request)
+      request.query_parameters["data.id"] || request.params.dig("data", "id") || request.params["data.id"]
+    end
+
+    # O tópico de contestações já traz o id do pagamento no corpo
+    # (`data.payment_id`), então não há consulta à API. O `data.id` do corpo é
+    # o id da contestação: tratá-lo como pagamento daria 500 ao buscar um
+    # pagamento inexistente. O id do evento inclui a versão porque a mesma
+    # contestação é notificada a cada mudança de status.
+    def chargeback_event(request)
+      data = request.params["data"]
+      payment_id = data.is_a?(Hash) ? data["payment_id"] : nil
+      return nil if payment_id.blank?
+
+      version = request.params["version"] || request.params["id"]
+      { event_id: "mp-chargeback-#{data['id']}-#{version}", external_id: payment_id.to_s, status: "charged_back" }
+    end
 
     def authorize_pix(order:, idempotency_key:, application_fee_cents:)
       access_token = access_token_for(order)
@@ -304,7 +358,8 @@ module Gateways
         # porque é ele que diz o que houve — "respondeu 500" sozinho custou uma
         # investigação inteira em 2026-09-08.
         code = error_code(response)
-        error_class = response.code.start_with?("4") && TRANSIENT_CLIENT_ERRORS.exclude?(response.code) ? RequestRejected : RequestFailed
+        error_class = InsufficientFunds if insufficient_funds?(response)
+        error_class ||= response.code.start_with?("4") && TRANSIENT_CLIENT_ERRORS.exclude?(response.code) ? RequestRejected : RequestFailed
         raise error_class, "Mercado Pago respondeu #{response.code} em #{request.path}#{" (#{code})" if code}"
       end
 
@@ -440,6 +495,24 @@ module Gateways
     # O identificador do erro do Mercado Pago (ex.: "user_allowed_only_in_test")
     # é seguro para a mensagem da exceção — é um código de causa, não conteúdo
     # do pagamento. O resto do corpo continua de fora.
+    # O Mercado Pago não dá um código estável para isto: `cause` traz só a
+    # descrição ("Collector hasn't enough available money"), então é ela que
+    # identifica o caso.
+    def insufficient_funds?(response)
+      causes = Array(JSON.parse(response.body.to_s)["cause"])
+      causes.any? { |cause| cause.is_a?(Hash) && cause["description"].to_s.match?(/enough available money/i) }
+    rescue StandardError
+      false
+    end
+
+    # A previsão é só um complemento da mensagem: se a consulta falhar, o
+    # reembolso já foi recusado e o admin ainda precisa saber o motivo.
+    def release_date_for(payment)
+      payment_details(external_id: payment.external_id)[:money_release_date]
+    rescue RequestFailed, ConfigurationError
+      nil
+    end
+
     def error_code(response)
       body = JSON.parse(response.body.to_s)
       body["error"].presence

@@ -1,5 +1,5 @@
-<% content_for :title, "Ateliês | EloShop" %>
-<% content_for :description, "Conheça os ateliês que vendem peças feitas à mão na EloShop." %>
+<% content_for :title, "Artesãos e ateliês independentes: conheça quem faz | EloShop" %>
+<% content_for :meta_description, "Conheça os ateliês que vendem peças feitas à mão na EloShop." %>
 <% content_for :canonical_url, sellers_url %>
 
 <div class="w-full">
@@ -27,7 +27,7 @@
           <%= link_to seller_path(seller.slug), class: "group flex h-full flex-col overflow-hidden rounded-[1.75rem] bg-brand-100/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl" do %>
             <div class="relative aspect-[3/4] overflow-hidden">
               <% if (cover = @covers[seller.id]) %>
-                <%= image_tag cover.main_image, alt: "", loading: "lazy",
+                <%= image_tag cover.main_image.variant(Product::CARD_IMAGE_VARIANT), alt: "", loading: "lazy",
                       class: "h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" %>
               <% else %>
                 <%# Sem peça com foto ainda: um fundo da paleta, para o card

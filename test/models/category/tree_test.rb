@@ -38,10 +38,41 @@ class Category::TreeTest < ActiveSupport::TestCase
     assert_not_includes roots, filha
   end
 
+  test "visible_children returns the direct children, without disabled ones or grandchildren" do
+    casa = Category.create!(name: "Casa filhas")
+    cozinha = casa.children.create!(name: "Cozinha filhas")
+    casa.children.create!(name: "Escondida filhas", active: false)
+    cozinha.children.create!(name: "Neta filhas")
+
+    children = Category::Tree.load.visible_children(casa)
+
+    assert_equal [ cozinha ], children
+  end
+
+  test "visible_children is empty for a category without children, and answers from memory" do
+    folha = Category.create!(name: "Folha sozinha")
+    tree = Category::Tree.load
+
+    assert_no_queries do
+      assert_empty tree.visible_children(folha)
+    end
+  end
+
   test "breadcrumb_name of a top-level category is its own name" do
     casa = Category.create!(name: "Casa sozinha")
 
     assert_equal "Casa sozinha", Category::Tree.load.breadcrumb_name(casa)
+  end
+
+  test "breadcrumb_options are sorted alphabetically by the full path, ignoring case and accents" do
+    zebra = Category.create!(name: "Zebra opções")
+    Category.create!(name: "Árvore opções", parent: zebra)
+    Category.create!(name: "abacaxi opções")
+    Category.create!(name: "Ótica opções", parent: zebra)
+
+    names = Category::Tree.load.breadcrumb_options.map(&:first).grep(/opções/)
+
+    assert_equal [ "abacaxi opções", "Zebra opções", "Zebra opções > Árvore opções", "Zebra opções > Ótica opções" ], names
   end
 
   test "load caches the records and does not query the database on a second call" do

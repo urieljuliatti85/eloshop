@@ -36,6 +36,29 @@ class OrderMessagesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to order_messages_path(@order)
   end
 
+  # Além do e-mail, a mensagem aparece no sino do painel do ateliê dono do
+  # pedido, com link direto para a conversa.
+  test "customer message notifies the order's atelier in the panel" do
+    sign_in_customer(customers(:one))
+    seller = @order.seller_order.seller
+
+    assert_difference -> { Notification.where(recipient: seller, kind: "new_message").count }, 1 do
+      post order_messages_path(@order), params: { order_message: { body: "Chega até sexta?" } }
+    end
+
+    notification = Notification.where(recipient: seller).order(:created_at).last
+    assert_equal "Nova mensagem do cliente", notification.title
+    assert_equal seller_order_messages_path(@order), notification.url
+  end
+
+  test "an invalid message does not notify the atelier" do
+    sign_in_customer(customers(:one))
+
+    assert_no_difference -> { Notification.count } do
+      post order_messages_path(@order), params: { order_message: { body: "" } }
+    end
+  end
+
   test "customer cannot access another customer's conversation" do
     sign_in_customer(customers(:two))
 

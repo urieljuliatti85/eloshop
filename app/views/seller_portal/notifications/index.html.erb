@@ -1,7 +1,7 @@
 <% content_for :title, "Notificações | Painel do artesão" %>
 
-<div class="mx-auto max-w-2xl">
-  <h1 class="text-2xl font-bold text-stone-900">Notificações</h1>
+<div class="max-w-2xl">
+  <h1 class="text-3xl font-black tracking-tight text-stone-950">Notificações</h1>
 
   <% if @notifications.any? %>
     <ul class="mt-8 space-y-3">
@@ -24,6 +24,9 @@
       <% end %>
     </ul>
   <% else %>
-    <p class="mt-8 text-stone-500">Você ainda não tem notificações.</p>
+    <div class="seller-card mt-8 text-center">
+      <p class="font-semibold text-stone-950">Nenhuma notificação ainda.</p>
+      <p class="mt-1 text-sm text-stone-600">Avisos de pedidos, mensagens e da sua conta aparecem aqui.</p>
+    </div>
   <% end %>
 </div>

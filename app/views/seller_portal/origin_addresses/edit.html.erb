@@ -1,0 +1,6 @@
+<% content_for :title, "Visão geral | #{current_seller.name}" %>
+<%# Endereço com erro: devolve só o bloco dos Primeiros passos, no mesmo
+    frame do painel inicial, com a etapa 1 aberta e as mensagens. %>
+<%= turbo_frame_tag "primeiros-passos", data: { turbo_action: "advance" } do %>
+  <%= render "seller_portal/dashboard/setup", steps: @getting_started_steps, current: :address %>
+<% end %>
