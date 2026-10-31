@@ -78,6 +78,30 @@ class CartItemTest < ActiveSupport::TestCase
     assert_includes item.errors[:product_variant], "não está disponível para compra"
   end
 
+  test "invalid with an available variant when the seller is only showcased, without Mercado Pago" do
+    seller = sellers(:pending)
+    seller.showcase!
+    product = products(:with_variants)
+    product.update_columns(seller_id: seller.id)
+
+    item = CartItem.new(cart: carts(:one), product: product.reload, product_variant: product_variants(:one), quantity: 1)
+
+    assert_not item.valid?
+    assert_includes item.errors[:product_variant], "não está disponível para compra"
+  end
+
+  test "invalid without variants when the seller is only showcased, without Mercado Pago" do
+    seller = sellers(:pending)
+    seller.showcase!
+    product = products(:one)
+    product.update_columns(seller_id: seller.id)
+
+    item = CartItem.new(cart: carts(:one), product: product.reload, quantity: 1)
+
+    assert_not item.valid?
+    assert_includes item.errors[:product], "não está disponível para compra"
+  end
+
   test "invalid when quantity exceeds the variant's stock" do
     item = CartItem.new(
       cart: carts(:one), product: products(:with_variants), product_variant: product_variants(:one),

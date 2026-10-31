@@ -214,6 +214,10 @@
       <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <%= render "seller_portal/shared/pre_launch_banner", ready: setup_steps.values.all? %>
       </div>
+    <% elsif sales_open? && current_seller.publicly_listed? && !current_seller.approved? %>
+      <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <%= render "seller_portal/shared/not_accepting_orders_banner" %>
+      </div>
     <% end %>
 
     <%# Telas largas: barra lateral fixa à esquerda; o conteúdo ocupa o resto. %>

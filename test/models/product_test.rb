@@ -18,12 +18,46 @@ class ProductTest < ActiveSupport::TestCase
     assert duplicate.save
   end
 
-  test "seller must be approved before publishing" do
+  test "seller must be approved or showcased before publishing" do
     product = products(:two)
     product.update!(seller: sellers(:pending))
 
     error = assert_raises(Product::InvalidStatusTransition) { product.publish! }
-    assert_equal "o vendedor precisa estar aprovado antes da publicação", error.message
+    assert_equal "o vendedor precisa estar aprovado ou liberado na vitrine antes da publicação", error.message
+  end
+
+  test "a showcased seller can publish, and the product is visible but not purchasable" do
+    seller = sellers(:pending)
+    seller.showcase!
+    user = User.create!(email_address: "vitrine-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller)
+    SellerTermsAcceptance.create!(
+      user: user, seller: seller, terms_version: SellerTerms.version, terms_text: SellerTerms.text,
+      terms_digest: Digest::SHA256.hexdigest(SellerTerms.text), accepted_at: Time.current, ip_address: "127.0.0.1"
+    )
+    product = products(:two)
+    product.update!(seller: seller, stock_quantity: 3, category: Category.create!(name: "Categoria vitrine"),
+      fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 6)
+
+    product.publish!
+
+    assert_includes Product.publicly_visible, product
+    assert_not_predicate product, :available_for_purchase?
+    assert_equal :seller_not_accepting_orders, product.purchase_blocker
+  end
+
+  test "an out-of-stock product of a showcased seller reports unavailable, not the seller" do
+    seller = sellers(:pending)
+    seller.showcase!
+    product = products(:one)
+    product.update_columns(seller_id: seller.id, stock_quantity: 0)
+    product.reload
+
+    assert_equal :unavailable, product.purchase_blocker
+  end
+
+  test "a purchasable product has no purchase blocker" do
+    assert_predicate products(:one), :available_for_purchase?
+    assert_nil products(:one).purchase_blocker
   end
 
   test "seller cannot change after the product participates in an order" do

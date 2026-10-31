@@ -69,7 +69,17 @@
             <td><%= seller.users.first&.email_address || "—" %></td>
             <td><%= admin_status_badge(seller.status) %></td>
             <td><%= seller_onboarding_badge(seller) %></td>
-            <td><%= admin_status_badge(seller.hidden? ? "hidden" : "visible", label: seller.hidden? ? "Escondida" : "Exibida") %></td>
+            <td>
+              <% if seller.hidden? %>
+                <%= admin_status_badge("hidden", label: "Escondida") %>
+              <% elsif seller.approved? %>
+                <%= admin_status_badge("visible", label: "Exibida") %>
+              <% elsif seller.publicly_listed? %>
+                <%= admin_status_badge("pending", label: "Exibida, sem vendas") %>
+              <% else %>
+                <%= admin_status_badge("hidden", label: "Fora da loja") %>
+              <% end %>
+            </td>
             <td><%= admin_status_badge(terms_status, label: terms_label) %></td>
             <td><%= seller.products.size %></td>
             <td class="text-right"><%= link_to "Detalhes", admin_seller_path(seller), class: "admin-link" %></td>

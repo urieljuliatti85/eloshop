@@ -16,4 +16,12 @@ class SellerLaunchMailer < ApplicationMailer
 
     mail(to: recipient, subject: "As vendas da EloShop abriram, #{seller.name}!")
   end
+
+  # Fim do pré-cadastro para quem está só na vitrine: a página aparece na loja,
+  # mas não vende até conectar o Mercado Pago e ser aprovado.
+  def sales_opened_not_accepting_orders(seller, recipient)
+    @seller = seller
+
+    mail(to: recipient, subject: "As vendas da EloShop abriram: conecte o Mercado Pago, #{seller.name}")
+  end
 end

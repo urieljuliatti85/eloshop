@@ -115,6 +115,27 @@ module ApplicationHelper
     @sales_open
   end
 
+  # Como a peça se apresenta na loja. Enquanto as vendas estão fechadas, a de
+  # um ateliê que só está na vitrine aparece igual à de um aprovado ("Vendas
+  # em breve" para todos); aberta a loja, ela passa a dizer que o ateliê ainda
+  # não recebe pedidos. A decisão de compra continua em
+  # `Product#available_for_purchase?` — isto só escolhe a mensagem.
+  def product_shown_as_available?(product)
+    blocker = product.purchase_blocker
+    blocker.nil? || (blocker == :seller_not_accepting_orders && !sales_open?)
+  end
+
+  def seller_not_accepting_orders?(product)
+    sales_open? && product.purchase_blocker == :seller_not_accepting_orders
+  end
+
+  # Ateliê que aparece na loja mas ainda não vende (vitrine do pré-cadastro, ou
+  # aprovado que desconectou o Mercado Pago). O público é avisado antes e
+  # depois da abertura das vendas, até a aprovação.
+  def seller_preparing_to_sell?(seller)
+    seller.publicly_listed? && !seller.approved?
+  end
+
   # Valor para dentro de um campo de formulário: "89,90", sem "R$" e sem
   # separador de milhar — o que o usuário edita, e o que `MoneyAttribute`
   # lê de volta.

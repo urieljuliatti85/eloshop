@@ -137,7 +137,7 @@ class Product < ApplicationRecord
   validate :images_count_within_limit
 
   def publish!
-    raise InvalidStatusTransition, "o vendedor precisa estar aprovado antes da publicação" unless seller.approved?
+    raise InvalidStatusTransition, "o vendedor precisa estar aprovado ou liberado na vitrine antes da publicação" unless seller.publicly_listed?
     raise InvalidStatusTransition, "aceite os termos comerciais antes de publicar" unless seller.terms_accepted?
 
     unless valid?(:publication)
@@ -179,18 +179,23 @@ class Product < ApplicationRecord
   end
 
   # Fonte única de verdade sobre disponibilidade de compra — ver docs/inventory.md.
-  # Produto sob encomenda não depende de estoque físico. Produto com
-  # variantes (Fase 9) nunca é comprado "cru" — a decisão passa sempre pela
-  # variante escolhida, então aqui só reflete se existe alguma opção comprável.
   def available_for_purchase?
-    return false unless seller&.approved?
-    return false if seller.hidden?
-    return false unless active?
-    return false if category && !category.visible?
-    return product_variants.any?(&:available_for_purchase?) if has_variants?
-    return true if availability_type_made_to_order?
+    purchase_blocker.nil?
+  end
 
-    stock_quantity.positive?
+  # Por que o produto não pode ser comprado agora (`nil` quando pode). As telas
+  # usam o motivo para escolher a mensagem; a decisão continua sendo uma só.
+  # `:seller_not_accepting_orders` é o ateliê que aparece na loja (vitrine do
+  # pré-cadastro, ou aprovado que desconectou o Mercado Pago) mas ainda não
+  # recebe pagamento: a peça em si está disponível, só não pode ser vendida.
+  def purchase_blocker
+    return :unavailable unless seller&.publicly_listed?
+    return :unavailable unless active?
+    return :unavailable if category && !category.visible?
+    return :unavailable unless in_stock_for_sale?
+    return :seller_not_accepting_orders unless seller.approved?
+
+    nil
   end
 
   def has_variants?
@@ -283,7 +288,7 @@ class Product < ApplicationRecord
     active.availability_type_standard.without_variants.where(stock_quantity: 1..LOW_STOCK_THRESHOLD)
   }
 
-  scope :publicly_visible, -> { active.joins(:seller).merge(Seller.approved).merge(Seller.visible).in_visible_category }
+  scope :publicly_visible, -> { active.joins(:seller).merge(Seller.publicly_listed).in_visible_category }
 
   # Categoria desabilitada tira do ar os produtos dela e da subárvore abaixo
   # (Category#visible?). Produto sem categoria nunca é escondido por isso:
@@ -321,6 +326,16 @@ class Product < ApplicationRecord
   end
 
   private
+
+  # Produto sob encomenda não depende de estoque físico. Produto com variantes
+  # (Fase 9) nunca é comprado "cru" — a decisão passa sempre pela variante
+  # escolhida, então aqui só reflete se existe alguma opção comprável.
+  def in_stock_for_sale?
+    return product_variants.any?(&:available_for_purchase?) if has_variants?
+    return true if availability_type_made_to_order?
+
+    stock_quantity.positive?
+  end
 
   def fixed_shipping_interstate_requires_base
     return if fixed_shipping_configured?

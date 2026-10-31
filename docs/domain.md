@@ -10,11 +10,13 @@ Representa um artesão como entidade comercial independente, dona do próprio ca
 
 O cadastro nasce pendente e exige aprovação/KYC antes da publicação. O KYC é realizado pelo Mercado Pago, que exige identificação nível 6 para o split 1:1. O vendedor conecta a conta por OAuth; a EloShop guarda apenas o identificador externo, `live_mode`, datas e tokens cifrados — nunca RG, selfie ou comprovantes. Como a resposta OAuth pública não informa o nível KYC, um admin confirma explicitamente o requisito antes da aprovação, que aceita apenas uma conexão de produção. Desconectar a conta retorna o vendedor para `pending`.
 
+Aparecer na loja e vender são decisões separadas. `Seller.publicly_listed` responde a primeira: aprovado, ou pendente liberado pelo admin na vitrine do pré-cadastro (`showcase!`, `showcased_at`), nunca suspenso ou escondido. A segunda continua exigindo aprovação (`Product#available_for_purchase?`). Aprovar também marca a vitrine, então quem desconecta o Mercado Pago continua na loja sem vender; suspender limpa a vitrine. A vitrine não inicia a comissão de lançamento, que conta da aprovação.
+
 ## Product `(MVP + Fases 8, 15 e 22)`
 
 Representa um produto comercial vendido pela loja.
 
-Todo produto pertence obrigatoriamente a um `Seller`; a unicidade de `sku`/`slug` é escopada por vendedor no model e em índices únicos compostos. Produtos ativos só aparecem na vitrine e podem ser comprados quando o vendedor está aprovado. A URL pública inclui o vendedor: `/artesaos/:seller_slug/produtos/:slug`.
+Todo produto pertence obrigatoriamente a um `Seller`; a unicidade de `sku`/`slug` é escopada por vendedor no model e em índices únicos compostos. Produtos ativos aparecem na vitrine quando o vendedor aparece na loja (`Seller.publicly_listed`) e só podem ser comprados quando ele está aprovado. A URL pública inclui o vendedor: `/artesaos/:seller_slug/produtos/:slug`.
 
 Desde a Fase 8, o produto tem um `availability_type`: `standard` (estoque numérico — cobre tanto produto comum quanto pequena tiragem), `one_of_a_kind` (peça única) ou `made_to_order` (feito sob encomenda, com prazo de produção). As formas abaixo ainda não existem no sistema:
 

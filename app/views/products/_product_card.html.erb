@@ -1,6 +1,6 @@
 <%
   subtitle = product.category&.name.presence || truncate(product.description.to_s.squish, length: 52)
-  available = product.available_for_purchase?
+  available = product_shown_as_available?(product)
 %>
 <%# Sem moldura: a peça aparece sobre um neutro claro e o texto vem centrado
     abaixo dela, com o preço fechando o bloco. %>
@@ -13,7 +13,7 @@
 
       <% unless available %>
         <div class="absolute inset-0 flex items-center justify-center bg-white/70">
-          <span class="rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white">Indisponível</span>
+          <span class="rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white"><%= seller_not_accepting_orders?(product) ? "Ateliê em preparação" : "Indisponível" %></span>
         </div>
       <% end %>
 

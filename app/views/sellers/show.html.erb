@@ -32,6 +32,11 @@
         linhas no celular. No topo editorial não há bloco de cor que separe
         a faixa do nome, então o respiro é maior. %>
     <div class="<%= @seller.theme_hero == "editorial" ? "space-y-8" : "space-y-3" %>">
+      <%# Aviso da plataforma, não do artesão: fica fora do tema (cor e cantos
+          próprios) para não ser confundido com a faixa que ele escreve. %>
+      <% if seller_preparing_to_sell?(@seller) %>
+        <p class="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-3 text-center text-sm font-semibold leading-snug text-balance text-amber-950" role="status">Este ateliê está se preparando para começar a vender. Salve as peças nos favoritos para voltar a elas depois.</p>
+      <% end %>
       <% if @seller.notice_text.present? %>
         <p class="<%= @seller.theme_corners == "retos" ? "rounded-none" : "rounded-2xl" %> bg-[var(--atelier-accent)] px-5 py-3 text-center text-sm font-semibold leading-snug text-balance text-white" role="status"><%= @seller.notice_text %></p>
       <% end %>
