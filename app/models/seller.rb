@@ -84,7 +84,10 @@ class Seller < ApplicationRecord
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 
   validates :name, presence: true
-  validates :slug, presence: true, uniqueness: true
+  # Sem nome, o slug (derivado dele) também falta: o erro do nome já diz o
+  # que corrigir, e repetir "URL do ateliê" confundia quem nem vê esse campo.
+  validates :slug, presence: true, unless: -> { name.blank? }
+  validates :slug, uniqueness: true
   validates :mercado_pago_user_id, uniqueness: true, allow_blank: true
   validates :footer_text, length: { maximum: FOOTER_TEXT_MAX_LENGTH }
   validate :theme_images_allowed
@@ -416,7 +419,19 @@ class Seller < ApplicationRecord
     digits = decrypted_cpf
     return nil if digits.blank?
 
-    "#{digits[0..2]}.#{digits[3..5]}.#{digits[6..8]}-#{digits[9..10]}"
+    self.class.format_cpf(digits)
+  end
+
+  # "12345678909" → "123.456.789-09", e progressivo para o que ainda está
+  # incompleto ("1234" → "123.4"), igual à máscara do cadastro
+  # (cpf_input_controller.js). Mais de 11 dígitos volta sem máscara, para a
+  # tela de erro mostrar o que foi digitado em vez de cortar em silêncio.
+  def self.format_cpf(value)
+    digits = value.to_s.gsub(/\D/, "")
+    return digits if digits.length > 11
+
+    formatted = [ digits[0, 3], digits[3, 3], digits[6, 3] ].compact_blank.join(".")
+    digits.length > 9 ? "#{formatted}-#{digits[9, 2]}" : formatted
   end
 
   def to_param
