@@ -1349,6 +1349,148 @@ Fase 20 (Etapa B — gateway Mercado Pago), Fase 23 (split de comissão).
 
 ---
 
+# PARTE 4 — Distribuidores de insumos (ADR 007)
+
+Novo tipo de vendedor: o **Distribuidor**, atacadista que vende **insumos** (fios, tecidos, argila, tintas, ferragens, embalagens) principalmente para artesãos. Ver `docs/decisions/007-distributors.md` para o contexto e as decisões.
+
+Decisões do negócio (2026-10-31): só insumos, nunca produto acabado para revenda; qualquer pessoa compra, com a conta de `Customer` existente; preço público, incluindo as faixas por quantidade; comissão de 15% sobre produtos após descontos, sem frete, com taxa de lançamento de 8% por 3 meses pela mesma regra do ateliê (na prática, contados da aprovação de cada distribuidor); meta de abertura da vertical em dezembro de 2026; CNPJ opcional; o distribuidor é sempre um usuário novo (um ateliê não vira distribuidor), tem painel dedicado e passa pela mesma análise do admin que o ateliê; pedido mínimo só por quantidade mínima por produto, sem valor mínimo por pedido. Pendente: obrigatoriedade da declaração de emissão de nota fiscal (consulta jurídica).
+
+**Esta parte só começa depois do acompanhamento dos primeiros ateliês (após a abertura das vendas) e com a SuperFrete funcionando de forma estável em produção.** Nenhuma fase abaixo deve ser iniciada antes disso.
+
+## FASE 25 — Fundação do distribuidor
+
+Status: `[ ]`
+
+### Objetivo
+
+Permitir que um distribuidor se cadastre, seja aprovado e opere um painel dedicado, reaproveitando a estrutura de `Seller`.
+
+### Funcionalidades
+
+* `Seller#kind` (`atelier` / `distributor`), com `atelier` como padrão para os vendedores existentes; o tipo é fixo depois do cadastro
+* Cadastro do distribuidor sempre com um `User` novo (um ateliê não vira distribuidor), com CNPJ opcional e declaração pública de emissão de nota fiscal (obrigatoriedade depende de consulta jurídica)
+* Aprovação pelo admin com a mesma análise do ateliê (OAuth `live_mode` + confirmação explícita do KYC), com filtro por tipo na gestão de vendedores
+* Termos comerciais próprios do distribuidor, versionados como `SellerTerms`
+* Taxa de 15% resolvida por `Seller#platform_fee_rate_bps`, com 8% nos 3 primeiros meses pela regra já existente do ateliê (mais tardio entre aprovação e abertura das vendas) — sem cálculo novo
+* Painel dedicado ao distribuidor (recomendação: namespace `DistributorPortal` em `/atacado/painel`), com porta de login própria (ex.: `/atacado/entrar`) que só aceita distribuidor, com a mesma mensagem genérica de erro das outras portas
+* `SellerPortal` passa a recusar distribuidores; o painel do distribuidor recusa ateliês; ambos escopados por `Current.user.seller`, nunca pela URL
+* Menu público (`ApplicationHelper#user_session_identity`) aponta o distribuidor logado para o painel dele
+
+### Modelos envolvidos
+
+* `Seller` (`kind`, CNPJ opcional, declaração de nota fiscal)
+
+### Testes
+
+* Model: tipo obrigatório, restrito aos valores válidos e imutável; taxa correta por tipo
+* Request: cada porta de login recusa o outro tipo (e o admin) sem revelar o papel
+* Autorização: distribuidor não entra em `/painel`, ateliê não entra no painel do distribuidor, e nenhum dos dois acessa dados de outro vendedor alterando a URL
+
+### Critérios de aceite
+
+* [ ] Distribuidor se cadastra com conta nova, conecta o Mercado Pago e é aprovado pelo admin
+* [ ] Distribuidor opera só o próprio painel; ateliê não alcança o painel do distribuidor e vice-versa
+* [ ] Vendedores existentes continuam como ateliê, sem mudança de comportamento
+* [ ] Taxa gravada no `SellerOrder` correta para o tipo
+
+### Dependências de outras fases
+
+Fases 22 e 23; pré-requisitos de negócio da Parte 4.
+
+## FASE 26 — Catálogo de insumos
+
+Status: `[ ]`
+
+### Objetivo
+
+Representar o insumo como produto comercial: unidade de venda, quantidade mínima e preço por faixa de quantidade, numa vitrine separada do catálogo artesanal.
+
+### Funcionalidades
+
+* Unidade de venda do produto (pacote, metro, kg, rolo, caixa)
+* Quantidade mínima de compra por produto (padrão 1, sem mínimo); sem valor mínimo por pedido, que só entra se os distribuidores pedirem
+* Faixas de preço por quantidade, públicas e exibidas na página do produto
+* Vitrine `/insumos`, fora de `/produtos`, da busca e do SEO das peças artesanais
+* Ponte com `Material` e `Technique` ("insumos para crochê")
+* SEO e dados estruturados da vitrine de insumos
+
+### Testes
+
+* Model: faixas sem sobreposição, em centavos, e mínimo coerente com as faixas
+* Model: disponibilidade continua com fonte única em `Product#available_for_purchase?`
+* Request: insumo não aparece em `/produtos` nem peça artesanal em `/insumos`
+
+### Critérios de aceite
+
+* [ ] Distribuidor cadastra insumo com unidade, mínimo e faixas
+* [ ] Página do produto mostra a tabela de faixas e o mínimo
+* [ ] Catálogo artesanal não é afetado
+
+### Dependências de outras fases
+
+Fase 25.
+
+## FASE 27 — Compra de insumos
+
+Status: `[ ]`
+
+### Objetivo
+
+Comprar insumo pelo fluxo de checkout existente, com mínimo e faixa validados no servidor.
+
+### Funcionalidades
+
+* Carrinho mostra a faixa aplicada e o quanto falta para a próxima
+* Checkout revalida mínimo e faixa dentro da transação de `Checkout::CreateOrder`
+* Snapshot da faixa e da unidade de venda no `OrderItem`
+* Mantida a regra de um vendedor por checkout (split 1:1)
+
+### Testes
+
+* Service: quantidade abaixo do mínimo é recusada; mudança de faixa entre carrinho e checkout usa o preço recalculado
+* Service: compra simultânea do último lote não vende acima do estoque
+* Request: valores enviados pelo navegador são ignorados
+
+### Critérios de aceite
+
+* [ ] Pedido de insumo pago com split e comissão de 15% conferidos
+* [ ] Pedido antigo preserva a faixa e o preço da compra
+
+### Dependências de outras fases
+
+Fase 26.
+
+## FASE 28 — Frete de insumos e informação fiscal
+
+Status: `[ ]`
+
+### Objetivo
+
+Cotar frete de volumes pesados e deixar claro ao comprador o que esperar em nota fiscal.
+
+### Funcionalidades
+
+* Cotação pela SuperFrete obrigatória para distribuidor (a tabela interna não representa volume pesado)
+* Exibição da declaração de emissão de nota fiscal na loja, no produto e no resumo do pedido
+* Dados do comprador necessários à nota (definição depende do que a SuperFrete e o fluxo fiscal exigirem)
+
+### Critérios de aceite
+
+* [ ] Frete cotado para pedidos acima do peso da tabela interna
+* [ ] Comprador sabe antes de pagar se o distribuidor emite nota fiscal
+
+### Dependências de outras fases
+
+Fase 27; SuperFrete estável em produção (ADR 005).
+
+### Fora do escopo (só com demanda real)
+
+* Artesão comprador verificado (vínculo `Customer ↔ Seller`) e preço exclusivo
+* Recompra rápida e histórico de compras de insumo no painel do ateliê
+* Pagamento faturado ou boleto a prazo
+
+---
+
 # Regras do Roadmap
 
 ## 1. Uma fase por vez
