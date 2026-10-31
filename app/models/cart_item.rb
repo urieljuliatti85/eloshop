@@ -75,8 +75,11 @@ class CartItem < ApplicationRecord
     end
   end
 
+  # A variante só sabe de si (ativa, com estoque); quem responde se o ateliê
+  # pode vender é o produto. Sem a primeira pergunta, a peça de um ateliê que
+  # só está na vitrine (sem Mercado Pago) entrava no carrinho pela variante.
   def validate_variant_quantity
-    unless product_variant.available_for_purchase?
+    unless product.available_for_purchase? && product_variant.available_for_purchase?
       errors.add(:product_variant, "não está disponível para compra")
       return
     end

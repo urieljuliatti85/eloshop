@@ -1,7 +1,7 @@
 class Seller < ApplicationRecord
   # Lista permitida (`only`), nunca `ignore`: a tabela tem tokens cifrados, CPF e
   # endereço, que não podem ir parar em `versions` se alguém criar uma coluna nova.
-  has_paper_trail only: %i[name slug status approved_at hidden_at mercado_pago_user_id mercado_pago_connected_at mercado_pago_live_mode]
+  has_paper_trail only: %i[name slug status approved_at showcased_at hidden_at mercado_pago_user_id mercado_pago_connected_at mercado_pago_live_mode]
 
   class VerificationRequired < StandardError; end
 
@@ -63,10 +63,19 @@ class Seller < ApplicationRecord
     SellerTermsAcceptance.where(terms_version: SellerTerms.version).select(:seller_id)
   end
 
-  # Composto com Seller.approved onde a visibilidade pública é decidida
+  # Composto em Seller.publicly_listed, onde a visibilidade pública é decidida
   # (Product.publicly_visible, Product#available_for_purchase?) — esconder
   # não muda o status do vendedor, é um filtro à parte.
   scope :visible, -> { where(hidden_at: nil) }
+
+  # Fonte única de "o ateliê aparece na loja?": aprovado, ou liberado na
+  # vitrine pelo admin durante o pré-cadastro, sempre fora do escondido.
+  # Aparecer não é vender: a compra continua exigindo `approved?` (ver
+  # Product#purchase_blocker). Suspenso nunca aparece, e `suspend!` também
+  # limpa a vitrine.
+  scope :publicly_listed, -> {
+    visible.where(status: :approved).or(visible.where(status: :pending).where.not(showcased_at: nil))
+  }
 
   # Nome livre para um novo ateliê? A unicidade é do slug, então "Ateliê da Ana"
   # e "atelie da ana" colidem. Devolve a sugestão mais próxima quando não é.
@@ -152,7 +161,33 @@ class Seller < ApplicationRecord
       raise VerificationRequired, "Conecte uma conta Mercado Pago de produção e confirme o KYC nível 6 antes da aprovação."
     end
 
-    update!(status: :approved, approved_at: Time.current)
+    now = Time.current
+    update!(status: :approved, approved_at: now, showcased_at: showcased_at || now)
+  end
+
+  # Libera o ateliê pendente para aparecer na loja sem o Mercado Pago, depois
+  # da revisão do admin. Aprovado já aparece (e esconder é `hide!`); suspenso
+  # precisa ser reaprovado.
+  def showcase!
+    raise VerificationRequired, "Só um ateliê pendente pode ser liberado na vitrine." unless pending?
+
+    update!(showcased_at: showcased_at || Time.current)
+  end
+
+  def unshowcase!
+    raise VerificationRequired, "Só um ateliê pendente pode ser retirado da vitrine." unless pending?
+
+    update!(showcased_at: nil)
+  end
+
+  def showcased?
+    showcased_at.present?
+  end
+
+  def publicly_listed?
+    return false if suspended? || hidden?
+
+    approved? || showcased?
   end
 
   # Exigir conta real é a regra em produção, onde aprovar um vendedor de teste
@@ -180,6 +215,7 @@ class Seller < ApplicationRecord
     update!(
       status: :suspended,
       approved_at: nil,
+      showcased_at: nil,
       mercado_pago_user_id: nil,
       mercado_pago_access_token_ciphertext: nil,
       mercado_pago_refresh_token_ciphertext: nil,
@@ -204,12 +240,12 @@ class Seller < ApplicationRecord
     update!(hidden_at: nil)
   end
 
-  # A página pública /artesaos/:slug só existe para ateliê aprovado e não
-  # escondido (ver SellersController#show): pendente responde 404, e suspenso
-  # ou escondido têm uma página de "indisponível". O "Ver a loja" do painel usa
-  # isto para não mandar o vendedor a um beco.
+  # A página pública /artesaos/:slug só existe para ateliê que aparece na loja
+  # (ver SellersController#show): pendente fora da vitrine responde 404, e
+  # suspenso ou escondido têm uma página de "indisponível". O "Ver a loja" do
+  # painel usa isto para não mandar o vendedor a um beco.
   def public_page_available?
-    approved? && !hidden?
+    publicly_listed?
   end
 
   def hidden?
@@ -322,6 +358,8 @@ class Seller < ApplicationRecord
     update!(connection_attributes)
   end
 
+  # Volta para `pending`, mas não mexe em `showcased_at`: o ateliê continua
+  # na loja e só para de vender até reconectar e ser reaprovado.
   def disconnect_mercado_pago!
     update!(
       mercado_pago_user_id: nil,

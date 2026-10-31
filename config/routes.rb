@@ -27,6 +27,8 @@ Rails.application.routes.draw do
         patch :suspend
         patch :hide
         patch :unhide
+        patch :showcase
+        patch :unshowcase
       end
     end
 
