@@ -178,7 +178,6 @@
     <% [
       [ "Quanto a EloShop cobra?", "#{launch_fee} nos 3 primeiros meses de vendas do seu ateliê e #{standard_fee} depois disso, sobre o valor dos produtos, já descontado qualquer cupom — o frete não entra nesse cálculo. Não há mensalidade, no momento." ],
       [ "Quem emite a nota fiscal?", "O ateliê. Nota fiscal e impostos são responsabilidade de quem vende." ],
-      [ "Quem decide cancelamentos e reembolsos?", "A plataforma opera e decide reembolsos e disputas; a comissão é devolvida proporcionalmente quando isso acontece." ],
       [ "E se a peça quebrar no transporte?", "Quem envia responde pela peça. Capriche na embalagem e, para peças frágeis, prefira um envio com seguro." ]
     ].each do |question, answer| %>
       <div class="rounded-3xl bg-mist-100 px-6 py-5">
@@ -187,6 +186,20 @@
       </div>
     <% end %>
   </dl>
+</section>
+
+<%# Anexo II do parecer jurídico de 2026-10-29, sem alterar o conteúdo.
+    Substitui o "a plataforma opera e decide reembolsos e disputas", que o
+    parecer apontou como promessa de decisão definitiva da plataforma. %>
+<section class="mt-14" aria-labelledby="cancelamentos-title">
+  <h2 id="cancelamentos-title" class="text-2xl font-bold text-ink">Quem cuida dos cancelamentos, devoluções e reembolsos?</h2>
+  <div class="mt-4 space-y-3 leading-relaxed text-ink-muted">
+    <p>A EloShop recebe e acompanha solicitações de cancelamento, devolução, reembolso e reclamações relacionadas às compras feitas na plataforma. Quando necessário, entraremos em contato para obter informações sobre o pedido, o andamento da produção, a entrega ou o produto.</p>
+    <p>O artesão é responsável por manter o anúncio correto e completo, observar as características e os prazos contratados, entregar o produto nas condições oferecidas e colaborar com a solução das solicitações dos compradores. O início da produção de uma peça sob encomenda não elimina, por si só, os direitos legais do consumidor.</p>
+    <p>A EloShop poderá adotar medidas administrativas para resolver as solicitações, inclusive promover cancelamentos e reembolsos, observadas as condições da plataforma e a legislação. Os custos, repasses e responsabilidades financeiras entre a EloShop e o artesão serão disciplinados nos Termos do Vendedor, sem prejuízo dos direitos do comprador.</p>
+    <p>Em caso de cancelamento com reembolso, eventual restituição da comissão da EloShop, integral ou proporcional, seguirá as condições comerciais expressamente previstas para o vendedor. Os ajustes financeiros internos não poderão reduzir o reembolso legalmente devido ao comprador.</p>
+    <p>Consulte também a <%= link_to "Política de Trocas, Devoluções, Cancelamentos e Reembolsos", returns_policy_path, class: "font-semibold text-brand-600 underline hover:text-brand-700" %> da EloShop.</p>
+  </div>
 </section>
 
 <section class="mt-14 flex flex-col items-start gap-5 rounded-[2rem] bg-brand-600 px-6 py-9 text-white sm:flex-row sm:items-center sm:justify-between sm:px-10" aria-labelledby="cta-title">

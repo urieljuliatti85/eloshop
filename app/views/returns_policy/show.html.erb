@@ -1,80 +1,177 @@
-<% content_for :title, "Trocas, devoluções e arrependimento — EloShop" %>
-<% content_for :meta_description, "Veja como funcionam o direito de arrependimento, a troca por defeito e o reembolso nas compras da EloShop, inclusive para peças sob encomenda." %>
+<%# Texto do Anexo I do parecer jurídico de 2026-10-29 (Marcos Alex Silva,
+    OAB/ES 39.173), reproduzido sem alterar o conteúdo. Não editar a redação
+    sem nova revisão jurídica. A publicação depende das condições do parecer:
+    pedido de desistência pelo próprio site com protocolo e confirmação
+    imediata, estorno comunicado na hora, devolução sem custo ao comprador e
+    Termos do Artesão harmonizados (ver docs/domain.md, "Início da produção"). %>
+<% content_for :title, "Trocas, devoluções, cancelamentos e reembolsos — EloShop" %>
+<% content_for :meta_description, "Como funcionam o direito de arrependimento, a devolução de produto com problema, o cancelamento e o reembolso nas compras da EloShop, inclusive de peças sob encomenda." %>
 
 <div class="container mx-auto max-w-3xl px-5 py-16">
-  <h1 class="text-3xl font-bold text-ink">Trocas, devoluções e arrependimento</h1>
-  <p class="mt-2 text-sm text-ink-muted">Última atualização: 1 de outubro de 2026.</p>
+  <h1 class="text-3xl font-bold text-ink">Política de Trocas, Devoluções, Cancelamentos e Reembolsos</h1>
+  <p class="mt-2 text-sm text-ink-muted">Última atualização: 31 de outubro de 2026.</p>
 
   <div class="mt-10 space-y-10 text-ink-muted [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-ink [&_li]:mt-1 [&_p]:mt-3 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">
     <section>
       <p>
-        A EloShop é um marketplace: cada peça é vendida por um ateliê independente. Esta página explica
-        seus direitos e como exercê-los. Em caso de dúvida, escreva para
-        <a href="mailto:contato@eloshop.shop" class="font-semibold text-brand-700 underline">contato@eloshop.shop</a>
-        ou use o <%= link_to "formulário de contato", new_contact_path, class: "font-semibold text-brand-700 underline" %>.
+        A EloShop reúne produtos oferecidos por artesãos e vendedores independentes. Esta política explica como
+        solicitar cancelamentos, devoluções, trocas e reembolsos nas compras realizadas pela plataforma, de acordo
+        com o Código de Defesa do Consumidor e as normas brasileiras de comércio eletrônico.
       </p>
     </section>
 
     <section id="arrependimento">
-      <h2>1. Direito de arrependimento (7 dias)</h2>
+      <h2>1. Direito de arrependimento</h2>
       <p>
-        Você pode desistir de uma compra feita pelo site em até <strong>7 dias corridos a contar do recebimento</strong>
-        do produto, sem precisar dar motivo.
+        Nas compras realizadas pela internet, você pode desistir da compra, sem precisar justificar o motivo, em até
+        <strong>7 (sete) dias corridos contados do recebimento do produto</strong>. Também é possível comunicar a
+        desistência antes da entrega, na forma da legislação aplicável.
       </p>
-      <ul>
-        <li>Devolvemos o valor integral pago, <strong>inclusive o frete de ida</strong>.</li>
-        <li>O custo do envio da devolução fica com o ateliê vendedor.</li>
-        <li>O produto deve voltar em boas condições e, se possível, na embalagem original.</li>
-        <li>O reembolso é feito pela mesma forma de pagamento: PIX ou cartão.</li>
-      </ul>
+      <p>
+        Quando o arrependimento é exercido regularmente, você recebe de volta todos os valores pagos pela compra,
+        <strong>inclusive o frete originalmente cobrado</strong>. Não haverá desconto de taxas administrativas,
+        comissão da plataforma, custos de produção ou despesas de devolução. Se o produto já tiver sido entregue,
+        informaremos o procedimento de postagem ou coleta sem custo para você.
+      </p>
+      <p>
+        A abertura da embalagem para conhecer e examinar o produto, por si só, não impede o exercício do direito de
+        arrependimento.
+      </p>
     </section>
 
     <section id="sob-encomenda">
-      <h2>2. Peças sob encomenda ou personalizadas</h2>
+      <h2>2. Produtos artesanais, sob encomenda e personalizados</h2>
       <p>
-        Como a peça só é produzida depois da compra, o arrependimento pode ser exercido
-        <strong>até o ateliê iniciar a produção</strong>. Você é avisado quando isso acontece, e a data aparece
-        na página do seu pedido. Depois disso, a peça feita sob medida não pode ser devolvida por arrependimento,
-        mas continua valendo a garantia contra defeito (item 3).
+        Algumas peças são produzidas após o pedido ou seguem medidas, cores, inscrições e outras características
+        escolhidas pelo comprador. Essas informações, inclusive o prazo de fabricação, devem constar na página do
+        produto antes da finalização da compra.
       </p>
-      <p>O prazo de produção é informado na página do produto, antes da compra.</p>
+      <p>
+        O início da produção não implica, por si só, a perda automática do direito de arrependimento previsto em lei.
+        Se desejar cancelar um pedido sob encomenda, entre em contato pelos canais indicados nesta política. O estágio
+        de fabricação será utilizado para organizar o atendimento e as providências necessárias, respeitados seus
+        direitos legais.
+      </p>
+      <p>
+        Antes de concluir a compra, confira as especificações selecionadas. Se a peça entregue divergir do que foi
+        contratado ou anunciado, serão aplicadas as regras de cumprimento da oferta e de solução da desconformidade.
+      </p>
     </section>
 
     <section id="defeito">
-      <h2>3. Defeito, dano no transporte ou peça diferente do anunciado</h2>
+      <h2>3. Produto com vício, avaria ou diferente do anunciado</h2>
       <p>
-        Se a peça chegar com defeito, danificada ou diferente do que foi anunciado, avise em até
-        <strong>30 dias do recebimento</strong>, com fotos. O ateliê pode reparar, trocar ou reembolsar.
-        Se não houver acordo, a EloShop decide.
+        Se receber um produto com problema de qualidade, avaria, erro de fabricação, características diferentes das
+        contratadas ou entrega em desacordo com o anúncio, comunique a EloShop para que a ocorrência seja registrada e
+        tratada.
+      </p>
+      <p>
+        Para vícios aparentes ou de fácil constatação, a legislação prevê prazo de reclamação de
+        <strong>30 (trinta) dias para produtos não duráveis</strong> e de
+        <strong>90 (noventa) dias para produtos duráveis</strong>, contados do recebimento. Nos vícios ocultos, a
+        contagem começa quando o problema se tornar evidente, conforme o art. 26 do Código de Defesa do Consumidor.
+      </p>
+      <p>
+        A solução observará os direitos previstos no CDC. Conforme o caso, poderá envolver reparo, substituição do
+        produto, restituição do valor pago ou abatimento do preço, respeitados os procedimentos e prazos legais. Se o
+        produto entregue não corresponder ao que foi ofertado, serão observadas também as alternativas legais para
+        descumprimento da oferta.
+      </p>
+      <p>
+        Se um defeito causar danos à pessoa ou a outros bens, a reclamação será analisada segundo as regras específicas
+        aplicáveis à responsabilidade por danos causados pelo produto. Esse tipo de situação não se limita
+        automaticamente aos prazos de 30 ou 90 dias mencionados acima.
+      </p>
+      <p>
+        Para facilitar a apuração, informe, sempre que possível, o número do pedido, o problema identificado e
+        fotografias ou outros registros. A falta de fotografias, isoladamente, não impede o exercício de direitos
+        previstos em lei.
       </p>
     </section>
 
     <section id="troca-simples">
-      <h2>4. Troca por tamanho, cor ou gosto</h2>
+      <h2>4. Troca por preferência, tamanho ou cor</h2>
       <p>
-        Não há uma troca à parte. Dentro dos 7 dias do item 1, você pode desistir da compra, ser reembolsado
-        e fazer um novo pedido.
+        Se o produto estiver de acordo com o anúncio, mas você mudar de ideia ou preferir outro modelo, tamanho ou cor,
+        poderá utilizar o direito de arrependimento dentro do prazo legal de 7 (sete) dias, nas condições do item 1.
+      </p>
+      <p>
+        Após esse prazo, uma troca por simples preferência dependerá de eventual condição comercial oferecida para o
+        produto. Isso não limita as garantias legais nem os direitos aplicáveis quando houver vício ou divergência entre
+        o produto e a oferta.
+      </p>
+    </section>
+
+    <section id="cancelamento">
+      <h2>5. Cancelamento antes da entrega e atraso</h2>
+      <p>
+        Você pode solicitar cancelamento antes de receber o produto. A solicitação será tratada conforme os direitos
+        previstos em lei e a situação concreta do pedido, sem que o início da fabricação seja considerado, isoladamente,
+        causa automática de perda do direito de arrependimento.
+      </p>
+      <p>
+        Se a entrega não ocorrer nas condições e nos prazos contratados, ou se houver descumprimento da oferta, você
+        poderá exercer as alternativas previstas no Código de Defesa do Consumidor, inclusive, conforme o caso, pedir a
+        resolução da compra e a restituição do que pagou.
       </p>
     </section>
 
     <section id="como-pedir">
-      <h2>5. Como pedir</h2>
+      <h2>6. Como pedir cancelamento, devolução ou reembolso</h2>
       <p>
-        Escreva para <a href="mailto:contato@eloshop.shop" class="font-semibold text-brand-700 underline">contato@eloshop.shop</a>
-        informando o <strong>número do pedido</strong>. Respondemos em até <strong>2 dias úteis</strong>.
-        A EloShop acompanha cada caso e decide reembolsos e disputas entre comprador e ateliê.
+        Utilize a ferramenta de atendimento ou cancelamento disponibilizada na área da sua compra na EloShop. Você
+        também pode escrever para
+        <a href="mailto:contato@eloshop.shop" class="font-semibold text-brand-700 underline">contato@eloshop.shop</a>,
+        informando, de preferência, o número do pedido e o que aconteceu.
+      </p>
+      <p>
+        O recebimento da sua solicitação será confirmado imediatamente pelo mesmo canal utilizado, com registro para
+        acompanhamento. A EloShop prestará retorno sobre o andamento ou solução em até <strong>2 (dois) dias úteis</strong>,
+        sem prejuízo das medidas que precisem ser adotadas imediatamente por exigência legal.
+      </p>
+    </section>
+
+    <section id="devolucao">
+      <h2>7. Devolução do produto e custos</h2>
+      <p>
+        Quando for necessária a devolução física do produto para atender ao direito de arrependimento ou a outra
+        obrigação legal do fornecedor, você receberá orientações para postagem ou coleta. Nesses casos,
+        <strong>não haverá cobrança de frete de retorno ao consumidor</strong>.
+      </p>
+      <p>
+        Não é exigida a embalagem original intacta como condição automática para o exercício do arrependimento. Pedimos
+        apenas que o produto e os itens recebidos sejam conservados de maneira adequada até as orientações de devolução,
+        ressalvada a avaliação jurídica de situações específicas.
       </p>
     </section>
 
     <section id="reembolso">
-      <h2>6. Reembolso</h2>
+      <h2>8. Restituição dos valores</h2>
       <p>
-        Depois da confirmação do seu pedido de arrependimento ou da devolução, solicitamos o reembolso em até
-        <strong>2 dias úteis</strong>. O dinheiro chega conforme o prazo do meio de pagamento: no PIX costuma
-        ser rápido, e no cartão pode aparecer em uma ou duas faturas.
+        Quando houver direito ao reembolso, os valores serão restituídos conforme a legislação e a forma de pagamento
+        utilizada, sem descontos indevidos. No exercício regular do direito de arrependimento, serão adotadas
+        imediatamente as providências de restituição e de comunicação à instituição financeira, administradora do cartão
+        ou responsável pelo processamento do pagamento.
       </p>
       <p>
-        A comissão da EloShop sobre o valor reembolsado também é devolvida, de forma proporcional.
+        A visualização do estorno na fatura ou na conta pode depender dos procedimentos da instituição financeira. A
+        EloShop acompanhará a operação e prestará as informações disponíveis sobre seu andamento. Os ajustes de comissão
+        e demais acertos entre a plataforma e o artesão não diminuem o valor devido ao consumidor.
+      </p>
+    </section>
+
+    <section id="mediacao">
+      <h2>9. Mediação de conflitos e direitos do consumidor</h2>
+      <p>
+        A EloShop recebe e acompanha solicitações relacionadas às compras realizadas na plataforma. Poderá pedir
+        esclarecimentos ao comprador e ao vendedor, organizar a devolução e adotar providências administrativas para
+        buscar uma solução.
+      </p>
+      <p>
+        As análises e decisões internas da plataforma não impedem o acesso aos órgãos de defesa do consumidor ou ao
+        Poder Judiciário, nem afastam direitos e responsabilidades previstos em lei. Em caso de dúvida, entre em contato
+        pelo e-mail
+        <a href="mailto:contato@eloshop.shop" class="font-semibold text-brand-700 underline">contato@eloshop.shop</a>.
       </p>
     </section>
   </div>
