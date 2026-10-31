@@ -20,6 +20,26 @@ RSpec.describe "Seller commercial terms", type: :request do
     expect(response.body).to include("15% (quinze por")
   end
 
+  # Versão 2026-10-31: frete da devolução, saldo para reembolso e
+  # responsabilidades, alinhados ao parecer jurídico de 2026-10-29.
+  it "states the return shipping, the balance for refunds and the artisan duties" do
+    get seller_terms_path
+
+    body = CGI.unescapeHTML(response.body).squish
+    expect(body).to include("o frete da devolução é de responsabilidade do artesão")
+    expect(body).to include("manter saldo disponível na conta Mercado Pago conectada suficiente para reembolsos e chargebacks")
+    expect(body).to include("colaborar com a solução das solicitações dos compradores")
+    expect(body).to include("não elimina, por si só, os direitos legais do consumidor")
+  end
+
+  # A EloShop não guarda o dinheiro do artesão (split): os termos não podem
+  # prometer compensação de um saldo que a plataforma não tem.
+  it "does not promise to offset from a balance the platform does not hold" do
+    get seller_terms_path
+
+    expect(CGI.unescapeHTML(response.body).squish).not_to include("compensados do saldo do artesão")
+  end
+
   it "shows the acceptance form to a signed-in seller" do
     sign_in_without_terms(user)
 
