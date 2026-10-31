@@ -218,6 +218,7 @@ Rails.application.routes.draw do
   get "como-funciona", to: "how_it_works#show", as: :how_it_works
 
   get "politica-de-privacidade", to: "privacy_policy#show", as: :privacy_policy
+  get "termos-de-uso", to: "terms_of_use#show", as: :terms_of_use
 
   get "customers/disponibilidade-email", to: "customers#email_availability", as: :customer_email_availability
   resources :customers, only: %i[new create]
