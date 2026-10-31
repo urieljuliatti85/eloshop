@@ -248,6 +248,24 @@ class SellerTest < ActiveSupport::TestCase
     assert_includes seller.errors[:cpf], "não pode ficar em branco"
   end
 
+  test "formats a CPF progressively and keeps more than 11 digits unmasked" do
+    assert_equal "123.456.789-09", Seller.format_cpf("12345678909")
+    assert_equal "123.456.789-09", Seller.format_cpf("123.456.789-09")
+    assert_equal "123.4", Seller.format_cpf("1234")
+    assert_equal "123", Seller.format_cpf("123")
+    assert_equal "123.456.789-0", Seller.format_cpf("1234567890")
+    assert_equal "", Seller.format_cpf(nil)
+    assert_equal "123456789012", Seller.format_cpf("123456789012")
+  end
+
+  test "a blank name reports only the name, not the URL derived from it" do
+    seller = Seller.new(name: "", owner_full_name: "Fulana", cpf: "52998224725")
+
+    assert_not seller.valid?
+    assert_predicate seller.errors[:name], :any?
+    assert_empty seller.errors[:slug]
+  end
+
   test "rejects a CPF with an invalid checksum" do
     seller = Seller.new(name: "Ateliê", owner_full_name: "Ana Lua", cpf: "11144477736")
 

@@ -18,26 +18,55 @@
     </ul>
   </div>
 
-  <% errors = @seller.errors.full_messages + @user.errors.full_messages %>
+  <%# Todos os erros de uma vez (ateliê, conta, termos e anti-robô) — o
+      controller valida tudo antes de decidir. A lista fica no topo, mas quem
+      clicou em "Criar cadastro" está no fim da página: o controller
+      error-summary rola até ela e a foca, e cada campo repete o próprio erro
+      logo abaixo dele. Sem isso o formulário voltava com as senhas apagadas e
+      nenhum aviso à vista, e o artesão não sabia o que tinha dado errado. %>
+  <% errors = registration_errors(@seller, @user) %>
   <% if errors.any? %>
-    <div class="mt-6 rounded-xl bg-red-50 p-4 text-sm text-red-700">
-      <ul class="list-disc pl-5"><% errors.each do |message| %><li><%= message %></li><% end %></ul>
+    <div id="erros-cadastro" tabindex="-1" class="mt-6 scroll-mt-24 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 focus:outline-2 focus:outline-offset-2 focus:outline-red-600" role="alert" aria-labelledby="erros-cadastro-titulo" data-controller="error-summary">
+      <p id="erros-cadastro-titulo" class="font-semibold text-red-800"><%= errors.one? ? "Não foi possível criar o cadastro. Corrija 1 erro para continuar:" : "Não foi possível criar o cadastro. Corrija #{errors.size} erros para continuar:" %></p>
+      <ul class="mt-2 list-disc space-y-2 pl-5"><% errors.each do |error| %><li><%= render "error_item", error: error %></li><% end %></ul>
     </div>
   <% end %>
+
+  <%# Erros por campo: borda vermelha, aria-invalid e a mensagem (com a
+      explicação) logo abaixo, ligada ao campo por aria-describedby. O slug sai
+      do nome e o hash do CPF, do CPF, então os erros deles aparecem nesses
+      campos. %>
+  <% field_class = ->(field_errors) { "mt-2 w-full rounded-xl border px-3 py-2 focus:outline-none #{field_errors.any? ? "border-red-500 focus:border-red-600" : "border-gray-300 focus:border-brand-500"}" } %>
+  <% name_errors = registration_errors_for(errors, :name, :slug) %>
+  <% owner_errors = registration_errors_for(errors, :owner_full_name) %>
+  <% cpf_errors = registration_errors_for(errors, :cpf, :cpf_hash) %>
+  <% email_errors = registration_errors_for(errors, :email_address) %>
+  <% password_errors = registration_errors_for(errors, :password) %>
+  <% confirmation_errors = registration_errors_for(errors, :password_confirmation) %>
+  <% base_errors = registration_errors_for(errors, :base) %>
+  <% field_error = ->(id, field_errors) { tag.div(id: id, class: "mt-1 space-y-1 text-sm text-red-700") { safe_join(field_errors.map { |error| tag.p(render("error_item", error: error)) }) } if field_errors.any? } %>
+  <% described_by = ->(id, field_errors, *others) { [ *others, (id if field_errors.any?) ].compact.join(" ").presence } %>
 
   <p class="mt-6 text-xs text-ink-muted">* campo obrigatório</p>
 
   <%= form_with url: seller_registration_path, class: "mt-4 flex flex-col gap-5" do |form| %>
     <div data-controller="atelier-name" data-atelier-name-url-value="<%= seller_registration_name_availability_path %>">
-      <%= form.label :name, "Nome do ateliê *", for: "seller_name" %><%= form.text_field :name, name: "seller[name]", id: "seller_name", value: @seller.name, required: true, autocomplete: "off", maxlength: 120, data: { atelier_name_target: "input", action: "input->atelier-name#check" }, aria_describedby: "seller_name_status", class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %>
+      <%= form.label :name, "Nome do ateliê *", for: "seller_name" %><%= form.text_field :name, name: "seller[name]", id: "seller_name", value: @seller.name, required: true, autocomplete: "off", maxlength: 120, data: { atelier_name_target: "input", action: "input->atelier-name#check" }, aria: { describedby: described_by.call("seller_name_error", name_errors, "seller_name_status"), invalid: (name_errors.any? || nil) }, class: field_class.call(name_errors) %>
+      <%= field_error.call("seller_name_error", name_errors) %>
       <p id="seller_name_status" role="status" aria-live="polite" data-atelier-name-target="status" class="mt-2 text-sm"></p>
       <p class="mt-2 text-xs text-ink-muted">Quando você cria um ateliê com o nome "Ateliê da Ana", por exemplo, ele gera uma URL (ex.: https://eloshop.shop/artesaos/atelie-da-ana). Caso você queira alterar o nome do ateliê, a URL não será alterada, devido aos riscos de quebra de links e de referências feitas por mecanismos de busca, como o Google.</p>
     </div>
-    <div><%= form.label :owner_full_name, "Nome completo do proprietário *", for: "seller_owner_full_name" %><%= form.text_field :owner_full_name, name: "seller[owner_full_name]", id: "seller_owner_full_name", value: @seller.owner_full_name, required: true, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
-    <div><%= form.label :cpf, "CPF *", for: "seller_cpf" %><%= form.text_field :cpf, name: "seller[cpf]", id: "seller_cpf", value: @seller.cpf, required: true, inputmode: "numeric", placeholder: "000.000.000-00", class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
-    <div><%= form.label :email_address, "E-mail *", for: "user_email_address" %><%= form.email_field :email_address, name: "user[email_address]", id: "user_email_address", value: @user.email_address, required: true, autocomplete: "email", class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
-    <div><%= form.label :password, "Senha *", for: "user_password" %><%= form.password_field :password, name: "user[password]", id: "user_password", required: true, autocomplete: "new-password", maxlength: 72, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
-    <div><%= form.label :password_confirmation, "Confirmar senha *", for: "user_password_confirmation" %><%= form.password_field :password_confirmation, name: "user[password_confirmation]", id: "user_password_confirmation", required: true, autocomplete: "new-password", maxlength: 72, class: "mt-2 w-full rounded-xl border border-gray-300 px-3 py-2 focus:border-brand-500 focus:outline-none" %></div>
+    <div><%= form.label :owner_full_name, "Nome completo do proprietário *", for: "seller_owner_full_name" %><%= form.text_field :owner_full_name, name: "seller[owner_full_name]", id: "seller_owner_full_name", value: @seller.owner_full_name, required: true, aria: { describedby: described_by.call("seller_owner_full_name_error", owner_errors), invalid: (owner_errors.any? || nil) }, class: field_class.call(owner_errors) %><%= field_error.call("seller_owner_full_name_error", owner_errors) %></div>
+    <%# Formata e valida o CPF na digitação (cpf_input_controller.js); o
+        servidor valida de novo, e sem JavaScript o `pattern` cobre o formato. %>
+    <div data-controller="cpf-input">
+      <%= form.label :cpf, "CPF *", for: "seller_cpf" %><%= form.text_field :cpf, name: "seller[cpf]", id: "seller_cpf", value: Seller.format_cpf(@seller.cpf), required: true, inputmode: "numeric", autocomplete: "off", maxlength: 14, placeholder: "000.000.000-00", pattern: '\d{3}\.?\d{3}\.?\d{3}-?\d{2}', title: "Digite os 11 números do CPF, no formato 000.000.000-00", data: { cpf_input_target: "input", action: "input->cpf-input#format blur->cpf-input#validate" }, aria: { describedby: described_by.call("seller_cpf_error", cpf_errors, "seller_cpf_check"), invalid: (cpf_errors.any? || nil) }, class: field_class.call(cpf_errors) %>
+      <p id="seller_cpf_check" class="mt-1 text-sm text-red-700" aria-live="polite" data-cpf-input-target="message" hidden></p>
+      <%= field_error.call("seller_cpf_error", cpf_errors) %>
+    </div>
+    <div><%= form.label :email_address, "E-mail *", for: "user_email_address" %><%= form.email_field :email_address, name: "user[email_address]", id: "user_email_address", value: @user.email_address, required: true, autocomplete: "email", aria: { describedby: described_by.call("user_email_address_error", email_errors), invalid: (email_errors.any? || nil) }, class: field_class.call(email_errors) %><%= field_error.call("user_email_address_error", email_errors) %></div>
+    <div><%= form.label :password, "Senha *", for: "user_password" %><%= form.password_field :password, name: "user[password]", id: "user_password", required: true, autocomplete: "new-password", maxlength: 72, aria: { describedby: described_by.call("user_password_error", password_errors), invalid: (password_errors.any? || nil) }, class: field_class.call(password_errors) %><%= field_error.call("user_password_error", password_errors) %></div>
+    <div><%= form.label :password_confirmation, "Confirmar senha *", for: "user_password_confirmation" %><%= form.password_field :password_confirmation, name: "user[password_confirmation]", id: "user_password_confirmation", required: true, autocomplete: "new-password", maxlength: 72, aria: { describedby: described_by.call("user_password_confirmation_error", confirmation_errors), invalid: (confirmation_errors.any? || nil) }, class: field_class.call(confirmation_errors) %><%= field_error.call("user_password_confirmation_error", confirmation_errors) %></div>
     <div class="rounded-xl border border-brand-100 bg-brand-50/50 p-4 text-sm text-stone-700">
       <label class="flex items-start gap-3">
         <%= check_box_tag :terms_accepted, "1", params[:terms_accepted] == "1", required: true, class: "mt-1" %>
@@ -45,6 +74,11 @@
       </label>
     </div>
     <%= render "shared/turnstile" %>
+    <%# Termos e anti-robô não têm campo de texto: o erro deles fica junto do
+        botão, onde a pessoa está quando o formulário volta. %>
+    <% if base_errors.any? %>
+      <ul class="space-y-2 text-sm text-red-700" id="erros-cadastro-gerais"><% base_errors.each do |error| %><li><%= render "error_item", error: error %></li><% end %></ul>
+    <% end %>
     <%= form.submit "Criar cadastro", class: "cursor-pointer rounded-full bg-brand-500 px-6 py-3 font-semibold text-white hover:bg-brand-600" %>
   <% end %>
 </div>
