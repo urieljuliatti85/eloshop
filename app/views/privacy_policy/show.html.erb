@@ -2,7 +2,7 @@
 
 <div class="container mx-auto max-w-3xl px-5 py-16">
   <h1 class="text-3xl font-bold text-ink">Política de Privacidade</h1>
-  <p class="mt-2 text-sm text-ink-muted">Última atualização: 24 de setembro de 2026.</p>
+  <p class="mt-2 text-sm text-ink-muted">Última atualização: 30 de outubro de 2026.</p>
 
   <div class="mt-10 space-y-10 text-ink-muted [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-ink [&_h3]:mb-2 [&_h3]:mt-6 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-ink [&_li]:mt-1 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-5 [&_p]:mt-3 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">
     <section>
@@ -38,7 +38,7 @@
         <li><strong>Identificação do negócio:</strong> nome do ateliê, nome completo do responsável e <strong>CPF</strong> (armazenado sempre de forma criptografada, nunca em texto simples).</li>
         <li><strong>Endereço de origem:</strong> usado para cálculo de frete dos produtos.</li>
         <li><strong>Conexão com o Mercado Pago:</strong> feita via OAuth diretamente com o Mercado Pago — a EloShop não coleta nem armazena documentos de identidade; apenas tokens de acesso criptografados e identificadores da conta conectada. A verificação de identidade (KYC) é feita pelo próprio Mercado Pago.</li>
-        <li><strong>Conexão com o Melhor Envio</strong> (frete): mesma lógica — tokens OAuth criptografados.</li>
+        <li><strong>Conexão com a SuperFrete</strong> (frete): mesma lógica — token de acesso criptografado e a identificação da conta conectada (id e e-mail da conta na SuperFrete).</li>
         <li><strong>Aceite de termos:</strong> registramos data, versão dos termos aceitos, IP e navegador no momento do aceite.</li>
       </ul>
 
@@ -89,7 +89,7 @@
       <ul>
         <li><strong>Vendedor da compra:</strong> recebe os dados necessários para produzir, embalar e enviar seu pedido (nome, endereço de entrega, itens comprados, personalizações e mensagens do pedido).</li>
         <li><strong>Mercado Pago:</strong> processa pagamentos e recebe os dados necessários para isso (nome, e-mail, valor da compra). No caso de vendedores, também realiza a verificação de identidade (KYC) durante a conexão da conta.</li>
-        <li><strong>Melhor Envio:</strong> recebe apenas CEP de origem e destino, peso e dimensões do produto — nunca nome, e-mail ou outros dados pessoais.</li>
+        <li><strong>SuperFrete:</strong> quando o ateliê conecta a própria conta, recebe para cotar o frete apenas CEP de origem e destino, peso, dimensões e valor declarado dos produtos — nunca nome, e-mail ou outros dados pessoais do cliente.</li>
         <li><strong>Sentry (monitoramento de erros):</strong> recebe informações técnicas para identificar falhas no sistema. Configuramos esse serviço para <strong>não</strong> enviar dados pessoais (nomes, e-mails, endereços, dados de pagamento) — apenas o necessário para diagnóstico técnico.</li>
         <li><strong>Google Analytics:</strong> apenas se você consentir, recebe dados de navegação anônimos/agregados.</li>
       </ul>
@@ -108,7 +108,7 @@
     <section>
       <h2>6. Segurança</h2>
       <ul>
-        <li>Dados sensíveis como o CPF do vendedor e os tokens de acesso ao Mercado Pago e ao Melhor Envio são armazenados <strong>criptografados</strong>.</li>
+        <li>Dados sensíveis como o CPF do vendedor e os tokens de acesso ao Mercado Pago e à SuperFrete são armazenados <strong>criptografados</strong>.</li>
         <li>Senhas nunca são armazenadas em texto simples.</li>
         <li>Campos sensíveis (senha, e-mail, CPF, tokens) são automaticamente ocultados dos nossos registros técnicos (logs).</li>
         <li>Comunicação com os gateways de pagamento é feita de forma segura e autenticada.</li>

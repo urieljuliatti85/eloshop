@@ -69,15 +69,15 @@
         <%= form_with url: ship_seller_order_path(@order), method: :patch, class: "mt-5 rounded-2xl border border-brand-100 bg-brand-50/50 p-4 sm:p-5" do |form| %>
           <h3 class="text-lg font-bold">Detalhes do Envio</h3>
           <p class="mt-1 text-sm text-ink-muted">Informe como o pedido foi enviado. O código de rastreamento é opcional.</p>
-          <%# Enquanto a integração com o Melhor Envio está bloqueada
-              (docs/shipping.md), a etiqueta é comprada pelo próprio artesão
-              no site do provedor. "Remetente" e "Destinatário" explícitos:
-              "endereço desta página" já foi lido como o endereço da EloShop. %>
+          <%# Enquanto a etiqueta não é gerada pela EloShop (docs/shipping.md),
+              o próprio artesão a compra no painel da SuperFrete. "Remetente" e
+              "Destinatário" explícitos: "endereço desta página" já foi lido
+              como o endereço da EloShop. %>
           <div class="mt-4 rounded-xl border border-brand-100 bg-white px-4 py-3 text-sm leading-6 text-ink" data-shipping-steps>
             <p class="font-semibold">Como enviar este pedido</p>
             <ol class="mt-2 list-decimal space-y-2 pl-5">
               <li>
-                Acesse o <%= link_to "Melhor Envio", "https://melhorenvio.com.br", target: "_blank", rel: "noopener noreferrer", class: "font-semibold underline" %> com a sua conta e compre a etiqueta:
+                Acesse a <%= link_to "SuperFrete", "https://web.superfrete.com", target: "_blank", rel: "noopener noreferrer", class: "font-semibold underline" %> com a sua conta e compre a etiqueta:
                 <ul class="mt-1 list-disc space-y-1 pl-5">
                   <li><strong>Remetente:</strong> você, com o endereço de onde a peça sai.</li>
                   <li><strong>Destinatário:</strong> o cliente que fez esta compra. O nome e o endereço dele estão no quadro <strong>“Endereço de entrega”</strong> deste pedido.</li>

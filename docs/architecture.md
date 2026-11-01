@@ -187,8 +187,9 @@ Configuração necessária:
   * `MERCADO_PAGO_MARKETPLACE_APP_ID`, `MERCADO_PAGO_MARKETPLACE_CLIENT_SECRET` e `MERCADO_PAGO_MARKETPLACE_REDIRECT_URI` — aplicação OAuth Marketplace; os valores são preservados pelo IaC sem entrar no repositório
   * `MERCADO_PAGO_MARKETPLACE_ACCESS_TOKEN` — Access Token de produção da aplicação Marketplace, usado somente pela conciliação do Sales Report em `/admin/financials`; é diferente do Client Secret e dos tokens OAuth dos artesãos, e também é preservado pelo IaC sem entrar no repositório
   * `MERCADO_PAGO_MARKETPLACE_SANDBOX=true` — somente durante a validação com aplicação/conta de teste; remover ou definir `false` antes do onboarding real
-  * `MELHOR_ENVIO_CLIENT_ID`, `MELHOR_ENVIO_CLIENT_SECRET` e `MELHOR_ENVIO_REDIRECT_URI` — aplicação OAuth do Melhor Envio (frete real, ADR 005); sem elas o painel mostra "aguarda a configuração" e o checkout usa a tabela interna de frete
-  * `MELHOR_ENVIO_SANDBOX=true` — somente durante a validação com a conta de teste do Melhor Envio (saldo fictício); remover ou definir `false` antes de cotar frete real
+  * `SUPERFRETE_CLIENT_ID`, `SUPERFRETE_CLIENT_SECRET` e `SUPERFRETE_REDIRECT_URI` — credenciais de plataforma da SuperFrete (frete, ADR 005), pedidas por formulário, um par por ambiente; o redirect tem de ser idêntico ao cadastrado (`https://eloshop.shop/painel/superfrete/callback`). Sem elas o painel mostra o aviso de envios em desenvolvimento
+  * `SUPERFRETE_SANDBOX=true` — somente durante a validação com a conta de teste; remover ou definir `false` antes de cotar frete real
+  * `SHIPPING_REMOTE_QUOTES_ENABLED=true` — liga a cotação externa em produção. Ausente, a conexão com a SuperFrete não aparece e o checkout usa o frete definido pelo ateliê. As antigas `MELHOR_ENVIO_*` não são mais lidas e podem ser apagadas
   * `GOOGLE_ANALYTICS_MEASUREMENT_ID`, `GOOGLE_ANALYTICS_PROPERTY_ID` e `GOOGLE_ANALYTICS_CREDENTIALS_JSON` — opcionais; habilitam respectivamente a coleta consentida na vitrine e os relatórios agregados do Admin. O JSON da conta de serviço é segredo e nunca deve ser versionado
   * `RESEND_API_KEY` — chave de API do Resend com permissão de envio restrita ao domínio `eloshop.shop`; ver "E-mail transacional" abaixo
   * `RAILS_ENV=production` (Railway/Dockerfile já cobre isso, mas confirmar)

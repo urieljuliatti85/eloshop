@@ -1,11 +1,11 @@
 module Shipping
   # Fonte única das opções de frete de um carrinho.
   #
-  # Cota no Melhor Envio quando o vendedor conectou a conta (ADR 005, Etapa
-  # 1) e cai na tabela interna quando não conectou, quando o provedor falha
-  # ou quando ele não devolve nenhuma opção — o ADR é explícito: "uma venda
-  # com frete estimado é melhor que uma venda perdida", e a tabela não deve
-  # ser deletada.
+  # Cota no provedor que o vendedor conectou (ADR 005, Etapa 1; ver
+  # `Shipping::Providers`) e cai no frete do ateliê ou na tabela interna
+  # quando não conectou, quando o provedor falha ou quando ele não devolve
+  # nenhuma opção — o ADR é explícito: "uma venda com frete estimado é melhor
+  # que uma venda perdida", e a tabela não deve ser deletada.
   class Calculator
     class Unavailable < StandardError; end
 
@@ -15,7 +15,7 @@ module Shipping
 
     # Origem, destino e peso se repetem muito entre uma mudança de endereço e
     # outra no checkout. Sem cache, cada uma vira chamada externa — e o rate
-    # limit do Melhor Envio não é documentado (ADR 005).
+    # limit dos provedores não é documentado (ADR 005).
     CACHE_TTL = 30.minutes
 
     # Rótulo da opção do vendedor no checkout: deixa claro ao cliente que o
@@ -36,16 +36,25 @@ module Shipping
     # a mesma opção quando o serviço mais barato também é o mais rápido.
     #
     # Frete grátis é uma promessa do vendedor ao cliente, não uma estimativa
-    # de custo — por isso vence mesmo quando há cotação real do Melhor
-    # Envio disponível, ao contrário do frete fixo (que só entra na ausência
-    # de cotação remota).
+    # de custo — por isso vence sempre, mesmo com cotação real disponível.
+    #
+    # Entre a cotação do provedor e o frete que o ateliê definiu no produto,
+    # quem escolhe é o ateliê (`Seller#provider_quotes_preferred`, falso por
+    # padrão): os termos comerciais dizem que o frete é definido pelo
+    # vendedor. Sem frete definido no produto, a cotação vem antes da tabela
+    # interna, que é só o último recurso.
     def quotes
       validate!
 
       delivery_quotes = if any_product_free_shipping?
         [ product_shipping_quote ]
       else
-        remote_quotes.presence || [ product_shipping_quote || fallback_quote ]
+        seller_defined = product_shipping_quote
+        if seller_defined && !seller.provider_quotes_preferred?
+          [ seller_defined ]
+        else
+          remote_quotes.presence || [ seller_defined || fallback_quote ]
+        end
       end
 
       all_products_allow_pickup? ? delivery_quotes + [ local_pickup_quote ] : delivery_quotes
@@ -70,15 +79,15 @@ module Shipping
     end
 
     def remote_quotes
-      return [] unless seller&.melhor_envio_connected?
+      return [] unless provider
       return [] unless seller.origin_zip_code.present?
 
       cheapest_and_fastest(cached_remote_quotes)
-    rescue Providers::MelhorEnvio::Unavailable => e
+    rescue Providers::Unavailable => e
       # A cotação real é uma otimização do valor, não um requisito do
       # checkout: registrar e seguir com a tabela vale mais que derrubar a
       # compra.
-      Rails.event.notify("shipping.provider_unavailable", provider: "melhor_envio", reason: e.message)
+      Rails.event.notify("shipping.provider_unavailable", provider: provider_name, reason: e.message)
       []
     end
 
@@ -193,8 +202,18 @@ module Shipping
       )
     end
 
+    # Quem decide se há cotação externa é a conexão do ateliê (e a chave do
+    # ambiente), nunca a injeção: o provedor injetado nos testes só substitui
+    # o real quando o ateliê tem um conectado.
     def provider
-      @provider ||= Providers::MelhorEnvio.new(seller: seller)
+      return @resolved_provider if defined?(@resolved_provider)
+
+      connected = Providers.for(seller)
+      @resolved_provider = connected && (@provider || connected)
+    end
+
+    def provider_name
+      provider.class.name.to_s.demodulize.underscore
     end
 
     def provider_items
@@ -213,7 +232,7 @@ module Shipping
 
     def cache_key
       digest = cart_items.map { |item| "#{item.product_id}:#{item.quantity}" }.sort.join(",")
-      [ "shipping/melhor_envio", seller.id, seller.origin_zip_code, destination_zip_code, Digest::SHA256.hexdigest(digest) ].join("/")
+      [ "shipping", provider_name, seller.id, seller.origin_zip_code, destination_zip_code, Digest::SHA256.hexdigest(digest) ].join("/")
     end
 
     def cart_items

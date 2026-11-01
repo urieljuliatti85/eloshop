@@ -1,0 +1,172 @@
+require "rails_helper"
+
+RSpec.describe "Seller SuperFrete connection", type: :request do
+  let(:seller) { Seller.create!(name: "Ateliê SuperFrete", owner_full_name: "Proprietário Teste", cpf: "12111122335") }
+  let(:user) { User.create!(email_address: "superfrete-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller) }
+  let(:oauth) { instance_double(Marketplace::SuperfreteOauth, configured?: true, sandbox?: true) }
+  let(:account) { Marketplace::SuperfreteOauth::Account.new(id: "sf-1", email: "atelie@example.com") }
+
+  before do
+    sign_in_as(user)
+    allow(Marketplace::SuperfreteOauth).to receive(:new).and_return(oauth)
+  end
+
+  describe "atelier page" do
+    it "offers the connection when it is configured" do
+      get seller_atelier_path
+
+      expect(Nokogiri::HTML(response.body).at_css("a[href='#{seller_superfrete_connect_path}']")).to be_present
+    end
+
+    it "shows the in-development notice instead of the connection when it is not configured" do
+      allow(oauth).to receive(:configured?).and_return(false)
+
+      get seller_atelier_path
+
+      expect(response.body).to include("estamos preparando soluções para facilitar as suas entregas")
+      expect(Nokogiri::HTML(response.body).at_css("a[href='#{seller_superfrete_connect_path}']")).to be_nil
+    end
+
+    it "shows the connected account, the shipping choice and the disconnect action" do
+      seller.connect_superfrete!(access_token: "token", account: account, sandbox: true)
+
+      get seller_atelier_path
+
+      page = Nokogiri::HTML(response.body)
+      expect(response.body).to include("atelie@example.com")
+      expect(page.at_css("form[action='#{seller_superfrete_connection_path}']")).to be_present
+      expect(page.at_css("form[action='#{seller_shipping_preference_path}']")).to be_present
+    end
+  end
+
+  it "starts authorization with an unpredictable state" do
+    state = start_authorization
+
+    expect(response).to redirect_to(%r{\Ahttps://sandbox\.superfrete\.com/#/auth/authorize\?})
+    expect(state.length).to be >= 32
+  end
+
+  it "connects the current seller after a valid callback, recording the account" do
+    state = start_authorization
+    allow(oauth).to receive(:exchange).with(code: "valid-code").and_return("superfrete-token")
+    allow(oauth).to receive(:account).with(access_token: "superfrete-token").and_return(account)
+
+    get seller_superfrete_callback_path, params: { code: "valid-code", state: state }
+
+    expect(response).to redirect_to(seller_atelier_path)
+    expect(flash[:notice]).to include("atelie@example.com")
+    seller.reload
+    expect(seller).to be_superfrete_connected
+    expect(seller.superfrete_access_token).to eq("superfrete-token")
+    expect([ seller.superfrete_account_id, seller.superfrete_sandbox ]).to eq([ "sf-1", true ])
+  end
+
+  it "says so when the seller reconnects with a different account" do
+    seller.connect_superfrete!(access_token: "old", account: Marketplace::SuperfreteOauth::Account.new(id: "sf-old", email: nil))
+    state = start_authorization
+    allow(oauth).to receive(:exchange).and_return("new-token")
+    allow(oauth).to receive(:account).and_return(account)
+
+    get seller_superfrete_callback_path, params: { code: "valid-code", state: state }
+
+    expect(flash[:notice]).to include("trocada")
+    expect(seller.reload.superfrete_account_id).to eq("sf-1")
+  end
+
+  # O `state` é a defesa contra CSRF no retorno: sem ele, um terceiro poderia
+  # forçar a vinculação de uma conta — e de uma carteira — que não é do ateliê.
+  it "refuses a callback with a forged state" do
+    start_authorization
+    expect(oauth).not_to receive(:exchange)
+
+    get seller_superfrete_callback_path, params: { code: "valid-code", state: "forged-state" }
+
+    expect(response).to redirect_to(seller_atelier_path)
+    expect(seller.reload).not_to be_superfrete_connected
+  end
+
+  it "keeps the previous connection when reading the account fails" do
+    seller.connect_superfrete!(access_token: "old", account: Marketplace::SuperfreteOauth::Account.new(id: "sf-old", email: nil))
+    state = start_authorization
+    allow(oauth).to receive(:exchange).and_return("new-token")
+    allow(oauth).to receive(:account).and_raise(Marketplace::SuperfreteOauth::RequestFailed, "A SuperFrete não informou a conta conectada.")
+
+    get seller_superfrete_callback_path, params: { code: "valid-code", state: state }
+
+    expect(flash[:alert]).to include("não informou a conta")
+    expect(seller.reload.superfrete_access_token).to eq("old")
+  end
+
+  context "with remote quotes disabled in the environment" do
+    around do |example|
+      previous = Rails.configuration.x.shipping.remote_quotes_enabled
+      Rails.configuration.x.shipping.remote_quotes_enabled = false
+      example.run
+    ensure
+      Rails.configuration.x.shipping.remote_quotes_enabled = previous
+    end
+
+    it "neither offers nor starts the connection" do
+      get seller_atelier_path
+      expect(Nokogiri::HTML(response.body).at_css("a[href='#{seller_superfrete_connect_path}']")).to be_nil
+
+      expect(oauth).not_to receive(:authorization_url)
+      get seller_superfrete_connect_path
+      expect(flash[:alert]).to include("indisponível")
+    end
+
+    it "refuses a callback without exchanging the code" do
+      expect(oauth).not_to receive(:exchange)
+
+      get seller_superfrete_callback_path, params: { code: "codigo", state: "estado" }
+
+      expect(seller.reload).not_to be_superfrete_connected
+    end
+  end
+
+  it "disconnects only the current seller" do
+    other = Seller.create!(name: "Ateliê Vizinho SuperFrete", owner_full_name: "Outra Pessoa", cpf: "52998224725")
+    other.connect_superfrete!(access_token: "other-token", account: Marketplace::SuperfreteOauth::Account.new(id: "sf-2", email: nil))
+    seller.connect_superfrete!(access_token: "token", account: account)
+
+    delete seller_superfrete_connection_path
+
+    expect(response).to redirect_to(seller_atelier_path)
+    expect(seller.reload).not_to be_superfrete_connected
+    expect(other.reload).to be_superfrete_connected
+  end
+
+  describe "shipping preference" do
+    it "lets the seller choose the provider quote and go back to their own shipping" do
+      patch seller_shipping_preference_path, params: { provider_quotes_preferred: "true" }
+      expect(response).to redirect_to(seller_atelier_path)
+      expect(seller.reload.provider_quotes_preferred).to be(true)
+
+      patch seller_shipping_preference_path, params: { provider_quotes_preferred: "false" }
+      expect(seller.reload.provider_quotes_preferred).to be(false)
+    end
+
+    it "rejects a request without the choice" do
+      patch seller_shipping_preference_path
+
+      expect(response).to have_http_status(:bad_request)
+    end
+
+    it "requires a seller login" do
+      reset!
+
+      patch seller_shipping_preference_path, params: { provider_quotes_preferred: "true" }
+
+      expect(response).to redirect_to(seller_login_path)
+      expect(seller.reload.provider_quotes_preferred).to be(false)
+    end
+  end
+
+  def start_authorization
+    allow(oauth).to receive(:authorization_url) do |state:|
+      "https://sandbox.superfrete.com/#/auth/authorize?client_id=x&state=#{CGI.escape(state)}"
+    end
+    get seller_superfrete_connect_path
+    Rack::Utils.parse_query(response.location.split("?", 2).last).fetch("state")
+  end
+end

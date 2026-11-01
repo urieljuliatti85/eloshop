@@ -216,10 +216,10 @@ RSpec.describe "Seller orders", type: :request do
       expect(response.body).to include("Código de rastreamento (opcional)")
     end
 
-    # Enquanto a integração está bloqueada, a etiqueta é comprada no site do
-    # Melhor Envio; remetente e destinatário explícitos para não confundir o
+    # Enquanto a EloShop não gera a etiqueta, ela é comprada no painel da
+    # SuperFrete; remetente e destinatário explícitos para não confundir o
     # endereço do cliente com o da EloShop.
-    it "explains how to send the order through the Melhor Envio website" do
+    it "explains how to send the order through the SuperFrete website" do
       order = create_order_for(own_product)
       order.confirm!
       create_shipment_for(order)
@@ -228,7 +228,7 @@ RSpec.describe "Seller orders", type: :request do
 
       steps = Nokogiri::HTML(response.body).at_css("[data-shipping-steps]")
       expect(steps.text).to include("Remetente:", "Destinatário:", "Endereço de entrega")
-      expect(steps.at_css("a[href='https://melhorenvio.com.br'][target='_blank'][rel='noopener noreferrer']")).to be_present
+      expect(steps.at_css("a[href='https://web.superfrete.com'][target='_blank'][rel='noopener noreferrer']")).to be_present
     end
 
     # O ateliê compra a etiqueta com o valor que o cliente pagou de frete em
