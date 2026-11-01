@@ -20,6 +20,7 @@
   <% if @sellers.any? %>
     <ul class="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
       <% @sellers.each do |seller| %>
+        <% product_count = @product_counts.fetch(seller.id, 0) %>
         <li>
           <%# Foto no topo e faixa clara embaixo, como os cards de categoria
               da home: aqui a peça é a informação, e o nome do ateliê fecha o
@@ -34,13 +35,22 @@
                     manter a altura da grade em vez de encolher. %>
                 <div class="h-full w-full bg-gradient-to-br from-brand-200 to-brand-100"></div>
               <% end %>
+              <% if product_count.zero? %>
+                <%# Na vitrine, mas sem peça publicada ainda: o mesmo selo dos
+                    cards de produto de um ateliê que não vende ainda. %>
+                <span class="absolute left-3 top-3 rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white">Em preparação</span>
+              <% end %>
             </div>
 
             <div class="flex items-center justify-between gap-3 px-5 py-4">
               <div class="min-w-0">
                 <strong class="block truncate text-base font-bold text-ink"><%= seller.name %></strong>
                 <span class="text-xs text-ink-muted">
-                  <%= pluralize(@product_counts.fetch(seller.id, 0), "peça", plural: "peças") %> à venda
+                  <% if product_count.zero? %>
+                    Peças em breve
+                  <% else %>
+                    <%= pluralize(product_count, "peça", plural: "peças") %> à venda
+                  <% end %>
                 </span>
               </div>
               <svg class="size-5 flex-none text-brand-600 transition group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -53,7 +63,7 @@
     </ul>
   <% else %>
     <p class="mt-10 rounded-2xl bg-sand-50 px-6 py-8 text-center text-ink-muted">
-      Nenhum ateliê com peças publicadas por enquanto.
+      Nenhum ateliê na loja por enquanto.
     </p>
   <% end %>
 </div>

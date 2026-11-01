@@ -34,15 +34,43 @@ RSpec.describe "Storefront sellers", type: :request do
       expect(response.body).to include(seller_path(approved_seller.slug))
     end
 
-    # Uma vitrine vazia na listagem é um beco — mesmo critério do filtro do
-    # catálogo e do sitemap.
-    it "omits an approved atelier with nothing published" do
-      empty = Seller.create!(name: "Ateliê vazio #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "50000000051", status: :approved, approved_at: Time.current)
+    # Ateliê na loja sem peça publicada aparece como "em preparação", depois
+    # dos que já têm peças (decisão de 2026-11-01).
+    it "lists an approved atelier with nothing published as preparing, after the ones with pieces" do
+      empty = Seller.create!(name: "AAA Ateliê vazio #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "50000000051", status: :approved, approved_at: Time.current)
       create_product(seller: approved_seller, name: "Peça de outro")
 
       get sellers_path
 
-      expect(response.body).not_to include(empty.name)
+      expect(response.body).to include(empty.name, seller_path(empty.slug), "Em preparação", "Peças em breve")
+      expect(response.body.index(approved_seller.name)).to be < response.body.index(empty.name)
+    end
+
+    it "lists a showcased pending atelier with nothing published as preparing" do
+      showcased = Seller.create!(name: "Vitrine sem peças #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "50222223375", status: :pending, showcased_at: Time.current)
+
+      get sellers_path
+
+      expect(response.body).to include(showcased.name, "Em preparação", "Peças em breve")
+      expect(response.body).not_to include("Nenhum ateliê na loja")
+    end
+
+    it "keeps the preparing badge away from an atelier with pieces" do
+      create_product(seller: approved_seller, name: "Peça listada")
+
+      get sellers_path
+
+      card = Nokogiri::HTML(response.body).css("li").find { |li| li.text.include?(approved_seller.name) }
+      expect(card.text).to include("1 peça")
+      expect(card.text).not_to include("Em preparação", "Peças em breve")
+    end
+
+    it "omits a hidden atelier even when it is showcased" do
+      hidden = Seller.create!(name: "Escondido #{SecureRandom.hex(3)}", owner_full_name: "Proprietário Teste", cpf: "50000000051", status: :pending, showcased_at: Time.current, hidden_at: Time.current)
+
+      get sellers_path
+
+      expect(response.body).not_to include(hidden.name)
     end
 
     it "omits an atelier that is not approved" do
