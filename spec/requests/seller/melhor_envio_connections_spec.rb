@@ -30,6 +30,34 @@ RSpec.describe "Seller Melhor Envio connection", type: :request do
     expect(Nokogiri::HTML(response.body).at_css("form[action='#{seller_melhor_envio_connection_path}']")).to be_present
   end
 
+  context "with remote quotes disabled in the environment" do
+    around do |example|
+      previous = Rails.configuration.x.shipping.remote_quotes_enabled
+      Rails.configuration.x.shipping.remote_quotes_enabled = false
+      example.run
+    ensure
+      Rails.configuration.x.shipping.remote_quotes_enabled = previous
+    end
+
+    it "refuses to start the connection and keeps the seller's own shipping" do
+      expect(oauth).not_to receive(:authorization_url)
+
+      get seller_melhor_envio_connect_path
+
+      expect(response).to redirect_to(seller_atelier_path)
+      expect(flash[:alert]).to include("indisponível")
+    end
+
+    it "refuses a callback without exchanging the code" do
+      expect(oauth).not_to receive(:exchange)
+
+      get seller_melhor_envio_callback_path, params: { code: "codigo", state: "estado" }
+
+      expect(response).to redirect_to(seller_atelier_path)
+      expect(seller.reload.melhor_envio_connected?).to be(false)
+    end
+  end
+
   it "starts authorization with an unpredictable state" do
     allow(oauth).to receive(:authorization_url) do |state:|
       "https://melhorenvio.com.br/oauth/authorize?state=#{CGI.escape(state)}"

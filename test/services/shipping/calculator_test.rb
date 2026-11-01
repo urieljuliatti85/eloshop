@@ -280,6 +280,20 @@ module Shipping
 
     # Sem CEP de origem nenhuma cotação real funciona, qualquer que seja a
     # transportadora — e o endereço do ateliê ainda é opcional.
+    test "does not call the provider when remote quotes are disabled in the environment" do
+      cart = connected_seller_cart
+      provider = Object.new
+      provider.define_singleton_method(:quotes) { |**| raise "não deveria cotar" }
+
+      previous = Rails.configuration.x.shipping.remote_quotes_enabled
+      Rails.configuration.x.shipping.remote_quotes_enabled = false
+      quotes = Calculator.new(cart: cart, address: addresses(:one), provider: provider).quotes
+
+      assert_equal [ "EloShop" ], quotes.map(&:carrier)
+    ensure
+      Rails.configuration.x.shipping.remote_quotes_enabled = previous
+    end
+
     test "does not call the provider when the seller has no origin postal code" do
       cart = connected_seller_cart(origin_zip_code: nil)
       provider = Object.new
