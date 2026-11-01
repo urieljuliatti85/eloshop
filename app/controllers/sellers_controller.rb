@@ -5,19 +5,20 @@ class SellersController < StorefrontController
   # do pré-cadastro: `Seller.publicly_listed` é a mesma condição que
   # `Product.publicly_visible` exige, então um ateliê pendente fora da vitrine
   # ou suspenso não aparece na listagem (ver `show` para a página dedicada de
-  # um ateliê suspenso). Só ateliês com peça publicada: uma
-  # vitrine vazia na listagem é um beco, o mesmo critério do filtro do
-  # catálogo e do sitemap.
+  # um ateliê suspenso). Ateliê na vitrine sem peça publicada também aparece,
+  # como "em preparação" e depois dos que já têm peças: no pré-cadastro, ele
+  # já existe para o público antes de montar o catálogo (decisão do Uriel,
+  # 2026-11-01). O filtro de ateliê do catálogo e o sitemap continuam só com
+  # quem tem peça.
   def index
-    @sellers = Seller.publicly_listed
-      .where(id: Product.publicly_visible.select(:seller_id))
-      .order(:name)
-
     # Duas leituras fixas para a grade inteira, não uma por ateliê: a contagem
     # de peças e a capa (foto da mais recente de cada um). Mesmo princípio do
     # DISTINCT ON da home.
     @product_counts = Product.publicly_visible.group(:seller_id).count
     @covers = cover_by_seller
+
+    with_products, preparing = Seller.publicly_listed.order(:name).partition { |seller| @product_counts.key?(seller.id) }
+    @sellers = with_products + preparing
   end
 
   # `pending` fora da vitrine continua 404 puro e simples: esse ateliê nunca
