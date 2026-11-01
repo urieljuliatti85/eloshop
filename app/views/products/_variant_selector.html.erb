@@ -77,14 +77,18 @@
 
     <%= render "personalization_fields", product: product %>
 
-    <div class="flex items-center gap-4">
-      <div class="flex items-center rounded-full border border-gray-300">
-        <%= form.number_field :quantity, value: 1, min: 1, aria: { label: "Quantidade" }, class: "min-h-11 w-16 rounded-full px-3 py-2 text-center focus:outline-2 focus:outline-offset-2 focus:outline-brand-600" %>
-      </div>
+    <% if sales_open? %>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center rounded-full border border-gray-300">
+          <%= form.number_field :quantity, value: 1, min: 1, aria: { label: "Quantidade" }, class: "min-h-11 w-16 rounded-full px-3 py-2 text-center focus:outline-2 focus:outline-offset-2 focus:outline-brand-600" %>
+        </div>
 
-      <%= form.submit "Adicionar ao carrinho", data: { "variant-selector-target": "submit" },
-            class: "flex-1 rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-700 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50" %>
-    </div>
+        <%= form.submit "Adicionar ao carrinho", data: { "variant-selector-target": "submit" },
+              class: "flex-1 rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-700 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50" %>
+      </div>
+    <% else %>
+      <%= render "products/sales_soon" %>
+    <% end %>
 
     <p class="text-sm text-red-700" data-variant-selector-target="stockNotice"></p>
   <% end %>

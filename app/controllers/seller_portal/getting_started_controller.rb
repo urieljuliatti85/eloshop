@@ -9,6 +9,24 @@ module SellerPortal
       approval: "aprovacao"
     }.freeze
 
+    # Título de cada etapa aberta (aqui e no painel inicial).
+    STEP_TITLES = {
+      address: "Preencha o endereço do ateliê",
+      mercado_pago: "Conecte sua conta do Mercado Pago",
+      pix_key: "Cadastre uma chave PIX no Mercado Pago",
+      product: "Cadastre seu primeiro produto",
+      approval: "Entenda como você recebe"
+    }.freeze
+
+    # Nome curto de cada etapa na faixa (aqui e no painel inicial).
+    STEP_SHORT_TITLES = {
+      address: "Endereço do ateliê",
+      mercado_pago: "Conta do Mercado Pago",
+      pix_key: "Chave PIX",
+      product: "Primeira peça",
+      approval: "Aprovação e recebimento"
+    }.freeze
+
     def show
       @steps = current_seller.getting_started_steps
       @completed_steps_count = @steps.count { |_step, completed| completed }

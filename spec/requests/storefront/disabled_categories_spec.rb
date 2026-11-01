@@ -77,7 +77,7 @@ RSpec.describe "Disabled categories", type: :request do
   it "hides the product from the public API" do
     hidden = create_product(name: "Vaso da API", category: disabled)
 
-    get "/api/v1/products", headers: { "ACCEPT" => "application/json" }
+    get "/api/v1/products", headers: api_headers("ACCEPT" => "application/json")
 
     expect(response.body).not_to include(hidden.name)
   end

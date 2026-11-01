@@ -99,7 +99,7 @@ module Shipping
       quote = Calculator.new(cart: cart_with(product), address: addresses(:one)).quotes.sole
 
       assert_equal "Ateliê", quote.carrier
-      assert_equal "Entrega padrão", quote.service
+      assert_equal Calculator::SELLER_DEFINED_SERVICE, quote.service
       assert_equal 2000, quote.shipping_cents
       assert_equal 8, quote.estimated_days
     end
@@ -177,6 +177,69 @@ module Shipping
       assert_equal 5, quote.estimated_days
     end
 
+    # Faixas do frete definido pelo vendedor: o endereço addresses(:one) é
+    # de SP; o estado de origem do ateliê decide a faixa.
+    test "charges the seller's own-state band when the customer is in the same state" do
+      product = two_band_product(origin_state: "SP")
+
+      quote = Calculator.new(cart: cart_with(product), address: addresses(:one)).quotes.sole
+
+      assert_equal 2000, quote.shipping_cents
+      assert_equal 5, quote.estimated_days
+    end
+
+    test "charges the interstate band when the customer is in another state" do
+      product = two_band_product(origin_state: "ES")
+
+      quote = Calculator.new(cart: cart_with(product), address: addresses(:one)).quotes.sole
+
+      assert_equal 3500, quote.shipping_cents
+      assert_equal 9, quote.estimated_days
+    end
+
+    test "uses the single value for every state when the interstate band is blank" do
+      product = two_band_product(origin_state: "ES")
+      product.update!(fixed_shipping_interstate_cents: nil, fixed_shipping_interstate_estimated_days: nil)
+
+      quote = Calculator.new(cart: cart_with(product), address: addresses(:one)).quotes.sole
+
+      assert_equal 2000, quote.shipping_cents
+    end
+
+    # Sem estado de origem não há como saber se o envio é interestadual:
+    # vale a faixa mais cara, porque quem paga a etiqueta é o vendedor.
+    test "charges the higher band when the atelier has no origin state" do
+      product = two_band_product(origin_state: nil)
+
+      quote = Calculator.new(cart: cart_with(product), address: addresses(:one)).quotes.sole
+
+      assert_equal 3500, quote.shipping_cents
+      assert_equal 9, quote.estimated_days
+    end
+
+    # Preço e prazo à parte: com preços iguais, a faixa mais lenta não pode
+    # ser trocada pela mais rápida só porque vem primeiro.
+    test "promises the longer delivery time when the origin is unknown and prices tie" do
+      product = two_band_product(origin_state: nil)
+      product.update!(fixed_shipping_cents: 3000, fixed_shipping_estimated_days: 5,
+        fixed_shipping_interstate_cents: 3000, fixed_shipping_interstate_estimated_days: 12)
+
+      quote = Calculator.new(cart: cart_with(product), address: addresses(:one)).quotes.sole
+
+      assert_equal 3000, quote.shipping_cents
+      assert_equal 12, quote.estimated_days
+    end
+
+    test "picks the band per item and multiplies by quantity" do
+      product = two_band_product(origin_state: "ES")
+      cart = Cart.create!(session_token: SecureRandom.hex(10))
+      cart.cart_items.create!(product: product, quantity: 2)
+
+      quote = Calculator.new(cart: cart, address: addresses(:one)).quotes.sole
+
+      assert_equal 7000, quote.shipping_cents
+    end
+
     test "offers local pickup after delivery and revalidates the customer choice" do
       product = products(:one)
       product.update!(fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 8, local_pickup_enabled: true)
@@ -185,7 +248,7 @@ module Shipping
       quotes = calculator.quotes
       pickup = quotes.last
 
-      assert_equal [ "Entrega padrão", "Retirada no ateliê" ], quotes.map(&:service)
+      assert_equal [ Calculator::SELLER_DEFINED_SERVICE, "Retirada no ateliê" ], quotes.map(&:service)
       assert_predicate pickup, :local_pickup?
       assert_equal 0, pickup.shipping_cents
       assert_equal pickup, calculator.call(quote_id: pickup.id)
@@ -266,6 +329,22 @@ module Shipping
     def stub_provider(quotes)
       Object.new.tap do |provider|
         provider.define_singleton_method(:quotes) { |**| quotes }
+      end
+    end
+
+    # O endereço de origem é tudo-ou-nada; `nil` limpa o endereço inteiro.
+    def two_band_product(origin_state:)
+      origin = if origin_state
+        { origin_zip_code: "29018120", origin_street: "Rua do Ateliê", origin_number: "10",
+          origin_neighborhood: "Centro", origin_city: "Cidade", origin_state: origin_state }
+      else
+        Seller::ORIGIN_ADDRESS_FIELDS.index_with { nil }
+      end
+      sellers(:approved).update!(origin)
+
+      products(:one).tap do |product|
+        product.update!(fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 5,
+          fixed_shipping_interstate_cents: 3500, fixed_shipping_interstate_estimated_days: 9)
       end
     end
 

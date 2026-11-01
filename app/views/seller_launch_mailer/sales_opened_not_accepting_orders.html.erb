@@ -1,0 +1,13 @@
+<p>Olá, <%= @seller.name %>!</p>
+
+<p>As vendas da EloShop abriram. Sua página já aparece na loja, mas o seu ateliê ainda não recebe pedidos: os clientes veem as peças e não conseguem comprar.</p>
+
+<p>Para começar a vender, conecte a sua conta do Mercado Pago no painel e aguarde a aprovação da EloShop:</p>
+
+<p><a href="<%= seller_getting_started_url(etapa: "mercado-pago") %>"><%= seller_getting_started_url(etapa: "mercado-pago") %></a></p>
+
+<p>Enquanto isso, a sua página continua no ar:</p>
+
+<p><a href="<%= seller_url(@seller.slug) %>"><%= seller_url(@seller.slug) %></a></p>
+
+<p>Qualquer dúvida, é só responder este e-mail.<br>Equipe EloShop</p>

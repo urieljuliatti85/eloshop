@@ -69,7 +69,7 @@ class ProductsController < StorefrontController
     @techniques = Technique.order(:name)
     # Só ateliês com peça à venda: oferecer no filtro um artesão que devolve
     # lista vazia é um beco.
-    @sellers = Seller.approved.where(id: Product.publicly_visible.select(:seller_id)).order(:name)
+    @sellers = Seller.publicly_listed.where(id: Product.publicly_visible.select(:seller_id)).order(:name)
     @category = find_category!(params[:category]) if params[:category].present?
     scope = scope.where(category_id: @category_tree.self_and_descendant_ids(@category)) if @category
     scope = scope.matching_query(params[:q]) if params[:q].present?
@@ -116,7 +116,7 @@ class ProductsController < StorefrontController
   def show
     # category: :parent porque a PDP usa breadcrumb_name, que sobe a árvore de
     # categorias — cada nível seria outra query.
-    seller = Seller.approved.find_by!(slug: params[:seller_slug])
+    seller = Seller.publicly_listed.find_by!(slug: params[:seller_slug])
     @product = seller.products.publicly_visible.includes(:product_variants, category: :parent).find_by!(slug: params[:slug])
     Analytics::Funnel.track("view_product", product: @product, seller: seller)
     # preload, e não includes: mesmo mecanismo do catálogo (ver comentário em

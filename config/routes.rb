@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
-  mount Rswag::Ui::Engine => "/api-docs"
-  mount Rswag::Api::Engine => "/api-docs"
+  # A documentação da API é do admin logado e de quem tem um ApiClient ativo
+  # (ver ApiDocsAuthentication); a API v1 exige o mesmo token.
+  mount ApiDocsAuthentication.new(Rswag::Ui::Engine) => "/api-docs"
+  mount ApiDocsAuthentication.new(Rswag::Api::Engine) => "/api-docs"
   resource :session
   resources :passwords, param: :token
 
@@ -11,6 +13,7 @@ Rails.application.routes.draw do
     get "financials", to: "financials#index", as: :financials
     get "financials/export", to: "financials#export", as: :financials_export
     post "financials/reconciliation", to: "financials#refresh_reconciliation", as: :financials_reconciliation
+    post "vendas/abrir", to: "sales_openings#create", as: :sales_opening
 
     resources :fraud_alerts, only: %i[index], path: "fraudes" do
       member { patch :resolve }
@@ -24,6 +27,8 @@ Rails.application.routes.draw do
         patch :suspend
         patch :hide
         patch :unhide
+        patch :showcase
+        patch :unshowcase
       end
     end
 
@@ -69,6 +74,10 @@ Rails.application.routes.draw do
 
     resources :coupons, except: %i[show]
 
+    resources :api_clients, path: "clientes-de-api", only: %i[index new create] do
+      member { patch :revoke }
+    end
+
     resources :mercado_pago_test_accounts, path: "contas-de-teste-mercado-pago", except: %i[show]
 
     resources :orders, only: %i[index show] do
@@ -113,6 +122,8 @@ Rails.application.routes.draw do
     # Uma etapa por tela; sem etapa na URL, abre a próxima pendente.
     get "primeiros-passos(/:etapa)", to: "getting_started#show", as: :getting_started,
       constraints: { etapa: /endereco|mercado-pago|chave-pix|primeira-peca|aprovacao/ }
+    # Endereço de origem preenchido dentro dos Primeiros passos do painel inicial.
+    resource :origin_address, only: :update, controller: "origin_addresses", path: "primeiros-passos/endereco"
     post "tour/concluir", to: "tours#complete", as: :tour_completion
     resource :pix_key_confirmation, only: %i[create destroy], path: "chave-pix"
     get "cadastro-chave-pix", to: "pix_key_guides#show", as: :pix_key_guide

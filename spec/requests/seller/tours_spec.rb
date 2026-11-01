@@ -36,17 +36,19 @@ RSpec.describe "Seller tour", type: :request do
     end
   end
 
-  describe "call on the dashboard" do
+  describe "floating button on the dashboard" do
     def tour_button_label
-      Nokogiri::HTML(response.body).at_css("section[aria-labelledby='tour-call-title'] button[data-action='tour#start']")&.text
+      # A bolinha flutuante, com o rótulo visível em cima dela.
+      Nokogiri::HTML(response.body).at_css(".seller-content button[data-action='tour#start']").text.squish
     end
 
-    it "offers to take the tour while it has not been completed" do
+    it "is the only tour button on the dashboard and offers to take the tour while it has not been completed" do
       sign_in_as(user)
 
       get seller_root_path
 
-      expect(tour_button_label).to eq("Fazer o tour")
+      expect(Nokogiri::HTML(response.body).css(".seller-content [data-action='tour#start']").size).to eq(1)
+      expect(tour_button_label).to eq("Faça o tour")
     end
 
     it "offers to redo the tour once completed" do
@@ -55,7 +57,7 @@ RSpec.describe "Seller tour", type: :request do
 
       get seller_root_path
 
-      expect(tour_button_label).to eq("Refazer o tour")
+      expect(tour_button_label).to eq("Refaça o tour")
     end
   end
 

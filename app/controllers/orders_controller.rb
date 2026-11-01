@@ -1,4 +1,5 @@
 class OrdersController < StorefrontController
+  before_action :require_sales_open, only: %i[new create]
   before_action :ensure_cart_not_empty, only: :new
 
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to cart_path, alert: "Muitas tentativas. Tente novamente em alguns minutos." }
@@ -15,8 +16,7 @@ class OrdersController < StorefrontController
     @addresses = Current.customer.addresses
     @shipping_quotes = @addresses.index_with { |address| shipping_quotes_for(address) }
     @selected_address = @addresses.find { |address| @shipping_quotes[address].present? }
-    @shipping_options = @shipping_quotes[@selected_address] || []
-    @shipping = @shipping_options.first
+    @shipping = @shipping_quotes[@selected_address]&.first
     @shipping_cents = @shipping&.shipping_cents
     checkout_started = session[:checkout_idempotency_key].blank?
     session[:checkout_idempotency_key] ||= SecureRandom.hex(20)
@@ -62,8 +62,16 @@ class OrdersController < StorefrontController
     shipment = order.seller_order.shipment
     raise ActiveRecord::RecordNotFound unless shipment
 
-    shipment.report_delivered_by_customer!
-    NotifySellerOfDeliveryJob.perform_later(order.seller_order)
+    if shipment.report_delivered_by_customer!
+      NotifySellerOfDeliveryJob.perform_later(order.seller_order)
+      Notification.create!(
+        recipient: order.seller_order.seller,
+        kind: :delivery_reported,
+        title: shipment.local_pickup? ? "Cliente retirou o pedido" : "Cliente recebeu o pedido",
+        body: "O cliente avisou que #{shipment.local_pickup? ? 'retirou' : 'recebeu'} o pedido ##{order.id}. Confirme a entrega no painel.",
+        url: seller_order_path(order)
+      )
+    end
 
     message = shipment.local_pickup? ? "Retirada confirmada." : "Recebimento confirmado."
     redirect_to order_path(order), notice: message
@@ -72,6 +80,13 @@ class OrdersController < StorefrontController
   end
 
   private
+
+  # O checkout também é bloqueado, então voltar ao Referer, como no resto da
+  # loja, viraria loop: o "Finalizar pedido" de uma tela aberta antes de as
+  # vendas fecharem volta para /orders/new, que volta para /orders/new...
+  def require_sales_open
+    redirect_to cart_path, alert: SALES_CLOSED_ALERT unless PlatformSetting.sales_open?
+  end
 
   def ensure_cart_not_empty
     redirect_to cart_path, alert: "Seu carrinho está vazio." if Current.cart.cart_items.empty?

@@ -1,0 +1,16 @@
+Olá, <%= @seller.name %>!
+
+Seu ateliê foi aprovado na EloShop.
+
+<% if @sales_open -%>
+Suas peças publicadas já aparecem na loja e podem ser compradas.
+<% else -%>
+<%= @pre_launch_notice %>
+
+Enquanto isso, sua página já está no ar: continue cadastrando peças e divulgue o endereço do seu ateliê.
+<% end -%>
+
+Ver a página do meu ateliê: <%= seller_url(@seller.slug) %>
+
+Qualquer dúvida, é só responder este e-mail.
+Equipe EloShop

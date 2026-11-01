@@ -1,4 +1,4 @@
-<p class="max-w-[68ch] text-base leading-7 text-stone-700 mt-4">Inclua fotos, descrição, preço, estoque, peso e dimensões. O produto pode ficar como rascunho enquanto você prepara os detalhes; para publicá-lo, o ateliê precisa estar aprovado e os dados de envio precisam estar completos.</p>
+<p class="max-w-[68ch] text-base leading-7 text-stone-700 mt-4">Inclua fotos, descrição, preço, estoque, peso e dimensões. O produto pode ficar como rascunho enquanto você prepara os detalhes; para publicá-lo, o ateliê precisa estar aprovado ou liberado na vitrine e os dados de envio precisam estar completos.</p>
 
 <h3 class="mt-6 font-bold text-stone-950">Três jeitos de cobrar o frete</h3>
 <ul class="max-w-[68ch] text-base leading-7 text-stone-700 mt-2">
@@ -6,7 +6,8 @@
   <li><strong class="text-stone-950">Retirada gratuita:</strong> o cliente combina a retirada diretamente com você.</li>
   <li><strong class="text-stone-950">Cálculo padrão:</strong> deixe o frete fixo vazio para usar o cálculo da plataforma.</li>
 </ul>
+<div class="mt-4 max-w-[68ch]"><%= render "seller_portal/shared/shipping_in_development" %></div>
 
 <div class="mt-6 flex flex-col gap-3 border-t border-brand-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
-  <%= link_to(done ? "Gerenciar produtos" : "Novo produto", done ? seller_products_path : new_seller_product_path, class: (done ? "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" : "seller-button seller-button--primary justify-center")) %>
+  <%= link_to(done ? "Gerenciar produtos" : "Novo produto", done ? seller_products_path : new_seller_product_path, data: { turbo_frame: "_top" }, class: (done ? "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" : "seller-button seller-button--primary justify-center")) %>
 </div>

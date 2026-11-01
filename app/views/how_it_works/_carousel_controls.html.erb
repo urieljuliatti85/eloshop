@@ -1,0 +1,20 @@
+<%# Controles dos carrosséis da aba "Quem vende", só abaixo do `lg`. Nascem
+    `hidden` e o carousel_controller os mostra: sem JS, a rolagem da faixa
+    já dá conta. `item` nomeia o ponto ("Ir para o passo 2"). %>
+<div class="mt-5 flex items-center justify-center gap-3 lg:hidden" data-carousel-target="controls" hidden>
+  <button type="button" data-action="carousel#previous" aria-label="<%= previous_label %>"
+          class="grid size-11 cursor-pointer place-items-center rounded-full border border-sand-200 bg-white text-ink transition hover:border-brand-300 hover:text-brand-600">
+    <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+  </button>
+  <div class="flex items-center gap-1.5" role="tablist" aria-label="<%= item.capitalize %>s">
+    <% count.times do |index| %>
+      <button type="button" role="tab" data-carousel-target="dot" data-index="<%= index %>" data-action="carousel#goTo"
+              aria-label="Ir para <%= item == "vantagem" ? "a" : "o" %> <%= item %> <%= index + 1 %>" aria-selected="<%= index.zero? %>"
+              class="h-2.5 cursor-pointer rounded-full transition-all <%= index.zero? ? "w-6 bg-brand-600" : "w-2.5 bg-sand-200" %>"></button>
+    <% end %>
+  </div>
+  <button type="button" data-action="carousel#next" aria-label="<%= next_label %>"
+          class="grid size-11 cursor-pointer place-items-center rounded-full border border-sand-200 bg-white text-ink transition hover:border-brand-300 hover:text-brand-600">
+    <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+  </button>
+</div>

@@ -1,6 +1,8 @@
 require "swagger_helper"
 
 RSpec.describe "api/v1/categories", type: :request do
+  let(:Authorization) { "Bearer #{api_token}" }
+
   CATEGORY_SCHEMA = {
     type: :object,
     properties: {
@@ -25,6 +27,8 @@ RSpec.describe "api/v1/categories", type: :request do
     get "Lista categorias visíveis" do
       tags "Categories"
       produces "application/json"
+
+      documents_api_token_requirement
 
       response "200", "categorias encontradas" do
         schema CATEGORY_LIST_SCHEMA

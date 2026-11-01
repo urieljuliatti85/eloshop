@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_31_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -54,6 +54,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["customer_id"], name: "index_addresses_on_customer_id"
+  end
+
+  create_table "api_clients", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "token_digest", null: false
+    t.datetime "revoked_at"
+    t.datetime "last_used_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_api_clients_on_name", unique: true
+    t.index ["token_digest"], name: "index_api_clients_on_token_digest", unique: true
   end
 
   create_table "cart_items", force: :cascade do |t|
@@ -238,7 +249,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.index ["seller_order_id"], name: "index_order_messages_on_seller_order_id"
     t.index ["sender_type", "sender_id"], name: "index_order_messages_on_sender"
     t.check_constraint "char_length(btrim(body)) >= 1 AND char_length(btrim(body)) <= 2000", name: "order_messages_body_length_check"
-    t.check_constraint "sender_type::text = ANY (ARRAY['Customer'::character varying, 'User'::character varying]::text[])", name: "order_messages_sender_type_check"
+    t.check_constraint "sender_type::text = ANY (ARRAY['Customer'::character varying::text, 'User'::character varying::text])", name: "order_messages_sender_type_check"
   end
 
   create_table "orders", force: :cascade do |t|
@@ -282,7 +293,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.index ["payment_id"], name: "index_payment_refunds_on_payment_id"
     t.check_constraint "amount_cents > 0", name: "payment_refunds_amount_check"
     t.check_constraint "application_fee_amount_cents >= 0 AND application_fee_amount_cents <= amount_cents", name: "payment_refunds_fee_check"
-    t.check_constraint "status::text = ANY (ARRAY['processing'::character varying, 'approved'::character varying, 'failed'::character varying]::text[])", name: "payment_refunds_status_check"
+    t.check_constraint "status::text = ANY (ARRAY['processing'::character varying::text, 'approved'::character varying::text, 'failed'::character varying::text])", name: "payment_refunds_status_check"
   end
 
   create_table "payments", force: :cascade do |t|
@@ -310,7 +321,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.check_constraint "application_fee_cents >= 0 AND application_fee_cents <= amount_cents", name: "payments_application_fee_check"
     t.check_constraint "application_fee_refunded_cents >= 0 AND application_fee_refunded_cents <= application_fee_cents", name: "payments_application_fee_refunded_check"
     t.check_constraint "installments >= 1", name: "payments_installments_check"
-    t.check_constraint "payment_method::text = ANY (ARRAY['pix'::character varying, 'credit_card'::character varying]::text[])", name: "payments_payment_method_check"
+    t.check_constraint "payment_method::text = ANY (ARRAY['pix'::character varying::text, 'credit_card'::character varying::text])", name: "payments_payment_method_check"
     t.check_constraint "processor_fee_cents IS NULL OR processor_fee_cents >= 0", name: "payments_processor_fee_check"
     t.check_constraint "refunded_amount_cents >= 0 AND refunded_amount_cents <= amount_cents", name: "payments_refunded_amount_check"
   end
@@ -325,6 +336,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.index ["product_id", "label"], name: "index_personalization_options_on_product_id_and_label", unique: true
     t.index ["product_id"], name: "index_personalization_options_on_product_id"
     t.check_constraint "max_length > 0", name: "personalization_options_max_length_check"
+  end
+
+  create_table "platform_settings", force: :cascade do |t|
+    t.datetime "sales_opened_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.check_constraint "id = 1", name: "platform_settings_singleton_check"
   end
 
   create_table "product_materials", force: :cascade do |t|
@@ -399,6 +417,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.integer "fixed_shipping_estimated_days"
     t.boolean "local_pickup_enabled", default: false, null: false
     t.boolean "free_shipping", default: false, null: false
+    t.integer "fixed_shipping_interstate_cents"
+    t.integer "fixed_shipping_interstate_estimated_days"
     t.index ["availability_type"], name: "index_products_on_availability_type"
     t.index ["category_id"], name: "index_products_on_category_id"
     t.index ["seller_id", "sku"], name: "index_products_on_seller_id_and_sku", unique: true
@@ -406,8 +426,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.index ["seller_id"], name: "index_products_on_seller_id"
     t.index ["status"], name: "index_products_on_status"
     t.check_constraint "(fixed_shipping_cents IS NULL) = (fixed_shipping_estimated_days IS NULL)", name: "products_fixed_shipping_complete_check"
+    t.check_constraint "(fixed_shipping_interstate_cents IS NULL) = (fixed_shipping_interstate_estimated_days IS NULL)", name: "products_fixed_shipping_interstate_complete_check"
     t.check_constraint "fixed_shipping_cents IS NULL OR fixed_shipping_cents > 0", name: "products_fixed_shipping_cents_check"
     t.check_constraint "fixed_shipping_estimated_days IS NULL OR fixed_shipping_estimated_days > 0", name: "products_fixed_shipping_days_check"
+    t.check_constraint "fixed_shipping_interstate_cents IS NULL OR fixed_shipping_cents IS NOT NULL", name: "products_fixed_shipping_interstate_requires_base_check"
+    t.check_constraint "fixed_shipping_interstate_cents IS NULL OR fixed_shipping_interstate_cents > 0", name: "products_fixed_shipping_interstate_cents_check"
+    t.check_constraint "fixed_shipping_interstate_estimated_days IS NULL OR fixed_shipping_interstate_estimated_days > 0", name: "products_fixed_shipping_interstate_days_check"
     t.check_constraint "stock_quantity >= 0", name: "products_stock_quantity_check"
   end
 
@@ -456,7 +480,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.check_constraint "refunded_amount_cents >= 0 AND refunded_amount_cents <= total_cents", name: "seller_orders_refunded_amount_check"
     t.check_constraint "seller_amount_cents = (total_cents - platform_fee_cents)", name: "seller_orders_seller_amount_check"
     t.check_constraint "shipping_cents >= 0", name: "seller_orders_shipping_check"
-    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'confirmed'::character varying, 'cancelled'::character varying, 'partially_refunded'::character varying, 'refunded'::character varying]::text[])", name: "seller_orders_status_check"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'confirmed'::character varying::text, 'cancelled'::character varying::text, 'partially_refunded'::character varying::text, 'refunded'::character varying::text])", name: "seller_orders_status_check"
     t.check_constraint "subtotal_cents >= 0", name: "seller_orders_subtotal_check"
     t.check_constraint "total_cents = (subtotal_cents - discount_cents + shipping_cents)", name: "seller_orders_total_check"
   end
@@ -540,10 +564,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_120000) do
     t.string "theme_ornament", default: "nenhum", null: false
     t.string "theme_image_ratio", default: "quadrada", null: false
     t.string "theme_heading_font", default: "igual", null: false
+    t.datetime "showcased_at"
     t.index ["cpf_hash"], name: "index_sellers_on_cpf_hash", unique: true, where: "(cpf_hash IS NOT NULL)"
     t.index ["mercado_pago_user_id"], name: "index_sellers_on_mercado_pago_user_id", unique: true, where: "(mercado_pago_user_id IS NOT NULL)"
     t.index ["slug"], name: "index_sellers_on_slug", unique: true
-    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'approved'::character varying, 'suspended'::character varying]::text[])", name: "sellers_status_check"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'approved'::character varying::text, 'suspended'::character varying::text])", name: "sellers_status_check"
   end
 
   create_table "sessions", force: :cascade do |t|

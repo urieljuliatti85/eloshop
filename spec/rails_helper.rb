@@ -44,6 +44,11 @@ RSpec.configure do |config|
   # um exemplo vazariam para o próximo (mesmo IP de teste em todos).
   config.before(:each) { Rails.cache.clear }
 
+  # Vendas abertas por padrão, como a loja depois do pré-cadastro (a suíte
+  # RSpec não carrega as fixtures do Minitest). Data antiga para a comissão de
+  # lançamento contar da aprovação. Os specs do pré-cadastro fecham as vendas.
+  config.before(:each) { PlatformSetting.instance.update!(sales_opened_at: Time.utc(2000, 1, 1)) }
+
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_paths = [
     Rails.root.join('spec/fixtures')

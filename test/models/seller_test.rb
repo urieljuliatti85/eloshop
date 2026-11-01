@@ -53,6 +53,30 @@ class SellerTest < ActiveSupport::TestCase
     assert_not seller.launch_fee_active?(at: Time.zone.local(2027, 6, 1))
   end
 
+  test "a seller approved during pre-registration starts the launch fee when sales open" do
+    PlatformSetting.instance.update!(sales_opened_at: nil)
+    seller = sellers(:approved)
+    seller.update!(approved_at: Time.zone.local(2026, 10, 28, 12))
+
+    assert_nil seller.launch_fee_ends_at
+    assert_not seller.launch_fee_active?
+    assert_equal 1_500, seller.platform_fee_rate_bps
+
+    PlatformSetting.instance.update!(sales_opened_at: Time.zone.local(2026, 11, 15, 9))
+
+    assert_equal Time.zone.local(2026, 11, 15, 9), seller.launch_fee_starts_at
+    assert_equal Time.zone.local(2027, 2, 15, 9), seller.launch_fee_ends_at
+    assert_equal 800, seller.platform_fee_rate_bps(at: Time.zone.local(2027, 2, 15, 8, 59))
+  end
+
+  test "a seller approved after sales opened starts the launch fee on approval" do
+    PlatformSetting.instance.update!(sales_opened_at: Time.zone.local(2026, 11, 15, 9))
+    seller = sellers(:approved)
+    seller.update!(approved_at: Time.zone.local(2026, 12, 1, 10))
+
+    assert_equal Time.zone.local(2026, 12, 1, 10), seller.launch_fee_starts_at
+  end
+
   test "a seller that was never approved has no launch period running" do
     seller = sellers(:pending)
 
@@ -224,6 +248,24 @@ class SellerTest < ActiveSupport::TestCase
     assert_includes seller.errors[:cpf], "não pode ficar em branco"
   end
 
+  test "formats a CPF progressively and keeps more than 11 digits unmasked" do
+    assert_equal "123.456.789-09", Seller.format_cpf("12345678909")
+    assert_equal "123.456.789-09", Seller.format_cpf("123.456.789-09")
+    assert_equal "123.4", Seller.format_cpf("1234")
+    assert_equal "123", Seller.format_cpf("123")
+    assert_equal "123.456.789-0", Seller.format_cpf("1234567890")
+    assert_equal "", Seller.format_cpf(nil)
+    assert_equal "123456789012", Seller.format_cpf("123456789012")
+  end
+
+  test "a blank name reports only the name, not the URL derived from it" do
+    seller = Seller.new(name: "", owner_full_name: "Fulana", cpf: "52998224725")
+
+    assert_not seller.valid?
+    assert_predicate seller.errors[:name], :any?
+    assert_empty seller.errors[:slug]
+  end
+
   test "rejects a CPF with an invalid checksum" do
     seller = Seller.new(name: "Ateliê", owner_full_name: "Ana Lua", cpf: "11144477736")
 
@@ -311,6 +353,84 @@ class SellerTest < ActiveSupport::TestCase
     assert_not_equal seller.mercado_pago_access_token_ciphertext, seller.melhor_envio_access_token_ciphertext
     assert_equal "seller-access-token", seller.mercado_pago_access_token
     assert_equal "melhor-envio-access-token", seller.melhor_envio_access_token
+  end
+
+  test "a pending seller is not publicly listed until the admin showcases it" do
+    seller = sellers(:pending)
+
+    assert_not_predicate seller, :publicly_listed?
+    assert_not_includes Seller.publicly_listed, seller
+
+    seller.showcase!
+
+    assert_predicate seller, :showcased?
+    assert_predicate seller, :pending?
+    assert_predicate seller, :publicly_listed?
+    assert_includes Seller.publicly_listed, seller
+    assert_not_predicate seller, :mercado_pago_connected?
+  end
+
+  test "unshowcasing takes a pending seller back out of the store" do
+    seller = sellers(:pending)
+    seller.showcase!
+
+    seller.unshowcase!
+
+    assert_not_predicate seller, :showcased?
+    assert_not_includes Seller.publicly_listed, seller
+  end
+
+  test "only a pending seller can be showcased or unshowcased" do
+    approved = sellers(:approved)
+    suspended = sellers(:other).tap(&:suspend!)
+
+    assert_raises(Seller::VerificationRequired) { approved.showcase! }
+    assert_raises(Seller::VerificationRequired) { approved.unshowcase! }
+    assert_raises(Seller::VerificationRequired) { suspended.showcase! }
+  end
+
+  test "a hidden or suspended seller is never publicly listed, even when showcased" do
+    seller = sellers(:pending)
+    seller.showcase!
+
+    seller.hide!
+    assert_not_predicate seller, :publicly_listed?
+    assert_not_includes Seller.publicly_listed, seller
+
+    seller.unhide!
+    seller.suspend!
+    assert_nil seller.showcased_at
+    assert_not_predicate seller, :publicly_listed?
+  end
+
+  test "approval keeps the seller listed after disconnecting Mercado Pago, without selling" do
+    seller = sellers(:pending)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.approve!(kyc_level_6_confirmed: true)
+    assert_not_nil seller.showcased_at
+
+    seller.disconnect_mercado_pago!
+
+    assert_predicate seller, :pending?
+    assert_predicate seller, :publicly_listed?
+  end
+
+  test "approval preserves the showcase date of a seller already in the store" do
+    seller = sellers(:pending)
+    seller.showcase!
+    showcased_at = seller.showcased_at
+
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.approve!(kyc_level_6_confirmed: true)
+
+    assert_equal showcased_at, seller.showcased_at
+  end
+
+  test "showcasing does not start the launch fee period" do
+    seller = sellers(:pending)
+    seller.showcase!
+
+    assert_nil seller.launch_fee_starts_at
   end
 
   private
@@ -532,6 +652,20 @@ class SellerTest < ActiveSupport::TestCase
     seller.products.create!(name: "Primeira peça", sku: "PASSOS-1", price_cents: 5_000, stock_quantity: 1)
 
     assert_equal({ address: true, mercado_pago: true, pix_key: true, product: true, approval: true }, seller.getting_started_steps)
+  end
+
+  test "setup_steps keeps a connected but not accepted Mercado Pago account as pending" do
+    seller = Seller.create!(name: "Ateliê não aceito", owner_full_name: "Ana Aceite", cpf: "11144477735")
+    seller.update!(
+      mercado_pago_user_id: "123456", mercado_pago_access_token_ciphertext: "a", mercado_pago_refresh_token_ciphertext: "r",
+      mercado_pago_connected_at: Time.current, mercado_pago_live_mode: false, mercado_pago_test_account: true
+    )
+
+    assert seller.getting_started_steps[:mercado_pago], "a página Primeiros passos vê a conexão"
+    assert_not seller.setup_steps[:mercado_pago], "o painel cobra a conta real"
+
+    seller.update!(mercado_pago_live_mode: true, mercado_pago_test_account: false)
+    assert seller.setup_steps[:mercado_pago]
   end
 
   test "public_page_available? is true only for an approved seller that is not hidden" do

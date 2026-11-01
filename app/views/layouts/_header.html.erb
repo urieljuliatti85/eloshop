@@ -1,7 +1,11 @@
-<header class="sticky top-0 z-10 border-b border-gray-100 bg-white/90 backdrop-blur"
+<%# Borda de baixo serrilhada (.topo-serrilhado), a mesma do painel do
+    artesão e da administração. O recorte precisa de fundo sólido, por isso o
+    topo deixou de ser branco translúcido com desfoque; a borda cinza virou o
+    traço dos dentes. %>
+<header class="topo-serrilhado sticky top-0 z-10"
         data-controller="mobile-menu"
         data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
-  <div class="container mx-auto flex items-center justify-between gap-6 px-5 py-4">
+  <div class="container mx-auto flex items-center justify-between gap-3 px-5 py-4 md:gap-6">
     <%= link_to root_path, class: "flex items-center" do %>
       <%= image_tag "logo-header.png", alt: "EloShop", class: "h-9 w-auto", width: 108, height: 36 %>
     <% end %>
@@ -33,6 +37,15 @@
               class: "rounded-full px-4 py-2 transition #{active ? 'bg-white text-brand-600 shadow-sm' : 'hover:bg-white hover:shadow-sm'}",
               aria: { current: ("page" if active) } %>
       <% end %>
+      <%# Instagram é a última pílula e sai do site (nova aba). Até o `xl` só o
+          ícone, para as pílulas não quebrarem linha; o nome acessível diz o
+          destino e que abre outra aba. %>
+      <%= link_to eloshop_instagram_url, target: "_blank", rel: "noopener",
+            class: "flex items-center gap-1.5 rounded-full px-3 py-2 transition hover:bg-white hover:text-brand-600 hover:shadow-sm xl:px-4",
+            aria: { label: "Instagram da EloShop (abre em nova aba)" } do %>
+        <%= instagram_icon("size-4") %>
+        <span class="hidden xl:inline">Instagram</span>
+      <% end %>
     </nav>
 
     <%# Em telas estreitas os rótulos de conta saem do topo (a 390px "Criar
@@ -41,7 +54,10 @@
     <%# Mesma pílula do menu de navegação ao lado: borda, fundo cinza e cantos
         arredondados, para os dois blocos do topo lerem como um par. No mobile
         a moldura sai — lá dentro ficam só o carrinho e o hambúrguer. %>
-    <div class="flex items-center gap-1 text-sm md:gap-0.5 md:rounded-full md:border md:border-gray-200 md:bg-gray-50 md:px-2 md:py-1">
+    <%# Sem espaço entre os ícones no celular: com o cliente logado são cinco
+        alvos de 44px (Instagram, sino, sacola, busca e menu), e a 390px eles
+        só cabem ao lado do logo assim. %>
+    <div class="flex items-center text-sm md:gap-0.5 md:rounded-full md:border md:border-gray-200 md:bg-gray-50 md:px-2 md:py-1">
       <%# Quem está logado aparece pelo primeiro nome, com a inicial no avatar
           — mesma identificação que o painel do artesão já usa. O nome abre um
           painel com os dados da conta e seus destinos.
@@ -134,6 +150,14 @@
             topo não diziam qual porta é de quem. O destino é o login, que já
             leva ao cadastro por link. %>
         <%= link_to "Quero comprar", new_customer_session_path, class: "hidden rounded-full px-4 py-2 font-medium text-ink transition hover:bg-white hover:shadow-sm md:inline-block" %>
+      <% end %>
+
+      <%# Instagram no topo do celular, ao lado do sino (ou da sacola, para quem
+          não está logado). No desktop ele é a última pílula do menu. %>
+      <%= link_to eloshop_instagram_url, target: "_blank", rel: "noopener",
+            class: "flex h-11 w-11 items-center justify-center text-ink transition hover:text-brand-600 md:hidden",
+            aria: { label: "Instagram da EloShop (abre em nova aba)" } do %>
+        <%= instagram_icon("h-6 w-6") %>
       <% end %>
 
       <%# Mesmo padrão do menu de conta e da busca ao lado: um botão abre um

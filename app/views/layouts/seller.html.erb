@@ -12,9 +12,16 @@
     <%= javascript_importmap_tags %>
   </head>
 
+  <%# Abas inferiores do celular (layouts/_seller_mobile_tabs): os Primeiros
+      passos enquanto o cadastro não está pronto, o trabalho do dia depois.
+      Não no editor de tema, que tem a própria barra de ações no rodapé. Com
+      elas, `--seller-tabs-height` (só abaixo de `sm`) abre espaço no fim do
+      conteúdo e sobe o que é fixo embaixo. %>
+  <% mobile_tabs = controller_name != "themes" %>
+
   <%# Tour guiado: abre sozinho enquanto o vendedor não o concluiu e também por
       qualquer elemento com `data-action="tour#start"` (ver Primeiros passos). %>
-  <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased"
+  <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased <%= 'max-sm:[--seller-tabs-height:4rem]' if mobile_tabs %>"
         data-controller="tour"
         data-tour-steps-value="<%= seller_tour_steps.to_json %>"
         data-tour-complete-url-value="<%= seller_tour_completion_path %>"
@@ -61,9 +68,10 @@
         ela não existe (cadastro pendente, suspenso ou escondido), cai na loja
         geral: a página própria responderia 404 ou "indisponível". %>
     <% store_path = current_seller.public_page_available? ? seller_path(current_seller) : products_path %>
-    <%# Borda de baixo serrilhada (.painel-topo): o recorte precisa de fundo
-        sólido, por isso o topo deixou de ser translúcido com desfoque. %>
-    <header class="painel-topo sticky top-0 z-40"
+    <%# Borda de baixo serrilhada (.topo-serrilhado), a mesma do site todo: o
+        recorte precisa de fundo sólido, por isso o topo deixou de ser
+        translúcido com desfoque. %>
+    <header class="topo-serrilhado sticky top-0 z-40"
             data-controller="mobile-menu"
             data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
       <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 sm:px-6 lg:flex-nowrap lg:px-8">
@@ -198,8 +206,22 @@
     <%= render "layouts/flash_message", message: flash[:notice], variant: :success %>
     <%= render "layouts/flash_message", message: flash[:alert], variant: :error %>
 
+    <% setup_steps = current_seller.setup_steps %>
+    <%# Pré-cadastro: todo ateliê vê quando as vendas abrem; a frase muda
+        conforme os primeiros passos estejam completos. Suspenso fica de fora:
+        o problema dele não é passo faltando. %>
+    <% if !sales_open? && !current_seller.suspended? %>
+      <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <%= render "seller_portal/shared/pre_launch_banner", ready: setup_steps.values.all? %>
+      </div>
+    <% elsif sales_open? && current_seller.publicly_listed? && !current_seller.approved? %>
+      <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <%= render "seller_portal/shared/not_accepting_orders_banner" %>
+      </div>
+    <% end %>
+
     <%# Telas largas: barra lateral fixa à esquerda; o conteúdo ocupa o resto. %>
-    <div class="mx-auto flex w-full max-w-7xl gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <div class="mx-auto flex w-full max-w-7xl gap-8 px-4 pt-6 pb-[calc(1.5rem+var(--seller-tabs-height,0px))] sm:px-6 lg:px-8 lg:py-8">
       <aside class="hidden w-60 shrink-0 lg:block">
         <nav class="sticky top-24 flex flex-col gap-1.5 text-sm font-semibold" aria-label="Navegação do painel">
           <% nav_groups.each_with_index do |(group, items), index| %>
@@ -215,5 +237,14 @@
         <div class="seller-content"><%= yield %></div>
       </main>
     </div>
+
+    <% if mobile_tabs %>
+      <% if setup_steps.values.include?(false) %>
+        <%= render "layouts/seller_mobile_tabs", label: "Primeiros passos", tabs: seller_setup_tabs(setup_steps) %>
+      <% else %>
+        <%= render "layouts/seller_mobile_tabs", label: "Atalhos do ateliê",
+              tabs: seller_work_tabs(active_nav_path, @to_prepare_count || current_seller.seller_orders_to_prepare.count) %>
+      <% end %>
+    <% end %>
   </body>
 </html>

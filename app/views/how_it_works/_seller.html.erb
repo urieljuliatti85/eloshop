@@ -1,0 +1,199 @@
+<%# Aba "Quem vende": convence e orienta o artesão a aderir. Primeiro o que
+    ele ganha, depois cartões numerados na ordem em que as coisas
+    acontecem. Os cartões 2 a 6 são as mesmas etapas, na mesma ordem, dos
+    Primeiros passos do painel (Seller#getting_started_steps), para quem se
+    cadastra reconhecer o caminho. Melhor Envio fica de fora: a integração
+    está bloqueada em produção (docs/shipping.md) e o frete do MVP é o que o
+    próprio artesão define. %>
+<% launch_fee = fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS)
+   standard_fee = fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS)
+   tag_classes = {
+     required: "bg-brand-100 text-brand-700",
+     free: "bg-emerald-100 text-emerald-800",
+     note: "bg-sand-100 text-ink"
+   }
+   # Textos curtos: no desktop cada passo é uma coluna estreita do fluxo.
+   # O que não cabe (exigência da chave PIX, e-mail do Mercado Pago) vai no
+   # quadro "Bom saber" logo abaixo. Cores do vermelho da marca até a tinta.
+   start_steps = [
+     { title: "Crie sua conta de artesão", tag: [ "Grátis", :free ], color: "var(--color-brand-500)",
+       icon: '<circle cx="10" cy="8" r="4"/><path d="M3 20c.8-3.5 3.6-5.5 7-5.5 1.3 0 2.5.3 3.5.8"/><path d="M18 14v6"/><path d="M15 17h6"/>',
+       body: "Nome do ateliê, seus dados e uma senha. O painel abre com o passo a passo." },
+     { title: "Informe o endereço do ateliê", tag: [ "Não aparece na loja", :note ], color: "var(--color-brand-600)",
+       icon: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+       body: "De onde suas encomendas saem. Serve para o frete." },
+     { title: "Conecte sua Conta Vendedor do Mercado Pago", tag: [ "Obrigatório", :required ], color: "var(--color-brand-700)",
+       icon: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/>',
+       body: "É onde você recebe. Quem verifica sua identidade é o Mercado Pago, não a EloShop." },
+     { title: "Cadastre uma chave PIX no Mercado Pago", tag: [ "Obrigatório para PIX", :required ], color: "#8f1607",
+       icon: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8"/><path d="m16 7 2 2"/><path d="m14 9 2 2"/>',
+       body: "Pelo app do Mercado Pago, em poucos minutos. O painel mostra como." },
+     { title: "Cadastre sua primeira peça", tag: [ "Pode ser rascunho", :note ], color: "#5c1a0b",
+       icon: '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+       body: "Fotos, preço, peso, medidas e prazo. Dá para salvar e terminar depois." },
+     { title: "Aguarde a aprovação da EloShop", tag: [ "Feito pela EloShop", :note ], color: "var(--color-ink)",
+       icon: '<path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/>',
+       body: "A EloShop confirma que a conta é real e libera seu catálogo na loja." }
+   ]
+   after_steps = [
+     { title: "Receba os pedidos e envie",
+       body: "O pedido chega no painel com os itens, a personalização escolhida e o endereço de entrega. O frete é você quem define: valor fixo por produto, retirada gratuita no ateliê ou o cálculo padrão da loja." },
+     { title: "Receba o pagamento",
+       body: "O valor cai direto na sua conta do Mercado Pago, já sem a comissão da EloShop. A tarifa do Mercado Pago na transação é sua, como em qualquer venda por ele." }
+   ]
+   step_card = "relative flex flex-col rounded-3xl border border-sand-200 p-6 shadow-[0_1px_2px_rgba(120,40,10,0.04)] sm:p-7" %>
+
+<section class="mt-10 overflow-hidden rounded-[2rem] border border-sand-200 bg-sand-50 px-6 py-9 sm:px-10 sm:py-12" aria-labelledby="vende-title">
+  <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Para quem faz à mão</p>
+  <h2 id="vende-title" class="mt-3 max-w-2xl font-craft text-4xl leading-[1.08] font-semibold text-ink sm:text-5xl">Venda suas peças como o seu próprio negócio</h2>
+  <p class="mt-4 max-w-2xl text-lg leading-relaxed text-ink-muted">
+    Cada ateliê na EloShop vende as próprias peças, com o próprio preço. O pagamento do cliente cai
+    direto na sua conta do Mercado Pago, e a plataforma fica só com uma comissão quando você vende.
+  </p>
+
+  <%# Vantagens num fluxo da esquerda para a direita (.processo, em
+      application.css): no desktop, placas arredondadas inclinadas em
+      perspectiva que se sobrepõem, cada uma com uma camada mais escura atrás;
+      abaixo disso, um carrossel (carousel_controller, sem avanço automático)
+      que vai até a borda do quadro areia. O pesponto tracejado é o ornamento. As
+      cores andam do vermelho da marca até a tinta, só com tons em que o
+      texto branco tem contraste. %>
+  <% benefits = [
+      [ "Sem mensalidade", "Você só paga quando vende. Não há mensalidade, no momento.",
+        '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M16 15h2"/>',
+        "bg-brand-600", "bg-brand-700" ],
+      [ "#{launch_fee} no começo", "Nos 3 primeiros meses de vendas do seu ateliê; depois, #{standard_fee}.",
+        '<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/>',
+        "bg-brand-700", "bg-[#8f1607]" ],
+      [ "Pagamento direto", "Na sua conta do Mercado Pago, sem esperar repasse.",
+        '<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v5"/><path d="M18 9.5v5"/>',
+        "bg-[#5c1a0b]", "bg-[#3d1107]" ],
+      [ "Seu frete", "Valor fixo, retirada no ateliê ou cálculo padrão: você escolhe.",
+        '<path d="M3 6h11v10H3z"/><path d="M14 9h4l3 3v4h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
+        "bg-ink", "bg-black" ]
+    ] %>
+  <div class="mt-10" data-controller="carousel" data-carousel-interval-value="0"
+       data-carousel-dot-active-class="w-6 bg-brand-600" data-carousel-dot-inactive-class="w-2.5 bg-sand-200">
+  <ul role="list" class="processo" data-carousel-target="track">
+    <% benefits.each do |term, detail, icon, color, shade| %>
+      <li class="processo__passo" data-carousel-target="slide">
+        <span class="processo__placa processo__placa--sombra <%= shade %>" aria-hidden="true"></span>
+        <span class="processo__placa processo__placa--frente <%= color %>" aria-hidden="true"></span>
+        <div class="processo__conteudo">
+          <svg viewBox="0 0 24 24" class="size-8 text-white" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><%= icon.html_safe %></svg>
+          <h3 class="mt-4 text-lg leading-snug font-bold text-white"><%= term %></h3>
+          <p class="mt-2 text-sm leading-relaxed text-white/90"><%= detail %></p>
+          <span class="processo__seta" aria-hidden="true"></span>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+  <%= render "how_it_works/carousel_controls", count: benefits.size, item: "vantagem", previous_label: "Vantagem anterior", next_label: "Próxima vantagem" %>
+  </div>
+
+  <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+    <%= link_to "Cadastrar meu ateliê", new_seller_registration_path,
+          class: "inline-flex min-h-12 items-center rounded-full bg-brand-600 px-7 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %>
+    <%= link_to "Já tenho conta: entrar no painel", seller_login_path,
+          class: "inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-sand-200 underline-offset-4 hover:text-brand-600" %>
+  </div>
+</section>
+
+<%# Fluxo de seis passos (.fluxo, em application.css): no desktop, colunas
+    sobre uma linha, cada uma com selo numerado, conector e ícone; no
+    celular, carrossel (carousel_controller, sem avanço automático: passos
+    não andam sozinhos). Sem JS, a faixa continua rolando com o dedo. No
+    celular a faixa vai até a borda da tela: `-mx-10` desfaz o padding do
+    <main> do layout e o desta página (20px cada), e o `px-10` mantém o
+    primeiro cartão alinhado ao título. %>
+<section class="mt-14" aria-labelledby="comecar-title"
+         data-controller="carousel" data-carousel-interval-value="0"
+         data-carousel-dot-active-class="w-6 bg-brand-600" data-carousel-dot-inactive-class="w-2.5 bg-sand-200">
+  <h2 id="comecar-title" class="text-2xl font-bold text-ink">Do cadastro à loja no ar</h2>
+  <p class="mt-2 max-w-2xl text-ink-muted">Na ordem em que você faz. Depois do cadastro, o painel do ateliê mostra estas mesmas etapas e marca cada uma que ficou pronta.</p>
+
+  <ol role="list" data-carousel-target="track"
+      class="fluxo__lista relative -mx-10 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-10 px-10 pb-2 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-6 lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0">
+    <% start_steps.each_with_index do |step, index| %>
+      <% label, kind = step[:tag] %>
+      <li data-carousel-target="slide" style="--passo: <%= step[:color] %>"
+          class="fluxo__cartao flex w-[82%] shrink-0 snap-start flex-col items-center rounded-3xl border border-sand-200 bg-white px-5 pt-6 pb-7 text-center sm:w-[46%] lg:w-auto lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
+        <%# Hexágonos em SVG para a costura: o contorno tracejado é o mesmo
+            pesponto das placas do destaque (`.fluxo__costura`). %>
+        <span class="fluxo__selo" aria-hidden="true">
+          <svg viewBox="0 0 74 64" class="fluxo__desenho">
+            <polygon class="fluxo__selo-fundo" points="18.5,2 55.5,2 72,32 55.5,62 18.5,62 2,32" />
+            <polygon class="fluxo__costura fluxo__costura--clara" points="21.5,7.5 52.5,7.5 65.5,32 52.5,56.5 21.5,56.5 8.5,32" />
+          </svg>
+          <span class="fluxo__selo-numero"><%= format("%02d", index + 1) %></span>
+        </span>
+        <span class="fluxo__conector" aria-hidden="true"></span>
+        <span class="fluxo__icone" aria-hidden="true">
+          <svg viewBox="0 0 128 112" class="fluxo__desenho">
+            <polygon class="fluxo__icone-contorno" points="32,2 96,2 126,56 96,110 32,110 2,56" />
+            <polygon class="fluxo__costura" points="36.5,10 91.5,10 117,56 91.5,102 36.5,102 11,56" />
+          </svg>
+          <svg viewBox="0 0 24 24" class="relative size-10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><%= step[:icon].html_safe %></svg>
+        </span>
+        <h3 class="mt-5 text-base leading-snug font-bold text-ink"><span class="sr-only">Passo <%= index + 1 %>: </span><%= step[:title] %></h3>
+        <span class="mt-2 rounded-full px-2.5 py-1 text-xs font-semibold <%= tag_classes.fetch(kind) %>"><%= label %></span>
+        <p class="mt-3 text-sm leading-relaxed text-ink-muted"><%= step[:body] %></p>
+      </li>
+    <% end %>
+  </ol>
+
+  <%= render "how_it_works/carousel_controls", count: start_steps.size, item: "passo", previous_label: "Passo anterior", next_label: "Próximo passo" %>
+
+  <div class="mt-8 grid gap-3 rounded-3xl border border-sand-200 bg-sand-50 px-6 py-5 sm:grid-cols-2 sm:gap-6">
+    <p class="text-sm leading-relaxed text-ink">
+      <strong class="text-brand-700">Exigência obrigatória:</strong> a conta do Mercado Pago conectada precisa ter uma
+      <strong>chave PIX cadastrada</strong>. Sem ela, os pagamentos por PIX dos seus clientes são recusados. O cartão não depende disso.
+    </p>
+    <p class="text-sm leading-relaxed text-ink">
+      <strong>Bom saber:</strong> o e-mail da sua conta do Mercado Pago pode ser diferente do seu cadastro aqui, e a EloShop não coleta nem guarda seus documentos.
+    </p>
+  </div>
+</section>
+
+<section class="mt-14" aria-labelledby="depois-title">
+  <h2 id="depois-title" class="text-2xl font-bold text-ink">Depois da aprovação</h2>
+  <p class="mt-2 max-w-2xl text-ink-muted">O dia a dia do ateliê: vender, enviar e receber.</p>
+
+  <ol role="list" start="<%= start_steps.size + 1 %>" class="mt-6 grid gap-4 sm:grid-cols-2">
+    <% after_steps.each_with_index do |step, index| %>
+      <% number = start_steps.size + index + 1 %>
+      <li class="<%= step_card %> bg-sand-50">
+        <span class="font-craft text-5xl leading-none font-semibold text-brand-600" aria-hidden="true"><%= number %></span>
+        <h3 class="mt-5 text-lg leading-snug font-bold text-ink"><span class="sr-only">Passo <%= number %>: </span><%= step[:title] %></h3>
+        <p class="mt-2 leading-relaxed text-ink-muted"><%= step[:body] %></p>
+      </li>
+    <% end %>
+  </ol>
+</section>
+
+<section class="mt-14" aria-labelledby="comissao-title">
+  <h2 id="comissao-title" class="text-2xl font-bold text-ink">Comissão e responsabilidades</h2>
+
+  <dl class="mt-6 grid gap-4 sm:grid-cols-2">
+    <% [
+      [ "Quanto a EloShop cobra?", "#{launch_fee} nos 3 primeiros meses de vendas do seu ateliê e #{standard_fee} depois disso, sobre o valor dos produtos, já descontado qualquer cupom — o frete não entra nesse cálculo. Não há mensalidade, no momento." ],
+      [ "Quem emite a nota fiscal?", "O ateliê. Nota fiscal e impostos são responsabilidade de quem vende." ],
+      [ "Quem decide cancelamentos e reembolsos?", "A plataforma opera e decide reembolsos e disputas; a comissão é devolvida proporcionalmente quando isso acontece." ],
+      [ "E se a peça quebrar no transporte?", "Quem envia responde pela peça. Capriche na embalagem e, para peças frágeis, prefira um envio com seguro." ]
+    ].each do |question, answer| %>
+      <div class="rounded-3xl bg-mist-100 px-6 py-5">
+        <dt class="font-semibold text-ink"><%= question %></dt>
+        <dd class="mt-1 leading-relaxed text-ink-muted"><%= answer %></dd>
+      </div>
+    <% end %>
+  </dl>
+</section>
+
+<section class="mt-14 flex flex-col items-start gap-5 rounded-[2rem] bg-brand-600 px-6 py-9 text-white sm:flex-row sm:items-center sm:justify-between sm:px-10" aria-labelledby="cta-title">
+  <div>
+    <h2 id="cta-title" class="font-craft text-3xl leading-tight font-semibold">Pronto para abrir seu ateliê?</h2>
+    <p class="mt-2 text-white/85">O cadastro é grátis e o painel te guia em cada etapa.</p>
+  </div>
+  <%= link_to "Cadastrar meu ateliê", new_seller_registration_path,
+        class: "inline-flex min-h-12 shrink-0 items-center rounded-full bg-white px-7 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50" %>
+</section>

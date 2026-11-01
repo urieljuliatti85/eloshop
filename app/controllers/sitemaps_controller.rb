@@ -16,7 +16,7 @@ class SitemapsController < StorefrontController
     tree = Category::Tree.load(order: :slug)
     # Só ateliês com peça publicada: uma vitrine vazia não é conteúdo que
     # valha indexar.
-    @sellers = Seller.approved.where(id: products.select(:seller_id)).order(:slug)
+    @sellers = Seller.publicly_listed.where(id: products.select(:seller_id)).order(:slug)
 
     # A listagem muda quando uma peça entra, sai ou é editada, então o lastmod
     # de home, catálogo, categorias e ateliês vem da peça mais recente que

@@ -15,7 +15,7 @@ class ReviewsController < StorefrontController
   private
 
   def set_product
-    seller = Seller.approved.find_by!(slug: params[:seller_slug])
+    seller = Seller.publicly_listed.find_by!(slug: params[:seller_slug])
     @product = seller.products.publicly_visible.find_by!(slug: params[:product_slug])
   end
 

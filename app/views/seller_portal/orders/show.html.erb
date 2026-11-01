@@ -69,6 +69,32 @@
         <%= form_with url: ship_seller_order_path(@order), method: :patch, class: "mt-5 rounded-2xl border border-brand-100 bg-brand-50/50 p-4 sm:p-5" do |form| %>
           <h3 class="text-lg font-bold">Detalhes do Envio</h3>
           <p class="mt-1 text-sm text-ink-muted">Informe como o pedido foi enviado. O código de rastreamento é opcional.</p>
+          <%# Enquanto a integração com o Melhor Envio está bloqueada
+              (docs/shipping.md), a etiqueta é comprada pelo próprio artesão
+              no site do provedor. "Remetente" e "Destinatário" explícitos:
+              "endereço desta página" já foi lido como o endereço da EloShop. %>
+          <div class="mt-4 rounded-xl border border-brand-100 bg-white px-4 py-3 text-sm leading-6 text-ink" data-shipping-steps>
+            <p class="font-semibold">Como enviar este pedido</p>
+            <ol class="mt-2 list-decimal space-y-2 pl-5">
+              <li>
+                Acesse o <%= link_to "Melhor Envio", "https://melhorenvio.com.br", target: "_blank", rel: "noopener noreferrer", class: "font-semibold underline" %> com a sua conta e compre a etiqueta:
+                <ul class="mt-1 list-disc space-y-1 pl-5">
+                  <li><strong>Remetente:</strong> você, com o endereço de onde a peça sai.</li>
+                  <li><strong>Destinatário:</strong> o cliente que fez esta compra. O nome e o endereço dele estão no quadro <strong>“Endereço de entrega”</strong> deste pedido.</li>
+                </ul>
+              </li>
+              <li data-shipping-paid>
+                <% if shipment.shipping_cents.positive? %>
+                  O cliente escolheu <strong><%= shipment.carrier %> — <%= shipment.service %></strong> e pagou <strong><%= format_price(shipment.shipping_cents) %></strong> de frete por essa modalidade.
+                <% else %>
+                  Este pedido saiu com <strong>frete grátis</strong> para o cliente: a etiqueta é por sua conta.
+                <% end %>
+              </li>
+              <li>Embale bem a peça e poste na agência ou ponto indicado na etiqueta.</li>
+              <li>Volte aqui, cole o código de rastreio e clique em <strong>Marcar como enviado</strong>. O cliente recebe o código por e-mail.</li>
+            </ol>
+            <p class="mt-2 text-ink-muted">O código é opcional, mas é a sua prova de envio se o cliente disser que não recebeu.</p>
+          </div>
           <div class="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <%= form.label :carrier, "Transportadora", class: "block text-sm font-semibold text-ink" %>
@@ -157,6 +183,7 @@
         <dl class="mt-5 space-y-2 border-t border-brand-100 pt-5 text-sm">
           <div class="flex justify-between gap-4"><dt class="text-ink-muted">Modalidade</dt><dd class="text-right font-semibold"><%= shipment.carrier %> — <%= shipment.service %></dd></div>
           <div class="flex justify-between gap-4"><dt class="text-ink-muted">Prazo estimado</dt><dd class="font-semibold"><%= shipping_estimate_label(shipment) %></dd></div>
+          <% unless shipment.local_pickup? %><div class="flex justify-between gap-4"><dt class="text-ink-muted">Frete pago pelo cliente</dt><dd class="font-semibold"><%= shipment.shipping_cents.positive? ? format_price(shipment.shipping_cents) : "Grátis" %></dd></div><% end %>
           <% if shipment.tracking_code.present? %><div class="flex justify-between gap-4"><dt class="text-ink-muted">Rastreamento</dt><dd class="font-semibold"><%= shipment.tracking_code %></dd></div><% end %>
         </dl>
       <% end %>

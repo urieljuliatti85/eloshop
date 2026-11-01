@@ -12,6 +12,21 @@ module ApplicationHelper
     "credits#show" => { path: "/creditos", title: "Créditos" }
   }.freeze
 
+  # Perfil oficial da EloShop no Instagram: menu do topo e banner da home.
+  ELOSHOP_INSTAGRAM_URL = "https://www.instagram.com/eloshop__".freeze
+  ELOSHOP_INSTAGRAM_HANDLE = "@eloshop__".freeze
+
+  def eloshop_instagram_url = ELOSHOP_INSTAGRAM_URL
+  def eloshop_instagram_handle = ELOSHOP_INSTAGRAM_HANDLE
+
+  # Ícone do Instagram (contorno), herda a cor do texto.
+  def instagram_icon(css_class)
+    tag.svg(viewBox: "0 0 24 24", class: css_class, fill: "none", stroke: "currentColor", "stroke-width": 1.8,
+            "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": true) do
+      safe_join([ tag.rect(x: 3, y: 3, width: 18, height: 18, rx: 5), tag.circle(cx: 12, cy: 12, r: 4), tag.circle(cx: 17.5, cy: 6.5, r: 0.6, fill: "currentColor") ])
+    end
+  end
+
   def google_analytics_measurement_id
     measurement_id = ENV["GOOGLE_ANALYTICS_MEASUREMENT_ID"].to_s.strip.upcase
     measurement_id if measurement_id.match?(GOOGLE_ANALYTICS_MEASUREMENT_ID_PATTERN)
@@ -78,18 +93,47 @@ module ApplicationHelper
 
   # Comissão que vale para este vendedor, em uma frase que cabe depois de
   # "a EloShop recebe ...": enquanto vale a de lançamento ela diz até quando e
-  # quanto passa a ser; antes da aprovação o prazo ainda não começou.
+  # quanto passa a ser; antes da aprovação ou da abertura das vendas o prazo
+  # ainda não começou.
   def seller_commission_text(seller)
     launch = fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS)
     standard = fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS)
+    ends_at = seller.launch_fee_ends_at
 
-    if seller.launch_fee_active?
-      "#{launch} (comissão de lançamento, até #{seller.launch_fee_ends_at.strftime("%d/%m/%Y")}; depois, #{standard})"
-    elsif seller.approved_at.present?
-      standard
+    if ends_at.nil?
+      "#{launch} nos 3 primeiros meses de vendas do seu ateliê e #{standard} depois disso"
+    elsif Time.current < ends_at
+      "#{launch} (comissão de lançamento, até #{ends_at.strftime("%d/%m/%Y")}; depois, #{standard})"
     else
-      "#{launch} nos 3 primeiros meses depois da aprovação do seu ateliê e #{standard} depois disso"
+      standard
     end
+  end
+
+  # Memoizado por request: o mesmo grid pergunta uma vez por card.
+  def sales_open?
+    @sales_open = PlatformSetting.sales_open? if @sales_open.nil?
+    @sales_open
+  end
+
+  # Como a peça se apresenta na loja. Enquanto as vendas estão fechadas, a de
+  # um ateliê que só está na vitrine aparece igual à de um aprovado ("Vendas
+  # em breve" para todos); aberta a loja, ela passa a dizer que o ateliê ainda
+  # não recebe pedidos. A decisão de compra continua em
+  # `Product#available_for_purchase?` — isto só escolhe a mensagem.
+  def product_shown_as_available?(product)
+    blocker = product.purchase_blocker
+    blocker.nil? || (blocker == :seller_not_accepting_orders && !sales_open?)
+  end
+
+  def seller_not_accepting_orders?(product)
+    sales_open? && product.purchase_blocker == :seller_not_accepting_orders
+  end
+
+  # Ateliê que aparece na loja mas ainda não vende (vitrine do pré-cadastro, ou
+  # aprovado que desconectou o Mercado Pago). O público é avisado antes e
+  # depois da abertura das vendas, até a aprovação.
+  def seller_preparing_to_sell?(seller)
+    seller.publicly_listed? && !seller.approved?
   end
 
   # Valor para dentro de um campo de formulário: "89,90", sem "R$" e sem

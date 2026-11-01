@@ -20,6 +20,10 @@ Evitar checagens de autorização espalhadas de forma ad-hoc (`if current_user.a
 
 Decisão tomada na Fase 14 e estendida na Fase 22: implementação simples, sem gem dedicada. `User` tem os papéis `admin` e `seller`; `Admin::BaseController#require_admin!` protege a plataforma e `SellerPortal::BaseController#require_seller!` protege o painel do artesão.
 
+A API v1 e a documentação (`/api-docs`, Swagger UI e `swagger.yaml`) exigem um token de `ApiClient`, emitido e revogado pelo admin em `/admin/clientes-de-api`. O token aparece uma única vez, na criação (a resposta vai com `Cache-Control: no-store` e não passa pelo flash, que gravaria no cookie); o banco guarda só o SHA-256, buscado por índice único — sem sal nem hash lento porque o token é aleatório de 256 bits, sem dicionário a atacar. Revogar marca `revoked_at` e o token para de valer na hora; `last_used_at` é gravado no máximo uma vez por minuto.
+
+Na API, o token vai como `Authorization: Bearer <token>` (`Api::V1::BaseController`); sem token válido a resposta é 401 em JSON com `WWW-Authenticate: Bearer`. A sessão de `User`, nem a do admin, vale na API: a API tem uma porta só. Na documentação, `ApiDocsAuthentication` (middleware em volta dos `mount` do rswag, porque os engines não passam pelos controllers) deixa entrar o admin logado, pela mesma sessão de `Authentication`, ou HTTP Basic com o token como senha; os demais recebem 401 com o desafio Basic, para o navegador abrir a janela de login. É middleware e não restrição de rota porque a restrição só sabe responder 404. O `public/api-docs/eloshop-swagger-init.js` é estático e fica fora da autenticação; não carrega dado da API.
+
 O escopo do vendedor nunca vem de parâmetros da requisição. Produtos e pedidos começam em `Current.user.seller`; trocar um ID na URL por um recurso de outro vendedor resulta em 404. Vendedores `pending` ou `suspended` podem consultar o painel, mas o domínio bloqueia publicação e compra. A vitrine lista somente vendedores aprovados.
 
 ## Pagamentos

@@ -1,6 +1,6 @@
 module Admin
   class SellersController < BaseController
-    before_action :set_seller, only: %i[show approve suspend hide unhide]
+    before_action :set_seller, only: %i[show approve suspend hide unhide showcase unshowcase]
 
     def index
       @sellers_in_risk = Seller.approved.where.not(id: Seller.accepted_current_terms_ids).count
@@ -28,6 +28,7 @@ module Admin
 
     def approve
       @seller.approve!(kyc_level_6_confirmed: params[:kyc_level_6_confirmed] == "1")
+      NotifySellerOfApprovalJob.perform_later(@seller)
       redirect_to admin_seller_path(@seller), notice: "Artesão aprovado."
     rescue Seller::VerificationRequired => e
       redirect_to admin_seller_path(@seller), alert: e.message
@@ -53,6 +54,23 @@ module Admin
     def unhide
       @seller.unhide!
       redirect_to admin_seller_path(@seller), notice: "Ateliê visível na vitrine pública novamente."
+    end
+
+    # Vitrine do pré-cadastro: o ateliê pendente aparece na loja depois da
+    # revisão do admin, sem o Mercado Pago, e só passa a vender quando for
+    # aprovado. Esconder (`hide`) continua sendo a pausa de quem já aparece.
+    def showcase
+      @seller.showcase!
+      redirect_to admin_seller_path(@seller), notice: "Ateliê liberado na vitrine. Ele aparece na loja, mas só vende depois de aprovado."
+    rescue Seller::VerificationRequired => e
+      redirect_to admin_seller_path(@seller), alert: e.message
+    end
+
+    def unshowcase
+      @seller.unshowcase!
+      redirect_to admin_seller_path(@seller), notice: "Ateliê retirado da vitrine."
+    rescue Seller::VerificationRequired => e
+      redirect_to admin_seller_path(@seller), alert: e.message
     end
 
     private

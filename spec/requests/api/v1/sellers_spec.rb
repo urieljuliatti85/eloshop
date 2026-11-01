@@ -1,6 +1,8 @@
 require "swagger_helper"
 
 RSpec.describe "api/v1/sellers", type: :request do
+  let(:Authorization) { "Bearer #{api_token}" }
+
   SELLER_SCHEMA = {
     type: :object,
     properties: {
@@ -23,6 +25,8 @@ RSpec.describe "api/v1/sellers", type: :request do
     get "Lista ateliês aprovados com peças publicadas" do
       tags "Sellers"
       produces "application/json"
+
+      documents_api_token_requirement
 
       response "200", "ateliês encontrados" do
         schema SELLER_LIST_SCHEMA
@@ -74,6 +78,8 @@ RSpec.describe "api/v1/sellers", type: :request do
       tags "Sellers"
       produces "application/json"
       parameter name: :slug, in: :path, type: :string
+
+      documents_api_token_requirement slug: "qualquer-atelie"
 
       response "200", "ateliê encontrado" do
         schema SELLER_SCHEMA

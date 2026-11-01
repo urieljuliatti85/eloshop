@@ -1,0 +1,5 @@
+<%# Um erro do cadastro: o que aconteceu, em negrito, e por que e como seguir
+    (SellerRegistrationsHelper#registration_errors). %>
+<strong class="font-semibold"><%= error[:message].end_with?(".", "!", "?") ? error[:message] : "#{error[:message]}." %></strong>
+<% if error[:hint] %><span class="text-red-800"><%= error[:hint] %></span><% end %>
+<% if error[:link] %><%= link_to error[:link].first, error[:link].last, class: "font-semibold text-red-800 underline" %><% end %>

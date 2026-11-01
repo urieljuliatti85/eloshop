@@ -14,6 +14,13 @@ class OrderMessagesController < StorefrontController
 
     if @message.save
       NotifyOrderMessageJob.perform_later(@message)
+      Notification.create!(
+        recipient: @seller_order.seller,
+        kind: :new_message,
+        title: "Nova mensagem do cliente",
+        body: "Você recebeu uma nova mensagem sobre o pedido ##{@order.id}.",
+        url: seller_order_messages_path(@order)
+      )
       redirect_to order_messages_path(@order), notice: "Mensagem enviada ao ateliê."
     else
       @messages = @seller_order.order_messages.includes(:sender).chronological

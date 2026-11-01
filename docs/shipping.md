@@ -30,6 +30,26 @@ de R$ 15,00 mais R$ 5,00 por quilo, com prazo de 5 ou 8 dias conforme a faixa
 de CEP. Assim, vendedores existentes continuam vendendo sem migração de dados.
 Configurar apenas valor ou apenas prazo é inválido.
 
+**Duas faixas e frete exigido para publicar (2026-10-27).** O valor fixo
+passou a valer para o **mesmo estado do ateliê** (`fixed_shipping_*`), e um par
+opcional (`fixed_shipping_interstate_*`) vale para **os demais estados**. O
+`Shipping::Calculator` compara o estado do endereço do cliente com o
+`Seller#origin_state`: mesmo estado cobra a primeira faixa, outro estado cobra a
+segunda; sem a segunda faixa, o valor único vale para todo o Brasil; sem estado
+de origem no ateliê, vale o pior caso de cada lado — o maior valor, porque quem
+paga a etiqueta é o vendedor e o cliente vê o valor antes de pagar, e o maior
+prazo, para o pedido não prometer menos do que o envio pode levar. Constraints no banco espelham
+as validações (par completo, valores positivos, faixa interestadual só junto da
+principal). Para **publicar**, o produto precisa de frete definido pelo vendedor
+ou de frete grátis (`Product#seller_defined_shipping_for_publication`, no
+contexto `:publication`, como peso e medidas): a tabela interna é um palpite da
+plataforma e não bate com o custo da etiqueta. Produtos publicados antes da
+regra seguem vendendo pela tabela; o painel lista quais são
+(`Product.without_seller_defined_shipping`). Depois do deploy, rodar uma vez
+`bin/rails shipping:notify_missing` avisa no sino do painel cada ateliê nessa
+situação; rodar de novo não repete o aviso enquanto o anterior não for lido. A opção aparece no checkout como
+"Ateliê · Frete definido pelo ateliê".
+
 Em um carrinho com mais de um produto, os valores configurados são somados por
 unidade e o maior prazo vira a promessa do pedido. Produto legado sem
 configuração, quando misturado com produtos configurados, contribui com sua
@@ -142,10 +162,49 @@ diferença de um frete real acima do estimado): essa continua em aberto.
 não está mais entre as ofertadas é recusada, não substituída. É a mesma regra
 que já valia para preço de produto e desconto (ver `docs/checkout.md`).
 
-**Ainda não verificado:** a integração nunca rodou contra o sandbox do Melhor
-Envio — falta credencial. Os testes stubam HTTP e cobrem o contrato do adapter
-(o que envia, o que devolve, o que descarta), não a API real. Mesma situação
-registrada para o Mercado Pago.
+**Verificado no sandbox, a partir do ambiente local (2026-10-28); produção
+segue bloqueada.** O WAF do provedor bloqueia o IP de saída da Railway com
+`E-WAF-0003` antes de a requisição chegar à API — ver o parágrafo de
+2026-09-12 no `ROADMAP.md`; o pedido de liberação do IP é o ticket nº 2086648,
+aberto em 2026-10-28. O bloqueio é só desse IP, então a integração foi
+exercitada da estação de desenvolvimento: OAuth completo (conectar, trocar o
+código, gravar os tokens cifrados com `melhor_envio_sandbox`), cotação real
+(Correios PAC e SEDEX, origem Vitória/ES, para ES, SP e AM) e um checkout até
+o pedido pago, com o frete escolhido gravado no `Shipment`. Os testes
+automatizados seguem stubando HTTP e cobrindo o contrato do adapter.
+
+Para repetir o teste local:
+
+* **Uma aplicação de sandbox só para desenvolvimento**, separada da `11947`
+  (cujo retorno aponta para produção). O cadastro do Melhor Envio exige
+  `https://` nas URLs, então o retorno passa por um túnel:
+  `cloudflared tunnel --url http://localhost:3000`. A URL
+  `*.trycloudflare.com` muda a cada execução, e a aplicação e o `.env`
+  precisam acompanhar.
+* No `.env`: `MELHOR_ENVIO_CLIENT_ID`, `MELHOR_ENVIO_CLIENT_SECRET`,
+  `MELHOR_ENVIO_REDIRECT_URI=https://<túnel>/painel/melhor-envio/callback` e
+  `MELHOR_ENVIO_SANDBOX=true`.
+* Em `config/environments/development.rb`, uma linha **local, que não vai
+  para o repositório**: `config.hosts << ".trycloudflare.com"` — sem ela o
+  Rails responde "Blocked host".
+* O botão de conexão está escondido pelo aviso do #273, mas a rota segue
+  ativa: abra `/painel/melhor-envio/conectar` direto, pelo endereço do túnel
+  (a sessão precisa estar no mesmo host do retorno).
+* O banco local nasce em pré-cadastro: abra as vendas pelo dashboard do admin
+  ou com `PlatformSetting.open_sales!`.
+* A cotação fica 30 minutos em cache; troque o CEP ou limpe o cache para
+  repetir.
+
+O teste revelou um defeito do checkout, corrigido no mesmo dia: a lista de
+modalidades era montada só para o primeiro endereço, e trocar de endereço
+deixava o resumo com o frete do anterior (o servidor recotava e cobrava o
+certo, mas o cliente via outro valor). Cada endereço tem agora o próprio grupo
+de modalidades.
+
+O código de rastreio **não** vem desta etapa: ele só existe depois da compra
+da etiqueta (Etapa 2). Até lá, o artesão compra a etiqueta no site do Melhor
+Envio e informa o código no detalhe do pedido (ver "Acompanhamento
+operacional do MVP").
 
 `TODO — DECISION REQUIRED`: segue pendente, e trava apenas as Etapas 2 e 3
 (etiqueta e rastreio), **quem absorve a diferença** quando o frete real sai mais
@@ -178,6 +237,12 @@ Para retirada no ateliê, as duas últimas etapas são “Pronto para retirada�
 “Retirado”. O pedido só pode avançar depois da confirmação do pagamento, não
 pode pular a etapa de envio/pronto para retirada e grava `shipped_at` e
 `delivered_at`. Pedidos cancelados ou totalmente reembolsados não avançam.
+
+Enquanto a integração com o Melhor Envio está bloqueada, o detalhe do pedido
+orienta o artesão a comprar a etiqueta no site do Melhor Envio com a própria
+conta, com remetente e destinatário explícitos, e a colar o código de rastreio
+aqui. O formulário do produto orienta a simular o envio no mesmo site para
+definir as duas faixas.
 
 Essa atualização é deliberadamente manual: não cria etiqueta, não afirma que
 uma transportadora confirmou a entrega e não depende da integração bloqueada

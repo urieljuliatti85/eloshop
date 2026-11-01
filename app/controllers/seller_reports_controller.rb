@@ -26,7 +26,7 @@ class SellerReportsController < StorefrontController
   private
 
   def set_seller
-    @seller = Seller.approved.find_by!(slug: params[:seller_slug])
+    @seller = Seller.publicly_listed.find_by!(slug: params[:seller_slug])
   end
 
   def seller_report_params

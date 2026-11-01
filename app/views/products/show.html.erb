@@ -68,11 +68,16 @@
       <p class="order-2 mt-6 leading-relaxed text-ink-muted md:order-none"><%= @product.description %></p>
 
       <div class="order-1 mt-6 border-t border-gray-200 pt-6 md:order-none md:mt-8 md:pt-8">
-        <% if @product.available_for_purchase? %>
+        <% if product_shown_as_available?(@product) %>
           <p class="mb-4 text-sm font-medium text-green-700">Disponível</p>
+          <% if seller_preparing_to_sell?(@product.seller) %>
+            <p class="mb-4 text-sm text-ink-muted">Este ateliê está se preparando para começar a vender.</p>
+          <% end %>
 
           <% if @product.has_variants? %>
             <%= render "variant_selector", product: @product %>
+          <% elsif !sales_open? %>
+            <%= render "sales_soon" %>
           <% else %>
             <%= form_with url: cart_items_path, method: :post, class: "flex flex-col gap-6" do |form| %>
               <%= form.hidden_field :product_id, value: @product.id %>
@@ -92,6 +97,8 @@
               </div>
             <% end %>
           <% end %>
+        <% elsif seller_not_accepting_orders?(@product) %>
+          <%= render "seller_not_accepting_orders" %>
         <% else %>
           <p class="text-sm font-medium text-red-700">Indisponível</p>
         <% end %>

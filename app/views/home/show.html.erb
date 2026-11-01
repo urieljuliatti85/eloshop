@@ -7,7 +7,7 @@
 <% content_for :body_class, "home-background" %>
 
 <div class="w-full">
-  <%# Carrossel de dois banners. A faixa é uma lista rolável com scroll-snap:
+  <%# Carrossel de três banners. A faixa é uma lista rolável com scroll-snap:
       sem JavaScript os dois continuam alcançáveis pela rolagem horizontal, e
       o Stimulus só acrescenta os controles e o avanço automático. Mesmo
       princípio da faixa de categorias abaixo. %>
@@ -19,13 +19,46 @@
                         focusin->carousel#stop focusout->carousel#start">
     <ul class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth rounded-[2rem] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         data-carousel-target="track">
+      <%# Primeiro banner: convite ao Instagram. Vermelho da marca com o
+          pesponto branco tracejado na borda, a mesma costura da aba "Quem
+          vende" de Como funciona. O link sai do site, por isso abre em nova
+          aba e diz isso ao leitor de tela. %>
+      <li class="relative w-full flex-none snap-start overflow-hidden bg-brand-600"
+          data-carousel-target="slide" aria-label="1 de 3">
+        <div class="pointer-events-none absolute inset-3 rounded-[1.6rem] border-2 border-dashed border-white/45 sm:inset-4"></div>
+        <%# Ícone grande só do `md` em diante: no celular ficava atrás do texto. %>
+        <div class="pointer-events-none absolute top-1/2 right-10 hidden -translate-y-1/2 text-white/10 md:block">
+          <%= instagram_icon("size-72 md:size-80") %>
+        </div>
+
+        <div class="relative flex max-w-2xl flex-col items-start gap-6 px-8 py-16 md:px-16 md:py-20">
+          <span class="flex items-center gap-2 rounded-full bg-white/20 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white">
+            <%= instagram_icon("size-4") %> <%= eloshop_instagram_handle %>
+          </span>
+
+          <h2 class="text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl">
+            Sejam muito bem-vindos ao nosso espaço dedicado ao artesanato!
+          </h2>
+
+          <p class="max-w-md text-lg leading-relaxed text-white/90">
+            Confira o nosso Instagram e acompanhe novidades, processos criativos dos nossos artesãos, entre outros.
+          </p>
+
+          <%= link_to eloshop_instagram_url, target: "_blank", rel: "noopener",
+                class: "flex items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50",
+                aria: { label: "Seguir #{eloshop_instagram_handle} no Instagram (abre em nova aba)" } do %>
+            <%= instagram_icon("size-5") %> Seguir <%= eloshop_instagram_handle %>
+          <% end %>
+        </div>
+      </li>
+
       <%# Cartão branco sobre a paisagem: o gradiente laranja competia com o
           fundo, que agora é a foto do pôr do sol. O texto inverte junto —
           escuro sobre claro. %>
       <%# Metade transparente: a paisagem atravessa o cartão. O texto ganha
           sombra para sobreviver ao que passa por trás. %>
       <li class="relative w-full flex-none snap-start overflow-hidden bg-white/50"
-          data-carousel-target="slide" aria-label="1 de 2">
+          data-carousel-target="slide" aria-label="2 de 3">
         <div class="pointer-events-none absolute -right-20 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-brand-100/60 blur-3xl"></div>
         <div class="pointer-events-none absolute -bottom-24 left-1/4 h-64 w-64 rounded-full bg-sand-100/70 blur-3xl"></div>
 
@@ -49,12 +82,12 @@
         </div>
       </li>
 
-      <%# O segundo banner fala com o artesão, não com o comprador: foto do
+      <%# O banner do artesão fala com ele, não com o comprador: foto do
           ateliê no lugar do gradiente puro. O véu escuro por cima existe para
           o texto branco manter contraste sobre qualquer região da foto —
           sem ele, o título cai em cima dos pincéis claros. %>
       <li class="relative w-full flex-none snap-start overflow-hidden bg-ink"
-          data-carousel-target="slide" aria-label="2 de 2">
+          data-carousel-target="slide" aria-label="3 de 3">
         <%# alt vazio: a foto é decorativa, e o título ao lado já diz do que
             se trata (§62). %>
         <%= image_tag "atelie-banner.jpg", alt: "", loading: "lazy",
@@ -82,6 +115,7 @@
           </div>
         </div>
       </li>
+
     </ul>
 
     <%# Controles só aparecem com JavaScript: sem ele a rolagem da própria
@@ -95,7 +129,7 @@
       </button>
 
       <div class="flex items-center gap-2" role="tablist">
-        <% 2.times do |index| %>
+        <% 3.times do |index| %>
           <%# Branco translúcido: o cinza sumia sobre o céu laranja do fundo.
               O ponto ativo vira `bg-brand-500` pelo controller. %>
           <button type="button" class="h-2.5 w-2.5 cursor-pointer rounded-full bg-white/70 transition"

@@ -1,0 +1,27 @@
+<%# Aviso do pré-cadastro, no visual do cartão da vitrine (banner do
+    Instagram na home): vermelho da marca e pesponto tracejado. O título
+    separa "pronta" de "quase pronta"; o texto de cada caso é o combinado
+    com o negócio (ver PlatformSetting). %>
+<section class="relative overflow-hidden rounded-[1.75rem] bg-brand-600 text-white" aria-labelledby="pre-launch-title">
+  <span class="pointer-events-none absolute inset-2 rounded-[1.4rem] border-2 border-dashed border-white/45 sm:inset-3" aria-hidden="true"></span>
+
+  <div class="relative flex flex-col items-start gap-4 px-7 py-8 sm:px-10 sm:py-10">
+    <p class="rounded-full bg-white/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em]">Pré-cadastro</p>
+
+    <% if ready %>
+      <h2 id="pre-launch-title" class="text-2xl font-black leading-tight tracking-tight sm:text-3xl">Sua loja está pronta.</h2>
+      <p class="max-w-2xl text-base leading-relaxed text-white/90"><%= PlatformSetting::SALES_OPENING_PROMISE %></p>
+    <% else %>
+      <h2 id="pre-launch-title" class="text-2xl font-black leading-tight tracking-tight sm:text-3xl">Sua loja está quase pronta.</h2>
+      <p class="max-w-2xl text-base leading-relaxed text-white/90">Siga os passos, integre com o Mercado Pago e adicione produtos. <%= PlatformSetting::SALES_OPENING_PROMISE %></p>
+    <% end %>
+
+    <% if !ready %>
+      <%= link_to "Ver primeiros passos", seller_getting_started_path,
+            class: "inline-flex min-h-11 items-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50" %>
+    <% elsif current_seller.public_page_available? %>
+      <%= link_to "Ver minha loja", seller_path(current_seller.slug),
+            class: "inline-flex min-h-11 items-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50" %>
+    <% end %>
+  </div>
+</section>

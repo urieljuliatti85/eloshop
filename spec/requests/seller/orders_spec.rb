@@ -216,6 +216,68 @@ RSpec.describe "Seller orders", type: :request do
       expect(response.body).to include("Código de rastreamento (opcional)")
     end
 
+    # Enquanto a integração está bloqueada, a etiqueta é comprada no site do
+    # Melhor Envio; remetente e destinatário explícitos para não confundir o
+    # endereço do cliente com o da EloShop.
+    it "explains how to send the order through the Melhor Envio website" do
+      order = create_order_for(own_product)
+      order.confirm!
+      create_shipment_for(order)
+
+      get seller_order_path(order)
+
+      steps = Nokogiri::HTML(response.body).at_css("[data-shipping-steps]")
+      expect(steps.text).to include("Remetente:", "Destinatário:", "Endereço de entrega")
+      expect(steps.at_css("a[href='https://melhorenvio.com.br'][target='_blank'][rel='noopener noreferrer']")).to be_present
+    end
+
+    # O ateliê compra a etiqueta com o valor que o cliente pagou de frete em
+    # vista; antes ele só aparecia no resumo financeiro, longe do envio.
+    it "shows the shipping the customer paid next to the sending steps" do
+      order = create_order_for(own_product)
+      order.confirm!
+      create_shipment_for(order, shipping_cents: 2068)
+
+      get seller_order_path(order)
+
+      html = Nokogiri::HTML(response.body)
+      expect(html.at_css("[data-shipping-paid]").text.squish).to include("Entrega EloShop — Entrega padrão", "R$ 20,68")
+      expect(html.at_xpath("//dt[normalize-space()='Frete pago pelo cliente']/following-sibling::dd").text.squish).to eq("R$ 20,68")
+    end
+
+    it "tells the seller the label is on them when the order shipped for free" do
+      order = create_order_for(own_product)
+      order.confirm!
+      create_shipment_for(order, shipping_cents: 0)
+
+      get seller_order_path(order)
+
+      html = Nokogiri::HTML(response.body)
+      expect(html.at_css("[data-shipping-paid]").text.squish).to include("frete grátis", "a etiqueta é por sua conta")
+      expect(html.at_xpath("//dt[normalize-space()='Frete pago pelo cliente']/following-sibling::dd").text.squish).to eq("Grátis")
+    end
+
+    it "does not show the sending steps for local pickup" do
+      order = create_order_for(own_product)
+      order.confirm!
+      create_shipment_for(order, service: Shipping::Quote::LOCAL_PICKUP_SERVICE)
+
+      get seller_order_path(order)
+
+      expect(Nokogiri::HTML(response.body).at_css("[data-shipping-steps]")).to be_nil
+      expect(response.body).not_to include("Frete pago pelo cliente")
+    end
+
+    it "does not show the sending steps once the order was shipped" do
+      order = create_order_for(own_product)
+      order.confirm!
+      create_shipment_for(order).mark_shipped!
+
+      get seller_order_path(order)
+
+      expect(Nokogiri::HTML(response.body).at_css("[data-shipping-steps]")).to be_nil
+    end
+
     it "marks the seller's confirmed order as shipped with the submitted details" do
       order = create_order_for(own_product)
       order.confirm!
@@ -349,11 +411,11 @@ RSpec.describe "Seller orders", type: :request do
     end
   end
 
-  def create_shipment_for(order, service: "Entrega padrão")
+  def create_shipment_for(order, service: "Entrega padrão", shipping_cents: order.shipping_cents)
     order.seller_order.create_shipment!(
       carrier: "Entrega EloShop",
       service: service,
-      shipping_cents: order.shipping_cents,
+      shipping_cents: shipping_cents,
       estimated_days: 5
     )
   end

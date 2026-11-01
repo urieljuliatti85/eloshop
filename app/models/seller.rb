@@ -1,7 +1,7 @@
 class Seller < ApplicationRecord
   # Lista permitida (`only`), nunca `ignore`: a tabela tem tokens cifrados, CPF e
   # endereço, que não podem ir parar em `versions` se alguém criar uma coluna nova.
-  has_paper_trail only: %i[name slug status approved_at hidden_at mercado_pago_user_id mercado_pago_connected_at mercado_pago_live_mode]
+  has_paper_trail only: %i[name slug status approved_at showcased_at hidden_at mercado_pago_user_id mercado_pago_connected_at mercado_pago_live_mode]
 
   class VerificationRequired < StandardError; end
 
@@ -63,10 +63,19 @@ class Seller < ApplicationRecord
     SellerTermsAcceptance.where(terms_version: SellerTerms.version).select(:seller_id)
   end
 
-  # Composto com Seller.approved onde a visibilidade pública é decidida
+  # Composto em Seller.publicly_listed, onde a visibilidade pública é decidida
   # (Product.publicly_visible, Product#available_for_purchase?) — esconder
   # não muda o status do vendedor, é um filtro à parte.
   scope :visible, -> { where(hidden_at: nil) }
+
+  # Fonte única de "o ateliê aparece na loja?": aprovado, ou liberado na
+  # vitrine pelo admin durante o pré-cadastro, sempre fora do escondido.
+  # Aparecer não é vender: a compra continua exigindo `approved?` (ver
+  # Product#purchase_blocker). Suspenso nunca aparece, e `suspend!` também
+  # limpa a vitrine.
+  scope :publicly_listed, -> {
+    visible.where(status: :approved).or(visible.where(status: :pending).where.not(showcased_at: nil))
+  }
 
   # Nome livre para um novo ateliê? A unicidade é do slug, então "Ateliê da Ana"
   # e "atelie da ana" colidem. Devolve a sugestão mais próxima quando não é.
@@ -84,7 +93,10 @@ class Seller < ApplicationRecord
   before_validation :assign_slug, if: -> { slug.blank? && name.present? }
 
   validates :name, presence: true
-  validates :slug, presence: true, uniqueness: true
+  # Sem nome, o slug (derivado dele) também falta: o erro do nome já diz o
+  # que corrigir, e repetir "URL do ateliê" confundia quem nem vê esse campo.
+  validates :slug, presence: true, unless: -> { name.blank? }
+  validates :slug, uniqueness: true
   validates :mercado_pago_user_id, uniqueness: true, allow_blank: true
   validates :footer_text, length: { maximum: FOOTER_TEXT_MAX_LENGTH }
   validate :theme_images_allowed
@@ -122,10 +134,18 @@ class Seller < ApplicationRecord
 
   LAUNCH_FEE_PERIOD = 3.months
 
-  # Fim da comissão de lançamento: 3 meses depois da aprovação deste vendedor.
-  # Vendedor ainda não aprovado não tem prazo correndo.
+  # A comissão de lançamento conta dos 3 primeiros meses em que o vendedor
+  # pode vender: a aprovação dele ou a abertura das vendas da plataforma, o
+  # que vier por último. Aprovado durante o pré-cadastro não perde o prazo
+  # esperando a abertura. Sem um dos dois, o prazo ainda não começou.
+  def launch_fee_starts_at
+    sales_opened_at = PlatformSetting.sales_opened_at
+    [ approved_at, sales_opened_at ].max if approved_at.present? && sales_opened_at.present?
+  end
+
   def launch_fee_ends_at
-    approved_at + LAUNCH_FEE_PERIOD if approved_at.present?
+    starts_at = launch_fee_starts_at
+    starts_at + LAUNCH_FEE_PERIOD if starts_at.present?
   end
 
   def launch_fee_active?(at: Time.current)
@@ -144,7 +164,33 @@ class Seller < ApplicationRecord
       raise VerificationRequired, "Conecte uma conta Mercado Pago de produção e confirme o KYC nível 6 antes da aprovação."
     end
 
-    update!(status: :approved, approved_at: Time.current)
+    now = Time.current
+    update!(status: :approved, approved_at: now, showcased_at: showcased_at || now)
+  end
+
+  # Libera o ateliê pendente para aparecer na loja sem o Mercado Pago, depois
+  # da revisão do admin. Aprovado já aparece (e esconder é `hide!`); suspenso
+  # precisa ser reaprovado.
+  def showcase!
+    raise VerificationRequired, "Só um ateliê pendente pode ser liberado na vitrine." unless pending?
+
+    update!(showcased_at: showcased_at || Time.current)
+  end
+
+  def unshowcase!
+    raise VerificationRequired, "Só um ateliê pendente pode ser retirado da vitrine." unless pending?
+
+    update!(showcased_at: nil)
+  end
+
+  def showcased?
+    showcased_at.present?
+  end
+
+  def publicly_listed?
+    return false if suspended? || hidden?
+
+    approved? || showcased?
   end
 
   # Exigir conta real é a regra em produção, onde aprovar um vendedor de teste
@@ -172,6 +218,7 @@ class Seller < ApplicationRecord
     update!(
       status: :suspended,
       approved_at: nil,
+      showcased_at: nil,
       mercado_pago_user_id: nil,
       mercado_pago_access_token_ciphertext: nil,
       mercado_pago_refresh_token_ciphertext: nil,
@@ -196,12 +243,12 @@ class Seller < ApplicationRecord
     update!(hidden_at: nil)
   end
 
-  # A página pública /artesaos/:slug só existe para ateliê aprovado e não
-  # escondido (ver SellersController#show): pendente responde 404, e suspenso
-  # ou escondido têm uma página de "indisponível". O "Ver a loja" do painel usa
-  # isto para não mandar o vendedor a um beco.
+  # A página pública /artesaos/:slug só existe para ateliê que aparece na loja
+  # (ver SellersController#show): pendente fora da vitrine responde 404, e
+  # suspenso ou escondido têm uma página de "indisponível". O "Ver a loja" do
+  # painel usa isto para não mandar o vendedor a um beco.
   def public_page_available?
-    approved? && !hidden?
+    publicly_listed?
   end
 
   def hidden?
@@ -242,6 +289,21 @@ class Seller < ApplicationRecord
       product: products.exists?,
       approval: approved?
     }
+  end
+
+  # Pagos e ainda não despachados: o mesmo `:preparing` da linha do tempo do
+  # pedido. É o "preparar e enviar" do painel inicial e da aba Pedidos.
+  def seller_orders_to_prepare
+    seller_orders.where(status: %w[confirmed partially_refunded]).joins(:shipment).merge(Shipment.pending)
+  end
+
+  # As mesmas etapas como o painel do artesão as cobra (bloco do painel
+  # inicial e abas do celular): conta do Mercado Pago conectada mas não
+  # aceita conta como pendente, porque é ela que o artesão precisa corrigir.
+  def setup_steps
+    steps = getting_started_steps
+    steps[:mercado_pago] = false if mercado_pago_account_state == :not_accepted
+    steps
   end
 
   def mercado_pago_connected?
@@ -299,6 +361,8 @@ class Seller < ApplicationRecord
     update!(connection_attributes)
   end
 
+  # Volta para `pending`, mas não mexe em `showcased_at`: o ateliê continua
+  # na loja e só para de vender até reconectar e ser reaprovado.
   def disconnect_mercado_pago!
     update!(
       mercado_pago_user_id: nil,
@@ -393,7 +457,19 @@ class Seller < ApplicationRecord
     digits = decrypted_cpf
     return nil if digits.blank?
 
-    "#{digits[0..2]}.#{digits[3..5]}.#{digits[6..8]}-#{digits[9..10]}"
+    self.class.format_cpf(digits)
+  end
+
+  # "12345678909" → "123.456.789-09", e progressivo para o que ainda está
+  # incompleto ("1234" → "123.4"), igual à máscara do cadastro
+  # (cpf_input_controller.js). Mais de 11 dígitos volta sem máscara, para a
+  # tela de erro mostrar o que foi digitado em vez de cortar em silêncio.
+  def self.format_cpf(value)
+    digits = value.to_s.gsub(/\D/, "")
+    return digits if digits.length > 11
+
+    formatted = [ digits[0, 3], digits[3, 3], digits[6, 3] ].compact_blank.join(".")
+    digits.length > 9 ? "#{formatted}-#{digits[9, 2]}" : formatted
   end
 
   def to_param

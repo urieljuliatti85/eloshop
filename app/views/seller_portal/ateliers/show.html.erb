@@ -9,6 +9,24 @@
     <%= link_to "Editar dados", edit_seller_atelier_path, class: "seller-button seller-button--primary w-fit" %>
   </header>
 
+  <%# Vitrine do pré-cadastro: o ateliê pendente sabe que vender exige terminar
+      os primeiros passos, e que a EloShop pode liberar a vitrine antes disso
+      (Seller#showcase!). Aprovado já vende; suspenso tem outro problema. %>
+  <% if current_seller.pending? %>
+    <section class="rounded-[1.75rem] border border-amber-300 bg-amber-50 px-7 py-6 text-amber-950" aria-labelledby="showcase-notice-title">
+      <h2 id="showcase-notice-title" class="text-lg font-bold">Para vender, você precisa terminar todo o processo.</h2>
+      <p class="mt-2 max-w-2xl text-sm leading-6">
+        <% if current_seller.showcased? %>
+          Enquanto isso, já liberamos a sua vitrine (cadastro de produtos) para que as pessoas vejam seus produtos, adicionem aos favoritos e façam uma lista de desejos, até você ativar a loja por completo.
+        <% else %>
+          Enquanto isso, nós liberaremos a sua vitrine (cadastro de produtos) para que as pessoas vejam seus produtos, adicionem aos favoritos e façam uma lista de desejos, até você ativar a loja por completo.
+        <% end %>
+      </p>
+      <%= link_to "Ver primeiros passos", seller_getting_started_path,
+            class: "mt-4 inline-flex min-h-11 items-center rounded-full bg-amber-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-950" %>
+    </section>
+  <% end %>
+
   <section class="seller-card-lg">
     <dl class="grid gap-6 sm:grid-cols-2">
       <div>
@@ -96,12 +114,12 @@
       <div class="sm:col-span-2">
         <dt class="text-sm text-stone-500">Endereço na loja</dt>
         <dd class="mt-1">
-          <% if current_seller.approved? %>
+          <% if current_seller.public_page_available? %>
             <%# break-all porque a URL é uma palavra só: sem isso ela estoura
                 a largura do celular em vez de quebrar em duas linhas. %>
             <%= link_to seller_url(current_seller.slug), seller_path(current_seller.slug), class: "inline-flex min-h-11 items-center break-all font-medium text-brand-600 underline underline-offset-4 hover:text-brand-700" %>
           <% else %>
-            <span class="text-stone-500">A vitrine fica pública quando o ateliê for aprovado.</span>
+            <span class="text-stone-500">A vitrine fica pública quando a EloShop liberar o ateliê na loja.</span>
           <% end %>
         </dd>
       </div>

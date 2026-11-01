@@ -102,6 +102,19 @@
     </section>
   </div>
 
+  <% if @seller.pending? %>
+    <section class="admin-card p-6">
+      <h2>Vitrine do pré-cadastro</h2>
+      <% if @seller.showcased? %>
+        <p class="mt-2 text-sm text-slate-500">Liberado em <%= l(@seller.showcased_at, format: :short) %>. O ateliê aparece na loja com os produtos publicados, mas só recebe pedidos depois de aprovado abaixo.</p>
+        <%= button_to "Retirar da vitrine", unshowcase_admin_seller_path(@seller), method: :patch, class: "admin-button admin-button--secondary mt-5" %>
+      <% else %>
+        <p class="mt-2 text-sm text-slate-500">Revise o nome, a vitrine e os produtos. Liberar faz o ateliê aparecer na loja sem o Mercado Pago; a venda continua exigindo a aprovação abaixo.</p>
+        <%= button_to "Liberar na vitrine", showcase_admin_seller_path(@seller), method: :patch, class: "admin-button admin-button--brand mt-5" %>
+      <% end %>
+    </section>
+  <% end %>
+
   <% unless @seller.approved? %>
     <section class="admin-card p-6">
       <h2>Aprovação do artesão</h2>

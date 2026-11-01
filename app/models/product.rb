@@ -6,6 +6,7 @@ class Product < ApplicationRecord
 
   money_attribute :price
   money_attribute :fixed_shipping
+  money_attribute :fixed_shipping_interstate
 
   class InvalidStatusTransition < StandardError; end
 
@@ -90,6 +91,13 @@ class Product < ApplicationRecord
             presence: true, if: :fixed_shipping_started?
   validates :fixed_shipping_cents, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validates :fixed_shipping_estimated_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  # Faixa opcional para fora do estado do ateliê; só existe como variação da
+  # principal (as mesmas regras também são constraints no banco).
+  validates :fixed_shipping_interstate_cents, :fixed_shipping_interstate_estimated_days,
+            presence: true, if: :fixed_shipping_interstate_started?
+  validates :fixed_shipping_interstate_cents, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :fixed_shipping_interstate_estimated_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validate :fixed_shipping_interstate_requires_base, if: :fixed_shipping_interstate_started?
 
   # Peso e dimensões são exigidos para PUBLICAR, não para rascunhar: o
   # vendedor cadastra a peça enquanto ainda a está fazendo, mas não anuncia
@@ -108,6 +116,12 @@ class Product < ApplicationRecord
   # catálogo legado sem categoria.
   validate :category_for_publication, on: :publication
 
+  # O frete é definido pelo vendedor (termos comerciais de 2026-10-03): sem
+  # valor próprio, o checkout cairia na tabela interna, um palpite da
+  # plataforma que não bate com o custo real da etiqueta. Mesma lógica do
+  # peso: exigido só para publicar, para não quebrar o catálogo já publicado.
+  validate :seller_defined_shipping_for_publication, on: :publication
+
   validates :stock_quantity, numericality: { less_than_or_equal_to: 1 }, if: :availability_type_one_of_a_kind?
   validates :production_time_min_days, :production_time_max_days,
             presence: true, numericality: { greater_than: 0 }, if: :availability_type_made_to_order?
@@ -123,7 +137,7 @@ class Product < ApplicationRecord
   validate :images_count_within_limit
 
   def publish!
-    raise InvalidStatusTransition, "o vendedor precisa estar aprovado antes da publicação" unless seller.approved?
+    raise InvalidStatusTransition, "o vendedor precisa estar aprovado ou liberado na vitrine antes da publicação" unless seller.publicly_listed?
     raise InvalidStatusTransition, "aceite os termos comerciais antes de publicar" unless seller.terms_accepted?
 
     unless valid?(:publication)
@@ -132,6 +146,12 @@ class Product < ApplicationRecord
     end
 
     transition_to!("active")
+  end
+
+  def seller_defined_shipping_for_publication
+    return if fixed_shipping_configured? || free_shipping?
+
+    errors.add(:base, "Defina o frete deste produto (valor e prazo) ou marque frete grátis antes de publicar.")
   end
 
   def category_for_publication
@@ -159,18 +179,23 @@ class Product < ApplicationRecord
   end
 
   # Fonte única de verdade sobre disponibilidade de compra — ver docs/inventory.md.
-  # Produto sob encomenda não depende de estoque físico. Produto com
-  # variantes (Fase 9) nunca é comprado "cru" — a decisão passa sempre pela
-  # variante escolhida, então aqui só reflete se existe alguma opção comprável.
   def available_for_purchase?
-    return false unless seller&.approved?
-    return false if seller.hidden?
-    return false unless active?
-    return false if category && !category.visible?
-    return product_variants.any?(&:available_for_purchase?) if has_variants?
-    return true if availability_type_made_to_order?
+    purchase_blocker.nil?
+  end
 
-    stock_quantity.positive?
+  # Por que o produto não pode ser comprado agora (`nil` quando pode). As telas
+  # usam o motivo para escolher a mensagem; a decisão continua sendo uma só.
+  # `:seller_not_accepting_orders` é o ateliê que aparece na loja (vitrine do
+  # pré-cadastro, ou aprovado que desconectou o Mercado Pago) mas ainda não
+  # recebe pagamento: a peça em si está disponível, só não pode ser vendida.
+  def purchase_blocker
+    return :unavailable unless seller&.publicly_listed?
+    return :unavailable unless active?
+    return :unavailable if category && !category.visible?
+    return :unavailable unless in_stock_for_sale?
+    return :seller_not_accepting_orders unless seller.approved?
+
+    nil
   end
 
   def has_variants?
@@ -227,6 +252,14 @@ class Product < ApplicationRecord
     fixed_shipping_cents.present? && fixed_shipping_estimated_days.present?
   end
 
+  def fixed_shipping_interstate_started?
+    fixed_shipping_interstate_cents.present? || fixed_shipping_interstate_estimated_days.present?
+  end
+
+  def fixed_shipping_interstate_configured?
+    fixed_shipping_interstate_cents.present? && fixed_shipping_interstate_estimated_days.present?
+  end
+
   scope :matching_query, ->(query) {
     term = "%#{sanitize_sql_like(query.to_s.strip)}%"
     left_joins(:category, :tags, :materials, :techniques)
@@ -248,11 +281,14 @@ class Product < ApplicationRecord
   # comercial. Cada ProductVariant passa a ser a fonte de verdade; por isso
   # este escopo cobre somente produtos sem variantes.
   scope :without_variants, -> { where.missing(:product_variants) }
+  # Sem frete definido pelo vendedor: o checkout usa a tabela interna, um
+  # palpite da plataforma. Publicados assim antes da regra de publicação.
+  scope :without_seller_defined_shipping, -> { where(fixed_shipping_cents: nil, free_shipping: false) }
   scope :low_stock, -> {
     active.availability_type_standard.without_variants.where(stock_quantity: 1..LOW_STOCK_THRESHOLD)
   }
 
-  scope :publicly_visible, -> { active.joins(:seller).merge(Seller.approved).merge(Seller.visible).in_visible_category }
+  scope :publicly_visible, -> { active.joins(:seller).merge(Seller.publicly_listed).in_visible_category }
 
   # Categoria desabilitada tira do ar os produtos dela e da subárvore abaixo
   # (Category#visible?). Produto sem categoria nunca é escondido por isso:
@@ -290,6 +326,22 @@ class Product < ApplicationRecord
   end
 
   private
+
+  # Produto sob encomenda não depende de estoque físico. Produto com variantes
+  # (Fase 9) nunca é comprado "cru" — a decisão passa sempre pela variante
+  # escolhida, então aqui só reflete se existe alguma opção comprável.
+  def in_stock_for_sale?
+    return product_variants.any?(&:available_for_purchase?) if has_variants?
+    return true if availability_type_made_to_order?
+
+    stock_quantity.positive?
+  end
+
+  def fixed_shipping_interstate_requires_base
+    return if fixed_shipping_configured?
+
+    errors.add(:fixed_shipping, "precisa ser definido para o seu estado antes do frete para outros estados")
+  end
 
   def allowed_status_transitions
     availability_type_one_of_a_kind? ? ONE_OF_A_KIND_STATUS_TRANSITIONS : STANDARD_STATUS_TRANSITIONS

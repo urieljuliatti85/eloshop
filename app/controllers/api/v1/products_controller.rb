@@ -22,7 +22,7 @@ module Api
       end
 
       def show
-        seller = Seller.approved.find_by!(slug: params[:seller_slug])
+        seller = Seller.publicly_listed.find_by!(slug: params[:seller_slug])
         @product = seller.products.publicly_visible.includes(:product_variants, category: :parent).find_by!(slug: params[:slug])
       end
 
