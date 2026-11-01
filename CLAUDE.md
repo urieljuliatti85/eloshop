@@ -104,6 +104,7 @@ Exemplos:
 - estoque → docs/inventory.md + docs/domain.md
 - frete → docs/shipping.md + docs/checkout.md + docs/decisions/005-shipping-provider.md
 - marketplace, vendedor, comissão, split → docs/decisions/004-marketplace-model.md + §34
+- distribuidor de insumos → docs/decisions/007-distributors.md + Parte 4 do ROADMAP.md
 - arquitetura, deploy, observabilidade → docs/architecture.md
 - segurança → docs/security.md
 - decisões arquiteturais já tomadas → docs/decisions/*.md (ADRs)
