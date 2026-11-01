@@ -2,13 +2,20 @@ module Api
   module V1
     class ProductsController < BaseController
       PER_PAGE = 12
+      TEXT_FILTERS = %i[q seller category availability].freeze
+
+      before_action :validate_listing_params, only: :index
 
       def index
         scope = filtered_scope
 
-        @page = [ params[:page].to_i, 1 ].max
+        @page = requested_page || 1
         @total_count = scope.count
         @total_pages = (@total_count / PER_PAGE.to_f).ceil
+        # Página além da última não vai ao banco: um `page` enorme estouraria
+        # o OFFSET (bigint) e respondia 500.
+        return @products = Product.none if @page > @total_pages
+
         # `preload`, não `includes`: com anexos do Active Storage o JOIN único
         # infla o custo estimado do plano e dispara o JIT do PostgreSQL — ver
         # o comentário em app/controllers/products_controller.rb.
@@ -28,6 +35,25 @@ module Api
 
       private
 
+      # Array ou hash na query string (`category[a]=x`, `page[]=1`) chegava ao
+      # domínio e respondia 500. Valor desconhecido de `availability`
+      # devolvia a listagem sem filtro, e o cliente achava que tinha filtrado:
+      # ao contrário do slug de categoria — dado que muda, filtro sem
+      # resultado —, os tipos de disponibilidade são um conjunto fechado.
+      def validate_listing_params
+        invalid = TEXT_FILTERS.find { |name| params.key?(name) && !params[name].is_a?(String) }
+        invalid ||= :availability if params[:availability].present? && !Product.availability_types.key?(params[:availability])
+        invalid ||= :page if params[:page].present? && requested_page.nil?
+
+        render_invalid_parameter invalid.to_s if invalid
+      end
+
+      # Inteiro positivo; qualquer outra coisa é nil, e o 400 vem da validação.
+      def requested_page
+        page = Integer(params[:page], 10, exception: false) if params[:page].is_a?(String)
+        page if page&.positive?
+      end
+
       # Um subconjunto dos filtros do catálogo do storefront, sobre o mesmo
       # escopo público — a API não enxerga nada que a loja já não mostre.
       def filtered_scope
@@ -37,7 +63,7 @@ module Api
         # condição precisa apontar para a tabela, não para o alias.
         scope = scope.where(sellers: { slug: params[:seller] }) if params[:seller].present?
         scope = scope.where(category_id: category_ids_for(params[:category])) if params[:category].present?
-        scope = scope.where(availability_type: params[:availability]) if Product.availability_types.key?(params[:availability])
+        scope = scope.where(availability_type: params[:availability]) if params[:availability].present?
         scope.distinct
       end
 

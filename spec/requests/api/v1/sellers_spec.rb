@@ -27,6 +27,7 @@ RSpec.describe "api/v1/sellers", type: :request do
       produces "application/json"
 
       documents_api_token_requirement
+      documents_rate_limit
 
       response "200", "ateliês encontrados" do
         schema SELLER_LIST_SCHEMA
@@ -80,6 +81,7 @@ RSpec.describe "api/v1/sellers", type: :request do
       parameter name: :slug, in: :path, type: :string
 
       documents_api_token_requirement slug: "qualquer-atelie"
+      documents_rate_limit slug: "qualquer-atelie"
 
       response "200", "ateliê encontrado" do
         schema SELLER_SCHEMA

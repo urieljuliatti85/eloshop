@@ -10,6 +10,12 @@ class ApiClient < ApplicationRecord
   # escrita; a precisão de um minuto basta para saber quem ainda usa.
   USAGE_TRACKING_INTERVAL = 1.minute
 
+  # Marca o token como da EloShop onde quer que ele vaze (repositório, log,
+  # print): dá para procurá-lo e cadastrá-lo como padrão num scanner de
+  # segredos. Faz parte do token, então entra no digest; os emitidos antes do
+  # prefixo seguem válidos, porque a busca é só pelo digest.
+  TOKEN_PREFIX = "eloshop_"
+
   attr_reader :token
 
   validates :name, presence: true, length: { maximum: 100 }, uniqueness: { case_sensitive: false }
@@ -46,7 +52,7 @@ class ApiClient < ApplicationRecord
   private
 
   def generate_token
-    @token = SecureRandom.base58(32)
+    @token = TOKEN_PREFIX + SecureRandom.base58(32)
     self.token_digest = self.class.digest(@token)
   end
 end

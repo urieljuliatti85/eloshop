@@ -40,7 +40,7 @@ RSpec.describe "api/v1/products", type: :request do
       tags "Products"
       produces "application/json"
       parameter name: :page, in: :query, type: :integer, required: false,
-                description: "Página da listagem (padrão 1)"
+                description: "Página da listagem: inteiro positivo, padrão 1. Além da última, lista vazia"
       parameter name: :q, in: :query, type: :string, required: false,
                 description: "Busca por nome, descrição, categoria, tag, material ou técnica"
       parameter name: :seller, in: :query, type: :string, required: false,
@@ -51,6 +51,21 @@ RSpec.describe "api/v1/products", type: :request do
                 description: "Tipo de disponibilidade (standard, one_of_a_kind, made_to_order)"
 
       documents_api_token_requirement
+      documents_rate_limit
+
+      # Os tipos de disponibilidade são um conjunto fechado: valor fora dele é
+      # erro de quem chamou, não filtro sem resultado (como o slug de categoria).
+      response "400", "parâmetro inválido" do
+        schema type: :object,
+          properties: { error: { type: :string }, parameter: { type: :string } },
+          required: %w[error parameter]
+
+        let(:availability) { "in_stock" }
+
+        run_test! do |response|
+          expect(JSON.parse(response.body)).to eq("error" => "invalid_parameter", "parameter" => "availability")
+        end
+      end
 
       response "200", "produtos ativos encontrados" do
         schema LIST_SCHEMA
@@ -272,6 +287,7 @@ RSpec.describe "api/v1/products", type: :request do
       let(:seller_slug) { approved_seller.slug }
 
       documents_api_token_requirement slug: "qualquer-produto"
+      documents_rate_limit slug: "qualquer-produto"
 
       response "200", "produto encontrado" do
         schema PRODUCT_SCHEMA
