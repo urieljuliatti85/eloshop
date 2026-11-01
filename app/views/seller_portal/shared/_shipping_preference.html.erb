@@ -1,0 +1,17 @@
+<%# Escolha do ateliê entre a cotação do provedor conectado e o frete que ele
+    definiu em cada produto (Seller#provider_quotes_preferred, lida pelo
+    Shipping::Calculator). Frete grátis vence nos dois casos. %>
+<%= form_with url: seller_shipping_preference_path, method: :patch, class: "mt-4 space-y-2" do |form| %>
+  <fieldset>
+    <legend class="text-sm font-semibold text-ink">Qual frete o cliente paga?</legend>
+    <label class="mt-2 flex min-h-11 items-start gap-3 text-sm text-stone-700">
+      <%= form.radio_button :provider_quotes_preferred, false, checked: !current_seller.provider_quotes_preferred?, class: "mt-1" %>
+      <span>O frete que eu defini em cada produto. Produtos sem frete definido usam a cotação.</span>
+    </label>
+    <label class="flex min-h-11 items-start gap-3 text-sm text-stone-700">
+      <%= form.radio_button :provider_quotes_preferred, true, checked: current_seller.provider_quotes_preferred?, class: "mt-1" %>
+      <span>O frete calculado na hora pela transportadora, para o CEP do cliente.</span>
+    </label>
+  </fieldset>
+  <%= form.submit "Salvar escolha", class: "min-h-11 rounded-full border border-brand-200 px-5 text-sm font-bold text-brand-700 hover:bg-brand-50" %>
+<% end %>

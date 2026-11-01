@@ -9,6 +9,15 @@ do MVP, cada produto pode configurar frete fixo nacional e retirada gratuita;
 a tabela interna permanece como último fallback. As decisões de etiqueta e
 frete grátis promocional seguem pendentes e travam apenas as Etapas 2 e 3.
 
+**Atualização 2026-10-30 — SuperFrete substitui o Melhor Envio.** O Melhor
+Envio respondeu que só libera IP fixo, exclusivo e no Brasil, o que a Railway
+não oferece (sem região no Brasil; o IP fixo dela pode ser compartilhado). A
+SuperFrete aceita chamadas da Railway e foi integrada para conexão do ateliê e
+cotação (ver `docs/shipping.md`); o Melhor Envio foi removido do código. As
+cotações externas obedecem à chave `SHIPPING_REMOTE_QUOTES_ENABLED` em produção,
+e o ateliê escolhe entre a cotação e o frete que definiu no produto. Etiqueta e
+rastreio seguem como Etapas 2 e 3, agora sobre a API da SuperFrete.
+
 Opções revisadas em 2026-09-06 com a documentação pública dos provedores
 ([Melhor Envio](https://docs.melhorenvio.com.br/reference/introducao-api-melhor-envio)).
 Preço e política desses serviços mudam: confirmar antes de assinar.

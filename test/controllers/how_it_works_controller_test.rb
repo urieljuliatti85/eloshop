@@ -65,10 +65,10 @@ class HowItWorksControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-tab-name='vende'] a[href='#{seller_login_path}']"
   end
 
-  test "seller tab does not offer the Melhor Envio connection, blocked in production" do
+  test "seller tab does not offer a shipping provider connection, still off in production" do
     get how_it_works_path(aba: "vende")
 
-    assert_not_includes response.body, "Melhor Envio"
+    assert_not_includes response.body, "SuperFrete"
   end
 
   test "seller benefits and steps become carousels on mobile, without autoplay" do

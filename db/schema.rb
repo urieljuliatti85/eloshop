@@ -536,11 +536,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_31_120000) do
     t.string "origin_state"
     t.boolean "mercado_pago_test_account"
     t.string "mercado_pago_public_key"
-    t.text "melhor_envio_access_token_ciphertext"
-    t.text "melhor_envio_refresh_token_ciphertext"
-    t.datetime "melhor_envio_token_expires_at"
-    t.datetime "melhor_envio_connected_at"
-    t.boolean "melhor_envio_sandbox", default: false, null: false
     t.string "owner_full_name"
     t.text "cpf_ciphertext"
     t.string "cpf_hash"
@@ -565,6 +560,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_31_120000) do
     t.string "theme_image_ratio", default: "quadrada", null: false
     t.string "theme_heading_font", default: "igual", null: false
     t.datetime "showcased_at"
+    t.text "superfrete_access_token_ciphertext"
+    t.string "superfrete_account_id"
+    t.string "superfrete_account_email"
+    t.datetime "superfrete_connected_at"
+    t.boolean "superfrete_sandbox", default: false, null: false
+    t.boolean "provider_quotes_preferred", default: false, null: false
     t.index ["cpf_hash"], name: "index_sellers_on_cpf_hash", unique: true, where: "(cpf_hash IS NOT NULL)"
     t.index ["mercado_pago_user_id"], name: "index_sellers_on_mercado_pago_user_id", unique: true, where: "(mercado_pago_user_id IS NOT NULL)"
     t.index ["slug"], name: "index_sellers_on_slug", unique: true
