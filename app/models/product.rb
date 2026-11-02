@@ -84,7 +84,10 @@ class Product < ApplicationRecord
   validates :sku, uniqueness: { scope: :seller_id }
   validates :currency, presence: true
   validates :price_cents, numericality: { greater_than_or_equal_to: 0 }
-  validates :stock_quantity, numericality: { greater_than_or_equal_to: 0 }
+  # Vazio não é "não é um número": a pessoa só apagou o valor, e a mensagem
+  # diz o que pôr no lugar. Vazio continua sendo erro (não vira 0 sozinho).
+  validates :stock_quantity, presence: { message: "precisa ser informado (use 0 se ainda não tiver peças prontas)" }
+  validates :stock_quantity, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :weight_grams, :length_cm, :width_cm, :height_cm,
             numericality: { greater_than: 0 }, allow_nil: true
   validates :fixed_shipping_cents, :fixed_shipping_estimated_days,
@@ -122,7 +125,8 @@ class Product < ApplicationRecord
   # peso: exigido só para publicar, para não quebrar o catálogo já publicado.
   validate :seller_defined_shipping_for_publication, on: :publication
 
-  validates :stock_quantity, numericality: { less_than_or_equal_to: 1 }, if: :availability_type_one_of_a_kind?
+  validates :stock_quantity, numericality: { less_than_or_equal_to: 1, message: "deve ser 0 ou 1 numa peça única" },
+            allow_nil: true, if: :availability_type_one_of_a_kind?
   validates :production_time_min_days, :production_time_max_days,
             presence: true, numericality: { greater_than: 0 }, if: :availability_type_made_to_order?
   validate :production_time_range_valid, if: :availability_type_made_to_order?

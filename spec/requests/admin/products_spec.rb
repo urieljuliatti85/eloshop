@@ -206,6 +206,24 @@ RSpec.describe "Admin products", type: :request do
 
       expect(response).to have_http_status(:unprocessable_entity)
     end
+
+    # O erro vem do servidor, então aparece junto do campo mesmo sem
+    # JavaScript; `seller_id` mostra o erro que o model registra em `seller`.
+    it "shows each server-side error next to its field" do
+      sign_in_as(user)
+
+      post admin_products_path, params: { product: { name: "", seller_id: "", price: "10,00", stock_quantity: 0 } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      page = Nokogiri::HTML(response.body)
+      %w[product_name product_seller_id].each do |id|
+        expect(page.at_css("##{id}")["aria-invalid"]).to eq("true")
+        expect(page.at_css("##{id}")["aria-describedby"]).to eq("#{id}_error")
+        expect(page.at_css("##{id}_error.field-error")).to be_present
+      end
+      expect(page.at_css("#product_price")["aria-invalid"]).to be_nil
+      expect(page.at_css("#product_price_error")).to be_nil
+    end
   end
 
   describe "PATCH /admin/products/:id" do

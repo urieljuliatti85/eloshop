@@ -222,7 +222,25 @@ class ProductTest < ActiveSupport::TestCase
       "name" => "Peça única 1", "sku" => "UNICA-001", "availability_type" => "one_of_a_kind", "stock_quantity" => 2
     ))
     assert_not product.valid?
-    assert_includes product.errors[:stock_quantity], "deve ser menor ou igual a 1"
+    assert_includes product.errors[:stock_quantity], "deve ser 0 ou 1 numa peça única"
+  end
+
+  # Apagar o estoque não é digitar algo que não é número: a mensagem diz o que
+  # pôr no lugar, e é a única (sem "não é um número" junto). Vazio não vira 0.
+  test "blank stock_quantity asks for a value instead of saying it is not a number" do
+    [ "standard", "one_of_a_kind" ].each do |availability_type|
+      product = Product.new(seller: sellers(:approved), name: "Peça", price_cents: 1000, stock_quantity: "", availability_type: availability_type)
+
+      assert_not product.valid?
+      assert_equal [ "precisa ser informado (use 0 se ainda não tiver peças prontas)" ], product.errors[:stock_quantity]
+    end
+  end
+
+  test "non-numeric stock_quantity is still rejected" do
+    product = Product.new(seller: sellers(:approved), name: "Peça", price_cents: 1000, stock_quantity: "abc")
+
+    assert_not product.valid?
+    assert_includes product.errors[:stock_quantity], "não é um número"
   end
 
   test "one_of_a_kind accepts stock_quantity of 1" do

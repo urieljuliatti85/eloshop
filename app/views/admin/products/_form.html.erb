@@ -16,12 +16,12 @@
     <%= form.label :seller_id do %>Artesão<%= required_marker %><% end %>
     <%= form.select :seller_id,
           options_for_select(Seller.order(:name).map { |seller| [ seller.name, seller.id ] }, form.object.seller_id),
-          { include_blank: "Selecione o artesão" }, class: "w-full", required: true, data: { required_fields_target: "field" } %>
+          { include_blank: "Selecione o artesão" }, aria: field_error_aria(form, :seller_id), class: "w-full", required: true, data: { required_fields_target: "field" } %><%= field_error(form, :seller_id) %>
   </div>
 
   <div>
     <%= form.label :name do %>Nome<%= required_marker %><% end %>
-    <%= form.text_field :name, required: true, data: { required_fields_target: "field" }, class: "w-full" %>
+    <%= form.text_field :name, aria: field_error_aria(form, :name), required: true, data: { required_fields_target: "field" }, class: "w-full" %><%= field_error(form, :name) %>
   </div>
 
   <div>
@@ -41,30 +41,30 @@
 
   <div>
     <%= form.label :description, "Descrição" %>
-    <%= form.text_area :description, class: "w-full" %>
+    <%= form.text_area :description, aria: field_error_aria(form, :description), class: "w-full" %><%= field_error(form, :description) %>
   </div>
 
   <div>
     <%= form.label :price do %>Preço (R$)<%= required_marker %><% end %>
-    <%= form.text_field :price, value: price_field_value(form.object.price_cents),
-          inputmode: "decimal", placeholder: "0,00", data: { controller: "price-input", action: "input->price-input#format", required_fields_target: "field" }, required: true, class: "w-full" %>
+    <%= form.text_field :price, aria: field_error_aria(form, :price), value: price_field_value(form.object.price_cents),
+          inputmode: "decimal", placeholder: "0,00", data: { controller: "price-input", action: "input->price-input#format", required_fields_target: "field" }, required: true, class: "w-full" %><%= field_error(form, :price) %>
   </div>
 
   <div>
     <%= form.label :currency, "Moeda" %>
-    <%= form.text_field :currency, value: form.object.currency || "BRL", class: "w-full" %>
+    <%= form.text_field :currency, aria: field_error_aria(form, :currency), value: form.object.currency || "BRL", class: "w-full" %><%= field_error(form, :currency) %>
   </div>
 
   <div>
     <%= form.label :sku, "SKU (opcional)" %>
-    <%= form.text_field :sku, placeholder: "Em branco, a EloShop gera", class: "w-full" %>
+    <%= form.text_field :sku, aria: field_error_aria(form, :sku), placeholder: "Em branco, a EloShop gera", class: "w-full" %><%= field_error(form, :sku) %>
   </div>
 
   <div>
     <%= form.label :category_id do %>Categoria<%= required_marker %><% end %>
     <%= form.select :category_id,
           options_for_select(category_tree.breadcrumb_options, form.object.category_id),
-          { include_blank: "Selecione uma categoria" }, class: "w-full", data: { required_fields_target: "field", publish_required: true } %>
+          { include_blank: "Selecione uma categoria" }, aria: field_error_aria(form, :category_id), class: "w-full", data: { required_fields_target: "field", publish_required: true } %><%= field_error(form, :category_id) %>
     <p class="text-sm text-gray-600">Em rascunho pode ficar em branco; para publicar, escolha uma categoria — é como o cliente encontra o produto.</p>
   </div>
 
@@ -74,36 +74,36 @@
           options_for_select(
             [["Estoque padrão", "standard"], ["Peça única", "one_of_a_kind"], ["Sob encomenda", "made_to_order"]],
             form.object.availability_type
-          ), {}, class: "w-full", data: { required_fields_target: "trigger", action: "change->required-fields#refresh" } %>
+          ), {}, aria: field_error_aria(form, :availability_type), class: "w-full", data: { required_fields_target: "trigger", action: "change->required-fields#refresh" } %><%= field_error(form, :availability_type) %>
   </div>
 
   <div>
     <%= form.label :stock_quantity, "Estoque" %>
-    <%= form.number_field :stock_quantity, class: "w-full" %>
+    <%= form.number_field :stock_quantity, aria: field_error_aria(form, :stock_quantity), min: 0, max: (1 if product.availability_type_one_of_a_kind?), data: { required_fields_target: "field", max_when: "one_of_a_kind", max_limit: 1, max_message: "Peça única: use 0 ou 1." }, class: "w-full" %><%= field_error(form, :stock_quantity) %>
     <p class="text-sm text-gray-600">Ignorado para produtos sob encomenda. Peça única aceita no máximo 1.</p>
   </div>
 
   <div>
     <%= form.label :production_time_min_days do %>Prazo de produção — mínimo (dias úteis)<%= required_marker(visible: made_to_order) %><% end %>
-    <%= form.number_field :production_time_min_days, required: made_to_order, data: { required_fields_target: "field", required_when: "made_to_order" }, class: "w-full" %>
+    <%= form.number_field :production_time_min_days, aria: field_error_aria(form, :production_time_min_days), required: made_to_order, data: { required_fields_target: "field", required_when: "made_to_order" }, class: "w-full" %><%= field_error(form, :production_time_min_days) %>
   </div>
 
   <div>
     <%= form.label :production_time_max_days do %>Prazo de produção — máximo (dias úteis)<%= required_marker(visible: made_to_order) %><% end %>
-    <%= form.number_field :production_time_max_days, required: made_to_order, data: { required_fields_target: "field", required_when: "made_to_order" }, class: "w-full" %>
+    <%= form.number_field :production_time_max_days, aria: field_error_aria(form, :production_time_max_days), required: made_to_order, data: { required_fields_target: "field", required_when: "made_to_order" }, class: "w-full" %><%= field_error(form, :production_time_max_days) %>
     <p class="text-sm text-gray-600">Obrigatório apenas para produtos sob encomenda.</p>
   </div>
 
   <div>
     <%= form.label :weight_grams do %>Peso para frete (gramas)<%= required_marker %><% end %>
-    <%= form.number_field :weight_grams, min: 1, data: { required_fields_target: "field", publish_required: true }, class: "w-full" %>
+    <%= form.number_field :weight_grams, aria: field_error_aria(form, :weight_grams), min: 1, data: { required_fields_target: "field", publish_required: true }, class: "w-full" %><%= field_error(form, :weight_grams) %>
   </div>
 
   <div class="grid grid-cols-3 gap-3">
     <% { length_cm: "Comprimento", width_cm: "Largura", height_cm: "Altura" }.each do |field, label| %>
       <div>
         <%= form.label field do %><%= label %> (cm)<%= required_marker %><% end %>
-        <%= form.number_field field, min: 1, data: { required_fields_target: "field", publish_required: true }, class: "w-full" %>
+        <%= form.number_field field, aria: field_error_aria(form, field), min: 1, data: { required_fields_target: "field", publish_required: true }, class: "w-full" %><%= field_error(form, field) %>
       </div>
     <% end %>
   </div>
@@ -117,21 +117,21 @@
     <div class="grid grid-cols-2 gap-3">
       <div>
         <%= form.label :fixed_shipping, "Valor fixo por unidade (R$)" %>
-        <%= form.text_field :fixed_shipping, value: price_field_value(form.object.fixed_shipping_cents),
-              inputmode: "decimal", placeholder: "20,00", data: { controller: "price-input", action: "input->price-input#format" }, class: "w-full" %>
+        <%= form.text_field :fixed_shipping, aria: field_error_aria(form, :fixed_shipping), value: price_field_value(form.object.fixed_shipping_cents),
+              inputmode: "decimal", placeholder: "20,00", data: { controller: "price-input", action: "input->price-input#format" }, class: "w-full" %><%= field_error(form, :fixed_shipping) %>
       </div>
       <div>
         <%= form.label :fixed_shipping_estimated_days, "Prazo máximo (dias úteis)" %>
-        <%= form.number_field :fixed_shipping_estimated_days, min: 1, step: 1, placeholder: "8", class: "w-full" %>
+        <%= form.number_field :fixed_shipping_estimated_days, aria: field_error_aria(form, :fixed_shipping_estimated_days), min: 1, step: 1, placeholder: "8", class: "w-full" %><%= field_error(form, :fixed_shipping_estimated_days) %>
       </div>
       <div>
         <%= form.label :fixed_shipping_interstate, "Outros estados: valor por unidade (R$)" %>
-        <%= form.text_field :fixed_shipping_interstate, value: price_field_value(form.object.fixed_shipping_interstate_cents),
-              inputmode: "decimal", placeholder: "35,00", data: { controller: "price-input", action: "input->price-input#format" }, class: "w-full" %>
+        <%= form.text_field :fixed_shipping_interstate, aria: field_error_aria(form, :fixed_shipping_interstate), value: price_field_value(form.object.fixed_shipping_interstate_cents),
+              inputmode: "decimal", placeholder: "35,00", data: { controller: "price-input", action: "input->price-input#format" }, class: "w-full" %><%= field_error(form, :fixed_shipping_interstate) %>
       </div>
       <div>
         <%= form.label :fixed_shipping_interstate_estimated_days, "Outros estados: prazo máximo (dias úteis)" %>
-        <%= form.number_field :fixed_shipping_interstate_estimated_days, min: 1, step: 1, placeholder: "12", class: "w-full" %>
+        <%= form.number_field :fixed_shipping_interstate_estimated_days, aria: field_error_aria(form, :fixed_shipping_interstate_estimated_days), min: 1, step: 1, placeholder: "12", class: "w-full" %><%= field_error(form, :fixed_shipping_interstate_estimated_days) %>
       </div>
     </div>
 
@@ -154,12 +154,12 @@
 
   <div>
     <%= form.label :main_image, "Imagem principal" %>
-    <%= form.file_field :main_image, accept: "image/png,image/jpeg,image/webp" %>
+    <%= form.file_field :main_image, aria: field_error_aria(form, :main_image), accept: "image/png,image/jpeg,image/webp" %><%= field_error(form, :main_image) %>
   </div>
 
   <div>
     <%= form.label :images, "Adicionar fotos à galeria" %>
-    <%= form.file_field :images, multiple: true, accept: "image/png,image/jpeg,image/webp" %>
+    <%= form.file_field :images, aria: field_error_aria(form, :images), multiple: true, accept: "image/png,image/jpeg,image/webp" %><%= field_error(form, :images) %>
     <p class="text-sm text-gray-600">Máximo de <%= Product::IMAGES_MAX_COUNT %> fotos no total. Envios somam às fotos já cadastradas.</p>
   </div>
 
