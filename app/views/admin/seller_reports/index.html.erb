@@ -20,6 +20,7 @@
   </nav>
 
   <% if @seller_reports.any? %>
+    <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
     <div class="admin-table-wrap">
       <table>
         <thead><tr><th>Ateliê</th><th>Cliente</th><th>Motivo</th><th>Detalhes</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>

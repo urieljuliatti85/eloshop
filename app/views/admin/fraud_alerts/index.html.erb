@@ -49,6 +49,7 @@
   </nav>
 
   <% if @alerts.any? %>
+    <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
     <div class="admin-table-wrap">
       <table>
         <thead><tr><th>Ateliê</th><th>O que foi encontrado</th><th>Detectado em</th><th>Situação</th><th><span class="sr-only">Ações</span></th></tr></thead>

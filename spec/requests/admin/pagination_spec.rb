@@ -67,4 +67,25 @@ RSpec.describe "Admin pagination", type: :request do
     expect((first + second).uniq.size).to eq(per_page + 1)
     expect(first + second).not_to include("Aviso alheio")
   end
+
+  it "repeats the pagination above the list on mobile only, with its own accessible name" do
+    (per_page + 1).times { |i| Coupon.create!(code: "TOPO#{i}", discount_type: :percentage, percentage: 10) }
+
+    get admin_coupons_path
+
+    html = Nokogiri::HTML(response.body)
+    top = html.at_css("nav[aria-label='Paginação, topo da lista']")
+    bottom = html.at_css("nav[aria-label='Paginação']")
+    expect(top["class"]).to include("lg:hidden")
+    expect(bottom["class"]).not_to include("lg:hidden")
+    expect(response.body.index("Paginação, topo da lista")).to be < response.body.index("TOPO")
+  end
+
+  it "shows no pagination at all when everything fits in one page" do
+    Coupon.create!(code: "UNICO", discount_type: :percentage, percentage: 10)
+
+    get admin_coupons_path
+
+    expect(response.body).not_to include("aria-label=\"Paginação")
+  end
 end

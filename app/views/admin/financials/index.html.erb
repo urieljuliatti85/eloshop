@@ -169,6 +169,7 @@
     <% end %>
 
     <% if @reconciliation_rows.any? %>
+      <div class="px-4"><%= render "admin/shared/pagination", pagination: @pagination, position: :top %></div>
       <div class="overflow-x-auto">
         <table>
           <thead>

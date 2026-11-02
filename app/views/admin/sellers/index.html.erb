@@ -48,6 +48,7 @@
     <% end %>
   </nav>
 
+  <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
   <div class="admin-card overflow-hidden">
     <table class="admin-table">
       <thead><tr><th>Ateliê</th><th>Proprietário</th><th>Contato</th><th>Status</th><th>Etapa</th><th>Vitrine</th><th>Termos</th><th>Produtos</th><th></th></tr></thead>

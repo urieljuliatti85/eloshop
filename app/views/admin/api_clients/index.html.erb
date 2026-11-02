@@ -8,6 +8,7 @@
     <%= link_to "Novo cliente", new_admin_api_client_path, class: "admin-button admin-button--brand" %>
   </header>
 
+  <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
   <div class="admin-table-wrap">
     <table>
       <thead><tr><th>Nome</th><th>Desde</th><th>Último uso</th><th>Situação</th><th><span class="sr-only">Ações</span></th></tr></thead>

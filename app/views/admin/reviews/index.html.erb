@@ -13,6 +13,7 @@
   </nav>
 
   <% if @reviews.any? %>
+    <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
     <div class="admin-table-wrap">
       <table>
         <thead><tr><th>Produto</th><th>Cliente</th><th>Nota</th><th>Comentário</th><th>Origem</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>

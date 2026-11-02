@@ -8,6 +8,7 @@
     <%= link_to "Novo administrador", new_admin_admin_path, class: "admin-button admin-button--brand" %>
   </header>
 
+  <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
   <div class="admin-table-wrap">
     <table>
       <thead><tr><th>E-mail</th><th>Desde</th><th><span class="sr-only">Ações</span></th></tr></thead>
