@@ -32,6 +32,13 @@ class Product < ApplicationRecord
   # made_to_order (sem estoque físico) nem one_of_a_kind (sempre 1 unidade).
   LOW_STOCK_THRESHOLD = 3
 
+  # Chave do painel do vendedor: desligada, o artesão não cria novas
+  # variantes nem campos de personalização (decisão de produto de
+  # 2026-11-02). A implementação continua inteira: a loja, o carrinho e o
+  # checkout seguem usando o que já existe, e o vendedor ainda edita e
+  # remove o que já cadastrou. O admin não é afetado.
+  SELLER_VARIANTS_AND_PERSONALIZATION_ENABLED = false
+
   enum :status, {
     draft: "draft",
     active: "active",

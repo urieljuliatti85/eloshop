@@ -110,6 +110,25 @@ RSpec.describe "Seller products", type: :request do
     expect(response.body).to include("Variantes", "OWN-001-AZUL", "Personalizações", "Galeria")
   end
 
+  it "hides variant and personalization creation for a product without them" do
+    get seller_product_path(own_product)
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).not_to include("Nova variante", "Novo campo", "Personalizações")
+    expect(response.body).not_to include(new_seller_product_product_variant_path(own_product))
+  end
+
+  it "keeps existing variants and personalizations manageable without the create buttons" do
+    variant = own_product.product_variants.create!(sku: "OWN-001-VERDE", price_cents: 5_000, stock_quantity: 1, color: "Verde")
+    option = own_product.personalization_options.create!(label: "Inicial", required: true, max_length: 2)
+
+    get seller_product_path(own_product)
+
+    expect(response.body).to include(edit_seller_product_product_variant_path(own_product, variant))
+    expect(response.body).to include(edit_seller_product_personalization_option_path(own_product, option))
+    expect(response.body).not_to include("Nova variante", "Novo campo")
+  end
+
   it "assigns newly created products to the authenticated seller" do
     expect do
       post seller_products_path, params: { product: { name: "Nova peça", sku: "NEW-001", price: "40,00", currency: "BRL", stock_quantity: 1 } }

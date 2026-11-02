@@ -54,7 +54,7 @@
   <% analytics_enabled = google_analytics_measurement_id.present? && analytics_page.present? %>
   <%# Páginas medidas usam navegação completa: ao entrar em carrinho, conta ou
       pedido, o documento anterior (inclusive o script do Google) é destruído. %>
-  <body class="flex min-h-screen flex-col overflow-x-clip bg-white text-ink <%= 'account-area' if account_area %> <%= content_for(:body_class) %>"
+  <body class="flex min-h-screen flex-col overflow-x-clip bg-white text-ink <%= account_area ? 'account-area' : 'storefront-tabs-area' %> <%= content_for(:body_class) %>"
         <% if analytics_enabled %>
           data-controller="google-analytics"
           data-turbo="false"
@@ -78,7 +78,13 @@
     </main>
 
     <%= render "layouts/footer" %>
-    <%= render "layouts/account_mobile_tabs" if account_area %>
+    <%# No celular, a área do cliente tem as abas da conta; o resto da loja,
+        as abas com os destinos do menu principal. Nunca as duas. %>
+    <% if account_area %>
+      <%= render "layouts/account_mobile_tabs" %>
+    <% else %>
+      <%= render "layouts/storefront_mobile_tabs" %>
+    <% end %>
     <%= render "layouts/google_analytics" if analytics_enabled %>
   </body>
 </html>

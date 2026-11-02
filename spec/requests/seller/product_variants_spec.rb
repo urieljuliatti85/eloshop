@@ -10,21 +10,51 @@ RSpec.describe "Seller product variants", type: :request do
 
   before { sign_in_as(user) }
 
-  it "renders the variant form for an owned product" do
-    get new_seller_product_product_variant_path(product)
+  context "when seller creation is enabled" do
+    before { stub_const("Product::SELLER_VARIANTS_AND_PERSONALIZATION_ENABLED", true) }
 
-    expect(response).to have_http_status(:ok)
-    expect(response.body).to include("Nova variante", "Salvar variante")
+    it "renders the variant form for an owned product" do
+      get new_seller_product_product_variant_path(product)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Nova variante", "Salvar variante")
+    end
+
+    it "creates a variant for an owned product" do
+      expect do
+        post seller_product_product_variants_path(product), params: {
+          product_variant: { sku: "SELLER-VAR-G", price: "85,00", stock_quantity: 4, size: "G", active: true }
+        }
+      end.to change(product.product_variants, :count).by(1)
+
+      expect(response).to redirect_to(seller_product_path(product))
+    end
   end
 
-  it "creates a variant for an owned product" do
-    expect do
-      post seller_product_product_variants_path(product), params: {
-        product_variant: { sku: "SELLER-VAR-G", price: "85,00", stock_quantity: 4, size: "G", active: true }
-      }
-    end.to change(product.product_variants, :count).by(1)
+  context "when seller creation is disabled" do
+    it "redirects the new form back to the product" do
+      get new_seller_product_product_variant_path(product)
+
+      expect(response).to redirect_to(seller_product_path(product))
+      expect(flash[:alert]).to include("Variantes não estão disponíveis")
+    end
+
+    it "does not create through a direct POST" do
+      expect do
+        post seller_product_product_variants_path(product), params: {
+          product_variant: { sku: "SELLER-VAR-G", price: "85,00", stock_quantity: 4, size: "G", active: true }
+        }
+      end.not_to change(product.product_variants, :count)
+
+      expect(response).to redirect_to(seller_product_path(product))
+    end
+  end
+
+  it "updates an existing variant while creation is disabled" do
+    patch seller_product_product_variant_path(product, variant), params: { product_variant: { stock_quantity: 5 } }
 
     expect(response).to redirect_to(seller_product_path(product))
+    expect(variant.reload.stock_quantity).to eq(5)
   end
 
   it "does not expose another seller product" do

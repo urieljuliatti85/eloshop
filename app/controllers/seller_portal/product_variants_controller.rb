@@ -1,6 +1,7 @@
 module SellerPortal
   class ProductVariantsController < BaseController
     before_action :set_product
+    before_action :require_creation_enabled, only: %i[new create]
     before_action :set_product_variant, only: %i[edit update destroy]
 
     def new
@@ -36,6 +37,12 @@ module SellerPortal
     end
 
     private
+
+    def require_creation_enabled
+      return if Product::SELLER_VARIANTS_AND_PERSONALIZATION_ENABLED
+
+      redirect_to seller_product_path(@product), alert: "Variantes não estão disponíveis no cadastro no momento."
+    end
 
     def set_product
       @product = current_seller.products.find(params[:product_id])

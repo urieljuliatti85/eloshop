@@ -23,8 +23,12 @@
     <div class="seller-card"><p class="text-sm text-ink-muted">Disponibilidade</p><p class="mt-2 text-lg font-bold"><%= @product.availability_type.humanize %></p></div>
   </div>
 
+  <%# Variantes e personalizações: criação desligada por Product::SELLER_VARIANTS_AND_PERSONALIZATION_ENABLED.
+      O que já existe continua visível para o artesão editar ou remover, porque a loja segue usando. %>
+  <% creation_enabled = Product::SELLER_VARIANTS_AND_PERSONALIZATION_ENABLED %>
+  <% if creation_enabled || @product.product_variants.any? %>
   <section class="seller-card">
-    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Variantes</h2><p class="mt-1 text-sm text-ink-muted">Combinações comerciais reais de tamanho, cor ou material.</p></div><%= link_to "Nova variante", new_seller_product_product_variant_path(@product), class: "inline-flex min-h-11 items-center rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %></div>
+    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Variantes</h2><p class="mt-1 text-sm text-ink-muted">Combinações comerciais reais de tamanho, cor ou material.</p></div><% if creation_enabled %><%= link_to "Nova variante", new_seller_product_product_variant_path(@product), class: "inline-flex min-h-11 items-center rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %><% end %></div>
     <% if @product.product_variants.any? %>
       <div class="mt-5 divide-y divide-brand-100">
         <% @product.product_variants.order(:sku).each do |variant| %>
@@ -38,9 +42,11 @@
       <p class="mt-5 text-sm text-ink-muted">Este produto é vendido sem variantes.</p>
     <% end %>
   </section>
+  <% end %>
 
+  <% if creation_enabled || @product.personalization_options.any? %>
   <section class="seller-card">
-    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Personalizações</h2><p class="mt-1 text-sm text-ink-muted">Informações que o comprador deverá fornecer.</p></div><%= link_to "Novo campo", new_seller_product_personalization_option_path(@product), class: "inline-flex min-h-11 items-center rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %></div>
+    <div class="flex items-center justify-between gap-4"><div><h2 class="text-xl font-bold">Personalizações</h2><p class="mt-1 text-sm text-ink-muted">Informações que o comprador deverá fornecer.</p></div><% if creation_enabled %><%= link_to "Novo campo", new_seller_product_personalization_option_path(@product), class: "inline-flex min-h-11 items-center rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %><% end %></div>
     <% if @product.personalization_options.any? %>
       <div class="mt-5 divide-y divide-brand-100">
         <% @product.personalization_options.order(:label).each do |option| %>
@@ -54,6 +60,7 @@
       <p class="mt-5 text-sm text-ink-muted">Nenhuma personalização solicitada.</p>
     <% end %>
   </section>
+  <% end %>
 
   <section class="seller-card">
     <h2 class="text-xl font-bold">Galeria</h2>
