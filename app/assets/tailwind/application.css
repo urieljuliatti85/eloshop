@@ -183,6 +183,12 @@
   .admin-stat-card::after { content: ""; @apply absolute -right-5 -top-5 size-20 rounded-full bg-brand-50; }
   .admin-stat-value { @apply mt-3 text-3xl font-semibold tracking-tight text-slate-950; }
   .admin-table-wrap { @apply overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03),0_16px_40px_rgba(15,23,42,0.04)]; }
+  /* A rolagem horizontal só contém um filho `absolute` (o `.sr-only` de
+     "Ações" na última coluna, por exemplo) se for o containing block dele.
+     Sem `relative`, o span escapa do overflow, alarga o documento e o
+     celular reduz o zoom da página inteira (/admin/orders ia a 1113px em
+     375px), levando junto as abas fixas do rodapé. */
+  .admin-content :is(.admin-table-wrap, .overflow-x-auto) { @apply relative; }
   .admin-content table { @apply w-full min-w-[44rem] border-collapse text-left text-sm; }
   .admin-content thead { @apply bg-[#fbfaf7]; }
   .admin-content th { @apply border-b border-slate-200 px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 first:pl-5 last:pr-5; }
