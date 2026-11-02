@@ -11,22 +11,54 @@
 // começa no "Cancelar" (a escolha segura) e volta a quem abriu. A mensagem
 // entra por `textContent`, nunca como HTML. Navegador sem <dialog> cai no
 // window.confirm de antes.
+//
+// Duas proteções que o window.confirm tinha de graça, por travar a página
+// (achadas no /qa de 2026-11-02):
+// - Duplo toque: o "Confirmar" abre exatamente sob o dedo em botões no meio
+//   da tela, e o segundo toque confirmava sem a pessoa ler. Por isso ele
+//   ignora toques nos primeiros CONFIRM_GUARD_MS depois de abrir.
+// - Voltar/avançar: a página voltava com o dialog aberto, e o "Confirmar"
+//   concluía a ação pendente de antes. Duas memórias guardam a página: a do
+//   Turbo (navegação pelo Turbo, evento `turbo:before-cache`) e a do próprio
+//   navegador (back/forward cache, depois de um carregamento completo, evento
+//   `pagehide`, com o JavaScript ainda vivo). Nas duas, o dialog é
+//   descartado como "Cancelar" antes de a página ser guardada.
+const CONFIRM_GUARD_MS = 400
+
 export function confirmDialog(message) {
   if (typeof HTMLDialogElement !== "function") return Promise.resolve(window.confirm(message))
 
   return new Promise((resolve) => {
     const opener = document.activeElement
     const dialog = buildDialog(message)
+    const confirmButton = dialog.querySelector("button[value='confirm']")
+    let settled = false
 
-    dialog.addEventListener("close", () => {
-      resolve(dialog.returnValue === "confirm")
+    // Termina uma vez só, seja qual for o caminho (botão, Esc, fundo, saída).
+    const finish = (confirmed, { restoreFocus = true } = {}) => {
+      if (settled) return
+      settled = true
+      document.removeEventListener("turbo:before-cache", discard)
+      window.removeEventListener("pagehide", discard)
+      resolve(confirmed)
       dialog.remove()
-      if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true })
-    }, { once: true })
+      if (restoreFocus && opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true })
+    }
+    const discard = () => finish(false, { restoreFocus: false })
+
+    dialog.addEventListener("close", () => finish(dialog.returnValue === "confirm"), { once: true })
+    document.addEventListener("turbo:before-cache", discard)
+    window.addEventListener("pagehide", discard)
 
     // Clique no fundo (fora do cartão) também cancela.
     dialog.addEventListener("click", (event) => {
       if (event.target === dialog) dialog.close("cancel")
+    })
+
+    // `data-ready` marca o fim da proteção (os testes esperam por ele).
+    setTimeout(() => { dialog.dataset.ready = "" }, CONFIRM_GUARD_MS)
+    confirmButton.addEventListener("click", (event) => {
+      if (!("ready" in dialog.dataset)) event.preventDefault()
     })
 
     document.body.append(dialog)

@@ -44,9 +44,63 @@ class TurboConfirmDialogTest < ApplicationSystemTestCase
 
     # Confirmar: a ação segue como antes.
     click_remove_variant(variant)
-    within("dialog[data-confirm-dialog][open]") { click_button "Confirmar" }
+    within("dialog[data-confirm-dialog][open][data-ready]") { click_button "Confirmar" }
     assert_no_text variant.sku
     assert_not ProductVariant.exists?(variant.id)
+  end
+
+  # /qa de 2026-11-02: o "Confirmar" abre exatamente sob o dedo, e o segundo
+  # toque de um duplo toque confirmava a remoção sem a pessoa ler.
+  test "a double tap on a turbo_confirm button does not confirm by itself" do
+    user = users(:seller)
+    product = user.seller.products.first
+    variant = product.product_variants.create!(sku: "DOUBLE-#{SecureRandom.hex(3)}", price_cents: 5_000, stock_quantity: 1, color: "Azul")
+    sign_in_seller(user)
+    visit seller_product_path(product)
+
+    button = find("form[action='#{seller_product_product_variant_path(product, variant)}'] button", text: "Remover")
+    page.execute_script("arguments[0].scrollIntoView({block: 'center'})", button)
+    button.double_click
+
+    assert_selector "dialog[data-confirm-dialog][open]", text: "Remover esta variante?"
+    assert ProductVariant.exists?(variant.id)
+  end
+
+  # /qa de 2026-11-02: o Turbo guardava a página com o dialog aberto, e o
+  # "Confirmar" do dialog restaurado concluía a remoção pendente de antes.
+  test "leaving the page with the confirmation open discards it" do
+    user = users(:seller)
+    product = user.seller.products.first
+    variant = product.product_variants.create!(sku: "BACK-#{SecureRandom.hex(3)}", price_cents: 5_000, stock_quantity: 1, color: "Azul")
+    sign_in_seller(user)
+    visit seller_root_path
+    visit seller_product_path(product)
+
+    click_remove_variant(variant)
+    assert_selector "dialog[data-confirm-dialog][open]"
+
+    # Carregamento completo: a página volta da memória do navegador.
+    page.go_back
+    assert_current_path seller_root_path
+    page.go_forward
+    assert_current_path seller_product_path(product)
+    assert_text variant.sku
+    assert_no_selector "dialog[data-confirm-dialog]"
+    assert ProductVariant.exists?(variant.id)
+
+    # Navegação pelo Turbo: a página volta da memória do Turbo.
+    visit seller_products_path
+    find("a[href='#{seller_product_path(product)}']", match: :first).click
+    assert_current_path seller_product_path(product)
+    click_remove_variant(variant)
+    assert_selector "dialog[data-confirm-dialog][open]"
+    page.go_back
+    assert_current_path seller_products_path
+    page.go_forward
+    assert_current_path seller_product_path(product)
+    assert_text variant.sku
+    assert_no_selector "dialog[data-confirm-dialog]"
+    assert ProductVariant.exists?(variant.id)
   end
 
   private
