@@ -65,6 +65,10 @@ Usar Active Storage. O produto tem uma imagem principal (`main_image`) clarament
 
 Galeria de fotos adicionais `(Fase 15)`: `has_many_attached :images`, até 2 fotos por produto (`Product::IMAGES_MAX_COUNT`; produtos antigos com mais fotos continuam como estão, só não aceitam acréscimo), validadas (tipo, tamanho) antes de anexar. `main_image` sempre aparece primeiro; a ordem do restante segue a ordem de upload.
 
+### Ampliação da foto
+
+Na PDP, a foto principal é um botão ("Ampliar foto") que abre a foto à vista num `<dialog>` nativo (`gallery_controller.js`): inteira e sem o corte da moldura (`object-cover`, 4:3 no celular), com pinça no celular (`touch-pinch-zoom`). Fecha por Esc, pelo botão "Fechar", clicando no fundo e ao sair da página (`turbo:before-cache`, para o "voltar" não reabrir), e devolve o foco a quem abriu. **A ampliação usa a mesma versão de 1200 px da foto principal**, no mesmo endereço (rota do Active Storage, que não expira): vem do cache do navegador, não gera variante nova nem ocupa mais o volume. Não usar o arquivo original: fotos enviadas antes do optimizer (2026-10-01) podem ter até 5 MB e manter metadados, e as variantes do libvips só removem metadados com `strip` (testado em 2026-11-02, ver a revisão no roteiro). Uma versão maior, se faltar detalhe no desktop, deve ter `strip` e ser carregada só ao abrir.
+
 Imagens de detalhe/escala/processo/embalagem como categorias distintas de foto, e otimizações de performance (variantes de imagem, thumbnails, lazy loading, CDN) continuam pós-MVP e devem ser tratadas quando o volume de catálogo justificar.
 
 ## URLs e SEO
