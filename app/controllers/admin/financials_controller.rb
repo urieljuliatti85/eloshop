@@ -5,7 +5,10 @@ module Admin
     SETTLED_ORDER_STATUSES = %w[confirmed partially_refunded refunded].freeze
     IN_PROGRESS_PAYMENT_STATUSES = %w[processing pending authorized].freeze
     SUCCESSFUL_PAYMENT_STATUSES = %w[paid partially_refunded refunded].freeze
-    RECONCILIATION_LIMIT = 100
+    # Teto de pagamentos locais lidos por conciliação, aplicado DEPOIS dos
+    # filtros de ateliê e período (ver prefilter_local_payments). Atingido, a
+    # tela avisa para refinar o filtro; o CSV sai com as mesmas linhas.
+    RECONCILIATION_LIMIT = 1_000
     RELEASE_DATE_LOOKUP_LIMIT = 50
     RELEASE_DATES_CACHE_KEY = "admin/mercado_pago_release_dates/v1"
     RECONCILIATION_CACHE_TTL = 24.hours
@@ -111,6 +114,9 @@ module Admin
       @official_report = report_client.cached
       @reconciliation_rows = apply_filters(reconciliation_rows(@official_report, cached_release_dates))
       @seller_summary = summarize_by_seller(@reconciliation_rows)
+      # Só a tabela pagina: o resumo por ateliê e o CSV usam todas as linhas
+      # filtradas.
+      @reconciliation_page_rows = paginate_array(@reconciliation_rows)
     end
 
     def financial_filters
@@ -166,12 +172,15 @@ module Admin
     end
 
     def reconciliation_rows(report, release_dates)
-      local_payments = Payment.includes(order: { seller_orders: :seller })
-        .where(gateway: "mercado_pago", status: SUCCESSFUL_PAYMENT_STATUSES)
-        .where.not(external_id: [ nil, "" ])
-        .order(created_at: :desc)
-        .limit(RECONCILIATION_LIMIT)
-        .to_a
+      local_payments = prefilter_local_payments(
+        Payment.includes(order: { seller_orders: :seller })
+          .where(gateway: "mercado_pago", status: SUCCESSFUL_PAYMENT_STATUSES)
+          .where.not(external_id: [ nil, "" ])
+      ).order(created_at: :desc, id: :desc).limit(RECONCILIATION_LIMIT + 1).to_a
+      # Um a mais que o teto diz se houve corte: com exatamente o teto, nada
+      # ficou de fora e a tela não deve avisar.
+      @reconciliation_truncated = local_payments.size > RECONCILIATION_LIMIT
+      local_payments = local_payments.first(RECONCILIATION_LIMIT)
 
       official_entries = report&.entries.to_a
       official_by_payment = official_entries.index_by { |entry| entry.payment_id.to_s }
@@ -189,6 +198,28 @@ module Admin
       end
 
       rows.sort_by { |row| row.fetch(:sold_at) || Time.at(0) }.reverse.first(RECONCILIATION_LIMIT)
+    end
+
+    # Antes, o teto vinha antes dos filtros: com mais pagamentos que o teto,
+    # filtrar um ateliê ou um mês antigo devolvia vazio. Aqui o banco descarta
+    # só o que não tem como passar no filtro exato de `apply_filters`, que
+    # continua valendo em memória:
+    # - ateliê: exato, pelo SellerOrder do pedido;
+    # - início do período: a venda (`sold_at`, aprovação no MP ou última
+    #   atualização local) nunca é posterior à última atualização do
+    #   pagamento, que é gravado ao ser aprovado;
+    # - fim do período: a venda nunca é anterior à criação do pagamento.
+    def prefilter_local_payments(scope)
+      if (seller_id = @filters[:seller_id].presence)
+        scope = scope.where(order_id: SellerOrder.where(seller_id: seller_id).select(:order_id))
+      end
+      if (date_from = parse_date(@filters[:date_from]))
+        scope = scope.where(updated_at: date_from.beginning_of_day..)
+      end
+      if (date_to = parse_date(@filters[:date_to]))
+        scope = scope.where(created_at: ..date_to.end_of_day)
+      end
+      scope
     end
 
     def reconciliation_row(payment:, entry:, release_dates:)

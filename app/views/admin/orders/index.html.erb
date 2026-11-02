@@ -46,6 +46,7 @@
   <% end %>
 
   <% if @orders.any? %>
+    <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
     <div class="admin-table-wrap">
       <table>
         <thead>

@@ -168,9 +168,11 @@ class Admin::FinancialsControllerTest < ActionDispatch::IntegrationTest
   test "admin can filter reconciliation rows by period, seller and release status" do
     payment = payments(:one)
     # Data fixa: sem ela a venda é datada de "agora" (`updated_at`) e sai da janela de setembro assim
-    # que o calendário passa de 30/09/2026.
+    # que o calendário passa de 30/09/2026. `created_at` acompanha: um pagamento não é atualizado antes
+    # de existir, e o pré-filtro do período (FinancialsController#prefilter_local_payments) conta com isso.
+    sold_at = Time.zone.parse("2026-09-20T12:00:00Z")
     payment.update!(gateway: "mercado_pago", status: "paid", external_id: "mp-payment-1",
-                    updated_at: Time.zone.parse("2026-09-20T12:00:00Z"))
+                    created_at: sold_at, updated_at: sold_at)
     Rails.cache.write(
       Admin::FinancialsController::RELEASE_DATES_CACHE_KEY,
       { payment.external_id => "2026-09-25T12:00:00Z" },
@@ -212,7 +214,76 @@ class Admin::FinancialsControllerTest < ActionDispatch::IntegrationTest
     assert_includes rows.first, "Data de liberação"
   end
 
+  # O teto de pagamentos lidos vinha antes dos filtros: com mais pagamentos
+  # recentes que o teto, filtrar um período antigo devolvia vazio.
+  test "filters reach payments older than the reconciliation limit" do
+    old_payment = payments(:one)
+    old_payment.update!(gateway: "mercado_pago", status: "paid", external_id: "mp-old",
+      created_at: Time.zone.parse("2026-08-10T12:00:00Z"), updated_at: Time.zone.parse("2026-08-10T12:00:00Z"))
+    3.times { |i| create_paid_mercado_pago_payment!(external_id: "mp-recent-#{i}") }
+    sign_in_as(users(:one))
+
+    with_reconciliation_limit(2) do
+      get admin_financials_path, params: { date_from: "2026-08-01", date_to: "2026-08-31" }
+    end
+
+    assert_response :success
+    assert_select "a", text: "Pedido ##{old_payment.order_id}"
+    assert_select "[role=status]", text: /pagamentos mais recentes/, count: 0
+  end
+
+  test "warns when the reconciliation limit is reached" do
+    3.times { |i| create_paid_mercado_pago_payment!(external_id: "mp-many-#{i}") }
+    sign_in_as(users(:one))
+
+    with_reconciliation_limit(2) do
+      get admin_financials_path
+    end
+
+    assert_select "[role=status]", text: /Mostrando os 2 pagamentos mais recentes/
+  end
+
+  # Exatamente o teto de pagamentos não é corte: nada ficou de fora.
+  test "does not warn when the payments exactly fill the reconciliation limit" do
+    Payment.where(gateway: "mercado_pago").delete_all
+    2.times { |i| create_paid_mercado_pago_payment!(external_id: "mp-exact-#{i}") }
+    sign_in_as(users(:one))
+
+    with_reconciliation_limit(2) do
+      get admin_financials_path
+    end
+
+    assert_select "[role=status]", text: /pagamentos mais recentes/, count: 0
+  end
+
+  test "paginates the reconciliation table but summarizes every filtered row" do
+    (Paginatable::DEFAULT_PER_PAGE + 1).times { |i| create_paid_mercado_pago_payment!(external_id: "mp-page-#{i}") }
+    sign_in_as(users(:one))
+
+    get admin_financials_path
+
+    rows_on_first_page = css_select("a").count { |link| link.text.start_with?("Pedido #") }
+    assert_equal Paginatable::DEFAULT_PER_PAGE, rows_on_first_page
+    assert_select "nav[aria-label=Paginação]"
+
+    get admin_financials_path, params: { page: 2 }
+    assert_equal 1, css_select("a").count { |link| link.text.start_with?("Pedido #") }
+  end
+
   private
+
+  def create_paid_mercado_pago_payment!(external_id:)
+    Payment.create!(order: orders(:one), gateway: "mercado_pago", status: "paid", external_id: external_id,
+      idempotency_key: "idem-#{external_id}", amount_cents: 10_490)
+  end
+
+  def with_reconciliation_limit(limit)
+    original = Admin::FinancialsController::RECONCILIATION_LIMIT
+    silence_warnings { Admin::FinancialsController.const_set(:RECONCILIATION_LIMIT, limit) }
+    yield
+  ensure
+    silence_warnings { Admin::FinancialsController.const_set(:RECONCILIATION_LIMIT, original) }
+  end
 
   def with_constructor_stub(klass, instance)
     original_constructor = klass.method(:new)

@@ -9,6 +9,7 @@
   </header>
 
   <% if @categories.any? %>
+    <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
     <div class="admin-table-wrap">
       <table>
         <thead><tr><th>Categoria</th><th>Categoria pai</th><th>Na loja</th><th>Produtos</th><th><span class="sr-only">Ações</span></th></tr></thead>

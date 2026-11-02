@@ -1,7 +1,7 @@
 module Admin
   class NotificationsController < BaseController
     def index
-      @notifications = Current.user.notifications.chronological
+      @notifications = paginate(Current.user.notifications.chronological)
     end
 
     def mark_as_read

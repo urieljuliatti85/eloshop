@@ -21,6 +21,7 @@
   </nav>
 
   <% if @versions.any? %>
+    <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
     <div class="admin-table-wrap">
       <table>
         <thead><tr><th>Quando</th><th>Quem</th><th>O quê</th><th>Mudanças</th></tr></thead>

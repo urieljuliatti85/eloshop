@@ -4,7 +4,7 @@ module Admin
   # cliente novo.
   class ApiClientsController < BaseController
     def index
-      @api_clients = paginate(ApiClient.order(revoked_at: :desc, created_at: :desc))
+      @api_clients = paginate(ApiClient.order(revoked_at: :desc, created_at: :desc, id: :desc))
     end
 
     def new

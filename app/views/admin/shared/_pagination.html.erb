@@ -1,8 +1,12 @@
+<%# `position: :top` repete a paginação acima da lista só no celular (abaixo
+    de `lg`), onde a lista em cartões é longa e o rodapé fica longe; com outro
+    nome acessível, para o leitor de tela distinguir as duas navegações. %>
+<% top = local_assigns[:position] == :top %>
 <% if pagination.total_pages > 1 %>
   <%# No celular os números de página saem (o "Página X de Y" já situa) e a
     linha pode quebrar: sem isso a paginação passava da largura da tela, o
     documento alargava e o celular reduzia o zoom da página inteira. %>
-  <nav class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-1 py-2" aria-label="Paginação">
+  <nav class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-1 py-2 <%= 'lg:hidden' if top %>" aria-label="<%= top ? 'Paginação, topo da lista' : 'Paginação' %>">
     <p class="text-sm text-slate-500">
       Página <%= pagination.current_page %> de <%= pagination.total_pages %>
       <span class="text-slate-400">(<%= pluralize(pagination.total_count, "item", plural: "itens") %>)</span>

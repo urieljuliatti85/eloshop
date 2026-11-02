@@ -4,6 +4,7 @@
   <h1 class="text-2xl font-bold text-slate-900">Notificações</h1>
 
   <% if @notifications.any? %>
+    <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
     <ul class="mt-8 space-y-3">
       <% @notifications.each do |notification| %>
         <li>
@@ -23,6 +24,7 @@
         </li>
       <% end %>
     </ul>
+    <div class="mt-4"><%= render "admin/shared/pagination", pagination: @pagination %></div>
   <% else %>
     <p class="mt-8 text-slate-500">Você ainda não tem notificações.</p>
   <% end %>

@@ -9,6 +9,7 @@
   </header>
 
   <% if @coupons.any? %>
+    <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
     <div class="admin-table-wrap">
       <table>
         <thead><tr><th>Código</th><th>Desconto</th><th>Mínimo</th><th>Usos</th><th>Validade</th><th>Status</th><th><span class="sr-only">Ações</span></th></tr></thead>
@@ -38,6 +39,7 @@
         </tbody>
       </table>
     </div>
+    <%= render "admin/shared/pagination", pagination: @pagination %>
   <% else %>
     <div class="admin-empty-state">Nenhum cupom cadastrado.</div>
   <% end %>

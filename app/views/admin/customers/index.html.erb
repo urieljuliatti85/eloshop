@@ -15,6 +15,7 @@
   <% end %>
 
   <% if @customers.any? %>
+    <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
     <div class="admin-table-wrap">
       <table>
         <thead><tr><th>Cliente</th><th>E-mail</th><th>Pedidos</th><th>Desde</th><th><span class="sr-only">Ações</span></th></tr></thead>
