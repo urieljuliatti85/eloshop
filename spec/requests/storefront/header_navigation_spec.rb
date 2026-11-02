@@ -5,8 +5,10 @@ require "rails_helper"
 RSpec.describe "Header navigation", type: :request do
   # O item ativo vem do controller, não da URL exata: a página de um produto
   # continua marcando "Loja".
+  # Só o topo: as abas inferiores da loja também marcam a página atual e têm
+  # o próprio spec (mobile_tabs_spec.rb).
   def active_labels
-    response.body.scan(/aria-current="page"[^>]*>([^<]+)</).flatten.uniq
+    Nokogiri::HTML(response.body).css("header a[aria-current='page']").map { |a| a.text.squish }.uniq
   end
 
   it "marks Início on the home page" do

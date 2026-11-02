@@ -159,6 +159,16 @@
   .account-tabs-sheet[hidden] { @apply hidden; }
   @media (width < 64rem) { body.account-area { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); } }
 
+  /* Loja: abas com os destinos do menu principal no celular, abaixo de `md`
+     (o corte do hambúrguer). Reaproveitam `.account-tab`. O body com
+     `storefront-tabs-area` reserva a altura delas, e o aviso de consentimento
+     de métricas sobe para não cobrir a barra. */
+  .storefront-tabs { @apply fixed inset-x-0 bottom-0 z-40 border-t border-brand-100 bg-white shadow-[0_-8px_24px_rgba(120,40,10,0.08)] md:hidden; padding-bottom: env(safe-area-inset-bottom); }
+  @media (width < 48rem) {
+    body.storefront-tabs-area { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); }
+    body.storefront-tabs-area [data-google-analytics-target="banner"] { bottom: calc(5rem + env(safe-area-inset-bottom)); }
+  }
+
   .admin-body { @apply min-h-screen bg-[#eee9df] text-slate-900 antialiased; --admin-tabs-height: 4rem; }
   @media (width >= 64rem) { .admin-body { --admin-tabs-height: 0px; } }
   .admin-shell { @apply min-h-screen lg:grid lg:grid-cols-[17rem_minmax(0,1fr)]; }
