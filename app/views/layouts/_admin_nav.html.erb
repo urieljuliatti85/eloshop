@@ -1,7 +1,9 @@
 <%# No celular, as áreas do dia a dia são abas no rodapé
-    (layouts/_admin_mobile_tabs) e as demais, esta faixa de rolagem
-    horizontal. O header não é sticky: a navegação fixa é o rodapé, e
-    prender topo + rodapé tiraria quase um terço da altura da tela. %>
+    (layouts/_admin_mobile_tabs); aqui ficam outras quatro
+    (`ADMIN_MOBILE_TOP_KEYS`) e "Mais", que abre a lista com o resto. O
+    header fica preso no topo (sticky), como o rodapé fica embaixo. %>
+<% more_items = admin_nav_items(except: AdminHelper::ADMIN_MOBILE_TAB_KEYS + AdminHelper::ADMIN_MOBILE_TOP_KEYS)
+   more_active = more_items.any? { |item| admin_nav_active?(item[:controllers]) } %>
 <header class="admin-mobile-header topo-serrilhado">
   <div class="flex items-center justify-between gap-3">
     <%= link_to admin_root_path, class: "admin-brand" do %>
@@ -14,12 +16,31 @@
     <%= button_to session_path, method: :delete, class: "admin-mobile-logout" do %><%= admin_icon :logout %><span>Sair</span><% end %>
   </div>
 
-  <nav class="admin-mobile-areas" aria-label="Outras áreas da administração" data-controller="center-active">
-    <% admin_nav_items(except: AdminHelper::ADMIN_MOBILE_TAB_KEYS).each do |item| %>
-      <% active = admin_nav_active?(item[:controllers]) %>
-      <%= link_to item[:label], item[:path], class: "admin-area-chip #{'admin-area-chip--active' if active}", aria: { current: ("page" if active) } %>
-    <% end %>
-    <%= link_to "Ver loja", root_path, class: "admin-area-chip" %>
+  <nav class="admin-top-tabs" aria-label="Outras áreas da administração"
+       data-controller="account-menu"
+       data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
+    <ul class="admin-tabs-list">
+      <% admin_nav_items_for(AdminHelper::ADMIN_MOBILE_TOP_KEYS).each do |tab| %>
+        <li><%= render "layouts/admin_mobile_tab", tab: tab %></li>
+      <% end %>
+      <li>
+        <button type="button" class="admin-tab w-full cursor-pointer <%= 'admin-tab--active' if more_active %>"
+                aria-expanded="false" aria-controls="admin-more-menu"
+                data-account-menu-target="button" data-action="account-menu#toggle">
+          <%= admin_icon :menu, class_name: "size-6" %>
+          <span>Mais</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="admin-more-menu" id="admin-more-menu" data-account-menu-target="panel" hidden>
+      <% more_items.each do |item| %>
+        <%= admin_nav_link item[:label], item[:path], icon: item[:icon], controllers: item[:controllers] %>
+      <% end %>
+      <div class="mt-2 border-t border-white/10 pt-2">
+        <%= link_to root_path, class: "admin-nav-link" do %><%= admin_icon :store %><span>Ver loja</span><% end %>
+      </div>
+    </div>
   </nav>
 </header>
 

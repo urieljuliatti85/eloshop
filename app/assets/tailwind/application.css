@@ -160,16 +160,27 @@
   .admin-nav-link { @apply flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 no-underline transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400; }
   .admin-nav-link--active { @apply bg-white text-slate-950 shadow-sm hover:bg-white hover:text-slate-950; }
   .admin-sidebar-footer { @apply mt-8 space-y-1.5 border-t border-white/10 pt-5; }
-  .admin-mobile-header { @apply flex flex-col gap-3 px-4 pb-3 pt-3 lg:hidden; --topo-fundo: #101b20; }
+  /* No celular o header inteiro (marca, Sair e abas do topo) fica preso no
+     topo, como as abas do rodapé ficam presas embaixo. O scroll-padding
+     impede que foco e âncora (o resumo de erros leva ao campo) parem atrás
+     dele. */
+  .admin-mobile-header { @apply sticky top-0 z-40 flex flex-col gap-3 px-4 pb-3 pt-3 lg:hidden; --topo-fundo: #101b20; padding-top: max(0.75rem, env(safe-area-inset-top)); }
+  @media (width < 64rem) { html:has(.admin-body) { scroll-padding-top: 9.5rem; } }
   .admin-mobile-logout { @apply flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-white/15 px-3 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400; }
-  /* Faixa das outras áreas no celular. `relative` faz dela o containing
-     block de qualquer filho absolute (o mesmo vazamento das tabelas, ver
-     .admin-content :is(...) abaixo) e o offsetParent dos chips, que o
-     center-active usa para centralizar o ativo. */
-  .admin-mobile-areas { @apply relative -mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]; }
-  .admin-mobile-areas::-webkit-scrollbar { @apply hidden; }
-  .admin-area-chip { @apply flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-white/15 px-4 text-sm font-medium text-slate-300 no-underline transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-400; }
-  .admin-area-chip--active { @apply border-white bg-white text-slate-950 hover:bg-white hover:text-slate-950; }
+  /* Abas do topo no celular: as mesmas do rodapé, com o traço da aba ativa
+     embaixo, e "Mais" abrindo a lista do resto. A lista tem altura limitada e
+     rolagem própria, senão os últimos itens ficariam atrás das abas do
+     rodapé (o header, preso no topo, mede ~9.5rem). */
+  .admin-top-tabs { @apply relative -mx-4 -mb-3 border-t border-white/10; }
+  .admin-top-tabs .admin-tab { @apply border-b-2 border-t-0; }
+  .admin-more-menu {
+    @apply absolute inset-x-3 top-full z-50 mt-3 flex flex-col gap-1 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-cover bg-center p-3 shadow-2xl;
+    max-height: calc(100dvh - 9.5rem - var(--admin-tabs-height) - env(safe-area-inset-bottom) - 1.5rem);
+    background-image:
+      linear-gradient(180deg, rgba(16, 12, 10, 0.85) 0%, rgba(16, 12, 10, 0.5) 55%, rgba(16, 12, 10, 0.85) 100%),
+      url("admin-sidebar-bg.jpg");
+  }
+  .admin-more-menu[hidden] { @apply hidden; }
   /* Abas inferiores do admin abaixo de `lg` (layouts/_admin_mobile_tabs).
      `--admin-tabs-height` reserva o espaço no fim do `.admin-main` para a
      barra fixa não cobrir botões e a última linha das tabelas. */

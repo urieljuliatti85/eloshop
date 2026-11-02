@@ -1,0 +1,15 @@
+<%# Uma aba da navegação do admin no celular (rodapé e topo): ícone, rótulo e,
+    se `tab[:count]` for positivo, um selo com a contagem (lido pelo leitor de
+    tela como "(N não lidas)"). %>
+<% active = admin_nav_active?(tab[:controllers])
+   count = tab[:count].to_i %>
+<%= link_to tab[:path], class: "admin-tab #{'admin-tab--active' if active}", aria: { current: ("page" if active) } do %>
+  <span class="relative">
+    <%= admin_icon tab[:icon], class_name: "size-6" %>
+    <% if count.positive? %>
+      <span class="admin-tab-count" aria-hidden="true"><%= count > 9 ? "9+" : count %></span>
+    <% end %>
+  </span>
+  <span><%= tab[:label] %></span>
+  <% if count.positive? %><span class="sr-only">(<%= count %> não lidas)</span><% end %>
+<% end %>
