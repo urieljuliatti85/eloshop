@@ -9,10 +9,32 @@
 class AddRecipientCreatedAtIndexToNotifications < ActiveRecord::Migration[8.1]
   disable_ddl_transaction!
 
-  def change
+  INDEX_NAME = "index_notifications_on_recipient_and_created_at".freeze
+
+  def up
+    remove_invalid_index
     add_index :notifications, [ :recipient_type, :recipient_id, :created_at, :id ],
       order: { created_at: :desc, id: :desc },
-      name: "index_notifications_on_recipient_and_created_at",
+      name: INDEX_NAME,
       algorithm: :concurrently
+  end
+
+  def down
+    remove_index :notifications, name: INDEX_NAME, algorithm: :concurrently, if_exists: true
+  end
+
+  private
+
+  # Um CREATE INDEX CONCURRENTLY interrompido (timeout, container derrubado)
+  # deixa um índice INVÁLIDO com este nome e não registra a migration: sem
+  # isto, todo deploy seguinte falhava no `db:prepare` do boot com
+  # PG::DuplicateTable. Só um índice inválido é removido; um válido nunca é
+  # tocado. Reproduzido no QA do #306 com statement_timeout.
+  def remove_invalid_index
+    invalid = select_value(<<~SQL)
+      SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid
+      WHERE c.relname = #{connection.quote(INDEX_NAME)} AND NOT i.indisvalid
+    SQL
+    remove_index :notifications, name: INDEX_NAME, algorithm: :concurrently if invalid
   end
 end
