@@ -27,6 +27,29 @@ class GoogleAnalyticsConsentTest < ApplicationSystemTestCase
     end
   end
 
+  # No celular as abas inferiores da loja ficam fixas no pé da tela; o aviso
+  # precisa ficar acima delas. A regra que o sobe vive fora de `@layer`
+  # (application.css): dentro de `components` ela perdia para a utility
+  # `bottom-4` do aviso, e o aviso cobria metade das abas. Viewport via CDP
+  # porque `resize_to` não desce abaixo de ~500px no Chrome.
+  test "on a phone the consent banner sits above the storefront tabs" do
+    page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 390, height: 844, deviceScaleFactor: 1, mobile: true)
+
+    with_measurement_id do
+      visit root_path
+      assert_text "Métricas de uso"
+
+      banner_bottom, tabs_top = page.evaluate_script(<<~JS)
+        [document.querySelector("[data-google-analytics-target='banner']").getBoundingClientRect().bottom,
+         document.querySelector("nav.storefront-tabs").getBoundingClientRect().top]
+      JS
+
+      assert_operator banner_bottom, :<=, tabs_top
+    end
+  ensure
+    page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
+  end
+
   private
 
   def with_measurement_id
