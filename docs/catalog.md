@@ -59,6 +59,10 @@ Produtos `standard` podem ter variações comerciais reais (tamanho, cor, materi
 
 Qualquer produto pode ter campos de personalização em texto livre (ex.: nome gravado, mensagem) — ver `PersonalizationOption` em `docs/domain.md`. Diferente de variação, não muda SKU, estoque ou preço, e não é restrita a `availability_type: standard` nem é exclusiva de produto sem variação — as duas podem coexistir no mesmo produto.
 
+### Criação desligada no painel do vendedor (2026-11-02)
+
+Por decisão de produto, o artesão não cria novas variantes nem campos de personalização: `Product::SELLER_VARIANTS_AND_PERSONALIZATION_ENABLED = false` esconde os botões e as seções vazias em `/painel/produtos/:id`, e `SellerPortal::ProductVariantsController` / `SellerPortal::PersonalizationOptionsController` recusam `new`/`create` no servidor. A implementação continua inteira: o que já foi cadastrado segue valendo na loja, no carrinho e no checkout, e por isso continua visível para o artesão editar ou remover — esconder também isso deixaria estoque de variante e campo obrigatório sem gestão. O admin não é afetado. Para religar, basta trocar a constante.
+
 ## Imagens
 
 Usar Active Storage. O produto tem uma imagem principal (`main_image`) claramente definida como capa — não depende da ordem acidental dos anexos. **As fotos são reduzidas no envio** (`Images::Optimizer`, chamado por `ProductGalleryUploads` nos cadastros do vendedor e do admin): no máximo 2.400 px no lado maior, qualidade 85, orientação EXIF aplicada e metadados removidos (inclusive localização). PNG sem transparência vira JPEG; PNG com transparência segue PNG. Antes o site guardava o original inteiro, e fotos de celular (2 a 5 MB) enchiam o volume de 500 MB da Railway e eram recusadas acima de 5 MB. Agora se aceita até 20 MB de arquivo bruto; o limite de 5 MB do `Product` vale para o arquivo já otimizado. Se a imagem não abrir, ou a versão reduzida não ficar menor, o original segue e as validações do produto decidem. O volume de imagens fica em `RAILS_STORAGE_PATH`; ver `docs/architecture.md` sobre o limite do plano.

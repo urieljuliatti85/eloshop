@@ -1,6 +1,7 @@
 module SellerPortal
   class PersonalizationOptionsController < BaseController
     before_action :set_product
+    before_action :require_creation_enabled, only: %i[new create]
     before_action :set_personalization_option, only: %i[edit update destroy]
 
     def new
@@ -34,6 +35,12 @@ module SellerPortal
     end
 
     private
+
+    def require_creation_enabled
+      return if Product::SELLER_VARIANTS_AND_PERSONALIZATION_ENABLED
+
+      redirect_to seller_product_path(@product), alert: "Personalizações não estão disponíveis no cadastro no momento."
+    end
 
     def set_product
       @product = current_seller.products.find(params[:product_id])

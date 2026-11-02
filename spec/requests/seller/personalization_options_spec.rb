@@ -10,19 +10,52 @@ RSpec.describe "Seller personalization options", type: :request do
 
   before { sign_in_as(user) }
 
-  it "renders the personalization form for an owned product" do
-    get new_seller_product_personalization_option_path(product)
+  context "when seller creation is enabled" do
+    before { stub_const("Product::SELLER_VARIANTS_AND_PERSONALIZATION_ENABLED", true) }
 
-    expect(response).to have_http_status(:ok)
-    expect(response.body).to include("Nova personalização", "Salvar personalização")
+    it "renders the personalization form for an owned product" do
+      get new_seller_product_personalization_option_path(product)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Nova personalização", "Salvar personalização")
+    end
+
+    it "creates a personalization field for an owned product" do
+      expect do
+        post seller_product_personalization_options_path(product), params: {
+          personalization_option: { label: "Mensagem", required: false, max_length: 80 }
+        }
+      end.to change(product.personalization_options, :count).by(1)
+
+      expect(response).to redirect_to(seller_product_path(product))
+    end
   end
 
-  it "creates a personalization field for an owned product" do
+  context "when seller creation is disabled" do
+    it "redirects the new form back to the product" do
+      get new_seller_product_personalization_option_path(product)
+
+      expect(response).to redirect_to(seller_product_path(product))
+      expect(flash[:alert]).to include("Personalizações não estão disponíveis")
+    end
+
+    it "does not create through a direct POST" do
+      expect do
+        post seller_product_personalization_options_path(product), params: {
+          personalization_option: { label: "Mensagem", required: false, max_length: 80 }
+        }
+      end.not_to change(product.personalization_options, :count)
+
+      expect(response).to redirect_to(seller_product_path(product))
+    end
+  end
+
+  it "removes an existing field while creation is disabled" do
+    option
+
     expect do
-      post seller_product_personalization_options_path(product), params: {
-        personalization_option: { label: "Mensagem", required: false, max_length: 80 }
-      }
-    end.to change(product.personalization_options, :count).by(1)
+      delete seller_product_personalization_option_path(product, option)
+    end.to change(product.personalization_options, :count).by(-1)
 
     expect(response).to redirect_to(seller_product_path(product))
   end
