@@ -1,8 +1,14 @@
 module Admin
   class DashboardController < BaseController
     RECENT_LIMIT = 10
+    RECENT_SIGNUPS_LIMIT = 5
 
     def index
+      # `id` desempata cadastros no mesmo instante (seed, importação), para a
+      # ordem não variar entre visitas.
+      @recent_customers = Customer.order(created_at: :desc, id: :desc).limit(RECENT_SIGNUPS_LIMIT)
+      @recent_sellers = Seller.preload(:users).order(created_at: :desc, id: :desc).limit(RECENT_SIGNUPS_LIMIT)
+
       @pending_orders = Order.pending.includes(:customer, :payments).order(created_at: :desc).limit(RECENT_LIMIT)
       @pending_orders_count = Order.pending.count
 

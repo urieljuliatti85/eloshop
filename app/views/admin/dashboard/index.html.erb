@@ -8,6 +8,8 @@
     <%= link_to "Ver loja", root_path, class: "admin-button admin-button--secondary" %>
   </header>
 
+  <%= render "recent_signups", customers: @recent_customers, sellers: @recent_sellers %>
+
   <%# Pré-cadastro: uma ação só de ida (ver Admin::SalesOpeningsController). %>
   <% if (sales_opened_at = PlatformSetting.sales_opened_at) %>
     <p class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">

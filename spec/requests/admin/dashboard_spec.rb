@@ -67,6 +67,57 @@ RSpec.describe "Admin dashboard", type: :request do
     end
   end
 
+  describe "recent signups" do
+    # Os fixtures também têm clientes e artesãos, criados "agora": um dia à
+    # frente, os cadastros do teste são os mais recentes.
+    before do
+      travel 1.day
+      post session_path, params: { email_address: user.email_address, password: "password" }
+    end
+
+    def section(title)
+      Nokogiri::HTML(response.body).css("section.admin-card").find { |card| card.at_css("h2")&.text == title }
+    end
+
+    def listed_names(title)
+      section(title).css("li a").map { |link| link.text.squish }
+    end
+
+    it "lists the five most recent customers, newest first" do
+      6.times do |i|
+        Customer.create!(name: "Cliente #{i}", email: "recente-#{i}@example.com", password: "password123", created_at: (6 - i).hours.ago)
+      end
+
+      get admin_root_path
+
+      expect(listed_names("Últimos clientes cadastrados")).to eq([ "Cliente 5", "Cliente 4", "Cliente 3", "Cliente 2", "Cliente 1" ])
+      expect(section("Últimos clientes cadastrados").text).to include("recente-5@example.com")
+    end
+
+    it "lists the five most recent sellers, newest first, with status and owner e-mail" do
+      sellers = 6.times.map do |i|
+        Seller.create!(name: "Ateliê recente #{i}", owner_full_name: "Dona #{i}", cpf: generate_valid_cpf, created_at: (6 - i).hours.ago)
+      end
+      sellers.last.update!(status: :approved, approved_at: Time.current)
+      User.create!(email_address: "dona-5@example.com", password: "password123", role: :seller, seller: sellers.last)
+
+      get admin_root_path
+
+      card = section("Últimos artesãos cadastrados")
+      expect(listed_names("Últimos artesãos cadastrados")).to eq((1..5).to_a.reverse.map { |i| "Ateliê recente #{i}" })
+      expect(card.css("li").first.text).to include("dona-5@example.com", "Aprovado")
+      expect(card.css("li").last.text).to include("Dona 1", "Pendente")
+    end
+
+    it "shows both cards above the seller risk summary" do
+      get admin_root_path
+
+      body = response.body
+      expect(body.index("Últimos clientes cadastrados")).to be < body.index("Últimos artesãos cadastrados")
+      expect(body.index("Últimos artesãos cadastrados")).to be < body.index("Em risco")
+    end
+  end
+
   def create_order_with_seller_order!(customer:, status:, subtotal_cents:, platform_fee_refunded_cents:)
     order = Order.create!(
       customer: customer, status: status, subtotal_cents: subtotal_cents, shipping_cents: 0, total_cents: subtotal_cents,
