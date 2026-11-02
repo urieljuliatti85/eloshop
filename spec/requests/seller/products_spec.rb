@@ -292,6 +292,36 @@ RSpec.describe "Seller products", type: :request do
     expect(flash[:alert]).to include("frete")
   end
 
+  describe "pending items to publish" do
+    it "lists everything a draft still needs, with a link to complete it" do
+      get seller_product_path(own_product)
+
+      page = Nokogiri::HTML(response.body)
+      card = page.at_css("section[aria-labelledby='publication-blockers-title']")
+      expect(card.text).to include("Para publicar, falta:", "categoria", "peso", "frete")
+      expect(card.at_css("a[href='#{edit_seller_product_path(own_product)}']").text).to eq("Completar cadastro")
+      # O botão continua ativo: quem decide é o servidor.
+      expect(page.at_css("form[action='#{publish_seller_product_path(own_product)}'] button")["disabled"]).to be_nil
+    end
+
+    it "hides the card once the draft is ready to publish" do
+      own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10,
+        category: Category.create!(name: "Categoria completa"), free_shipping: true)
+
+      get seller_product_path(own_product)
+
+      expect(response.body).not_to include("Para publicar, falta:")
+    end
+
+    it "does not show the card on a published product" do
+      own_product.update_column(:status, "active")
+
+      get seller_product_path(own_product)
+
+      expect(response.body).not_to include("Para publicar, falta:")
+    end
+  end
+
   it "saves both shipping bands through the update form" do
     patch seller_product_path(own_product), params: { product: {
       fixed_shipping: "20,00", fixed_shipping_estimated_days: "5",

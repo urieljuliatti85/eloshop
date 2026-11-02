@@ -141,15 +141,27 @@ class Product < ApplicationRecord
   validate :images_count_within_limit
 
   def publish!
-    raise InvalidStatusTransition, "o vendedor precisa estar aprovado ou liberado na vitrine antes da publicação" unless seller.publicly_listed?
-    raise InvalidStatusTransition, "aceite os termos comerciais antes de publicar" unless seller.terms_accepted?
-
-    unless valid?(:publication)
-      raise InvalidStatusTransition, errors.full_messages_for(:base).join(" ").presence ||
-        "informe peso e dimensões antes de publicar"
-    end
+    # Status que não publica (descontinuado) recusa por isso, antes do cadastro.
+    ensure_transition_allowed!("active")
+    blockers = publication_blockers
+    raise InvalidStatusTransition, blockers.join(" ") if blockers.any?
 
     transition_to!("active")
+  end
+
+  # Tudo o que impede a publicação, de uma vez — vazio quando pode publicar.
+  # É a mesma resposta para o `publish!` e para o aviso "Para publicar, falta"
+  # da página do rascunho: o ateliê vê todas as pendências juntas, em vez de
+  # descobrir uma por tentativa. Inclui os erros de campo (prazo de produção
+  # inválido, frete pela metade), que antes caíam numa mensagem genérica de
+  # peso e medidas. Roda as validações, então substitui `errors`.
+  def publication_blockers
+    blockers = []
+    blockers << "O ateliê precisa estar aprovado ou liberado na vitrine antes da publicação." unless seller&.publicly_listed?
+    blockers << "Aceite os termos comerciais antes de publicar." unless seller&.terms_accepted?
+
+    valid?(:publication)
+    blockers + errors.full_messages.map { |message| message.end_with?(".") ? message : "#{message}." }
   end
 
   def seller_defined_shipping_for_publication
@@ -352,11 +364,14 @@ class Product < ApplicationRecord
   end
 
   def transition_to!(new_status)
-    unless allowed_status_transitions.fetch(status).include?(new_status)
-      raise InvalidStatusTransition, "não é possível transicionar de #{status} para #{new_status}"
-    end
-
+    ensure_transition_allowed!(new_status)
     update!(status: new_status)
+  end
+
+  def ensure_transition_allowed!(new_status)
+    return if allowed_status_transitions.fetch(status).include?(new_status)
+
+    raise InvalidStatusTransition, "não é possível transicionar de #{status} para #{new_status}"
   end
 
   def assign_slug

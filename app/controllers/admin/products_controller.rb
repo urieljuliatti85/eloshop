@@ -27,7 +27,9 @@ module Admin
       @products = paginate(products)
     end
 
+    # Pendências só fazem sentido onde há o botão Publicar (rascunho ou esgotado).
     def show
+      @publication_blockers = @product.draft? || @product.sold_out? ? @product.publication_blockers : []
     end
 
     def new
