@@ -368,6 +368,32 @@ RSpec.describe "Seller products", type: :request do
     expect(own_product.reload.free_shipping).to be(true)
   end
 
+  # O aviso de custo vem na página, não num confirm() — que navegador de
+  # aplicativo responde "não" sem mostrar, desmarcando a caixa.
+  it "explains the free shipping cost on the page instead of asking with confirm()" do
+    get edit_seller_product_path(own_product)
+
+    page = Nokogiri::HTML(response.body)
+    checkbox = page.at_css("#product_free_shipping")
+    expect(checkbox["data-action"]).to be_nil
+    expect(response.body).not_to include("confirm-check")
+    expect(page.at_css("[data-free-shipping-notice]").text).to include("Você assume o custo do envio deste produto")
+  end
+
+  # Fora do <label>: dentro dele o clique também acionaria o label e desfaria
+  # a marcação.
+  it "offers a Marcar/Desmarcar button for free shipping outside the checkbox label" do
+    get edit_seller_product_path(own_product)
+
+    page = Nokogiri::HTML(response.body)
+    button = page.at_css("button[data-action='checkbox-toggle#toggle']")
+    expect(button["type"]).to eq("button")
+    expect(button["aria-controls"]).to eq("product_free_shipping")
+    expect(button.text.squish).to include("Marcar frete grátis", "Desmarcar frete grátis")
+    expect(button.ancestors("label")).to be_empty
+    expect(page.at_css("#product_free_shipping")["data-checkbox-toggle-target"]).to eq("checkbox")
+  end
+
   it "discontinues the selected owned products in bulk" do
     own_product.update!(status: :active)
     other_active = Product.create!(seller: seller, name: "Caneca própria", sku: "OWN-003", price_cents: 3_000, stock_quantity: 2, status: :active)

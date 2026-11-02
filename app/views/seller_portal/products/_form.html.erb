@@ -63,10 +63,31 @@
       <%= form.check_box :local_pickup_enabled, class: "mt-1 size-4 rounded border-stone-300 text-brand-500 focus:ring-brand-400" %>
       <span><span class="block text-sm font-semibold text-stone-800">Permitir retirada gratuita deste produto</span><span class="mt-1 block text-xs leading-5 text-stone-500">A retirada aparece no checkout somente quando todos os produtos do carrinho permitirem.</span></span>
     </label>
-    <label class="flex cursor-pointer items-start gap-3" data-controller="confirm-check" data-confirm-check-message-value="Ao ativar o frete grátis, você assume o custo do envio deste produto: o valor será descontado do seu repasse, não da comissão da EloShop. Confirmar?">
-      <%= form.check_box :free_shipping, class: "mt-1 size-4 rounded border-stone-300 text-brand-500 focus:ring-brand-400", data: { action: "change->confirm-check#confirm" } %>
-      <span><span class="block text-sm font-semibold text-stone-800">Frete grátis para este produto</span><span class="mt-1 block text-xs leading-5 text-stone-500">O cliente não paga frete. <strong>Você assume o custo do envio</strong>: o valor é descontado do seu repasse, não da comissão da EloShop.</span></span>
-    </label>
+    <%# Sem confirm(): em navegador de aplicativo (Instagram, Facebook) ele
+        responde "não" sem aparecer, e a caixa desmarcava sozinha — o ateliê
+        não conseguia oferecer frete grátis. O aviso de custo aparece na página
+        ao marcar (CSS :has, sem JavaScript) e fica visível até salvar. %>
+    <%# O botão Marcar/Desmarcar é um alvo de toque maior que a caixa (16 px)
+        e fica fora do <label>: dentro dele, o clique também acionaria o
+        label e desfaria a marcação. O texto acompanha o estado da caixa por
+        CSS, então já vem certo antes do JavaScript. %>
+    <div class="group grid gap-3" data-controller="checkbox-toggle">
+      <div class="flex items-start justify-between gap-3">
+        <label class="flex cursor-pointer items-start gap-3">
+          <%= form.check_box :free_shipping, class: "mt-1 size-4 rounded border-stone-300 text-brand-500 focus:ring-brand-400", data: { checkbox_toggle_target: "checkbox" } %>
+          <span><span class="block text-sm font-semibold text-stone-800">Frete grátis para este produto</span><span class="mt-1 block text-xs leading-5 text-stone-500">O cliente não paga frete. <strong>Você assume o custo do envio</strong>: o valor é descontado do seu repasse, não da comissão da EloShop.</span></span>
+        </label>
+        <button type="button" data-action="checkbox-toggle#toggle" aria-controls="<%= form.field_id(:free_shipping) %>"
+                class="inline-flex min-h-11 shrink-0 items-center rounded-full border border-stone-300 bg-white px-4 text-sm font-semibold text-stone-800 shadow-sm transition hover:bg-stone-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand-500 group-has-[:checked]:border-brand-500 group-has-[:checked]:text-brand-700">
+          <span class="group-has-[:checked]:hidden">Marcar<span class="sr-only"> frete grátis</span></span>
+          <span class="hidden group-has-[:checked]:inline">Desmarcar<span class="sr-only"> frete grátis</span></span>
+        </button>
+      </div>
+      <p class="hidden items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900 group-has-[:checked]:flex" data-free-shipping-notice>
+        <svg viewBox="0 0 24 24" class="mt-0.5 size-5 shrink-0 text-amber-600" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 9v4m0 3.5h.01M10.3 4.3 2.6 17.6A2 2 0 0 0 4.3 20.6h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z"/></svg>
+        <span><strong>Frete grátis ativado.</strong> Você assume o custo do envio deste produto: o valor da etiqueta é descontado do seu repasse, não da comissão da EloShop.</span>
+      </p>
+    </div>
   </section>
 
   <%= form.hidden_field :currency, value: product.currency.presence || "BRL" %>
