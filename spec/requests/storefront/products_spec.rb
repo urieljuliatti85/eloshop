@@ -183,6 +183,50 @@ RSpec.describe "Storefront products", type: :request do
       expect(response.body).to include(product.seller.name)
     end
 
+    # A ampliação abre a mesma versão da foto principal (sem variante nova nem
+    # o arquivo original, ver docs/catalog.md "Ampliação da foto").
+    describe "photo zoom" do
+      it "offers to enlarge the main photo with the same variant the page already loads" do
+        product = Product.create!(seller: approved_seller, name: "Vaso ampliar", sku: "STORE-ZOOM", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+        product.main_image.attach(fixture_file_upload("sample.png", "image/png"))
+
+        get product_path(product.seller, product.slug)
+
+        page = Nokogiri::HTML(response.body)
+        button = page.at_css("button[data-action='gallery#open']")
+        expect(button["aria-label"]).to eq("Ampliar foto")
+        expect(button["aria-haspopup"]).to eq("dialog")
+        main = page.at_css("[data-gallery-target='main']")
+        zoom = page.at_css("dialog[data-gallery-target='dialog'] img[data-gallery-target='zoom']")
+        expect(zoom["src"]).to eq(main["src"])
+        expect(zoom["src"]).to include("/rails/active_storage/representations/")
+        expect(zoom["alt"]).to eq("Vaso ampliar")
+        expect(page.at_css("dialog button[data-action='gallery#close']").text).to include("Fechar")
+      end
+
+      it "numbers each photo in the alt text when there is more than one" do
+        product = Product.create!(seller: approved_seller, name: "Vaso duas fotos", sku: "STORE-ZOOM2", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+        product.main_image.attach(fixture_file_upload("sample.png", "image/png"))
+        product.images.attach(fixture_file_upload("sample.png", "image/png"))
+
+        get product_path(product.seller, product.slug)
+
+        page = Nokogiri::HTML(response.body)
+        expect(page.at_css("[data-gallery-target='main']")["alt"]).to eq("Vaso duas fotos — foto 1 de 2")
+        alts = page.css("button[data-action='gallery#show']").map { |thumb| thumb["data-gallery-alt-param"] }
+        expect(alts).to eq([ "Vaso duas fotos — foto 1 de 2", "Vaso duas fotos — foto 2 de 2" ])
+      end
+
+      it "has nothing to enlarge without a photo" do
+        product = Product.create!(seller: approved_seller, name: "Vaso sem foto", sku: "STORE-ZOOM0", price_cents: 8_990, stock_quantity: 3, currency: "BRL", status: :active)
+
+        get product_path(product.seller, product.slug)
+
+        expect(response.body).not_to include("gallery#open")
+        expect(response.body).not_to include("data-gallery-target=\"dialog\"")
+      end
+    end
+
     it "returns 404 for a draft product" do
       product = Product.create!(seller: approved_seller, name: "Caneca draft", sku: "STORE-004", price_cents: 4_990, stock_quantity: 5, currency: "BRL", status: :draft)
 
