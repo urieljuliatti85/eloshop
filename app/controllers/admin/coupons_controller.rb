@@ -3,7 +3,7 @@ module Admin
     before_action :set_coupon, only: %i[edit update destroy]
 
     def index
-      @coupons = Coupon.order(created_at: :desc)
+      @coupons = paginate(Coupon.order(created_at: :desc, id: :desc))
     end
 
     def new

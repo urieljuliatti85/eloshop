@@ -3,9 +3,10 @@ module Admin
     before_action :set_seller_report, only: %i[review resolve dismiss]
 
     def index
-      @seller_reports = SellerReport.includes(:seller, :customer).order(created_at: :desc)
-      @seller_reports = @seller_reports.where(status: params[:status]) if params[:status].present?
-      @seller_reports = @seller_reports.where(seller_id: params[:seller_id]) if params[:seller_id].present?
+      seller_reports = SellerReport.includes(:seller, :customer).order(created_at: :desc, id: :desc)
+      seller_reports = seller_reports.where(status: params[:status]) if params[:status].present?
+      seller_reports = seller_reports.where(seller_id: params[:seller_id]) if params[:seller_id].present?
+      @seller_reports = paginate(seller_reports)
     end
 
     def review

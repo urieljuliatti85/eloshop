@@ -39,7 +39,7 @@ class FraudAlert < ApplicationRecord
   validates :detected_at, presence: true
 
   scope :open, -> { where(resolved_at: nil) }
-  scope :recent_first, -> { order(detected_at: :desc) }
+  scope :recent_first, -> { order(detected_at: :desc, id: :desc) }
 
   def title
     RULES.fetch(rule).fetch(:title)

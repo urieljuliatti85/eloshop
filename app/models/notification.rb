@@ -20,7 +20,10 @@ class Notification < ApplicationRecord
 
   validates :kind, :title, :body, presence: true
 
-  scope :chronological, -> { order(created_at: :desc) }
+  # `id` desempata notificações criadas no mesmo instante (notify_admins!
+  # cria várias de uma vez): sem ele, a paginação por OFFSET pode repetir ou
+  # pular uma na fronteira entre páginas.
+  scope :chronological, -> { order(created_at: :desc, id: :desc) }
   scope :unread, -> { where(read_at: nil) }
 
   def read?

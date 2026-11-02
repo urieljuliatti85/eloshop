@@ -7,7 +7,7 @@ module Admin
       @terms_pending_sellers_count = Seller.where.not(id: Seller.accepted_current_terms_ids).count
       @suspended_sellers_count = Seller.suspended.count
 
-      sellers = Seller.includes(:users, :seller_terms_acceptances).order(created_at: :desc)
+      sellers = Seller.includes(:users, :seller_terms_acceptances).order(created_at: :desc, id: :desc)
       sellers = sellers.where(status: params[:status]) if params[:status].present? && %w[pending approved suspended].include?(params[:status])
 
       case params[:terms].presence
