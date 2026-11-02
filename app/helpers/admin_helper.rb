@@ -52,11 +52,16 @@ module AdminHelper
     tag.span(ONBOARDING_STAGE_LABELS.fetch(stage), class: "admin-badge #{ONBOARDING_STAGE_TONES.fetch(stage)}")
   end
 
-  # Fonte única das áreas do admin: a lateral (desktop) e o menu do celular
-  # leem daqui, e as abas inferiores escolhem um subconjunto por `key`.
+  # Áreas que viram abas no rodapé do celular (layouts/_admin_mobile_tabs);
+  # as demais vão para a faixa do topo (layouts/_admin_nav). Topo + rodapé
+  # cobrem a lateral sem repetir área.
+  ADMIN_MOBILE_TAB_KEYS = %i[dashboard orders sellers products].freeze
+
+  # Fonte única das áreas do admin: a lateral (desktop) lê a lista inteira, e
+  # no celular as abas do rodapé e a faixa do topo dividem a lista por `key`.
   # `controllers` decide qual área fica ativa na página atual.
-  def admin_nav_items
-    [
+  def admin_nav_items(except: [])
+    items = [
       { key: :dashboard, label: "Dashboard", path: admin_root_path, icon: :dashboard, controllers: %w[dashboard] },
       { key: :analytics, label: "Analytics", path: admin_analytics_path, icon: :analytics, controllers: %w[analytics] },
       { key: :observability, label: "Observabilidade", path: admin_observability_path, icon: :observability, controllers: %w[observability] },
@@ -75,6 +80,7 @@ module AdminHelper
       { key: :api_clients, label: "Clientes de API", path: admin_api_clients_path, icon: :categories, controllers: %w[api_clients] },
       { key: :mercado_pago_test_accounts, label: "Contas de teste MP", path: admin_mercado_pago_test_accounts_path, icon: :categories, controllers: %w[mercado_pago_test_accounts] }
     ]
+    items.reject { |item| except.include?(item[:key]) }
   end
 
   def admin_nav_links
@@ -150,8 +156,6 @@ module AdminHelper
       [ tag.path(d: "m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z") ]
     when :notifications
       [ tag.path(d: "M6 8a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 12 6 8Z"), tag.path(d: "M9.5 16a2.5 2.5 0 0 0 5 0") ]
-    when :menu
-      [ tag.path(d: "M4 7h16M4 12h16M4 17h16") ]
     when :logout
       [ tag.path(d: "M10 17l5-5-5-5M15 12H3"), tag.path(d: "M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5") ]
     when :store
