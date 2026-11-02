@@ -229,6 +229,27 @@ RSpec.describe "Seller products", type: :request do
     expect(own_product.reload.fixed_shipping_cents).to be_nil
   end
 
+  # A caixa do topo lista tudo; o erro também precisa estar no campo, porque
+  # no celular a pessoa envia do fim do formulário e não vê o topo. Vem do
+  # servidor, então aparece mesmo sem JavaScript — inclusive nas regras que o
+  # navegador não confere (frete pela metade).
+  it "shows each server-side error next to its field" do
+    patch seller_product_path(own_product), params: { product: {
+      name: "", fixed_shipping: "20,00", fixed_shipping_estimated_days: ""
+    } }
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    page = Nokogiri::HTML(response.body)
+    %w[product_name product_fixed_shipping_estimated_days].each do |id|
+      expect(page.at_css("##{id}")["aria-invalid"]).to eq("true")
+      expect(page.at_css("##{id}")["aria-describedby"]).to eq("#{id}_error")
+      expect(page.at_css("##{id}_error.field-error").text).to include("não pode ficar em branco")
+    end
+    expect(page.at_css("#product_sku")["aria-invalid"]).to be_nil
+    expect(page.at_css("#product_sku_error")).to be_nil
+  end
+
+
   it "publishes once name, price, shipping dimensions and shipping price are set" do
     own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10, category: Category.create!(name: "Categoria publicar"),
       fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 6)

@@ -152,6 +152,42 @@ module ApplicationHelper
     tag.span("*", class: "ml-0.5 text-red-600", aria: { hidden: true }, hidden: !visible, data: { required_fields_target: "marker" })
   end
 
+  # Erro do servidor junto do campo, no mesmo formato que o `required-fields`
+  # cria no navegador (id `<campo>_error`, classe `field-error`): sem
+  # JavaScript o erro aparece do mesmo jeito, e com ele o controller reaproveita
+  # a mensagem e a limpa quando o campo é preenchido. Fica ao lado da caixa do
+  # topo, que continua listando tudo (inclusive os erros sem campo, `:base`).
+  def field_error(form, field)
+    messages = field_error_messages(form.object, field)
+    return if messages.empty?
+
+    tag.p(messages.to_sentence, class: "field-error", id: field_error_id(form, field))
+  end
+
+  # Borda vermelha (`aria-invalid`) e associação com a mensagem para leitor de
+  # tela; vazio quando o campo não tem erro.
+  def field_error_aria(form, field)
+    return {} if field_error_messages(form.object, field).empty?
+
+    { invalid: true, describedby: field_error_id(form, field) }
+  end
+
+  # O formulário edita alguns campos com outro nome no model: dinheiro entra
+  # em reais e é validado em centavos (`MoneyAttribute`: `price` →
+  # `price_cents`), e a associação é escolhida pelo id e validada pelo nome
+  # (`seller_id` → `seller`).
+  def field_error_messages(record, field)
+    return [] if record.nil?
+
+    attributes = [ field, :"#{field}_cents" ]
+    attributes << field.to_s.delete_suffix("_id").to_sym if field.to_s.end_with?("_id")
+    attributes.flat_map { |attribute| record.errors[attribute] }.uniq
+  end
+
+  def field_error_id(form, field)
+    "#{form.field_id(field)}_error"
+  end
+
   # Campo exigido só para publicar (o rascunho salva sem ele): texto em vez de
   # asterisco, para não se confundir com "obrigatório para salvar".
   def publish_marker

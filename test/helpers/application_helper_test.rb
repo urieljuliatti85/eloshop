@@ -41,4 +41,34 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_includes payment_summary_label(Payment.new(payment_method: "pix", status: "pending", installments: 1)), "Forma de pagamento escolhida:"
     assert_includes payment_summary_label(Payment.new(payment_method: "pix", status: "paid", installments: 1)), "Pago com"
   end
+
+  test "field_error shows the server message with the id the required-fields controller uses" do
+    product = Product.new
+    product.errors.add(:name, "não pode ficar em branco")
+    form = ActionView::Helpers::FormBuilder.new(:product, product, self, {})
+
+    html = field_error(form, :name)
+
+    assert_includes html, 'id="product_name_error"'
+    assert_includes html, 'class="field-error"'
+    assert_includes html, "não pode ficar em branco"
+    assert_equal({ invalid: true, describedby: "product_name_error" }, field_error_aria(form, :name))
+  end
+
+  test "field_error reads the model attribute behind money and association fields" do
+    product = Product.new
+    product.errors.add(:price_cents, "deve ser maior ou igual a 0")
+    product.errors.add(:seller, "é obrigatório(a)")
+    form = ActionView::Helpers::FormBuilder.new(:product, product, self, {})
+
+    assert_includes field_error(form, :price), "deve ser maior ou igual a 0"
+    assert_includes field_error(form, :seller_id), "é obrigatório(a)"
+  end
+
+  test "field_error renders nothing for a field without errors" do
+    form = ActionView::Helpers::FormBuilder.new(:product, Product.new, self, {})
+
+    assert_nil field_error(form, :sku)
+    assert_equal({}, field_error_aria(form, :sku))
+  end
 end
