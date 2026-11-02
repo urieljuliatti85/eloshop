@@ -243,6 +243,19 @@ class Admin::FinancialsControllerTest < ActionDispatch::IntegrationTest
     assert_select "[role=status]", text: /Mostrando os 2 pagamentos mais recentes/
   end
 
+  # Exatamente o teto de pagamentos não é corte: nada ficou de fora.
+  test "does not warn when the payments exactly fill the reconciliation limit" do
+    Payment.where(gateway: "mercado_pago").delete_all
+    2.times { |i| create_paid_mercado_pago_payment!(external_id: "mp-exact-#{i}") }
+    sign_in_as(users(:one))
+
+    with_reconciliation_limit(2) do
+      get admin_financials_path
+    end
+
+    assert_select "[role=status]", text: /pagamentos mais recentes/, count: 0
+  end
+
   test "paginates the reconciliation table but summarizes every filtered row" do
     (Paginatable::DEFAULT_PER_PAGE + 1).times { |i| create_paid_mercado_pago_payment!(external_id: "mp-page-#{i}") }
     sign_in_as(users(:one))

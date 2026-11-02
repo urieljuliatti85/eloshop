@@ -176,8 +176,11 @@ module Admin
         Payment.includes(order: { seller_orders: :seller })
           .where(gateway: "mercado_pago", status: SUCCESSFUL_PAYMENT_STATUSES)
           .where.not(external_id: [ nil, "" ])
-      ).order(created_at: :desc, id: :desc).limit(RECONCILIATION_LIMIT).to_a
-      @reconciliation_truncated = local_payments.size == RECONCILIATION_LIMIT
+      ).order(created_at: :desc, id: :desc).limit(RECONCILIATION_LIMIT + 1).to_a
+      # Um a mais que o teto diz se houve corte: com exatamente o teto, nada
+      # ficou de fora e a tela não deve avisar.
+      @reconciliation_truncated = local_payments.size > RECONCILIATION_LIMIT
+      local_payments = local_payments.first(RECONCILIATION_LIMIT)
 
       official_entries = report&.entries.to_a
       official_by_payment = official_entries.index_by { |entry| entry.payment_id.to_s }
