@@ -52,8 +52,41 @@ module AdminHelper
     tag.span(ONBOARDING_STAGE_LABELS.fetch(stage), class: "admin-badge #{ONBOARDING_STAGE_TONES.fetch(stage)}")
   end
 
+  # Fonte única das áreas do admin: a lateral (desktop) e o menu do celular
+  # leem daqui, e as abas inferiores escolhem um subconjunto por `key`.
+  # `controllers` decide qual área fica ativa na página atual.
+  def admin_nav_items
+    [
+      { key: :dashboard, label: "Dashboard", path: admin_root_path, icon: :dashboard, controllers: %w[dashboard] },
+      { key: :analytics, label: "Analytics", path: admin_analytics_path, icon: :analytics, controllers: %w[analytics] },
+      { key: :observability, label: "Observabilidade", path: admin_observability_path, icon: :observability, controllers: %w[observability] },
+      { key: :financials, label: "Financials", path: admin_financials_path, icon: :financials, controllers: %w[financials] },
+      { key: :products, label: "Produtos", path: admin_products_path, icon: :products, controllers: %w[products product_variants personalization_options product_images] },
+      { key: :sellers, label: "Artesãos", path: admin_sellers_path, icon: :customers, controllers: %w[sellers] },
+      { key: :orders, label: "Pedidos", path: admin_orders_path, icon: :orders, controllers: %w[orders] },
+      { key: :customers, label: "Clientes", path: admin_customers_path, icon: :customers, controllers: %w[customers] },
+      { key: :admins, label: "Administradores", path: admin_admins_path, icon: :customers, controllers: %w[admins] },
+      { key: :categories, label: "Categorias", path: admin_categories_path, icon: :categories, controllers: %w[categories] },
+      { key: :coupons, label: "Cupons", path: admin_coupons_path, icon: :coupons, controllers: %w[coupons] },
+      { key: :reviews, label: "Avaliações", path: admin_reviews_path, icon: :reviews, controllers: %w[reviews] },
+      { key: :seller_reports, label: "Denúncias", path: admin_seller_reports_path, icon: :reviews, controllers: %w[seller_reports] },
+      { key: :fraud_alerts, label: "Fraudes", path: admin_fraud_alerts_path, icon: :reviews, controllers: %w[fraud_alerts] },
+      { key: :audit_logs, label: "Auditoria", path: admin_audit_logs_path, icon: :reviews, controllers: %w[audit_logs] },
+      { key: :api_clients, label: "Clientes de API", path: admin_api_clients_path, icon: :categories, controllers: %w[api_clients] },
+      { key: :mercado_pago_test_accounts, label: "Contas de teste MP", path: admin_mercado_pago_test_accounts_path, icon: :categories, controllers: %w[mercado_pago_test_accounts] }
+    ]
+  end
+
+  def admin_nav_links
+    safe_join(admin_nav_items.map { |item| admin_nav_link(item[:label], item[:path], icon: item[:icon], controllers: item[:controllers]) })
+  end
+
+  def admin_nav_active?(controllers)
+    Array(controllers).include?(controller_name)
+  end
+
   def admin_nav_link(label, path, icon:, controllers:)
-    active = Array(controllers).include?(controller_name)
+    active = admin_nav_active?(controllers)
     classes = [ "admin-nav-link", ("admin-nav-link--active" if active) ].compact.join(" ")
 
     link_to path, class: classes, aria: { current: ("page" if active) } do
