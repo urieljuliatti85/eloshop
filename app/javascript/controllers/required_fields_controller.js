@@ -13,6 +13,11 @@ import { Controller } from "@hotwired/stimulus"
 // elemento `trigger` (um <select>) tiver esse valor; o asterisco do label
 // acompanha, e um `group` com o mesmo `data-required-when` aparece e some
 // (ou some, com `data-hidden-when`).
+// Campos com `data-max-when="<valor>"` e `data-max-limit` ganham esse
+// `max` só enquanto o trigger tiver o valor (ex.: peça única tem no máximo 1
+// unidade em estoque). Valor fora de `min`/`max` é marcado como os demais,
+// com `data-max-message` quando houver (só para o limite de cima), em vez do
+// balão do navegador.
 // O servidor continua sendo a fonte da verdade das regras.
 export default class extends Controller {
   static targets = ["field", "trigger", "marker", "group"]
@@ -53,6 +58,13 @@ export default class extends Controller {
     const current = this.hasTriggerTarget ? this.triggerTarget.value : null
 
     this.fieldTargets.forEach((field) => {
+      const maxWhen = field.dataset.maxWhen
+      if (maxWhen) {
+        if (current === maxWhen) field.max = field.dataset.maxLimit
+        else field.removeAttribute("max")
+        if (field.getAttribute("aria-invalid") === "true") this.check(field)
+      }
+
       const when = field.dataset.requiredWhen
       if (!when) return
 
@@ -72,13 +84,25 @@ export default class extends Controller {
 
   // true quando o campo está ok (ou não é obrigatório).
   check(field) {
+    // Campo escondido (ex.: estoque em peça sob encomenda) não é mostrado
+    // nem pode impedir o envio: a pessoa não teria como corrigi-lo.
+    if (field.closest("[hidden]")) {
+      this.clear(field)
+      return true
+    }
+
     if (field.required && field.validity.valueMissing) {
-      this.flag(field)
+      this.flag(field, field.tagName === "SELECT" ? "Selecione uma opção." : "Preencha este campo.")
+      return false
+    }
+
+    if (field.validity.rangeOverflow || field.validity.rangeUnderflow) {
+      this.flag(field, this.rangeMessage(field))
       return false
     }
 
     if (this.publishOnly(field) && field.value.trim() === "") {
-      this.flag(field)
+      this.flag(field, "Obrigatório para publicar.")
       return false
     }
 
@@ -86,7 +110,12 @@ export default class extends Controller {
     return true
   }
 
-  flag(field) {
+  rangeMessage(field) {
+    if (field.validity.rangeUnderflow) return `Use no mínimo ${field.min}.`
+    return field.dataset.maxMessage || `Use no máximo ${field.max}.`
+  }
+
+  flag(field, text) {
     field.setAttribute("aria-invalid", "true")
 
     let message = this.messageFor(field)
@@ -97,8 +126,7 @@ export default class extends Controller {
       field.insertAdjacentElement("afterend", message)
       field.setAttribute("aria-describedby", message.id)
     }
-    message.textContent = this.publishOnly(field) ? "Obrigatório para publicar."
-      : field.tagName === "SELECT" ? "Selecione uma opção." : "Preencha este campo."
+    message.textContent = text
   }
 
   clear(field) {

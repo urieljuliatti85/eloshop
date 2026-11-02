@@ -79,7 +79,7 @@
 
   <div>
     <%= form.label :stock_quantity, "Estoque" %>
-    <%= form.number_field :stock_quantity, aria: field_error_aria(form, :stock_quantity), class: "w-full" %><%= field_error(form, :stock_quantity) %>
+    <%= form.number_field :stock_quantity, aria: field_error_aria(form, :stock_quantity), min: 0, max: (1 if product.availability_type_one_of_a_kind?), data: { required_fields_target: "field", max_when: "one_of_a_kind", max_limit: 1, max_message: "Peça única: use 0 ou 1." }, class: "w-full" %><%= field_error(form, :stock_quantity) %>
     <p class="text-sm text-gray-600">Ignorado para produtos sob encomenda. Peça única aceita no máximo 1.</p>
   </div>
 

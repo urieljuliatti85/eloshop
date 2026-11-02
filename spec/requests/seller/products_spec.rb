@@ -249,6 +249,29 @@ RSpec.describe "Seller products", type: :request do
     expect(page.at_css("#product_sku_error")).to be_nil
   end
 
+  it "explains a blank stock next to the field instead of saying it is not a number" do
+    patch seller_product_path(own_product), params: { product: { stock_quantity: "" } }
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    page = Nokogiri::HTML(response.body)
+    expect(page.at_css("#product_stock_quantity_error").text).to eq("precisa ser informado (use 0 se ainda não tiver peças prontas)")
+    expect(response.body).not_to include("não é um número")
+    expect(own_product.reload.stock_quantity).to eq(2)
+  end
+
+  # O navegador só conhece o limite da peça única se o campo vier com `max`; o
+  # `required-fields` liga e desliga o atributo quando a disponibilidade muda.
+  it "limits the stock field to 1 only for a one-of-a-kind piece" do
+    get edit_seller_product_path(own_product)
+    stock = Nokogiri::HTML(response.body).at_css("#product_stock_quantity")
+    expect(stock["max"]).to be_nil
+    expect(stock["data-max-when"]).to eq("one_of_a_kind")
+    expect(stock["data-max-limit"]).to eq("1")
+
+    own_product.update!(availability_type: :one_of_a_kind, stock_quantity: 1)
+    get edit_seller_product_path(own_product)
+    expect(Nokogiri::HTML(response.body).at_css("#product_stock_quantity")["max"]).to eq("1")
+  end
 
   it "publishes once name, price, shipping dimensions and shipping price are set" do
     own_product.update!(weight_grams: 200, length_cm: 10, width_cm: 10, height_cm: 10, category: Category.create!(name: "Categoria publicar"),

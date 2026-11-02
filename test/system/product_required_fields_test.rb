@@ -57,7 +57,17 @@ class ProductRequiredFieldsTest < ApplicationSystemTestCase
 
     # Peso e dimensões são marcados "Para publicar", mas não impedem salvar como rascunho.
     assert_selector "label[for='product_weight_grams'] [data-publish-marker]", visible: :visible
+    # Peça única aceita no máximo 1 unidade: o aviso fica no campo, não no
+    # balão do navegador, e o limite some ao voltar para estoque padrão.
+    select "Peça única", from: "Disponibilidade"
+    fill_in "Estoque", with: "3"
+    click_button "Salvar produto"
+    assert_current_path new_seller_product_path
+    assert_text "Peça única: use 0 ou 1."
+    assert_equal "product_stock_quantity", page.evaluate_script("document.activeElement.id")
+
     select "Estoque padrão", from: "Disponibilidade"
+    assert_no_text "Peça única: use 0 ou 1."
     click_button "Salvar produto"
     assert_text "Produto criado com sucesso."
   end

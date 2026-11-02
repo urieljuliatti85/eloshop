@@ -209,7 +209,7 @@ RSpec.describe Product, type: :model do
       product = described_class.new(valid_attributes.merge(slug: "peca-unica-1", sku: "UNICA-001", availability_type: "one_of_a_kind", stock_quantity: 2))
 
       expect(product).not_to be_valid
-      expect(product.errors[:stock_quantity]).to include("deve ser menor ou igual a 1")
+      expect(product.errors[:stock_quantity]).to include("deve ser 0 ou 1 numa peça única")
 
       valid = described_class.new(valid_attributes.merge(slug: "peca-unica-2", sku: "UNICA-002", availability_type: "one_of_a_kind", stock_quantity: 1))
       expect(valid).to be_valid
