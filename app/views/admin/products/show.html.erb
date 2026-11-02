@@ -19,6 +19,8 @@
     </div>
   </header>
 
+  <%= render "shared/publication_blockers", blockers: @publication_blockers, edit_path: edit_admin_product_path(@product) %>
+
   <div class="grid items-start gap-6 xl:grid-cols-[minmax(19rem,0.7fr)_minmax(0,1.3fr)]">
     <div class="space-y-6">
       <section class="admin-card overflow-hidden">

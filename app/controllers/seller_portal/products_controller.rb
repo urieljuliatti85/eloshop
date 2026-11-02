@@ -13,7 +13,9 @@ module SellerPortal
       @published_without_shipping = current_seller.products.active.without_seller_defined_shipping.order(:name).to_a
     end
 
+    # Pendências só fazem sentido onde há o botão Publicar (rascunho).
     def show
+      @publication_blockers = @product.draft? ? @product.publication_blockers : []
     end
 
     def new

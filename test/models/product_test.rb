@@ -23,7 +23,7 @@ class ProductTest < ActiveSupport::TestCase
     product.update!(seller: sellers(:pending))
 
     error = assert_raises(Product::InvalidStatusTransition) { product.publish! }
-    assert_equal "o vendedor precisa estar aprovado ou liberado na vitrine antes da publicação", error.message
+    assert_includes error.message, "O ateliê precisa estar aprovado ou liberado na vitrine antes da publicação."
   end
 
   test "a showcased seller can publish, and the product is visible but not purchasable" do
@@ -654,6 +654,41 @@ class ProductTest < ActiveSupport::TestCase
     product.update_column(:status, "active")
 
     assert product.reload.update(stock_quantity: 4)
+  end
+
+  # Todas as pendências de uma vez: o ateliê não pode descobrir uma por
+  # tentativa (antes, ateliê pendente escondia a falta de categoria).
+  test "publication_blockers lists the seller, the terms and the catalog gaps together" do
+    product = Product.create!(seller: sellers(:pending), name: "Nada", sku: "BLK-#{SecureRandom.hex(4)}",
+      price_cents: 1000, stock_quantity: 1, currency: "BRL", status: "draft")
+
+    blockers = product.publication_blockers
+
+    assert_includes blockers, "O ateliê precisa estar aprovado ou liberado na vitrine antes da publicação."
+    assert blockers.any? { |blocker| blocker.include?("categoria") }
+    assert blockers.any? { |blocker| blocker.include?("peso") }
+    assert blockers.any? { |blocker| blocker.include?("frete") }
+  end
+
+  # Erro de campo caía na mensagem de reserva "informe peso e dimensões",
+  # mesmo com peso e medidas preenchidos.
+  test "publish! names a field error instead of asking for weight and dimensions" do
+    product = publishable_draft
+    product.update!(fixed_shipping_cents: 2000, fixed_shipping_estimated_days: 6)
+    product.update_columns(availability_type: "made_to_order", production_time_min_days: 10, production_time_max_days: 5)
+
+    error = assert_raises(Product::InvalidStatusTransition) { product.publish! }
+
+    assert_includes error.message, "Produção máxima deve ser maior ou igual ao prazo mínimo."
+    assert_no_match(/peso/, error.message)
+    assert product.reload.draft?
+  end
+
+  test "publication_blockers is empty for a product ready to publish" do
+    product = publishable_draft
+    product.update!(free_shipping: true)
+
+    assert_empty product.publication_blockers
   end
 
   private

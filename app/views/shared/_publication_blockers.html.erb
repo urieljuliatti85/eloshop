@@ -1,0 +1,14 @@
+<%# O que falta para publicar, na página do produto (ateliê e admin). A lista
+    vem de `Product#publication_blockers`, a mesma que o `publish!` usa para
+    recusar — o botão Publicar continua ativo, e o servidor decide. %>
+<% if blockers.any? %>
+  <section class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-950" aria-labelledby="publication-blockers-title">
+    <h2 id="publication-blockers-title" class="font-bold">Para publicar, falta:</h2>
+    <ul class="mt-2 list-disc space-y-1 pl-5">
+      <% blockers.each do |blocker| %>
+        <li><%= blocker %></li>
+      <% end %>
+    </ul>
+    <%= link_to "Completar cadastro", edit_path, class: "mt-3 inline-flex min-h-11 items-center font-semibold underline" %>
+  </section>
+<% end %>

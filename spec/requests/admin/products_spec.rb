@@ -308,6 +308,22 @@ RSpec.describe "Admin products", type: :request do
 
       expect(response).to redirect_to(admin_product_path(product))
       expect(product.reload).to be_discontinued
+      # Recusa pelo status, não por cadastro incompleto (o produto também
+      # não tem categoria nem medidas).
+      expect(flash[:alert]).to include("não é possível transicionar")
+      expect(flash[:alert]).not_to include("categoria")
+    end
+
+    it "shows on the draft page everything still missing to publish" do
+      sign_in_as(user)
+      product = Product.create!(seller: approved_seller, name: "Rascunho admin", sku: "PUB-003", price_cents: 8_990,
+        stock_quantity: 3, currency: "BRL", status: "draft")
+
+      get admin_product_path(product)
+
+      card = Nokogiri::HTML(response.body).at_css("section[aria-labelledby='publication-blockers-title']")
+      expect(card.text).to include("Para publicar, falta:", "categoria", "peso", "frete")
+      expect(card.at_css("a[href='#{edit_admin_product_path(product)}']")).to be_present
     end
   end
 

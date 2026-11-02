@@ -15,6 +15,8 @@
     </div>
   </header>
 
+  <%= render "shared/publication_blockers", blockers: @publication_blockers, edit_path: edit_seller_product_path(@product) %>
+
   <div class="grid gap-4 sm:grid-cols-3">
     <div class="seller-card"><p class="text-sm text-ink-muted">Preço</p><p class="mt-2 text-2xl font-bold"><%= format_price(@product.price_cents) %></p></div>
     <div class="seller-card"><p class="text-sm text-ink-muted">Estoque</p><p class="mt-2 text-2xl font-bold"><%= @product.stock_quantity %></p></div>
