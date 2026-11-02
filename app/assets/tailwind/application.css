@@ -241,6 +241,13 @@
     .admin-content table { min-width: 0; }
     .admin-content :is(table, tbody, tr, td) { display: block; }
     .admin-content thead { @apply sr-only; }
+    /* Os links de ordenação do <thead> seguem focáveis: com o foco num deles,
+       o cabeçalho reaparece como uma faixa de colunas que quebra linha (e não
+       como a linha larga da tabela, que vazaria a página). Sem isso, quem
+       navega por teclado parava em links invisíveis. */
+    .admin-content thead:focus-within { @apply not-sr-only block border-b border-slate-100 px-5 py-3; }
+    .admin-content thead:focus-within tr { @apply flex flex-wrap gap-x-4 gap-y-2; }
+    .admin-content thead:focus-within :is(th, th:first-child, th:last-child) { @apply block border-0 p-0; }
     .admin-content tbody tr { @apply border-b border-slate-100 px-5 py-4; }
     .admin-content tbody tr:last-child { @apply border-b-0; }
     /* Texto sem espaço (e-mail, código) quebra em qualquer ponto em toda

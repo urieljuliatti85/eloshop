@@ -75,6 +75,25 @@ class AdminMobileListingsTest < ApplicationSystemTestCase
     assert_no_horizontal_overflow
   end
 
+  # O <thead> fica só para o leitor de tela no modo cartão, mas os links de
+  # ordenação continuam focáveis: sem isto, quem navega por teclado parava
+  # em links invisíveis antes do primeiro cartão.
+  test "shows the sort links while one of them has keyboard focus" do
+    visit admin_orders_path
+
+    focused = page.evaluate_script(<<~JS)
+      (() => {
+        const link = document.querySelector('.admin-content thead a');
+        link.focus();
+        const rect = link.getBoundingClientRect();
+        const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        return document.activeElement === link && rect.left >= 0 && rect.right <= innerWidth && link.contains(hit);
+      })()
+    JS
+    assert focused, "o link de ordenação focado precisa estar visível na tela"
+    assert_no_horizontal_overflow
+  end
+
   private
 
   def overflowing_cells
