@@ -85,7 +85,7 @@
         <%= render "layouts/flash_message", message: flash[:alert], variant: :error %>
 
         <main class="admin-main">
-          <div class="admin-content"><%= yield %></div>
+          <div class="admin-content" data-controller="table-labels"><%= yield %></div>
         </main>
       </div>
     </div>

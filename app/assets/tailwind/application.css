@@ -232,6 +232,40 @@
   .admin-content td { @apply border-b border-slate-100 px-4 py-3.5 align-middle text-slate-700 first:pl-5 last:pr-5; }
   .admin-content tbody tr { @apply transition-colors hover:bg-[#fbfaf7]; }
   .admin-content tbody tr:last-child td { @apply border-b-0; }
+  /* Abaixo de `lg` cada linha das tabelas do admin vira um cartão: o título
+     é a primeira coluna com nome (`data-primary`) e as outras aparecem como
+     "rótulo: valor", com o rótulo vindo do <thead> (table-labels controller).
+     A tabela larga cortava colunas no celular. O <thead> continua no HTML,
+     escondido só visualmente. */
+  @media (width < 64rem) {
+    .admin-content table { min-width: 0; }
+    .admin-content :is(table, tbody, tr, td) { display: block; }
+    .admin-content thead { @apply sr-only; }
+    /* Os links de ordenação do <thead> seguem focáveis: com o foco num deles,
+       o cabeçalho reaparece como uma faixa de colunas que quebra linha (e não
+       como a linha larga da tabela, que vazaria a página). Sem isso, quem
+       navega por teclado parava em links invisíveis. */
+    .admin-content thead:focus-within { @apply not-sr-only block border-b border-slate-100 px-5 py-3; }
+    .admin-content thead:focus-within tr { @apply flex flex-wrap gap-x-4 gap-y-2; }
+    .admin-content thead:focus-within :is(th, th:first-child, th:last-child) { @apply block border-0 p-0; }
+    .admin-content tbody tr { @apply border-b border-slate-100 px-5 py-4; }
+    .admin-content tbody tr:last-child { @apply border-b-0; }
+    /* Texto sem espaço (e-mail, código) quebra em qualquer ponto em toda
+       célula, inclusive a do título, em vez de estourar o cartão. */
+    .admin-content td,
+    .admin-content td:first-child,
+    .admin-content td:last-child { @apply border-0 px-0 py-1 text-left [overflow-wrap:anywhere]; }
+    .admin-content td[data-primary] { @apply pb-2 text-base font-semibold text-slate-950; }
+    /* Rótulo absolute dentro da própria célula (relative): o conteúdo segue
+       em fluxo normal, sem virar itens de grid/flex. */
+    .admin-content td[data-label] { @apply relative min-h-7 pl-[40%]; }
+    /* Selos longos ("Falta conectar o Mercado Pago", versão dos termos)
+       quebram linha no cartão em vez de serem cortados. */
+    .admin-content td[data-label] .admin-badge { @apply whitespace-normal; }
+    .admin-content td[data-label]::before { content: attr(data-label); @apply absolute left-0 top-1.5 w-[37%] truncate text-xs font-semibold uppercase tracking-[0.06em] text-slate-500; }
+    .admin-content td:not([data-label]):not([data-primary]) { @apply pt-2; }
+    .admin-content td:not([data-label]):not([data-primary]) > .flex { @apply flex-wrap justify-start; }
+  }
   .admin-badge { @apply inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold whitespace-nowrap; }
   .admin-badge--warning { @apply bg-amber-100 text-amber-900; }
   .admin-badge--success { @apply bg-emerald-100 text-emerald-800; }
