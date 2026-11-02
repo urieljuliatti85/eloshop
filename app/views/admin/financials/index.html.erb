@@ -162,6 +162,12 @@
       <% end %>
     </div>
 
+    <% if @reconciliation_truncated %>
+      <p class="mx-5 mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+        Mostrando os <%= number_with_delimiter(Admin::FinancialsController::RECONCILIATION_LIMIT, delimiter: ".") %> pagamentos mais recentes que atendem ao filtro, e a exportação traz os mesmos. Filtre por período ou artesão para ver os anteriores.
+      </p>
+    <% end %>
+
     <% if @reconciliation_rows.any? %>
       <div class="overflow-x-auto">
         <table>
@@ -178,7 +184,7 @@
             </tr>
           </thead>
           <tbody>
-            <% @reconciliation_rows.each do |row| %>
+            <% @reconciliation_page_rows.each do |row| %>
               <tr>
                 <td>
                   <% if row.fetch(:payment) %>
@@ -212,6 +218,9 @@
           </tbody>
         </table>
       </div>
+      <% if @pagination.total_pages > 1 %>
+        <div class="border-t border-slate-100 px-4"><%= render "admin/shared/pagination", pagination: @pagination %></div>
+      <% end %>
     <% else %>
       <p class="m-5 admin-empty-state">Ainda não há pagamentos do Mercado Pago para conciliar.</p>
     <% end %>
