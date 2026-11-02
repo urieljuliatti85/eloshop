@@ -143,7 +143,8 @@
   .app-flash__close { @apply absolute right-4 top-4 grid size-11 cursor-pointer place-items-center rounded-full text-white/80 transition hover:bg-white/15 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white; }
   .app-flash__close svg { @apply size-6; }
 
-  .admin-body { @apply min-h-screen bg-[#eee9df] text-slate-900 antialiased; }
+  .admin-body { @apply min-h-screen bg-[#eee9df] text-slate-900 antialiased; --admin-tabs-height: 4rem; }
+  @media (width >= 64rem) { .admin-body { --admin-tabs-height: 0px; } }
   .admin-shell { @apply min-h-screen lg:grid lg:grid-cols-[17rem_minmax(0,1fr)]; }
   .admin-workspace { @apply min-w-0 bg-[#f8f6f0]; }
   .admin-sidebar {
@@ -160,20 +161,28 @@
   .admin-nav-link--active { @apply bg-white text-slate-950 shadow-sm hover:bg-white hover:text-slate-950; }
   .admin-sidebar-footer { @apply mt-8 space-y-1.5 border-t border-white/10 pt-5; }
   .admin-mobile-header { @apply sticky top-0 z-40 flex items-center justify-between px-4 py-3 lg:hidden; --topo-fundo: #101b20; }
-  .admin-mobile-menu summary { @apply flex size-11 cursor-pointer list-none flex-col items-center justify-center gap-1.5 rounded-xl border border-white/15 text-white; }
-  .admin-mobile-menu summary::-webkit-details-marker { @apply hidden; }
-  .admin-mobile-menu summary span { @apply block h-0.5 w-5 rounded-full bg-current; }
-  .admin-mobile-menu nav {
-    @apply absolute inset-x-3 top-[4.4rem] flex flex-col gap-1 rounded-2xl border border-white/10 bg-cover bg-center p-3 shadow-2xl;
+  /* Abas inferiores do admin abaixo de `lg` (layouts/_admin_mobile_tabs).
+     `--admin-tabs-height` reserva o espaço no fim do `.admin-main` para a
+     barra fixa não cobrir botões e a última linha das tabelas. */
+  .admin-tabs { @apply fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#101b20] shadow-[0_-8px_24px_rgba(15,23,42,0.18)] lg:hidden; padding-bottom: env(safe-area-inset-bottom); }
+  .admin-tabs-list { @apply grid h-16 grid-cols-5; }
+  .admin-tab { @apply relative flex h-full cursor-pointer flex-col items-center justify-center gap-1 border-t-2 border-transparent text-[0.6875rem] font-semibold leading-none text-slate-400 no-underline transition hover:text-white focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-400; }
+  .admin-tab--active, .admin-tab[aria-expanded="true"] { @apply border-brand-400 text-white; }
+  .admin-tab-count { @apply absolute -right-3 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[0.625rem] font-bold tabular-nums text-white ring-2 ring-[#101b20]; }
+  .admin-tabs-sheet {
+    @apply absolute inset-x-3 bottom-full mb-3 flex flex-col gap-1 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-cover bg-center p-3 shadow-2xl;
+    max-height: calc(100dvh - var(--admin-tabs-height) - env(safe-area-inset-bottom) - 1.5rem);
     background-image:
       linear-gradient(180deg, rgba(16, 12, 10, 0.85) 0%, rgba(16, 12, 10, 0.5) 55%, rgba(16, 12, 10, 0.85) 100%),
       url("admin-sidebar-bg.jpg");
   }
+  .admin-tabs-sheet[hidden] { @apply hidden; }
   .admin-topbar { @apply hidden h-20 items-center justify-between px-6 lg:flex lg:px-9; --topo-fundo: #f8f6f0; }
   .admin-eyebrow { @apply text-[0.65rem] font-bold uppercase tracking-[0.22em] text-brand-600; }
   .admin-user-chip { @apply flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm; }
   .admin-user-avatar { @apply grid size-9 shrink-0 place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-700; }
   .admin-main { @apply mx-auto w-full max-w-[100rem] px-4 py-6 sm:px-6 lg:px-9 lg:py-9; }
+  @media (width < 64rem) { .admin-main { padding-bottom: calc(1.5rem + var(--admin-tabs-height) + env(safe-area-inset-bottom)); } }
   .admin-content h1 { @apply text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl; }
   .admin-content h2 { @apply text-lg font-semibold tracking-tight text-slate-900; }
   .admin-card { @apply rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03),0_16px_40px_rgba(15,23,42,0.04)]; }

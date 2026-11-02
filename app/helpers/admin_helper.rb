@@ -148,6 +148,10 @@ module AdminHelper
       [ tag.path(d: "M21 12a3 3 0 0 0-3-3V4H6v5a3 3 0 0 0 0 6v5h12v-5a3 3 0 0 0 3-3Z"), tag.path(d: "M9 9h.01M15 15h.01M15 9l-6 6") ]
     when :reviews
       [ tag.path(d: "m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z") ]
+    when :notifications
+      [ tag.path(d: "M6 8a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 12 6 8Z"), tag.path(d: "M9.5 16a2.5 2.5 0 0 0 5 0") ]
+    when :menu
+      [ tag.path(d: "M4 7h16M4 12h16M4 17h16") ]
     when :logout
       [ tag.path(d: "M10 17l5-5-5-5M15 12H3"), tag.path(d: "M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5") ]
     when :store

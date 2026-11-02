@@ -1,3 +1,4 @@
+<%# No celular a navegação fica nas abas inferiores (layouts/_admin_mobile_tabs). %>
 <header class="admin-mobile-header topo-serrilhado">
   <%= link_to admin_root_path, class: "admin-brand" do %>
     <span class="admin-brand-mark">E</span>
@@ -6,19 +7,6 @@
       <span class="block text-[0.65rem] uppercase tracking-[0.18em] text-slate-400">Administração</span>
     </span>
   <% end %>
-
-  <details class="admin-mobile-menu">
-    <summary aria-label="Abrir menu administrativo">
-      <span></span><span></span><span></span>
-    </summary>
-    <nav aria-label="Navegação administrativa">
-      <%= admin_nav_links %>
-      <div class="mt-2 border-t border-white/10 pt-2">
-        <%= link_to root_path, class: "admin-nav-link" do %><%= admin_icon :store %><span>Ver loja</span><% end %>
-        <%= button_to session_path, method: :delete, class: "admin-nav-link w-full" do %><%= admin_icon :logout %><span>Sair</span><% end %>
-      </div>
-    </nav>
-  </details>
 </header>
 
 <aside class="admin-sidebar">

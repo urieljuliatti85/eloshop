@@ -13,6 +13,7 @@
   </head>
 
   <body class="admin-body">
+    <% unread_count = Current.user.notifications.unread.count %>
     <div class="admin-shell">
       <%= render "layouts/admin_nav" %>
 
@@ -24,8 +25,7 @@
           </div>
 
           <div class="flex items-center gap-3 sm:gap-5">
-            <% recent_notifications = Current.user.notifications.chronological.limit(5)
-               unread_count = Current.user.notifications.unread.count %>
+            <% recent_notifications = Current.user.notifications.chronological.limit(5) %>
             <div class="relative" data-controller="account-menu"
                  data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
               <button type="button"
@@ -89,5 +89,7 @@
         </main>
       </div>
     </div>
+
+    <%= render "layouts/admin_mobile_tabs", unread_count: unread_count %>
   </body>
 </html>
