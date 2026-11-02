@@ -1,40 +1,47 @@
+<%# No celular, as áreas do dia a dia são abas no rodapé
+    (layouts/_admin_mobile_tabs); aqui ficam outras quatro
+    (`ADMIN_MOBILE_TOP_KEYS`) e "Mais", que abre a lista com o resto. O
+    header fica preso no topo (sticky), como o rodapé fica embaixo. %>
+<% more_items = admin_nav_items(except: AdminHelper::ADMIN_MOBILE_TAB_KEYS + AdminHelper::ADMIN_MOBILE_TOP_KEYS)
+   more_active = more_items.any? { |item| admin_nav_active?(item[:controllers]) } %>
 <header class="admin-mobile-header topo-serrilhado">
-  <%= link_to admin_root_path, class: "admin-brand" do %>
-    <span class="admin-brand-mark">E</span>
-    <span>
-      <span class="block text-base font-bold text-white">EloShop</span>
-      <span class="block text-[0.65rem] uppercase tracking-[0.18em] text-slate-400">Administração</span>
-    </span>
-  <% end %>
+  <div class="flex items-center justify-between gap-3">
+    <%= link_to admin_root_path, class: "admin-brand" do %>
+      <span class="admin-brand-mark">E</span>
+      <span>
+        <span class="block text-base font-bold text-white">EloShop</span>
+        <span class="block text-[0.65rem] uppercase tracking-[0.18em] text-slate-400">Administração</span>
+      </span>
+    <% end %>
+    <%= button_to session_path, method: :delete, class: "admin-mobile-logout" do %><%= admin_icon :logout %><span>Sair</span><% end %>
+  </div>
 
-  <details class="admin-mobile-menu">
-    <summary aria-label="Abrir menu administrativo">
-      <span></span><span></span><span></span>
-    </summary>
-    <nav aria-label="Navegação administrativa">
-      <%= admin_nav_link "Dashboard", admin_root_path, icon: :dashboard, controllers: %w[dashboard] %>
-      <%= admin_nav_link "Analytics", admin_analytics_path, icon: :analytics, controllers: %w[analytics] %>
-      <%= admin_nav_link "Observabilidade", admin_observability_path, icon: :observability, controllers: %w[observability] %>
-      <%= admin_nav_link "Financials", admin_financials_path, icon: :financials, controllers: %w[financials] %>
-      <%= admin_nav_link "Produtos", admin_products_path, icon: :products, controllers: %w[products product_variants personalization_options product_images] %>
-      <%= admin_nav_link "Artesãos", admin_sellers_path, icon: :customers, controllers: %w[sellers] %>
-      <%= admin_nav_link "Pedidos", admin_orders_path, icon: :orders, controllers: %w[orders] %>
-      <%= admin_nav_link "Clientes", admin_customers_path, icon: :customers, controllers: %w[customers] %>
-      <%= admin_nav_link "Administradores", admin_admins_path, icon: :customers, controllers: %w[admins] %>
-      <%= admin_nav_link "Categorias", admin_categories_path, icon: :categories, controllers: %w[categories] %>
-      <%= admin_nav_link "Cupons", admin_coupons_path, icon: :coupons, controllers: %w[coupons] %>
-      <%= admin_nav_link "Avaliações", admin_reviews_path, icon: :reviews, controllers: %w[reviews] %>
-      <%= admin_nav_link "Denúncias", admin_seller_reports_path, icon: :reviews, controllers: %w[seller_reports] %>
-      <%= admin_nav_link "Fraudes", admin_fraud_alerts_path, icon: :reviews, controllers: %w[fraud_alerts] %>
-      <%= admin_nav_link "Auditoria", admin_audit_logs_path, icon: :reviews, controllers: %w[audit_logs] %>
-      <%= admin_nav_link "Clientes de API", admin_api_clients_path, icon: :categories, controllers: %w[api_clients] %>
-      <%= admin_nav_link "Contas de teste MP", admin_mercado_pago_test_accounts_path, icon: :categories, controllers: %w[mercado_pago_test_accounts] %>
+  <nav class="admin-top-tabs" aria-label="Outras áreas da administração"
+       data-controller="account-menu"
+       data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
+    <ul class="admin-tabs-list">
+      <% admin_nav_items_for(AdminHelper::ADMIN_MOBILE_TOP_KEYS).each do |tab| %>
+        <li><%= render "layouts/admin_mobile_tab", tab: tab %></li>
+      <% end %>
+      <li>
+        <button type="button" class="admin-tab w-full cursor-pointer <%= 'admin-tab--active' if more_active %>"
+                aria-expanded="false" aria-controls="admin-more-menu"
+                data-account-menu-target="button" data-action="account-menu#toggle">
+          <%= admin_icon :menu, class_name: "size-6" %>
+          <span>Mais</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="admin-more-menu" id="admin-more-menu" data-account-menu-target="panel" hidden>
+      <% more_items.each do |item| %>
+        <%= admin_nav_link item[:label], item[:path], icon: item[:icon], controllers: item[:controllers] %>
+      <% end %>
       <div class="mt-2 border-t border-white/10 pt-2">
         <%= link_to root_path, class: "admin-nav-link" do %><%= admin_icon :store %><span>Ver loja</span><% end %>
-        <%= button_to session_path, method: :delete, class: "admin-nav-link w-full" do %><%= admin_icon :logout %><span>Sair</span><% end %>
       </div>
-    </nav>
-  </details>
+    </div>
+  </nav>
 </header>
 
 <aside class="admin-sidebar">
@@ -48,23 +55,7 @@
 
   <nav class="admin-nav" aria-label="Navegação administrativa">
     <p class="admin-nav-label">Gestão</p>
-    <%= admin_nav_link "Dashboard", admin_root_path, icon: :dashboard, controllers: %w[dashboard] %>
-    <%= admin_nav_link "Analytics", admin_analytics_path, icon: :analytics, controllers: %w[analytics] %>
-    <%= admin_nav_link "Observabilidade", admin_observability_path, icon: :observability, controllers: %w[observability] %>
-    <%= admin_nav_link "Financials", admin_financials_path, icon: :financials, controllers: %w[financials] %>
-    <%= admin_nav_link "Produtos", admin_products_path, icon: :products, controllers: %w[products product_variants personalization_options product_images] %>
-    <%= admin_nav_link "Artesãos", admin_sellers_path, icon: :customers, controllers: %w[sellers] %>
-    <%= admin_nav_link "Pedidos", admin_orders_path, icon: :orders, controllers: %w[orders] %>
-    <%= admin_nav_link "Clientes", admin_customers_path, icon: :customers, controllers: %w[customers] %>
-      <%= admin_nav_link "Administradores", admin_admins_path, icon: :customers, controllers: %w[admins] %>
-    <%= admin_nav_link "Categorias", admin_categories_path, icon: :categories, controllers: %w[categories] %>
-    <%= admin_nav_link "Cupons", admin_coupons_path, icon: :coupons, controllers: %w[coupons] %>
-    <%= admin_nav_link "Avaliações", admin_reviews_path, icon: :reviews, controllers: %w[reviews] %>
-    <%= admin_nav_link "Denúncias", admin_seller_reports_path, icon: :reviews, controllers: %w[seller_reports] %>
-    <%= admin_nav_link "Fraudes", admin_fraud_alerts_path, icon: :reviews, controllers: %w[fraud_alerts] %>
-    <%= admin_nav_link "Auditoria", admin_audit_logs_path, icon: :reviews, controllers: %w[audit_logs] %>
-    <%= admin_nav_link "Clientes de API", admin_api_clients_path, icon: :categories, controllers: %w[api_clients] %>
-    <%= admin_nav_link "Contas de teste MP", admin_mercado_pago_test_accounts_path, icon: :categories, controllers: %w[mercado_pago_test_accounts] %>
+    <%= admin_nav_links %>
   </nav>
 
   <div class="admin-sidebar-footer">

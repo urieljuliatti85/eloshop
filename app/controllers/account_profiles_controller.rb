@@ -1,6 +1,7 @@
 # Dados de cadastro do cliente. A troca de senha é opcional: em branco, os
 # demais campos são salvos sem tocar na senha.
 class AccountProfilesController < StorefrontController
+  account_area
   def edit
     @customer = Current.customer
   end

@@ -47,10 +47,14 @@
   <%# `body_class` deixa uma página trocar o fundo do body — hoje só a home,
       que usa `home-background`, definida no CSS compilado. %>
   <% analytics_page = google_analytics_public_page %>
+  <%# Área do cliente (StorefrontController.account_area): lateral no desktop e
+      abas no rodapé do celular. Controllers fora da vitrine também usam este
+      layout, daí o respond_to?. %>
+  <% account_area = respond_to?(:account_area?) && account_area? %>
   <% analytics_enabled = google_analytics_measurement_id.present? && analytics_page.present? %>
   <%# Páginas medidas usam navegação completa: ao entrar em carrinho, conta ou
       pedido, o documento anterior (inclusive o script do Google) é destruído. %>
-  <body class="flex min-h-screen flex-col overflow-x-clip bg-white text-ink <%= content_for(:body_class) %>"
+  <body class="flex min-h-screen flex-col overflow-x-clip bg-white text-ink <%= 'account-area' if account_area %> <%= content_for(:body_class) %>"
         <% if analytics_enabled %>
           data-controller="google-analytics"
           data-turbo="false"
@@ -63,10 +67,18 @@
     <%= render "layouts/flash_message", message: flash[:alert], variant: :error %>
 
     <main class="container mx-auto flex-1 px-5 py-12">
-      <%= yield %>
+      <% if account_area %>
+        <div class="account-shell">
+          <%= render "layouts/account_sidebar" %>
+          <div class="min-w-0"><%= yield %></div>
+        </div>
+      <% else %>
+        <%= yield %>
+      <% end %>
     </main>
 
     <%= render "layouts/footer" %>
+    <%= render "layouts/account_mobile_tabs" if account_area %>
     <%= render "layouts/google_analytics" if analytics_enabled %>
   </body>
 </html>

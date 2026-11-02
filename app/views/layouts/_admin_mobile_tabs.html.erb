@@ -1,0 +1,17 @@
+<%# Abas inferiores do admin no celular e no tablet (abaixo de `lg`, mesmo
+    corte da lateral — acima dele a lateral assume). As áreas do trabalho do
+    dia (`AdminHelper::ADMIN_MOBILE_TAB_KEYS`) mais Notificações, que vivem
+    aqui porque o sino do topo é só do desktop. As outras áreas ficam nas
+    abas do topo e no "Mais" (layouts/_admin_nav). A altura (h-16) é a
+    `--admin-tabs-height` que o `.admin-body` define para o `.admin-main`
+    abrir espaço no fim da página. %>
+<% tabs = admin_nav_items_for(AdminHelper::ADMIN_MOBILE_TAB_KEYS)
+     .map { |item| item[:key] == :dashboard ? item.merge(label: "Início") : item }
+   tabs << { label: "Notificações", path: admin_notifications_path, icon: :notifications, controllers: %w[notifications], count: unread_count } %>
+<nav class="admin-tabs" aria-label="Atalhos da administração">
+  <ul class="admin-tabs-list">
+    <% tabs.each do |tab| %>
+      <li><%= render "layouts/admin_mobile_tab", tab: tab %></li>
+    <% end %>
+  </ul>
+</nav>

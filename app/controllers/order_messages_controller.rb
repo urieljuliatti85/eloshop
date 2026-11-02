@@ -1,4 +1,5 @@
 class OrderMessagesController < StorefrontController
+  account_area
   rate_limit to: 10, within: 5.minutes, only: :create,
     with: -> { redirect_to order_messages_path(params[:order_id]), alert: "Muitas mensagens em pouco tempo. Aguarde alguns minutos." }
 

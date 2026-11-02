@@ -1,5 +1,8 @@
 <% if pagination.total_pages > 1 %>
-  <nav class="flex items-center justify-between gap-4 px-1 py-2" aria-label="Paginação">
+  <%# No celular os números de página saem (o "Página X de Y" já situa) e a
+    linha pode quebrar: sem isso a paginação passava da largura da tela, o
+    documento alargava e o celular reduzia o zoom da página inteira. %>
+  <nav class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-1 py-2" aria-label="Paginação">
     <p class="text-sm text-slate-500">
       Página <%= pagination.current_page %> de <%= pagination.total_pages %>
       <span class="text-slate-400">(<%= pluralize(pagination.total_count, "item", plural: "itens") %>)</span>
@@ -10,7 +13,7 @@
             aria: (pagination.first_page? ? { disabled: "true" } : {}) %>
 
       <% if pagination.total_pages > 1 %>
-        <div class="flex items-center gap-1">
+        <div class="hidden items-center gap-1 sm:flex">
           <% pagination.page_window.each do |page| %>
             <% if page.nil? %>
               <span class="px-1 text-sm text-slate-400" aria-hidden="true">…</span>

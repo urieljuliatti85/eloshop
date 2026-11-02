@@ -1,4 +1,5 @@
 class AddressesController < StorefrontController
+  account_area
   # Sempre a partir do cliente da sessão, nunca de `Address.find`: senão um id
   # trocado na URL alcança o endereço de outra pessoa.
   before_action :set_address, only: %i[edit update destroy]

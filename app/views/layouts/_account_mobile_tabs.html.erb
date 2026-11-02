@@ -1,0 +1,52 @@
+<%# Abas inferiores da área do cliente no celular e no tablet (abaixo de `lg`,
+    mesmo corte da lateral). Quatro áreas (`AccountHelper::ACCOUNT_TAB_KEYS`)
+    e "Mais", que abre o resto e "Sair". O body ganha `account-area`, que
+    reserva a altura da barra no fim da página (ver application.css). %>
+<% items = account_nav_items
+   tabs = items.select { |item| AccountHelper::ACCOUNT_TAB_KEYS.include?(item[:key]) }
+   more_items = items - tabs
+   more_active = more_items.any? { |item| account_nav_active?(item) } %>
+<nav class="account-tabs" aria-label="Minha conta"
+     data-controller="account-menu"
+     data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
+  <div class="account-tabs-sheet" id="account-tabs-sheet" data-account-menu-target="panel" hidden>
+    <% more_items.each do |item| %>
+      <% active = account_nav_active?(item) %>
+      <%= link_to item[:path], class: "account-nav-link #{'account-nav-link--active' if active}", aria: { current: ("page" if active) } do %>
+        <%= account_icon item[:icon] %><span><%= item[:label] %></span>
+      <% end %>
+    <% end %>
+    <div class="mt-1 border-t border-gray-100 pt-1">
+      <%= button_to customer_session_path, method: :delete, class: "account-nav-link w-full" do %>
+        <%= account_icon :logout %><span>Sair</span>
+      <% end %>
+    </div>
+  </div>
+
+  <ul class="grid h-16 grid-cols-5">
+    <% tabs.each do |tab| %>
+      <% active = account_nav_active?(tab)
+         count = tab[:count].to_i %>
+      <li>
+        <%= link_to tab[:path], class: "account-tab #{'account-tab--active' if active}", aria: { current: ("page" if active) } do %>
+          <span class="relative">
+            <%= account_icon tab[:icon], class_name: "size-6" %>
+            <% if count.positive? %>
+              <span class="account-tab-count" aria-hidden="true"><%= count > 9 ? "9+" : count %></span>
+            <% end %>
+          </span>
+          <span><%= tab[:label] %></span>
+          <% if count.positive? %><span class="sr-only">(<%= count %> não lidas)</span><% end %>
+        <% end %>
+      </li>
+    <% end %>
+    <li>
+      <button type="button" class="account-tab w-full cursor-pointer <%= 'account-tab--active' if more_active %>"
+              aria-expanded="false" aria-controls="account-tabs-sheet"
+              data-account-menu-target="button" data-action="account-menu#toggle">
+        <%= account_icon :menu, class_name: "size-6" %>
+        <span>Mais</span>
+      </button>
+    </li>
+  </ul>
+</nav>

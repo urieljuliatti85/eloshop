@@ -166,7 +166,7 @@
           /notifications — nada se perde. %>
       <% if respond_to?(:customer_authenticated?) && customer_authenticated? && Current.customer %>
         <% recent_notifications = Current.customer.notifications.chronological.limit(5)
-           unread_count = Current.customer.notifications.unread.count %>
+           unread_count = customer_unread_notifications_count %>
         <div class="relative hidden md:block" data-controller="account-menu"
              data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
           <button type="button"
@@ -341,7 +341,7 @@
           <% end %>
         <% end %>
         <%= link_to "Pedidos", orders_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" %>
-        <% unread_count = Current.customer.notifications.unread.count %>
+        <% unread_count = customer_unread_notifications_count %>
         <%= link_to notifications_path, class: "flex min-h-11 items-center justify-center rounded-full border border-gray-200 px-5 text-base font-medium text-ink" do %>
           Notificações<%= " (#{unread_count})" if unread_count.positive? %>
         <% end %>

@@ -1,4 +1,5 @@
 class OrdersController < StorefrontController
+  account_area only: %i[index show]
   before_action :require_sales_open, only: %i[new create]
   before_action :ensure_cart_not_empty, only: :new
 

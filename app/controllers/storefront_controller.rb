@@ -10,9 +10,21 @@ class StorefrontController < ApplicationController
   # CustomerSessionsController). AddressesController não libera nenhuma,
   # exigindo cliente autenticado em todas as ações.
 
-  helper_method :wishlist_item_id_for
+  helper_method :wishlist_item_id_for, :account_area?
+
+  # Marca as ações que pertencem à área do cliente: o layout mostra a
+  # navegação da conta (lateral e abas do rodapé) só nelas e só com cliente
+  # logado. Explícito por controller para o checkout, que mora em
+  # OrdersController, não herdar o menu da conta.
+  def self.account_area(**options)
+    before_action(**options) { @account_area = true }
+  end
 
   private
+
+  def account_area?
+    @account_area == true && Current.customer.present?
+  end
 
   # Pré-cadastro: com as vendas fechadas, o servidor recusa o que levaria a um
   # pedido (carrinho, checkout, pagamento). Esconder o botão não basta — o

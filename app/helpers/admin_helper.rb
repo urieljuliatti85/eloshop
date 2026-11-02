@@ -52,8 +52,54 @@ module AdminHelper
     tag.span(ONBOARDING_STAGE_LABELS.fetch(stage), class: "admin-badge #{ONBOARDING_STAGE_TONES.fetch(stage)}")
   end
 
+  # No celular a lateral se divide em três, sem repetir área: as abas do
+  # rodapé (layouts/_admin_mobile_tabs, o trabalho do dia), as abas do topo
+  # (layouts/_admin_nav) e o menu "Mais" do topo, com o resto.
+  ADMIN_MOBILE_TAB_KEYS = %i[dashboard orders sellers products].freeze
+  ADMIN_MOBILE_TOP_KEYS = %i[financials customers reviews fraud_alerts].freeze
+
+  # Fonte única das áreas do admin: a lateral (desktop) lê a lista inteira, e
+  # no celular as abas do rodapé, as do topo e o "Mais" a dividem por `key`.
+  # `controllers` decide qual área fica ativa na página atual.
+  def admin_nav_items(except: [])
+    items = [
+      { key: :dashboard, label: "Dashboard", path: admin_root_path, icon: :dashboard, controllers: %w[dashboard] },
+      { key: :analytics, label: "Analytics", path: admin_analytics_path, icon: :analytics, controllers: %w[analytics] },
+      { key: :observability, label: "Observabilidade", path: admin_observability_path, icon: :observability, controllers: %w[observability] },
+      { key: :financials, label: "Financials", path: admin_financials_path, icon: :financials, controllers: %w[financials] },
+      { key: :products, label: "Produtos", path: admin_products_path, icon: :products, controllers: %w[products product_variants personalization_options product_images] },
+      { key: :sellers, label: "Artesãos", path: admin_sellers_path, icon: :customers, controllers: %w[sellers] },
+      { key: :orders, label: "Pedidos", path: admin_orders_path, icon: :orders, controllers: %w[orders] },
+      { key: :customers, label: "Clientes", path: admin_customers_path, icon: :customers, controllers: %w[customers] },
+      { key: :admins, label: "Administradores", path: admin_admins_path, icon: :customers, controllers: %w[admins] },
+      { key: :categories, label: "Categorias", path: admin_categories_path, icon: :categories, controllers: %w[categories] },
+      { key: :coupons, label: "Cupons", path: admin_coupons_path, icon: :coupons, controllers: %w[coupons] },
+      { key: :reviews, label: "Avaliações", path: admin_reviews_path, icon: :reviews, controllers: %w[reviews] },
+      { key: :seller_reports, label: "Denúncias", path: admin_seller_reports_path, icon: :reviews, controllers: %w[seller_reports] },
+      { key: :fraud_alerts, label: "Fraudes", path: admin_fraud_alerts_path, icon: :shield, controllers: %w[fraud_alerts] },
+      { key: :audit_logs, label: "Auditoria", path: admin_audit_logs_path, icon: :reviews, controllers: %w[audit_logs] },
+      { key: :api_clients, label: "Clientes de API", path: admin_api_clients_path, icon: :categories, controllers: %w[api_clients] },
+      { key: :mercado_pago_test_accounts, label: "Contas de teste MP", path: admin_mercado_pago_test_accounts_path, icon: :categories, controllers: %w[mercado_pago_test_accounts] }
+    ]
+    items.reject { |item| except.include?(item[:key]) }
+  end
+
+  # Áreas na ordem das `keys` (as abas do celular seguem a ordem da constante,
+  # não a da lateral).
+  def admin_nav_items_for(keys)
+    admin_nav_items.select { |item| keys.include?(item[:key]) }.sort_by { |item| keys.index(item[:key]) }
+  end
+
+  def admin_nav_links
+    safe_join(admin_nav_items.map { |item| admin_nav_link(item[:label], item[:path], icon: item[:icon], controllers: item[:controllers]) })
+  end
+
+  def admin_nav_active?(controllers)
+    Array(controllers).include?(controller_name)
+  end
+
   def admin_nav_link(label, path, icon:, controllers:)
-    active = Array(controllers).include?(controller_name)
+    active = admin_nav_active?(controllers)
     classes = [ "admin-nav-link", ("admin-nav-link--active" if active) ].compact.join(" ")
 
     link_to path, class: classes, aria: { current: ("page" if active) } do
@@ -115,6 +161,12 @@ module AdminHelper
       [ tag.path(d: "M21 12a3 3 0 0 0-3-3V4H6v5a3 3 0 0 0 0 6v5h12v-5a3 3 0 0 0 3-3Z"), tag.path(d: "M9 9h.01M15 15h.01M15 9l-6 6") ]
     when :reviews
       [ tag.path(d: "m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z") ]
+    when :notifications
+      [ tag.path(d: "M6 8a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 12 6 8Z"), tag.path(d: "M9.5 16a2.5 2.5 0 0 0 5 0") ]
+    when :shield
+      [ tag.path(d: "M12 3 5 6v5c0 4.4 3 8.3 7 10 4-1.7 7-5.6 7-10V6l-7-3Z"), tag.path(d: "M12 8v4M12 15.5h.01") ]
+    when :menu
+      [ tag.path(d: "M4 7h16M4 12h16M4 17h16") ]
     when :logout
       [ tag.path(d: "M10 17l5-5-5-5M15 12H3"), tag.path(d: "M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5") ]
     when :store
