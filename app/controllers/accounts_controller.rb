@@ -1,6 +1,7 @@
 # Página inicial da área do cliente: reúne os destinos da conta e um resumo
 # do que existe em cada um.
 class AccountsController < StorefrontController
+  account_area
   def show
     @customer = Current.customer
     @recent_orders = @customer.orders.includes(:order_items).order(created_at: :desc).limit(3)

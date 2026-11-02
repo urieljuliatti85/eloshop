@@ -1,4 +1,5 @@
 class WishlistsController < StorefrontController
+  account_area
   def show
     # Um produto descontinuado sai do catálogo para valer: a PDP responde
     # 404, então mantê-lo aqui só ofereceria um link quebrado.

@@ -1,0 +1,30 @@
+<%# Menu lateral da área do cliente no desktop (a partir de `lg`, o mesmo corte
+    do admin); abaixo dele, as abas do rodapé (layouts/_account_mobile_tabs). %>
+<aside class="account-sidebar">
+  <div class="flex items-center gap-3 px-3">
+    <span class="grid size-10 shrink-0 place-items-center rounded-full bg-ink text-sm font-bold text-white" aria-hidden="true"><%= Current.customer.name.first.upcase %></span>
+    <span class="min-w-0">
+      <span class="block truncate text-sm font-semibold text-ink"><%= Current.customer.name %></span>
+      <span class="block truncate text-xs text-ink-muted"><%= Current.customer.email %></span>
+    </span>
+  </div>
+
+  <nav class="mt-6 flex flex-col gap-1" aria-label="Minha conta">
+    <% account_nav_items.each do |item| %>
+      <% active = account_nav_active?(item) %>
+      <%= link_to item[:path], class: "account-nav-link #{'account-nav-link--active' if active}", aria: { current: ("page" if active) } do %>
+        <%= account_icon item[:icon] %>
+        <span class="flex-1"><%= item[:label] %></span>
+        <% if item[:count].to_i.positive? %>
+          <span class="account-nav-count"><%= item[:count] %><span class="sr-only"> não lidas</span></span>
+        <% end %>
+      <% end %>
+    <% end %>
+  </nav>
+
+  <div class="mt-4 border-t border-gray-100 pt-4">
+    <%= button_to customer_session_path, method: :delete, class: "account-nav-link w-full" do %>
+      <%= account_icon :logout %><span>Sair</span>
+    <% end %>
+  </div>
+</aside>

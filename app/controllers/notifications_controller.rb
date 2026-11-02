@@ -1,4 +1,5 @@
 class NotificationsController < StorefrontController
+  account_area
   def index
     @notifications = Current.customer.notifications.chronological
   end
