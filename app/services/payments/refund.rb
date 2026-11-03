@@ -1,12 +1,18 @@
 module Payments
   class Refund
     class InvalidRefund < StandardError; end
+    # O comprador contestou a compra no cartão: reembolsar também devolveria o
+    # dinheiro duas vezes se a contestação for aceita. Só passa com a
+    # confirmação explícita do admin, depois de conferir a disputa no Mercado
+    # Pago (decisão de 2026-11-03).
+    class ChargebackReported < InvalidRefund; end
 
-    def initialize(payment:, amount_cents:, idempotency_key:, gateway: Gateways.build(payment.gateway))
+    def initialize(payment:, amount_cents:, idempotency_key:, gateway: Gateways.build(payment.gateway), chargeback_acknowledged: false)
       @payment = payment
       @amount_cents = amount_cents.to_i
       @idempotency_key = idempotency_key
       @gateway = gateway
+      @chargeback_acknowledged = chargeback_acknowledged
     end
 
     def call
@@ -15,6 +21,7 @@ module Payments
         raise InvalidRefund, "chave de idempotência pertence a outro pagamento"
       end
       return existing if existing&.approved?
+      ensure_retryable_key!(existing)
 
       refund = prepare_refund
       return refund unless refund.processing?
@@ -34,13 +41,7 @@ module Payments
         raise
       end
 
-      applied = apply_refund!(refund, intent)
-      # Fora da transação de propósito, como o fan-out do pagamento: o job só
-      # entra na fila depois do commit. E só quando ESTA chamada foi a que
-      # aprovou o reembolso: repetir a mesma chave (ou uma chamada concorrente)
-      # não avisa o comprador duas vezes.
-      NotifyCustomerOfRefundJob.perform_later(applied) if @approved_now
-      applied
+      settle(refund, intent)
     rescue ActiveRecord::RecordNotUnique
       concurrent = PaymentRefund.find_by!(idempotency_key: @idempotency_key)
       raise InvalidRefund, "chave de idempotência pertence a outro pagamento" if concurrent.payment_id != @payment.id
@@ -48,15 +49,48 @@ module Payments
       concurrent
     end
 
+    # Aplica a resposta do gateway a uma tentativa já reservada. Público para a
+    # reconciliação (Payments::ReconcileRefunds) resolver tentativas que
+    # ficaram em `processing` pelo mesmo caminho, com a mesma contabilidade e
+    # o mesmo aviso ao comprador.
+    def settle(refund, intent)
+      applied = apply_refund!(refund, intent)
+      # Fora da transação de propósito, como o fan-out do pagamento: o job só
+      # entra na fila depois do commit. E só quando ESTA chamada foi a que
+      # aprovou o reembolso: repetir a mesma chave (ou uma chamada concorrente)
+      # não avisa o comprador duas vezes.
+      NotifyCustomerOfRefundJob.perform_later(applied) if @approved_now
+      applied
+    end
+
     private
+
+    # A chave identifica uma TENTATIVA, não o pedido de reembolso. Reusar a
+    # chave de uma tentativa recusada devolveria o registro `failed` sem
+    # chamar o gateway — depois de resolver a causa (ex.: saldo insuficiente),
+    # o reembolso nunca sairia. Quem tenta de novo precisa de uma chave nova;
+    # só a tentativa em `processing` reusa a mesma, para a idempotência do
+    # Mercado Pago resolver a ambiguidade.
+    def ensure_retryable_key!(existing)
+      return unless existing&.failed?
+
+      raise InvalidRefund, "esta tentativa de reembolso foi recusada; uma nova tentativa precisa de outra chave"
+    end
 
     def prepare_refund
       @payment.with_lock do
+        # Mesmo lock que Shipment#transition_to! toma antes de marcar o envio:
+        # serializa reservar um reembolso integral e postar a peça.
+        @payment.order.seller_order.lock!
         existing = @payment.payment_refunds.find_by(idempotency_key: @idempotency_key)
+        ensure_retryable_key!(existing)
         return existing if existing
 
         unless @payment.paid? || @payment.partially_refunded?
           raise InvalidRefund, "somente pagamentos confirmados podem ser reembolsados"
+        end
+        if @payment.chargeback_reported? && !@chargeback_acknowledged
+          raise ChargebackReported, "o comprador contestou este pagamento no cartão (chargeback); confira a disputa no Mercado Pago e confirme antes de reembolsar"
         end
         processing_refunds = @payment.payment_refunds.processing
         reserved_cents = processing_refunds.sum(:amount_cents)

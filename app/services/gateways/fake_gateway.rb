@@ -39,6 +39,12 @@ module Gateways
       RefundIntent.new(external_id: "fake_refund_#{SecureRandom.hex(10)}", status: "approved")
     end
 
+    # O reembolso fake aprova na hora, então nenhuma tentativa fica sem
+    # resposta do lado de cá para ser achada na lista.
+    def refunds_for(payment:)
+      []
+    end
+
     def verify_webhook(request)
       ActiveSupport::SecurityUtils.secure_compare(request.params[:secret].to_s, WEBHOOK_SECRET)
     end

@@ -38,7 +38,8 @@ module Admin
       refund = Payments::Refund.new(
         payment: payment,
         amount_cents: amount_cents,
-        idempotency_key: params.require(:idempotency_key)
+        idempotency_key: params.require(:idempotency_key),
+        chargeback_acknowledged: params[:chargeback_acknowledged] == "1"
       ).call
 
       if refund.approved?

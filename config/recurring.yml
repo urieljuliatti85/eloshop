@@ -23,6 +23,7 @@ production:
     schedule: every 10 minutes
   # Cobre o webhook do Mercado Pago que não chegou: consulta o gateway para
   # pagamentos pending há mais de 10 minutos. Idempotente (usa ProcessWebhook).
+  # Também resolve reembolsos que ficaram processing (Payments::ReconcileRefunds).
   reconcile_payments:
     class: ReconcilePaymentsJob
     queue: default

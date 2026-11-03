@@ -313,6 +313,24 @@ RSpec.describe "Seller orders", type: :request do
       expect(shipment.reload).to be_pending
     end
 
+    it "refuses to ship and warns the seller while a full refund is still processing" do
+      order = create_order_for(own_product)
+      order.confirm!
+      shipment = create_shipment_for(order)
+      payment = order.payments.create!(gateway: "fake", external_id: "fake-#{SecureRandom.hex(4)}", status: "paid", amount_cents: order.total_cents)
+      payment.payment_refunds.create!(idempotency_key: "in-flight-#{SecureRandom.hex(4)}", amount_cents: payment.amount_cents, application_fee_amount_cents: 0)
+
+      get seller_order_path(order)
+      expect(response.body).to include("está sendo devolvido ao comprador")
+      expect(response.body).not_to include("Marcar como enviado")
+
+      patch ship_seller_order_path(order), params: { carrier: "Correios", service: "PAC", tracking_code: "BR999" }
+
+      expect(response).to redirect_to(seller_order_path(order))
+      expect(flash[:alert]).to include("reembolso integral em andamento")
+      expect(shipment.reload).to be_pending
+    end
+
     it "does not allow updating another seller's shipment" do
       other_order = create_order_for(other_product)
       other_order.confirm!

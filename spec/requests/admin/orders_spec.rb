@@ -349,6 +349,44 @@ RSpec.describe "Admin orders", type: :request do
       expect(notification.title).to eq("Reembolso parcial")
     end
 
+    context "when the buyer opened a chargeback" do
+      let(:seller) { Seller.create!(name: "Ateliê Chargeback", owner_full_name: "Proprietário Teste", cpf: "52998224725", status: :approved, approved_at: Time.current) }
+      let!(:payment) do
+        order.seller_orders.create!(
+          seller: seller, status: :confirmed, subtotal_cents: 1000, shipping_cents: 500,
+          total_cents: 1500, platform_fee_cents: 150, seller_amount_cents: 1350
+        )
+        order.update!(status: :confirmed)
+        order.payments.create!(gateway: "fake", external_id: "fake-chargeback", status: :paid, amount_cents: 1500, application_fee_cents: 150).tap do |created|
+          Payments::ProcessWebhook.new(event_id: "cb-#{SecureRandom.hex(4)}", external_id: created.external_id, status: "charged_back").call
+        end
+      end
+
+      before { post session_path, params: { email_address: user.email_address, password: "password" } }
+
+      it "warns about the dispute next to the refund form" do
+        get admin_order_path(order)
+
+        expect(response.body).to include("contestou este pagamento no cartão", "Conferi a disputa e confirmo o reembolso mesmo assim")
+      end
+
+      it "refuses the refund without the acknowledgement and leaves the payment untouched" do
+        post refund_admin_order_path(order), params: { amount: "5,00", idempotency_key: "cb-no-ack" }
+
+        expect(response).to redirect_to(admin_order_path(order))
+        expect(flash[:alert]).to include("chargeback")
+        expect(PaymentRefund.find_by(idempotency_key: "cb-no-ack")).to be_nil
+        expect(payment.reload).to be_paid
+      end
+
+      it "refunds once the admin acknowledges the dispute" do
+        post refund_admin_order_path(order), params: { amount: "5,00", idempotency_key: "cb-ack", chargeback_acknowledged: "1" }
+
+        expect(flash[:notice]).to eq("Reembolso solicitado com sucesso.")
+        expect(payment.reload.refunded_amount_cents).to eq(500)
+      end
+    end
+
     context "when the payment gateway fails" do
       let(:seller) { Seller.create!(name: "Ateliê Gateway", owner_full_name: "Proprietário Teste", cpf: "10777771080", status: :approved, approved_at: Time.current) }
       let(:payment) do
@@ -378,6 +416,31 @@ RSpec.describe "Admin orders", type: :request do
         expect(payment.reload).to be_paid
         expect(PaymentRefund.find_by!(idempotency_key: "gw-rejected")).to be_failed
         expect(seller.notifications.order_refunded).to be_empty
+      end
+
+      it "keeps the refund pending and explains it instead of a 500 when the network times out" do
+        allow(gateway).to receive(:refund).and_raise(Gateways::MercadoPago::RequestFailed, "sem resposta do Mercado Pago em /v1/payments/1/refunds (Net::ReadTimeout)")
+
+        post refund_admin_order_path(order), params: { amount: "5,00", idempotency_key: "gw-timeout" }
+
+        expect(response).to redirect_to(admin_order_path(order))
+        expect(flash[:alert]).to include("Não foi possível confirmar o reembolso", "Net::ReadTimeout")
+        expect(PaymentRefund.find_by!(idempotency_key: "gw-timeout")).to be_processing
+        expect(payment.reload).to be_paid
+      end
+
+      it "turns a raw socket timeout from the real adapter into the same message, not a 500" do
+        adapter = Gateways::MercadoPago.new(access_token: "TEST-token", webhook_secret: "x")
+        fake_http = Object.new
+        fake_http.define_singleton_method(:request) { |_req| raise Net::ReadTimeout }
+        adapter.instance_variable_set(:@http, fake_http)
+        allow(Gateways).to receive(:build).with("fake").and_return(adapter)
+
+        post refund_admin_order_path(order), params: { idempotency_key: "gw-raw-timeout" }
+
+        expect(response).to redirect_to(admin_order_path(order))
+        expect(flash[:alert]).to include("Não foi possível confirmar o reembolso")
+        expect(PaymentRefund.find_by!(idempotency_key: "gw-raw-timeout")).to be_processing
       end
 
       it "explains the missing balance and when it will be released" do

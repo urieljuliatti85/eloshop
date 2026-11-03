@@ -100,8 +100,20 @@ solicitações abertas do mesmo tipo para o mesmo pedido.
 
 * Estorno travado por falta de saldo: a tela do admin precisa dizer de qual
   lado faltou, reaproveitando o tratamento de `InsufficientFunds`.
-* Reembolso duplicado: coberto pela idempotência de `Payments::Refund`; a
-  solicitação gera uma chave estável por reembolso.
+* Reembolso duplicado: coberto pela idempotência de `Payments::Refund`. A
+  solicitação gera **uma chave por tentativa** (ex.: `return-request-<id>-<n>`),
+  não uma chave fixa: `n` só avança depois de uma tentativa `failed`, e a
+  tentativa `processing` reusa a mesma chave. Uma chave fixa faria a nova
+  tentativa depois de uma recusa (ex.: falta de saldo) devolver o registro
+  recusado sem chamar o Mercado Pago — desde 2026-11-03 `Payments::Refund`
+  recusa explicitamente reusar a chave de uma tentativa `failed`.
+* Reembolso que fica `processing` (timeout, PIX em contingência) é resolvido
+  por `Payments::ReconcileRefunds` (2026-11-03); a fila do admin deve mostrar
+  "em processamento" em vez de oferecer nova tentativa.
+* Envio durante o "cancelar e reembolsar": desde 2026-11-03 o reembolso
+  integral em `processing` trava "marcar como enviado" sob o lock do
+  `SellerOrder` (decisão do Uriel: travar no reembolso). `Orders::CancelAndRefund`
+  deve conferir "não enviado" sob esse mesmo lock, antes de reservar o valor.
 * Prazo de 2 dias úteis estourado com uma pessoa só atendendo: risco
   operacional, mitigado pela fila e pelo aviso diário.
 * Fotos são dado pessoal: validação como os demais uploads, e a Política de

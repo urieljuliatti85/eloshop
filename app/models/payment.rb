@@ -64,6 +64,13 @@ class Payment < ApplicationRecord
     amount_cents - refunded_amount_cents
   end
 
+  # O chargeback não muda o status do pagamento (Fraud::RecordChargeback só
+  # sinaliza), mas o evento do webhook fica gravado. É por ele que o
+  # reembolso descobre que o comprador já contestou a compra no cartão.
+  def chargeback_reported?
+    payment_events.where("payload->>'status' = ?", "charged_back").exists?
+  end
+
   private
 
   def ensure_idempotency_key

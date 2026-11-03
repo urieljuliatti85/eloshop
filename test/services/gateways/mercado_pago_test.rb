@@ -259,6 +259,44 @@ module Gateways
       assert_equal 5.0, JSON.parse(captured.body)["amount"]
     end
 
+    test "a network failure surfaces as an ambiguous RequestFailed, never as a raw socket error" do
+      [ Net::ReadTimeout, Net::OpenTimeout, Errno::ECONNREFUSED, Errno::ECONNRESET, SocketError, OpenSSL::SSL::SSLError ].each do |network_error|
+        fake_http = Object.new
+        fake_http.define_singleton_method(:request) { |_req| raise network_error }
+        @gateway.instance_variable_set(:@http, fake_http)
+
+        error = assert_raises(MercadoPago::RequestFailed, "#{network_error} escapou cru") do
+          @gateway.refund(payment: payments(:one), amount_cents: 500, idempotency_key: "net-#{network_error.name}")
+        end
+        assert_not_kind_of MercadoPago::RequestRejected, error, "#{network_error} não pode liberar a tentativa como recusa definitiva"
+        assert_match network_error.name, error.message
+      ensure
+        @gateway.remove_instance_variable(:@http) if @gateway.instance_variable_defined?(:@http)
+      end
+    end
+
+    test "refunds_for lists the payment refunds in the domain vocabulary, including contingency ones" do
+      payment = payments(:one)
+      payload = [
+        { "id" => 11, "amount" => 4.6, "status" => "approved" },
+        { "id" => 12, "amount" => 20, "status" => "in_process" },
+        { "id" => 13, "amount" => 1, "status" => "rejected" }
+      ]
+
+      captured = stub_request(payload) do
+        refunds = @gateway.refunds_for(payment: payment)
+        assert_equal [
+          RemoteRefund.new(external_id: "11", status: "approved", amount_cents: 460),
+          RemoteRefund.new(external_id: "12", status: "processing", amount_cents: 2_000),
+          RemoteRefund.new(external_id: "13", status: "failed", amount_cents: 100)
+        ], refunds
+      end
+
+      assert_kind_of Net::HTTP::Get, captured
+      assert_equal "/v1/payments/#{payment.external_id}/refunds", captured.path
+      assert_equal "true", captured["X-Render-In-Process-Refunds"]
+    end
+
     # Pedido #54 (2026-10-07): o reembolso voltou 400 `bad_request` e só o
     # `cause` dizia que a conta do artesão não tinha saldo disponível.
     test "refund without available balance raises InsufficientFunds with the release date" do
