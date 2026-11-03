@@ -11,6 +11,12 @@ Revisado em 2026-11-03 (`/principal-reviewer`): o desenho foi mantido, com as
 decisões A e B do Uriel e as regras de implementação da seção "Regras de
 implementação". Elas são o contrato que o PR da funcionalidade precisa cumprir.
 
+**Entrega em duas fases** (decisão do Uriel, 2026-11-03): a **Fase 1**, antes de
+abrir as vendas, é o mínimo que o Decreto 7.962 pede — desistir pelo site, com
+protocolo e confirmação imediata —, com o reembolso e o estoque ainda feitos à
+mão pelo admin. O resto do desenho é a **Fase 2**, depois da abertura. Ver a
+seção "Fase 1".
+
 É a primeira condição do parecer jurídico de 2026-10-29 (Marcos Alex Silva,
 OAB/ES 39.173) para publicar a política de trocas e devoluções (PR #172), e o
 item 6 do texto da política ("utilize a ferramenta… na área da sua compra").
@@ -170,6 +176,81 @@ reembolso estiver em `processing`.
 * **B — Itens da devolução guardados desde a primeira versão**
   (`ReturnRequestItem`), mesmo que a tela comece oferecendo só o pedido
   inteiro, para não migrar solicitações abertas depois.
+* **Entrega em duas fases:** Fase 1 antes de abrir as vendas, Fase 2 depois
+  (seção "Fase 1").
+
+## Fase 1 (antes de abrir as vendas)
+
+O mínimo para o comprador desistir pelo site, como o Decreto 7.962 (art. 5º)
+exige: pela mesma ferramenta da compra, com protocolo e confirmação imediata.
+Reembolso e estoque continuam manuais, pelos caminhos que já existem — por isso
+a Fase 1 **não toca em `Payments::Refund`**, onde estão os riscos sérios
+apontados na revisão.
+
+**Comprador**
+
+1. Em pedido pago, "Desistir da compra ou relatar um problema" substitui o
+   "Cancelar pedido" (que hoje só recusa). Escolhe o tipo (`withdrawal`,
+   `product_issue`, `delivery_issue`) e escreve uma descrição opcional.
+2. Ao enviar, vê o protocolo na tela e recebe o mesmo número por e-mail.
+3. A página da solicitação mostra o status e as respostas da EloShop.
+
+**Admin**
+
+1. Notificação a cada solicitação nova.
+2. Lista em `/admin/solicitacoes`, ordenada por `respond_by` (2 dias úteis),
+   atrasadas em destaque.
+3. Responde e muda o status (`received` → `in_progress` → `awaiting_return` →
+   `resolved` / `closed`); o comprador recebe e-mail a cada mudança.
+4. Reembolsa pela tela do pedido, como hoje (`Payments::Refund`, #309/#310), e
+   ajusta o estoque à mão no produto. A tela do pedido mostra a solicitação
+   aberta, com link, e a da solicitação mostra os reembolsos do pedido.
+
+**Ateliê**
+
+1. Notificação de que o pedido tem uma solicitação.
+2. Com `withdrawal` aberta, não consegue marcar o pedido como enviado, com o
+   motivo explicado no painel (decisão A, regra 4).
+
+**Banco:** `return_requests` e `return_request_updates` como no desenho, e
+`return_request_items` preenchido automaticamente com **todos** os itens do
+pedido (decisão B sem custo de tela: a Fase 2 só passa a deixar escolher).
+`payment_refunds.return_request_id` fica para a Fase 2.
+
+**Regras de implementação que valem na Fase 1:** 3 (ordem de travas), 4
+(desistência trava o envio), 6 (protocolo por sequence), 8 (fora de
+`require_sales_open`, `rate_limit`, escopo por `Current.customer`) e 10
+(confirmação legal é a da tela). As regras 1, 2, 5, 7 e 9 dependem do que fica
+para a Fase 2 e passam a valer junto com ela.
+
+**Fica para a Fase 2:** "cancelar e reembolsar" num clique
+(`Orders::CancelAndRefund`, `require_unshipped`), reembolso ligado à solicitação
+e gancho no `settle`, devolução automática de estoque e "peça recebida de
+volta", escolha das peças devolvidas, fotos, ateliê escrevendo na solicitação
+(até lá, usa a conversa do pedido) e o lembrete diário de prazo.
+
+**Testes da Fase 1**
+
+* Minitest: protocolo único sob concorrência; prazo em dias úteis
+  atravessando o fim de semana; transições inválidas recusadas; duplicata
+  barrada pelo índice no banco; itens preenchidos com todo o pedido; envio
+  recusado com desistência aberta e liberado depois de fechada; desistência
+  nunca recusada por produção ou prazo.
+* RSpec: comprador só nos próprios pedidos; protocolo na resposta; ateliê sem
+  acesso à solicitação de outro; só o admin muda status; `rate_limit`;
+  solicitação criada com as vendas fechadas; e-mails enfileirados.
+* Sistema: comprador abre a solicitação pelo pedido e vê o protocolo.
+
+**Critérios de aceite da Fase 1**
+
+* Em pedido pago, o comprador abre solicitação de qualquer tipo, sem bloqueio
+  por prazo ou produção, e recebe o protocolo na tela e por e-mail.
+* O admin vê a fila com o prazo, responde, muda o status e chega ao reembolso
+  pela tela do pedido.
+* Com desistência aberta antes do envio, o ateliê não marca o pedido como
+  enviado.
+* Confirmar com o advogado que a Fase 1 atende à condição do parecer para
+  publicar a política (#172).
 
 ## Pendente
 
@@ -268,16 +349,20 @@ reembolso estiver em `processing`.
 ## Ao retomar
 
 Branch prevista `feat/solicitacoes-pos-venda`, sem publicar a política junto
-(ela segue no #172 até as condições do parecer serem cumpridas). Dois PRs, para
-o que mexe em dinheiro ter revisão própria:
+(ela segue no #172 até as condições do parecer serem cumpridas).
 
-1. **Núcleo:** migrations, `Payments::Refund` (`require_unshipped`,
-   `return_request`), gancho no `settle`, `Orders::CancelAndRefund`, trava de
-   envio, botão do comprador com protocolo, fila do admin e leitura pelo
-   ateliê. Os testes das regras 1, 2 e 4 vêm antes do código.
-2. **Complementos:** fotos, conversa com o ateliê, "peça recebida de volta",
-   avisos por e-mail e o lembrete diário de prazo.
+1. **Fase 1, antes de abrir as vendas:** um PR com o que está na seção
+   "Fase 1" — sem mexer em `Payments::Refund`. Os testes da trava de envio
+   (regra 4) e do protocolo (regra 6) vêm antes do código.
+2. **Fase 2, depois da abertura, conforme o uso real:** um PR para o que mexe
+   em dinheiro — `Payments::Refund` (`require_unshipped`, `return_request`),
+   gancho no `settle`, `Orders::CancelAndRefund`, regras 1, 2, 5 e 9, com os
+   testes delas antes do código — e outro para fotos (regra 7), escolha das
+   peças, "peça recebida de volta", ateliê na solicitação e lembrete diário.
+   As seções "Testes previstos" e "Critérios de aceite" acima descrevem o
+   desenho completo, ao fim da Fase 2.
 
-Validar no sandbox com o ateliê de teste (compra, desistência, "cancelar e
-reembolsar", comissão proporcional devolvida e estoque) antes de abrir as
-vendas.
+Validar a Fase 1 no sandbox com o ateliê de teste (compra, desistência,
+protocolo, envio travado e reembolso pela tela do pedido) antes de abrir as
+vendas. A Fase 2 repete a validação com "cancelar e reembolsar", comissão
+proporcional devolvida e estoque.
