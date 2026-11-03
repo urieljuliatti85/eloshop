@@ -1,0 +1,45 @@
+<div class="space-y-8">
+  <header>
+    <p class="admin-section-label mb-2">Pós-venda</p>
+    <h1>Solicitações</h1>
+    <p class="mt-2 text-sm text-slate-500">
+      Desistências e problemas abertos pelos compradores, com prazo de resposta de 2 dias úteis.
+      <%= pluralize(@open_count, "aberta", plural: "abertas") %><% if @overdue_count.positive? %>, <strong class="text-rose-700"><%= pluralize(@overdue_count, "atrasada", plural: "atrasadas") %></strong><% end %>.
+    </p>
+  </header>
+
+  <nav class="flex flex-wrap gap-2" aria-label="Filtrar solicitações">
+    <% [["Abertas", "open"], ["Atrasadas", "overdue"], ["Concluídas", "done"], ["Todas", "all"]].each do |label, filter| %>
+      <% active = @filter == filter %>
+      <%= link_to label, admin_return_requests_path(filter: filter), class: "admin-button #{active ? 'admin-button--primary' : 'admin-button--secondary'}", aria: { current: ("page" if active) } %>
+    <% end %>
+  </nav>
+
+  <% if @return_requests.any? %>
+    <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
+    <div class="admin-table-wrap">
+      <table>
+        <thead><tr><th>Protocolo</th><th>Motivo</th><th>Pedido</th><th>Ateliê</th><th>Responder até</th><th>Situação</th></tr></thead>
+        <tbody>
+          <% @return_requests.each do |return_request| %>
+            <% order = return_request.seller_order.order %>
+            <tr>
+              <td class="font-semibold text-slate-900"><%= link_to return_request.protocol, admin_return_request_path(return_request), class: "admin-link" %></td>
+              <td><%= return_request.kind_label %></td>
+              <td><%= link_to "##{order.id}", admin_order_path(order), class: "admin-link" %> · <%= order.customer.name %></td>
+              <td><%= return_request.seller_order.seller.name %></td>
+              <td>
+                <%= l(return_request.respond_by, format: :short) %>
+                <% if return_request.overdue? %><%= admin_status_badge("overdue", label: "Atrasada") %><% end %>
+              </td>
+              <td><%= admin_status_badge(return_request.status, label: return_request.status_label) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <%= render "admin/shared/pagination", pagination: @pagination %>
+  <% else %>
+    <div class="admin-empty-state">Nenhuma solicitação neste filtro.</div>
+  <% end %>
+</div>

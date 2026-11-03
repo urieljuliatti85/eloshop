@@ -15,7 +15,7 @@ module Admin
       # `customers.name` — `payments`/`seller_orders` continuam em `preload`
       # para não repetir o LEFT JOIN e inflar o custo estimado do plano
       # (CLAUDE.md, Fase 17).
-      orders = Order.joins(:customer).preload(:customer, :payments, seller_orders: [ { seller: :users }, :shipment ])
+      orders = Order.joins(:customer).preload(:customer, :payments, seller_orders: [ { seller: :users }, :shipment, :open_return_requests ])
       orders = apply_filters(orders)
       orders = orders.order(sort_clause)
 

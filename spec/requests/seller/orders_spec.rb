@@ -396,6 +396,66 @@ RSpec.describe "Seller orders", type: :request do
     end
   end
 
+  describe "open return requests in the list (ADR 008)" do
+    def confirmed_order_for(product)
+      create_order_for(product).tap do |order|
+        order.update!(status: :confirmed)
+        order.seller_order.update!(status: :confirmed)
+      end
+    end
+
+    it "labels each order with its open request" do
+      withdrawn = confirmed_order_for(own_product)
+      with_issue = confirmed_order_for(own_product)
+      untouched = confirmed_order_for(own_product)
+      ReturnRequests::Open.new(seller_order: withdrawn.seller_order, customer: customer, kind: :withdrawal).call
+      ReturnRequests::Open.new(seller_order: with_issue.seller_order, customer: customer, kind: :product_issue).call
+
+      get seller_orders_path
+
+      rows = Nokogiri::HTML(response.body).css("tbody tr")
+      row_for = ->(order) { rows.find { |row| row.text.include?("##{order.id}") }.text }
+      expect(row_for.call(withdrawn)).to include("Desistência solicitada")
+      expect(row_for.call(with_issue)).to include("Solicitação aberta")
+      expect(row_for.call(untouched)).not_to include("Desistência solicitada", "Solicitação aberta")
+    end
+
+    it "does not add a query per order to show the label" do
+      2.times do
+        order = confirmed_order_for(own_product)
+        ReturnRequests::Open.new(seller_order: order.seller_order, customer: customer, kind: :withdrawal).call
+      end
+      get seller_orders_path
+
+      before = count_queries { ActiveRecord::Base.uncached { get seller_orders_path } }
+      4.times do
+        order = confirmed_order_for(own_product)
+        ReturnRequests::Open.new(seller_order: order.seller_order, customer: customer, kind: :withdrawal).call
+      end
+      after = count_queries { ActiveRecord::Base.uncached { get seller_orders_path } }
+
+      expect(after).to eq(before)
+    end
+  end
+
+  describe "with a withdrawal open (ADR 008, decisão A)" do
+    it "warns the atelier and refuses marking the order as shipped" do
+      order = create_order_for(own_product)
+      order.update!(status: :confirmed)
+      order.seller_order.update!(status: :confirmed)
+      shipment = create_shipment_for(order)
+      return_request = ReturnRequests::Open.new(seller_order: order.seller_order, customer: customer, kind: :withdrawal).call.return_request
+
+      get seller_order_path(order)
+      expect(response.body).to include(return_request.protocol, "Não envie a peça")
+
+      patch ship_seller_order_path(order), params: { carrier: "Correios", tracking_code: "AA123BR" }
+      expect(response).to redirect_to(seller_order_path(order))
+      expect(flash[:alert]).to include("desistir da compra", return_request.protocol)
+      expect(shipment.reload).to be_pending
+    end
+  end
+
   private
 
   def create_order_for(product)

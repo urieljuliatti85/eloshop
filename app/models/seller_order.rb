@@ -14,6 +14,9 @@ class SellerOrder < ApplicationRecord
   has_many :order_items, dependent: :restrict_with_error
   has_many :order_messages, dependent: :destroy
   has_one :shipment, dependent: :destroy
+  has_many :return_requests, dependent: :restrict_with_error
+  # Só as abertas, para listas que mostram a etiqueta de solicitação com preload.
+  has_many :open_return_requests, -> { open }, class_name: "ReturnRequest", inverse_of: false
 
   enum :status, {
     pending: "pending",

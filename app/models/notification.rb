@@ -16,7 +16,9 @@ class Notification < ApplicationRecord
     production_started: "production_started",
     delivery_reported: "delivery_reported",
     shipping_setup_required: "shipping_setup_required",
-    refund_failed: "refund_failed"
+    refund_failed: "refund_failed",
+    return_request_opened: "return_request_opened",
+    return_request_updated: "return_request_updated"
   }
 
   validates :kind, :title, :body, presence: true

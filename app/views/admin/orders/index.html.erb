@@ -80,7 +80,15 @@
               </td>
               <td><%= seller ? link_to(seller.name, admin_seller_path(seller), class: "admin-link") : "—" %></td>
               <td class="text-slate-500"><%= seller&.users&.first&.email_address || "—" %></td>
-              <td><%= admin_status_badge(order.status) %></td>
+              <td>
+                <div class="flex flex-wrap gap-1.5">
+                  <%= admin_status_badge(order.status) %>
+                  <%# Solicitação pós-venda aberta (ADR 008); preload de open_return_requests. %>
+                  <% if (open_kinds = order.seller_orders.flat_map(&:open_return_requests).map(&:kind)).any? %>
+                    <%= admin_status_badge("return_request", label: open_kinds.include?("withdrawal") ? "Desistência solicitada" : "Solicitação aberta") %>
+                  <% end %>
+                </div>
+              </td>
               <td><%= payment ? admin_status_badge(payment.status) : admin_status_badge("pending", label: "Não iniciado") %></td>
               <td><%= order.shipment ? admin_status_badge(order.shipment.status) : "—" %></td>
               <td class="font-semibold text-slate-950"><%= format_price(order.total_cents) %></td>

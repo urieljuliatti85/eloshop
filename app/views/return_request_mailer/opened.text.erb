@@ -1,0 +1,16 @@
+Olá, <%= @order.customer.name %>!
+
+Recebemos a sua solicitação sobre o pedido #<%= @order.id %>.
+
+Protocolo: <%= @return_request.protocol %>
+Motivo: <%= @return_request.kind_label %>
+Resposta até: <%= l(@return_request.respond_by, format: :short) %> (2 dias úteis)
+<% if @return_request.description.present? %>
+O que você nos contou:
+<%= @return_request.description %>
+<% end %>
+Guarde este protocolo. Vamos responder por e-mail e na página da solicitação. Se quiser mandar fotos ou mais detalhes, responda este e-mail informando o protocolo — a falta de fotos não impede a análise.
+
+Ver a solicitação: <%= order_return_request_url(@order, @return_request) %>
+
+Equipe EloShop

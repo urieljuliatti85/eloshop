@@ -10,6 +10,11 @@ class OrdersController < StorefrontController
 
   def index
     @orders = Current.customer.orders.includes(:order_items).order(created_at: :desc)
+    # Etiqueta de solicitação aberta por pedido, numa consulta só (sem N+1).
+    @open_return_kinds = ReturnRequest.open.joins(:seller_order)
+      .where(seller_orders: { order_id: @orders.map(&:id) })
+      .pluck("seller_orders.order_id", :kind)
+      .group_by(&:first).transform_values { |pairs| pairs.map(&:last) }
   end
 
   def new

@@ -253,6 +253,7 @@ pt-BR:
       order_cancelled: "Pedido cancelado"
       refund_processed: "Reembolso processado"
       production_started: "Produção iniciada"
+      return_request_opened: "Solicitação pós-venda aberta"
   shipments:
     fulfillment_states:
       awaiting_payment: "Aguardando pagamento"

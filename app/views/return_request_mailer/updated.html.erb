@@ -1,0 +1,20 @@
+<p>Olá, <%= @order.customer.name %>!</p>
+
+<p>Sua solicitação <strong><%= @return_request.protocol %></strong>, do pedido <strong>#<%= @order.id %></strong>, foi atualizada.</p>
+
+<% if @update.status_change? %>
+  <p>Situação: <strong><%= ReturnRequest::STATUS_LABELS.fetch(@update.to_status) %></strong></p>
+<% end %>
+
+<% if @update.body.present? %>
+  <p>Resposta da EloShop:</p>
+  <blockquote style="margin: 0 0 16px; padding-left: 12px; border-left: 3px solid #e5e7eb; color: #4b5563;"><%= simple_format(@update.body) %></blockquote>
+<% end %>
+
+<p>
+  <a href="<%= order_return_request_url(@order, @return_request) %>" style="display: inline-block; background-color: #c2410c; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+    Ver a solicitação
+  </a>
+</p>
+
+<p>Equipe EloShop</p>
