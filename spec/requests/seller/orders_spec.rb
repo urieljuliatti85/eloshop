@@ -138,6 +138,21 @@ RSpec.describe "Seller orders", type: :request do
       expect(response.body).to include("Produção iniciada em")
     end
 
+    # O parecer jurídico de 2026-10-29 afastou "pode desistir até iniciar a
+    # produção": o pedido mostra o marco, mas aponta para a política sem
+    # prometer limite à desistência.
+    it "shows the production start to the buyer without limiting withdrawal" do
+      order = confirmed_custom_order
+      post customer_session_path, params: { email: customer.email, password: "password123" }
+      patch start_production_seller_order_path(order)
+
+      get order_path(order)
+
+      expect(response.body).to include("Produção iniciada em")
+      expect(response.body).to include(returns_policy_path(anchor: "como-pedir"))
+      expect(response.body).not_to include("até o ateliê iniciar a produção")
+    end
+
     it "cannot be undone or repeated, and keeps the original timestamp" do
       order = confirmed_custom_order
       patch start_production_seller_order_path(order)
