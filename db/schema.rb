@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_02_175634) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_03_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -567,6 +567,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_175634) do
     t.datetime "superfrete_connected_at"
     t.boolean "superfrete_sandbox", default: false, null: false
     t.boolean "provider_quotes_preferred", default: false, null: false
+    t.datetime "mercado_pago_disconnected_at"
     t.index ["cpf_hash"], name: "index_sellers_on_cpf_hash", unique: true, where: "(cpf_hash IS NOT NULL)"
     t.index ["mercado_pago_user_id"], name: "index_sellers_on_mercado_pago_user_id", unique: true, where: "(mercado_pago_user_id IS NOT NULL)"
     t.index ["slug"], name: "index_sellers_on_slug", unique: true

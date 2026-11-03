@@ -259,6 +259,35 @@ module Gateways
       assert_equal 5.0, JSON.parse(captured.body)["amount"]
     end
 
+    test "a disconnected seller can no longer be charged but its past sale can still be refunded" do
+      seller = @order.seller_order.seller
+      seller.connect_mercado_pago!(Marketplace::MercadoPagoOauth::Credentials.new(
+        user_id: "retained-1", access_token: "retained-token", refresh_token: "retained-refresh",
+        expires_at: 30.days.from_now, live_mode: true, test_account: false, public_key: "TEST-pk"
+      ))
+      seller.disconnect_mercado_pago!
+      gateway = MercadoPago.new(webhook_secret: WEBHOOK_SECRET)
+
+      assert_raises(MercadoPago::ConfigurationError) do
+        gateway.authorize(order: @order, idempotency_key: "charge-after-disconnect", application_fee_cents: 0)
+      end
+
+      captured = nil
+      fake_http = Object.new
+      fake_http.define_singleton_method(:request) do |req|
+        captured = req
+        response = Net::HTTPCreated.new("1.1", "201", "Created")
+        response.define_singleton_method(:body) { { "id" => 501, "status" => "approved" }.to_json }
+        response
+      end
+      gateway.instance_variable_set(:@http, fake_http)
+
+      intent = gateway.refund(payment: payments(:one), amount_cents: 500, idempotency_key: "refund-after-disconnect")
+
+      assert_equal "approved", intent.status
+      assert_equal "Bearer retained-token", captured["Authorization"]
+    end
+
     test "a network failure surfaces as an ambiguous RequestFailed, never as a raw socket error" do
       [ Net::ReadTimeout, Net::OpenTimeout, Errno::ECONNREFUSED, Errno::ECONNRESET, SocketError, OpenSSL::SSL::SSLError ].each do |network_error|
         fake_http = Object.new

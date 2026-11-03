@@ -99,11 +99,11 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.approved_at
   end
 
-  # Sem isto, o token OAuth continuaria válido após a suspensão, e um pedido
-  # com pagamento pendente criado antes dela ainda conseguiria ser autorizado
-  # — nem `Payments::Authorize` nem o gateway checam `approved?`/`suspended?`,
-  # só a presença do token (ver Seller#suspend!).
-  test "suspension disconnects Mercado Pago instead of just changing status" do
+  # Suspender para a cobrança (o pedido pendente de antes da suspensão não pode
+  # mais ser autorizado — ver Marketplace::MercadoPagoAccessToken), mas guarda
+  # os tokens: só o token do ateliê estorna um pagamento dele no split 1:1, e
+  # o comprador de uma venda anterior ainda precisa do reembolso.
+  test "suspension stops charging but keeps the credentials to refund past sales" do
     seller = sellers(:pending)
     seller.connect_mercado_pago!(mercado_pago_credentials)
     seller.approve!(kyc_level_6_confirmed: true)
@@ -113,10 +113,63 @@ class SellerTest < ActiveSupport::TestCase
 
     assert_predicate seller, :suspended?
     assert_not_predicate seller, :mercado_pago_connected?
-    assert_nil seller.mercado_pago_user_id
-    assert_nil seller.mercado_pago_access_token_ciphertext
-    assert_nil seller.mercado_pago_refresh_token_ciphertext
+    assert_predicate seller, :mercado_pago_refund_credentials?
+    assert_not_nil seller.mercado_pago_disconnected_at
+    assert_equal "seller-access-token", seller.mercado_pago_access_token
+    assert_nil seller.mercado_pago_public_key, "sem Public Key o cartão some do checkout"
+    assert_nil seller.mercado_pago_connected_at
+  end
+
+  test "disconnecting keeps the refund credentials and reconnecting the same account clears the disconnection" do
+    seller = Seller.create!(name: "Ateliê volta", owner_full_name: "Ana Lua", cpf: "52998224725")
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.disconnect_mercado_pago!
+
+    assert_predicate seller, :pending?
+    assert_not_predicate seller, :mercado_pago_connected?
+    assert_predicate seller, :mercado_pago_refund_credentials?
+
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+
+    assert_predicate seller.reload, :mercado_pago_connected?
+    assert_nil seller.mercado_pago_disconnected_at
+  end
+
+  test "renewing the token of a disconnected seller does not reconnect it" do
+    seller = Seller.create!(name: "Ateliê renova", owner_full_name: "Ana Lua", cpf: "39053344705")
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller.disconnect_mercado_pago!
+
+    renewed = Marketplace::MercadoPagoOauth::Credentials.new(**mercado_pago_credentials.to_h.merge(access_token: "renewed-token", refresh_token: "renewed-refresh", expires_at: 30.days.from_now))
+    seller.renew_mercado_pago_tokens!(renewed)
+
+    assert_equal "renewed-token", seller.reload.mercado_pago_access_token
+    assert_not_predicate seller, :mercado_pago_connected?
     assert_nil seller.mercado_pago_public_key
+  end
+
+  test "retained credentials are purged only after the refund window and with no refund in flight" do
+    seller = sellers(:approved)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+    seller_order = seller_orders(:one)
+    seller_order.update_columns(status: "confirmed", created_at: 100.days.ago)
+
+    assert_not seller.purge_retained_mercado_pago_credentials!, "conectado nunca é limpo"
+
+    seller.disconnect_mercado_pago!
+    assert_not seller.purge_retained_mercado_pago_credentials!, "venda de 100 dias ainda pode ser reembolsada"
+    assert_predicate seller.reload, :mercado_pago_refund_credentials?
+
+    seller_order.update_columns(created_at: 200.days.ago)
+    payment = payments(:one)
+    payment.update_columns(status: "paid")
+    refund = payment.payment_refunds.create!(idempotency_key: "in-flight-purge", amount_cents: 100, application_fee_amount_cents: 0)
+    assert_not seller.purge_retained_mercado_pago_credentials!, "reembolso esperando resposta ainda precisa do token"
+
+    refund.update!(status: "failed")
+    assert seller.purge_retained_mercado_pago_credentials!
+    assert_not_predicate seller.reload, :mercado_pago_refund_credentials?
+    assert_nil seller.mercado_pago_user_id
   end
 
   # Diferente de suspend!, esconder não é moderação: o vendedor continua
