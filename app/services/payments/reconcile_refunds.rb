@@ -49,11 +49,17 @@ module Payments
 
       if remote
         intent = Gateways::RefundIntent.new(external_id: remote.external_id, status: remote.status)
-        service_for(refund).settle(refund, intent)
+        applied = service_for(refund).settle(refund, intent)
         notify("payment.refund_reconciled", refund, status: remote.status)
+        notify_admins_of_failure(refund) if applied.failed?
       elsif refund.external_id.blank? && refund.created_at <= @now - GIVE_UP_AFTER
-        refund.with_lock { refund.update!(status: "failed") if refund.processing? }
+        gave_up = refund.with_lock do
+          next false unless refund.processing?
+
+          refund.update!(status: "failed")
+        end
         notify("payment.refund_reconciled", refund, status: "failed")
+        notify_admins_of_failure(refund) if gave_up
       end
     rescue StandardError => e
       notify("payment.refund_reconcile_failed", refund, error: e.class.name)
@@ -81,6 +87,20 @@ module Payments
         amount_cents: refund.amount_cents,
         idempotency_key: refund.idempotency_key,
         gateway: @gateway
+      )
+    end
+
+    # O admin pediu o reembolso e viu "ainda está processando"; sem este aviso
+    # ele não saberia que nada foi devolvido. A aprovação tardia não avisa o
+    # admin de propósito: comprador e ateliê já são avisados por
+    # Payments::Refund#settle, e o que exige ação dele é o "não saiu".
+    def notify_admins_of_failure(refund)
+      order = refund.payment.order
+      Notification.notify_admins!(
+        kind: :refund_failed,
+        title: "Reembolso não concluído",
+        body: "O Mercado Pago não concluiu o reembolso do pedido ##{order.id}. Nada foi devolvido; tente de novo pela tela do pedido.",
+        url: Rails.application.routes.url_helpers.admin_order_path(order)
       )
     end
 

@@ -78,6 +78,43 @@ module Payments
       end
     end
 
+    test "tells the seller once when a refund is approved, with the total wording only when it empties the payment" do
+      payment = build_paid_payment
+      seller = payment.order.seller_order.seller
+      refunds = -> { seller.notifications.order_refunded }
+
+      assert_difference(-> { refunds.call.count }, 1) do
+        Refund.new(payment: payment, amount_cents: 500, idempotency_key: "seller-partial").call
+      end
+      assert_equal "Reembolso parcial", refunds.call.order(:id).last.title
+
+      assert_no_difference(-> { refunds.call.count }) do
+        Refund.new(payment: payment, amount_cents: 500, idempotency_key: "seller-partial").call
+      end
+
+      assert_difference(-> { refunds.call.count }, 1) do
+        Refund.new(payment: payment, amount_cents: payment.reload.remaining_refundable_cents, idempotency_key: "seller-total").call
+      end
+      last = refunds.call.order(:id).last
+      assert_equal "Reembolso total", last.title
+      assert_equal "/painel/orders/#{payment.order_id}", last.url
+    end
+
+    test "does not tell the seller while the refund is processing or after a rejection" do
+      payment = build_paid_payment
+      processing = Object.new
+      processing.define_singleton_method(:refund) { |**| Gateways::RefundIntent.new(external_id: "r-p", status: "processing") }
+      rejecting = Object.new
+      rejecting.define_singleton_method(:refund) { |**| raise Gateways::MercadoPago::RequestRejected, "Mercado Pago respondeu 404" }
+
+      assert_no_difference(-> { Notification.order_refunded.count }) do
+        Refund.new(payment: payment, amount_cents: 300, idempotency_key: "seller-processing", gateway: processing).call
+        assert_raises(Gateways::MercadoPago::RequestRejected) do
+          Refund.new(payment: payment, amount_cents: 300, idempotency_key: "seller-rejected", gateway: rejecting).call
+        end
+      end
+    end
+
     test "does not tell the buyer while the gateway still reports the refund as processing" do
       payment = build_paid_payment
       processing = Object.new

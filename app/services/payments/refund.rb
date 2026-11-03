@@ -52,18 +52,35 @@ module Payments
     # Aplica a resposta do gateway a uma tentativa já reservada. Público para a
     # reconciliação (Payments::ReconcileRefunds) resolver tentativas que
     # ficaram em `processing` pelo mesmo caminho, com a mesma contabilidade e
-    # o mesmo aviso ao comprador.
+    # os mesmos avisos ao comprador e ao ateliê.
     def settle(refund, intent)
       applied = apply_refund!(refund, intent)
       # Fora da transação de propósito, como o fan-out do pagamento: o job só
       # entra na fila depois do commit. E só quando ESTA chamada foi a que
       # aprovou o reembolso: repetir a mesma chave (ou uma chamada concorrente)
-      # não avisa o comprador duas vezes.
-      NotifyCustomerOfRefundJob.perform_later(applied) if @approved_now
+      # não avisa ninguém duas vezes. O aviso mora aqui, e não na tela que
+      # pediu o reembolso, para valer também quando a aprovação chega depois,
+      # pela reconciliação.
+      if @approved_now
+        NotifyCustomerOfRefundJob.perform_later(applied)
+        notify_seller_of_refund
+      end
       applied
     end
 
     private
+
+    def notify_seller_of_refund
+      order = @payment.order
+      fully_refunded = @payment.refunded?
+      Notification.create!(
+        recipient: order.seller_order.seller,
+        kind: :order_refunded,
+        title: fully_refunded ? "Reembolso total" : "Reembolso parcial",
+        body: "O pedido ##{order.id} recebeu um reembolso#{" total" if fully_refunded}.",
+        url: Rails.application.routes.url_helpers.seller_order_path(order)
+      )
+    end
 
     # A chave identifica uma TENTATIVA, não o pedido de reembolso. Reusar a
     # chave de uma tentativa recusada devolveria o registro `failed` sem

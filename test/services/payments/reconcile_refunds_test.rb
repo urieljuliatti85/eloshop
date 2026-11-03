@@ -71,6 +71,41 @@ module Payments
       assert old.reload.failed?
     end
 
+    test "a late approval tells the seller once and does not bother the admins" do
+      processing_refund(amount_cents: @payment.amount_cents, external_id: "mp-late", age: 15.minutes)
+      seller = @payment.order.seller_order.seller
+
+      assert_no_difference(-> { Notification.refund_failed.count }) do
+        assert_difference(-> { seller.notifications.order_refunded.count }, 1) do
+          reconcile(remote(external_id: "mp-late", status: "approved", amount_cents: @payment.amount_cents))
+          reconcile(remote(external_id: "mp-late", status: "approved", amount_cents: @payment.amount_cents))
+        end
+      end
+      assert_equal "Reembolso total", seller.notifications.order_refunded.order(:id).last.title
+    end
+
+    test "tells every admin when the gateway rejects a pending refund" do
+      processing_refund(amount_cents: 500, external_id: "mp-rejected", age: 15.minutes)
+
+      assert_difference(-> { Notification.refund_failed.count }, User.admin.count) do
+        reconcile(remote(external_id: "mp-rejected", status: "failed", amount_cents: 500))
+      end
+
+      notification = Notification.refund_failed.order(:id).last
+      assert_match "Nada foi devolvido", notification.body
+      assert_equal "/admin/orders/#{@payment.order_id}", notification.url
+      assert_equal 0, @payment.order.seller_order.seller.notifications.order_refunded.count
+    end
+
+    test "tells the admins once when it gives up on a lost attempt" do
+      processing_refund(amount_cents: 400, age: 2.hours)
+
+      assert_difference(-> { Notification.refund_failed.count }, User.admin.count) do
+        reconcile
+        reconcile
+      end
+    end
+
     test "never gives up on an attempt the gateway already acknowledged" do
       refund = processing_refund(amount_cents: 500, external_id: "mp-acked", age: 2.hours)
 
