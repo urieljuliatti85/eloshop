@@ -63,7 +63,19 @@ mudança de status). O protocolo também entra no `OrderEvent` do pedido.
 
 Banco: tabelas `return_requests` e `return_request_updates` com chaves
 estrangeiras, protocolo único e índice único parcial que impede duas
-solicitações abertas do mesmo tipo para o mesmo pedido.
+solicitações abertas do mesmo tipo para o mesmo pedido. `payment_refunds`
+ganha `return_request_id` (opcional, chave estrangeira): é por ele que a
+solicitação mostra os próprios reembolsos e conta a tentativa `n` da chave
+(ver Riscos), sob a trava do pagamento.
+
+**A solicitação reage ao desfecho do reembolso no serviço, não na tela**
+(revisão de 2026-11-03). Desde o #309 o reembolso pode ser aprovado depois,
+pela reconciliação (`Payments::ReconcileRefunds` → `Payments::Refund#settle`).
+Devolver o estoque, fechar a solicitação e avisar precisam partir do desfecho
+aprovado dentro do `settle` — o mesmo lugar de onde já saem o e-mail ao
+comprador e o aviso ao ateliê —, nunca do controller que pediu o reembolso. O
+estoque volta uma única vez, guardado por uma marca gravada na mesma
+transação, e nunca enquanto o reembolso estiver em `processing`.
 
 ## Decisões do negócio (2026-10-31)
 
@@ -98,8 +110,18 @@ solicitações abertas do mesmo tipo para o mesmo pedido.
 
 ## Riscos
 
-* Estorno travado por falta de saldo: a tela do admin precisa dizer de qual
-  lado faltou, reaproveitando o tratamento de `InsufficientFunds`.
+* Estorno travado por falta de saldo: o Mercado Pago devolve o mesmo erro
+  (`Collector hasn't enough available money`) se faltar saldo no ateliê **ou**
+  na plataforma (chamado WCS-53635), então a tela não tem como dizer de qual
+  lado faltou — diz "ateliê ou plataforma", como `insufficient_funds_message`
+  já faz. Quando o provedor não consegue (ateliê sem saldo, pagamento com mais
+  de 180 dias), o admin devolve por outro meio e **registra** o reembolso na
+  tela do pedido (desde 2026-11-03, `settlement: manual`), que passa pela mesma
+  contabilidade.
+* Ateliê que desconecta o Mercado Pago ou é suspenso depois da venda: desde
+  2026-11-03 os tokens ficam guardados só para estorno por 181 dias depois da
+  última venda (`Seller#mercado_pago_refund_credentials?`), e a cobrança nova é
+  recusada. A solicitação continua reembolsável pelo gateway nesse período.
 * Reembolso duplicado: coberto pela idempotência de `Payments::Refund`. A
   solicitação gera **uma chave por tentativa** (ex.: `return-request-<id>-<n>`),
   não uma chave fixa: `n` só avança depois de uma tentativa `failed`, e a

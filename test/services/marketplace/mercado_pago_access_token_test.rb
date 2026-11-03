@@ -23,6 +23,50 @@ module Marketplace
       assert_equal "current", MercadoPagoAccessToken.new(seller: seller, oauth: oauth).call
     end
 
+    test "refuses to charge a disconnected or suspended seller but still lends the token to refund past sales" do
+      oauth = Object.new
+      oauth.define_singleton_method(:refresh) { |**| raise "não deveria renovar" }
+
+      disconnected = sellers(:approved)
+      disconnected.connect_mercado_pago!(credentials(access_token: "kept", refresh_token: "refresh", expires_at: 1.day.from_now))
+      disconnected.disconnect_mercado_pago!
+
+      error = assert_raises(MercadoPagoOauth::ConfigurationError) do
+        MercadoPagoAccessToken.new(seller: disconnected, oauth: oauth).call
+      end
+      assert_match "não está conectada", error.message
+      assert_equal "kept", MercadoPagoAccessToken.new(seller: disconnected, oauth: oauth, for_charge: false).call
+
+      disconnected.connect_mercado_pago!(credentials(access_token: "kept", refresh_token: "refresh", expires_at: 1.day.from_now))
+      disconnected.update_columns(status: "suspended")
+      error = assert_raises(MercadoPagoOauth::ConfigurationError) do
+        MercadoPagoAccessToken.new(seller: disconnected.reload, oauth: oauth).call
+      end
+      assert_match "suspenso", error.message
+    end
+
+    test "renews the retained token of a disconnected seller without reconnecting it" do
+      seller = sellers(:approved)
+      seller.connect_mercado_pago!(credentials(access_token: "old", refresh_token: "old-refresh", expires_at: 1.minute.from_now))
+      seller.disconnect_mercado_pago!
+      oauth = Object.new
+      renewed = credentials(access_token: "new", refresh_token: "new-refresh", expires_at: 180.days.from_now)
+      oauth.define_singleton_method(:refresh) { |**| renewed }
+
+      assert_equal "new", MercadoPagoAccessToken.new(seller: seller, oauth: oauth, for_charge: false).call
+      assert_not_predicate seller.reload, :mercado_pago_connected?
+      assert_equal "new", seller.mercado_pago_access_token
+    end
+
+    test "has nothing to lend once the retained credentials are gone" do
+      seller = sellers(:pending)
+      seller.update_columns(mercado_pago_user_id: nil, mercado_pago_access_token_ciphertext: nil, mercado_pago_refresh_token_ciphertext: nil)
+
+      assert_raises(MercadoPagoOauth::ConfigurationError) do
+        MercadoPagoAccessToken.new(seller: seller, for_charge: false).call
+      end
+    end
+
     test "renews and persists an expiring token" do
       seller = sellers(:approved)
       seller.connect_mercado_pago!(credentials(access_token: "old", refresh_token: "old-refresh", expires_at: 1.minute.from_now))

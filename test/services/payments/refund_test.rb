@@ -197,6 +197,65 @@ module Payments
       assert payment.order.seller_order.reload.refunded?
     end
 
+    test "records a refund made outside Mercado Pago through the same accounting, without calling the gateway" do
+      payment = build_paid_payment
+      admin = users(:one)
+      seller = payment.order.seller_order.seller
+
+      refund = nil
+      assert_enqueued_with(job: NotifyCustomerOfRefundJob) do
+        refund = Refund.new(payment: payment, amount_cents: payment.amount_cents, idempotency_key: "manual-1",
+          manual_reference: "PIX E2E 1234", recorded_by: admin).call
+      end
+
+      assert refund.approved?
+      assert refund.settled_by_manual?
+      assert_equal "PIX E2E 1234", refund.manual_reference
+      assert_equal admin, refund.recorded_by
+      assert_nil refund.external_id
+      assert payment.reload.refunded?
+      assert payment.order.reload.refunded?
+      assert_equal payment.application_fee_cents, payment.application_fee_refunded_cents
+      assert_equal "Reembolso total", seller.notifications.order_refunded.order(:id).last.title
+    end
+
+    test "a manual refund needs the proof and who recorded it, and respects the remaining amount" do
+      payment = build_paid_payment
+
+      error = assert_raises(Refund::InvalidRefund) do
+        Refund.new(payment: payment, amount_cents: 500, idempotency_key: "manual-no-proof", manual_reference: " ", recorded_by: users(:one)).call
+      end
+      assert_match "comprovante", error.message
+      assert_raises(Refund::InvalidRefund) do
+        Refund.new(payment: payment, amount_cents: 500, idempotency_key: "manual-no-admin", manual_reference: "PIX 99").call
+      end
+      assert_raises(Refund::InvalidRefund) do
+        Refund.new(payment: payment, amount_cents: payment.amount_cents + 1, idempotency_key: "manual-too-much",
+          manual_reference: "PIX 99", recorded_by: users(:one)).call
+      end
+      assert_equal 0, payment.payment_refunds.count
+    end
+
+    test "the database refuses a manual refund without proof even if the model is bypassed" do
+      payment = build_paid_payment
+
+      assert_raises(ActiveRecord::StatementInvalid) do
+        PaymentRefund.insert_all!([ { payment_id: payment.id, idempotency_key: "raw-manual", amount_cents: 100,
+          application_fee_amount_cents: 0, settlement: "manual", status: "approved" } ])
+      end
+    end
+
+    test "a manual refund still asks for the chargeback acknowledgement" do
+      payment = build_paid_payment
+      ProcessWebhook.new(event_id: "cb-manual-#{SecureRandom.hex(3)}", external_id: payment.external_id, status: "charged_back").call
+
+      assert_raises(Refund::ChargebackReported) do
+        Refund.new(payment: payment, amount_cents: 500, idempotency_key: "manual-cb", manual_reference: "PIX 1", recorded_by: users(:one)).call
+      end
+      assert Refund.new(payment: payment, amount_cents: 500, idempotency_key: "manual-cb-ack", manual_reference: "PIX 1",
+        recorded_by: users(:one), chargeback_acknowledged: true).call.approved?
+    end
+
     test "refuses to refund a charged-back payment unless the admin acknowledges the dispute" do
       payment = build_paid_payment
       ProcessWebhook.new(event_id: "cb-#{SecureRandom.hex(4)}", external_id: payment.external_id, status: "charged_back").call

@@ -95,7 +95,7 @@ module Gateways
     def find_payment_for(order:)
       response = get(
         "/v1/payments/search?external_reference=#{order.id}&sort=date_created&criteria=desc&limit=5",
-        access_token: access_token_for(order)
+        access_token: access_token_for(order, for_charge: false)
       )
       found = Array(response["results"]).find { |result| result["external_reference"].to_s == order.id.to_s }
       return nil unless found
@@ -115,7 +115,7 @@ module Gateways
     end
 
     def refund(payment:, amount_cents:, idempotency_key:)
-      access_token = access_token_for(payment.order)
+      access_token = access_token_for(payment.order, for_charge: false)
       response = post(
         "/v1/payments/#{payment.external_id}/refunds",
         body: { amount: (amount_cents / 100.0).round(2) },
@@ -138,7 +138,7 @@ module Gateways
     def refunds_for(payment:)
       response = get(
         "/v1/payments/#{payment.external_id}/refunds",
-        access_token: access_token_for(payment.order),
+        access_token: access_token_for(payment.order, for_charge: false),
         headers: { "X-Render-In-Process-Refunds" => "true" }
       )
       Array(response).map do |refund|
@@ -213,7 +213,7 @@ module Gateways
     end
 
     def authorize_pix(order:, idempotency_key:, application_fee_cents:)
-      access_token = access_token_for(order)
+      access_token = access_token_for(order, for_charge: true)
 
       response = post(
         "/v1/payments",
@@ -253,7 +253,7 @@ module Gateways
       raise ArgumentError, "card_token é obrigatório para cartão de crédito" if card_token.blank?
       raise ArgumentError, "payment_method_id é obrigatório para cartão de crédito" if payment_method_id.blank?
 
-      access_token = access_token_for(order)
+      access_token = access_token_for(order, for_charge: true)
 
       body = {
         transaction_amount: (order.total_cents / 100.0).round(2),
@@ -284,8 +284,11 @@ module Gateways
       )
     end
 
-    def access_token_for(order)
-      token = @access_token_override || seller_access_token(order.seller_order.seller)
+    # Cobrar exige o ateliê conectado; estornar e consultar uma venda já feita
+    # aceita o token guardado depois de desconectar ou suspender. Sem padrão de
+    # propósito: cada chamada declara qual dos dois é.
+    def access_token_for(order, for_charge:)
+      token = @access_token_override || seller_access_token(order.seller_order.seller, for_charge: for_charge)
       return token if token.present?
 
       raise ConfigurationError, "a conta Mercado Pago do artesão não está conectada"
@@ -305,7 +308,7 @@ module Gateways
     def payment_details(external_id:)
       payment = Payment.find_by(external_id: external_id)
       seller = payment&.order&.seller_order&.seller
-      access_token = @access_token_override || (seller_access_token(seller) if seller)
+      access_token = @access_token_override || (seller_access_token(seller, for_charge: false) if seller)
       raise ConfigurationError, "a conta Mercado Pago do artesão não está conectada" if access_token.blank?
 
       response = get("/v1/payments/#{external_id}", access_token: access_token)
@@ -331,8 +334,8 @@ module Gateways
       end
     end
 
-    def seller_access_token(seller)
-      Marketplace::MercadoPagoAccessToken.new(seller: seller).call
+    def seller_access_token(seller, for_charge:)
+      Marketplace::MercadoPagoAccessToken.new(seller: seller, for_charge: for_charge).call
     rescue Marketplace::MercadoPagoOauth::ConfigurationError => e
       raise ConfigurationError, e.message
     rescue Marketplace::MercadoPagoOauth::RequestFailed => e

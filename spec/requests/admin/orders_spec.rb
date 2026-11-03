@@ -500,6 +500,65 @@ RSpec.describe "Admin orders", type: :request do
     end
   end
 
+  describe "POST /admin/orders/:id/manual_refund" do
+    let(:seller) { Seller.create!(name: "Ateliê Manual", owner_full_name: "Proprietário Teste", cpf: "52998224725", status: :approved, approved_at: Time.current) }
+    let!(:payment) do
+      order.seller_orders.create!(
+        seller: seller, status: :confirmed, subtotal_cents: 1000, shipping_cents: 500,
+        total_cents: 1500, platform_fee_cents: 150, seller_amount_cents: 1350
+      )
+      order.update!(status: :confirmed)
+      order.payments.create!(gateway: "fake", external_id: "fake-manual", status: :paid, amount_cents: 1500, application_fee_cents: 150)
+    end
+
+    it "records the refund made outside Mercado Pago without calling the gateway" do
+      post session_path, params: { email_address: user.email_address, password: "password" }
+      expect(Gateways).not_to receive(:build)
+
+      post manual_refund_admin_order_path(order), params: { idempotency_key: "manual-admin", manual_reference: "PIX E2E 777" }
+
+      expect(response).to redirect_to(admin_order_path(order))
+      expect(flash[:notice]).to include("outro meio registrado")
+      refund = PaymentRefund.find_by!(idempotency_key: "manual-admin")
+      expect(refund).to be_settled_by_manual
+      expect(refund.recorded_by).to eq(user)
+      expect(payment.reload).to be_refunded
+      expect(order.reload).to be_refunded
+      expect(seller.notifications.order_refunded.last.title).to eq("Reembolso total")
+
+      get admin_order_path(order)
+      expect(response.body).to include("Reembolsos feitos por outro meio", "PIX E2E 777", user.email_address)
+    end
+
+    it "asks for the proof instead of recording a refund without it" do
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      post manual_refund_admin_order_path(order), params: { idempotency_key: "manual-blank", manual_reference: "" }
+
+      expect(flash[:alert]).to include("comprovante")
+      expect(PaymentRefund.find_by(idempotency_key: "manual-blank")).to be_nil
+      expect(payment.reload).to be_paid
+    end
+
+    it "offers the form next to the gateway refund" do
+      post session_path, params: { email_address: user.email_address, password: "password" }
+
+      get admin_order_path(order)
+
+      expect(response.body).to include("Registrar reembolso feito por outro meio", manual_refund_admin_order_path(order))
+    end
+
+    it "is closed to a seller even for the seller's own order" do
+      seller_user = User.create!(email_address: "manual-seller@example.com", password: "password123", role: :seller, seller: seller)
+      sign_in_as(seller_user)
+
+      post manual_refund_admin_order_path(order), params: { idempotency_key: "manual-seller", manual_reference: "PIX 1" }
+
+      expect(PaymentRefund.find_by(idempotency_key: "manual-seller")).to be_nil
+      expect(payment.reload).to be_paid
+    end
+  end
+
   describe "POST /admin/orders/:id/cancel" do
     let(:seller) { Seller.create!(name: "Ateliê Cancel", owner_full_name: "Proprietário Teste", cpf: "10555558541", status: :approved, approved_at: Time.current) }
     let(:product) { Product.create!(seller: seller, name: "Produto", sku: "SKU-CANCEL-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 5, currency: "BRL", status: "active") }

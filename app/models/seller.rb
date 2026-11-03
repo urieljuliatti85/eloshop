@@ -207,26 +207,20 @@ class Seller < ApplicationRecord
     mercado_pago_real_account? || Marketplace::MercadoPagoOauth.sandbox?
   end
 
-  # Suspender também desconecta o Mercado Pago: caso contrário o token OAuth
-  # continua válido e um pedido com pagamento pendente antes da suspensão
-  # ainda conseguiria ser autorizado e repassar dinheiro ao vendedor suspenso
-  # (nem `Payments::Authorize` nem o gateway checam `approved?`/`suspended?`,
-  # só a presença do token). Pedidos já pagos antes da suspensão não são
-  # mexidos aqui — reembolso, se necessário, é decisão manual do admin através
-  # do fluxo de reembolso já existente.
+  # Suspender também desconecta o Mercado Pago para COBRAR: um pedido com
+  # pagamento pendente antes da suspensão não pode mais ser autorizado
+  # (Marketplace::MercadoPagoAccessToken recusa a cobrança de ateliê
+  # desconectado ou suspenso). Os tokens, porém, ficam guardados cifrados:
+  # no split 1:1 só o token do ateliê estorna um pagamento dele, e apagá-los
+  # deixaria sem reembolso os compradores das vendas já feitas (decisão de
+  # 2026-11-03). Saem quando o prazo de reembolso passa
+  # (`purge_retained_mercado_pago_credentials!`).
   def suspend!
     update!(
       status: :suspended,
       approved_at: nil,
       showcased_at: nil,
-      mercado_pago_user_id: nil,
-      mercado_pago_access_token_ciphertext: nil,
-      mercado_pago_refresh_token_ciphertext: nil,
-      mercado_pago_token_expires_at: nil,
-      mercado_pago_connected_at: nil,
-      mercado_pago_live_mode: false,
-      mercado_pago_test_account: nil,
-      mercado_pago_public_key: nil
+      **mercado_pago_disconnection_attributes
     )
   end
 
@@ -306,10 +300,52 @@ class Seller < ApplicationRecord
     steps
   end
 
+  # Conectado para cobrar: tem tokens e não desconectou nem foi suspenso.
   def mercado_pago_connected?
+    mercado_pago_disconnected_at.nil? && mercado_pago_refund_credentials?
+  end
+
+  # Tem os tokens, conectado ou não. Basta para estornar e consultar pagamentos
+  # já feitos: depois de desconectar ou ser suspenso, o ateliê não recebe
+  # cobranças novas, mas o comprador de uma venda anterior ainda precisa
+  # conseguir o reembolso.
+  def mercado_pago_refund_credentials?
     mercado_pago_user_id.present? &&
       mercado_pago_access_token_ciphertext.present? &&
       mercado_pago_refresh_token_ciphertext.present?
+  end
+
+  # O Mercado Pago só reembolsa até 180 dias depois da aprovação; o dia a mais
+  # cobre a diferença entre a criação do pedido e a aprovação do pagamento.
+  MERCADO_PAGO_REFUND_RETENTION = 181.days
+
+  # Apaga os tokens guardados só para estorno quando não há mais venda que o
+  # Mercado Pago aceite reembolsar, nem reembolso esperando resposta. Ateliê
+  # conectado nunca é afetado.
+  def purge_retained_mercado_pago_credentials!(now: Time.current)
+    with_lock do
+      next false unless retained_mercado_pago_credentials_expired?(now)
+
+      update!(
+        mercado_pago_user_id: nil,
+        mercado_pago_access_token_ciphertext: nil,
+        mercado_pago_refresh_token_ciphertext: nil,
+        mercado_pago_token_expires_at: nil
+      )
+    end
+  end
+
+  # Renovação do token. Conectado, é a mesma gravação da conexão. Desconectado
+  # (token guardado só para estorno), troca só os tokens: renovar não pode
+  # reconectar o ateliê para cobrar.
+  def renew_mercado_pago_tokens!(credentials)
+    return connect_mercado_pago!(credentials) if mercado_pago_disconnected_at.nil?
+
+    update!(
+      mercado_pago_access_token_ciphertext: encrypt_credential(credentials.access_token, salt: CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO),
+      mercado_pago_refresh_token_ciphertext: encrypt_credential(credentials.refresh_token, salt: CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO),
+      mercado_pago_token_expires_at: credentials.expires_at
+    )
   end
 
   # `mercado_pago_connected?` só diz que há tokens: serve ao gateway e ao
@@ -350,6 +386,7 @@ class Seller < ApplicationRecord
       mercado_pago_refresh_token_ciphertext: encrypt_credential(credentials.refresh_token, salt: CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO),
       mercado_pago_token_expires_at: credentials.expires_at,
       mercado_pago_connected_at: Time.current,
+      mercado_pago_disconnected_at: nil,
       mercado_pago_live_mode: credentials.live_mode,
       mercado_pago_test_account: credentials.test_account,
       mercado_pago_public_key: credentials.public_key
@@ -363,19 +400,9 @@ class Seller < ApplicationRecord
 
   # Volta para `pending`, mas não mexe em `showcased_at`: o ateliê continua
   # na loja e só para de vender até reconectar e ser reaprovado.
+  # Os tokens ficam guardados só para estorno (ver `suspend!`).
   def disconnect_mercado_pago!
-    update!(
-      mercado_pago_user_id: nil,
-      mercado_pago_access_token_ciphertext: nil,
-      mercado_pago_refresh_token_ciphertext: nil,
-      mercado_pago_token_expires_at: nil,
-      mercado_pago_connected_at: nil,
-      mercado_pago_live_mode: false,
-      mercado_pago_test_account: nil,
-      mercado_pago_public_key: nil,
-      status: :pending,
-      approved_at: nil
-    )
+    update!(status: :pending, approved_at: nil, **mercado_pago_disconnection_attributes)
   end
 
   # Cartão de crédito (Fase 24) exige a Public Key do vendedor no front; sem
@@ -500,6 +527,32 @@ class Seller < ApplicationRecord
     superfrete_sandbox: false
   }.freeze
   CREDENTIAL_ENCRYPTION_SALT_CPF = "seller-owner-cpf".freeze
+
+  # Para de cobrar e esconde o cartão, mas guarda conta e tokens (cifrados)
+  # para estornar vendas já feitas. `mercado_pago_token_expires_at` também
+  # fica: é dele que a renovação depende.
+  def mercado_pago_disconnection_attributes
+    {
+      mercado_pago_disconnected_at: mercado_pago_disconnected_at || Time.current,
+      mercado_pago_connected_at: nil,
+      mercado_pago_live_mode: false,
+      mercado_pago_test_account: nil,
+      mercado_pago_public_key: nil
+    }
+  end
+
+  # Venda que o Mercado Pago ainda aceita reembolsar: pedido pago (ou já
+  # parcialmente reembolsado) criado dentro do prazo.
+  def retained_mercado_pago_credentials_expired?(now)
+    mercado_pago_disconnected_at.present? &&
+      mercado_pago_refund_credentials? &&
+      !refundable_sales_since?(now - MERCADO_PAGO_REFUND_RETENTION) &&
+      !PaymentRefund.processing.joins(payment: { order: :seller_orders }).where(seller_orders: { seller_id: id }).exists?
+  end
+
+  def refundable_sales_since?(cutoff)
+    seller_orders.where(status: %w[confirmed partially_refunded]).where(created_at: cutoff..).exists?
+  end
 
   def assign_cpf
     self.cpf_ciphertext = encrypt_credential(cpf, salt: CREDENTIAL_ENCRYPTION_SALT_CPF)

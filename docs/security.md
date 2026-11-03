@@ -30,6 +30,10 @@ O escopo do vendedor nunca vem de parâmetros da requisição. Produtos e pedido
 
 Nunca armazenar número de cartão, CVV ou dados sensíveis equivalentes. Ver `docs/payments.md` para o modelo completo de isolamento do gateway.
 
+**Tokens do Mercado Pago de ateliê desconectado ou suspenso ficam guardados, cifrados, só para estorno** (desde 2026-11-03). Apagá-los impedia reembolsar compradores de vendas já feitas, porque no split 1:1 só o token do ateliê estorna. O risco que a limpeza fechava — cobrar um pedido pendente de ateliê suspenso — continua fechado de outro jeito: `Marketplace::MercadoPagoAccessToken` recusa a cobrança (`for_charge: true`) de ateliê desconectado ou suspenso, e só estorno e consulta de vendas já feitas usam o token guardado. `PurgeRetainedMercadoPagoCredentialsJob` apaga os tokens 181 dias depois da última venda paga. O ateliê é avisado ao desconectar; a cláusula nos Termos do Artesão está pendente.
+
+**Reembolso feito por outro meio é exclusivo do admin e auditável.** A ação fica em `Admin::OrdersController` (atrás de `require_admin!`), exige comprovante e grava quem lançou (`PaymentRefund#recorded_by`), com restrição no banco que recusa reembolso manual sem os dois; o `PaymentRefund` também está no PaperTrail. O comprovante não aparece para o comprador. Ver `docs/payments.md`, "Reembolsos".
+
 ## Logs
 
 Nunca registrar em logs:

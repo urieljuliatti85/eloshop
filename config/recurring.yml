@@ -28,6 +28,12 @@ production:
     class: ReconcilePaymentsJob
     queue: default
     schedule: every 15 minutes
+  # Apaga os tokens do Mercado Pago guardados só para estorno (ateliê
+  # desconectado ou suspenso) quando o prazo de reembolso de 180 dias passou.
+  purge_retained_mercado_pago_credentials:
+    class: PurgeRetainedMercadoPagoCredentialsJob
+    queue: default
+    schedule: every day at 4am
   # Procura sinais de vendedor irregular e avisa o admin por e-mail e Sentry.
   # Só notifica (Fraud::SellerScan); idempotente por vendedor e regra.
   seller_fraud_scan:

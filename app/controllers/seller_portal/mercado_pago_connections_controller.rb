@@ -52,7 +52,7 @@ module SellerPortal
 
     def destroy
       current_seller.disconnect_mercado_pago!
-      redirect_to seller_atelier_path, notice: "Conta Mercado Pago desconectada. A publicação foi suspensa até uma nova aprovação."
+      redirect_to seller_atelier_path, notice: "Conta Mercado Pago desconectada. A publicação foi suspensa até uma nova aprovação. O acesso fica guardado só para devolver o dinheiro de vendas já feitas, por até 180 dias."
     end
 
     private
