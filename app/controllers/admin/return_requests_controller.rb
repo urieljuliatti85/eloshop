@@ -55,28 +55,35 @@ module Admin
       params.fetch(:return_request_update, {}).permit(:body, :status)
     end
 
-    # Fora da transação de record_update!: e-mail e notificações só depois do
-    # commit, e a falha deles não desfaz o atendimento.
+    # Fora da transação de record_update!, e cada aviso por conta própria: a
+    # falha de um vai para o Sentry sem derrubar os outros nem a resposta — o
+    # atendimento já está gravado.
     def notify(return_request, update)
       order = return_request.order
-      ReturnRequestMailer.updated(update).deliver_later
-      Notification.create!(
-        recipient: order.customer,
-        kind: :return_request_updated,
-        title: "Solicitação #{return_request.protocol} atualizada",
-        body: update.status_change? ? "Situação: #{return_request.status_label}." : "A EloShop respondeu à sua solicitação.",
-        url: order_return_request_path(order, return_request)
-      )
+      context = { return_request_id: return_request.id }
+
+      Rails.error.handle(context: context) { ReturnRequestMailer.updated(update).deliver_later }
+      Rails.error.handle(context: context) do
+        Notification.create!(
+          recipient: order.customer,
+          kind: :return_request_updated,
+          title: "Solicitação #{return_request.protocol} atualizada",
+          body: update.status_change? ? "Situação: #{return_request.status_label}." : "A EloShop respondeu à sua solicitação.",
+          url: order_return_request_path(order, return_request)
+        )
+      end
       return unless update.status_change? && !return_request.open?
 
       # O fim de uma desistência destrava o envio no painel (decisão A).
-      Notification.create!(
-        recipient: return_request.seller_order.seller,
-        kind: :return_request_updated,
-        title: "Solicitação #{return_request.protocol} #{return_request.status_label.downcase}",
-        body: "A EloShop encerrou a solicitação do pedido ##{order.id} (#{return_request.kind_label.downcase}).",
-        url: seller_order_path(order)
-      )
+      Rails.error.handle(context: context) do
+        Notification.create!(
+          recipient: return_request.seller_order.seller,
+          kind: :return_request_updated,
+          title: "Solicitação #{return_request.protocol} #{return_request.status_label.downcase}",
+          body: "A EloShop encerrou a solicitação do pedido ##{order.id} (#{return_request.kind_label.downcase}).",
+          url: seller_order_path(order)
+        )
+      end
     end
   end
 end

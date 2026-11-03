@@ -24,6 +24,28 @@ RSpec.describe "Return requests (desistência pelo site)", type: :request do
       expect(response.body).not_to include(cancel_order_path(order))
     end
 
+    it "offers neither the request nor cancelling once the order is fully refunded" do
+      order.update!(status: :refunded)
+      order.seller_order.update!(status: :refunded)
+      sign_in_customer
+
+      get order_path(order)
+
+      expect(response.body).not_to include(new_order_return_request_path(order))
+      expect(response.body).not_to include(cancel_order_path(order))
+
+      get new_order_return_request_path(order)
+      expect(response).to redirect_to(order_path(order))
+    end
+
+    it "does not open the form for another customer's order" do
+      sign_in_customer(other_customer)
+
+      get new_order_return_request_path(order)
+
+      expect(response).to have_http_status(:not_found)
+    end
+
     it "keeps cancelling an unpaid order" do
       order.update!(status: :pending)
       order.seller_order.update!(status: :pending)
@@ -58,6 +80,17 @@ RSpec.describe "Return requests (desistência pelo site)", type: :request do
 
       follow_redirect!
       expect(response.body).to include(return_request.protocol, "Não quero mais.")
+    end
+
+    it "still shows the protocol when the e-mail cannot be queued" do
+      allow(ReturnRequestMailer).to receive(:opened).and_raise(ActiveRecord::ConnectionNotEstablished, "fila fora do ar")
+      sign_in_customer
+
+      post order_return_requests_path(order), params: { return_request: { kind: "withdrawal" } }
+
+      return_request = ReturnRequest.sole
+      expect(response).to redirect_to(order_return_request_path(order, return_request))
+      expect(flash[:notice]).to include(return_request.protocol)
     end
 
     it "works with sales closed: withdrawing is the buyer's right" do

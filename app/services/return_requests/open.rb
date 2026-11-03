@@ -13,7 +13,8 @@ module ReturnRequests
   class Open
     class NotEligible < StandardError; end
 
-    Result = Data.define(:return_request, :created)
+    # `appended`: a mensagem do comprador entrou numa solicitação já aberta.
+    Result = Data.define(:return_request, :created, :appended)
 
     def initialize(seller_order:, customer:, kind:, description: nil)
       @seller_order = seller_order
@@ -32,7 +33,11 @@ module ReturnRequests
         existing = @seller_order.return_requests.open.find_by(kind: @kind)
         existing ? add_to_existing(existing) : create_request
       end
-      notify(result) if result.created
+      if result.created
+        notify_opened(result.return_request)
+      elsif result.appended
+        notify_admins_of_message(result.return_request)
+      end
       result
     end
 
@@ -42,7 +47,7 @@ module ReturnRequests
     # histórico dela (o índice único parcial impede outra aberta).
     def add_to_existing(return_request)
       return_request.updates.create!(author: @customer, body: @description) if @description
-      Result.new(return_request: return_request, created: false)
+      Result.new(return_request: return_request, created: false, appended: @description.present?)
     end
 
     def create_request
@@ -66,28 +71,55 @@ module ReturnRequests
       # Duas abas abrindo ao mesmo tempo ficam em fila no lock do SellerOrder,
       # e a segunda cai em `add_to_existing`; o índice único parcial é a
       # garantia no banco caso algum caminho futuro esqueça o lock.
-      Result.new(return_request: return_request, created: true)
+      Result.new(return_request: return_request, created: true, appended: false)
     end
 
-    def notify(result)
-      return_request = result.return_request
+    # Depois do commit, e cada aviso por conta própria: a falha de um (fila
+    # fora do ar, erro ao gravar a notificação) vai para o Sentry e não
+    # derruba os outros nem a resposta. A confirmação legal é o protocolo na
+    # tela (ADR 008, regra 10) — ela não pode depender da fila.
+    def notify_opened(return_request)
       order = @seller_order.order
-      url_helpers = Rails.application.routes.url_helpers
 
-      ReturnRequestMailer.opened(return_request).deliver_later
-      Notification.notify_admins!(
-        kind: :return_request_opened,
-        title: "Nova solicitação #{return_request.protocol}",
-        body: "#{return_request.kind_label} no pedido ##{order.id}. Responder até #{I18n.l(return_request.respond_by, format: :short)}.",
-        url: url_helpers.admin_return_request_path(return_request)
-      )
-      Notification.create!(
-        recipient: @seller_order.seller,
-        kind: :return_request_opened,
-        title: return_request.kind_withdrawal? ? "Desistência no pedido ##{order.id}" : "Solicitação no pedido ##{order.id}",
-        body: seller_message(return_request, order),
-        url: url_helpers.seller_order_path(order)
-      )
+      deliver_safely(return_request) { ReturnRequestMailer.opened(return_request).deliver_later }
+      deliver_safely(return_request) do
+        Notification.notify_admins!(
+          kind: :return_request_opened,
+          title: "Nova solicitação #{return_request.protocol}",
+          body: "#{return_request.kind_label} no pedido ##{order.id}. Responder até #{I18n.l(return_request.respond_by, format: :short)}.",
+          url: url_helpers.admin_return_request_path(return_request)
+        )
+      end
+      deliver_safely(return_request) do
+        Notification.create!(
+          recipient: @seller_order.seller,
+          kind: :return_request_opened,
+          title: return_request.kind_withdrawal? ? "Desistência no pedido ##{order.id}" : "Solicitação no pedido ##{order.id}",
+          body: seller_message(return_request, order),
+          url: url_helpers.seller_order_path(order)
+        )
+      end
+    end
+
+    # O comprador acrescentou informação a uma solicitação aberta; sem este
+    # aviso, o admin só a veria abrindo a solicitação por conta própria.
+    def notify_admins_of_message(return_request)
+      deliver_safely(return_request) do
+        Notification.notify_admins!(
+          kind: :return_request_updated,
+          title: "Nova mensagem em #{return_request.protocol}",
+          body: "O comprador acrescentou informação à solicitação do pedido ##{@seller_order.order.id}.",
+          url: url_helpers.admin_return_request_path(return_request)
+        )
+      end
+    end
+
+    def deliver_safely(return_request, &block)
+      Rails.error.handle(context: { return_request_id: return_request.id }, &block)
+    end
+
+    def url_helpers
+      Rails.application.routes.url_helpers
     end
 
     def seller_message(return_request, order)

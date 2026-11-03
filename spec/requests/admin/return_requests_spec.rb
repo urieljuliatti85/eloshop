@@ -51,6 +51,17 @@ RSpec.describe "Admin return requests", type: :request do
     expect(Notification.where(recipient: customer, kind: "return_request_updated")).to exist
   end
 
+  it "keeps the answer saved when the e-mail cannot be queued" do
+    allow(ReturnRequestMailer).to receive(:updated).and_raise(ActiveRecord::ConnectionNotEstablished, "fila fora do ar")
+    sign_in_admin
+
+    patch admin_return_request_path(return_request), params: { return_request_update: { body: "Resposta.", status: "in_progress" } }
+
+    expect(response).to redirect_to(admin_return_request_path(return_request))
+    expect(return_request.reload).to be_in_progress
+    expect(Notification.where(recipient: customer, kind: "return_request_updated")).to exist
+  end
+
   it "tells the atelier when a withdrawal ends, because shipping is unlocked" do
     sign_in_admin
 
@@ -67,6 +78,16 @@ RSpec.describe "Admin return requests", type: :request do
 
     expect(flash[:alert]).to include("Não é possível")
     expect(return_request.reload).to be_resolved
+  end
+
+  it "never renders the buyer's text as HTML" do
+    payload = %(<script>alert("x")</script><img src=x onerror="alert(1)">)
+    request = ReturnRequests::Open.new(seller_order: seller_order, customer: customer, kind: :product_issue, description: payload).call.return_request
+    sign_in_admin
+
+    get admin_return_request_path(request)
+
+    expect(response.body).not_to include("<script>alert", "onerror=")
   end
 
   it "shows the open request on the order page, pointing to it" do
