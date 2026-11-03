@@ -2,9 +2,10 @@
 
 ## Status
 
-Proposed — desenho registrado em 2026-10-31, **sem implementação**. O Uriel
-decidiu reservar a tarefa e não implementar agora. As decisões de negócio
-listadas abaixo já foram tomadas; uma segue pendente com o advogado.
+Proposed — desenho registrado em 2026-10-31, **sem implementação**. Reservada
+em 2026-10-31; implementação decidida em 2026-11-03, ainda sem código. As
+decisões de negócio listadas abaixo já foram tomadas; uma segue pendente com o
+advogado.
 
 Revisado em 2026-11-03 (`/principal-reviewer`): o desenho foi mantido, com as
 decisões A e B do Uriel e as regras de implementação da seção "Regras de
@@ -49,7 +50,11 @@ Uma entidade nova, `ReturnRequest` ("Solicitação" na interface), presa ao
 Os itens devolvidos ficam em `ReturnRequestItem` (`order_item_id`, `quantity`),
 desde a primeira versão (decisão B). O valor sugerido do reembolso e o estoque
 devolvido saem deles; o admin pode ajustar o valor. A tela pode começar
-oferecendo só o pedido inteiro, gravando todos os itens.
+oferecendo só o pedido inteiro, gravando todos os itens. Como o índice único
+parcial permite uma única solicitação aberta por tipo e pedido, desistir de
+outra peça com a desistência ainda aberta **acrescenta itens a ela** (enquanto
+`received` ou `in_progress`, registrado no histórico); fechada, uma nova
+solicitação pode ser aberta.
 
 Histórico em `ReturnRequestUpdate` (autor comprador, ateliê ou admin; texto;
 mudança de status). O protocolo também entra no `OrderEvent` do pedido.
@@ -64,10 +69,12 @@ mudança de status). O protocolo também entra no `OrderEvent` do pedido.
    destaque. Responde, muda o status e **reembolsa** a partir da solicitação,
    reaproveitando `Payments::Refund` (integral com frete na desistência).
    Pedido ainda não enviado: "cancelar e reembolsar" num clique
-   (`Orders::CancelAndRefund`: reembolso, estoque e status na ordem certa).
+   (`Orders::CancelAndRefund`: só chama o reembolso com `require_unshipped`;
+   estoque, status e avisos saem do `settle` — regras 1 e 2).
 3. Ateliê: vê as solicitações dos próprios pedidos (escopo por
    `current_seller`) e acrescenta informação. **Não decide** (Anexo II do
-   parecer).
+   parecer). "Peça recebida de volta" registra um fato: devolve só o estoque
+   dos itens da solicitação, não muda o status dela nem dispara reembolso.
 4. Notificação e e-mail a cada mudança, para comprador, ateliê e admin. Um job
    diário avisa o admin das solicitações perto do prazo.
 
@@ -124,10 +131,11 @@ reembolso estiver em `processing`.
    `RequestRejected` em `call`, o `settle` com status não aprovado e a
    desistência por tempo em `ReconcileRefunds`, que não passa pelo `settle`);
    um status próprio ficaria preso. Só a aprovação gera efeito na solicitação.
-6. **Protocolo derivado do `id`** (`ELO-2026-000123`), gravado logo depois do
-   insert, na mesma transação, ou de uma sequence do Postgres; nunca
-   `MAX + 1`, que disputa sob concorrência e daria erro ao comprador na
-   confirmação imediata. A numeração não reinicia por ano.
+6. **Protocolo vindo de uma sequence do Postgres** (`ELO-2026-000123`), como
+   `DEFAULT` da coluna (`nextval`), o que mantém `protocol` `NOT NULL` num
+   passo só; nunca `MAX + 1`, que disputa sob concorrência e daria erro ao
+   comprador na confirmação imediata. A numeração não reinicia por ano.
+   (Derivar do `id` num segundo `UPDATE` exigiria a coluna anulável.)
 7. **Fotos por controller próprio**, que autoriza comprador, ateliê (por
    `current_seller`) ou admin e redireciona para uma URL de serviço de curta
    duração (`blob.url`). A rota padrão do Active Storage
@@ -137,7 +145,12 @@ reembolso estiver em `processing`.
 8. **Fora de `require_sales_open`**: desistir é direito do comprador mesmo
    com as vendas fechadas. `rate_limit` por IP e por cliente na criação,
    escopo sempre por `Current.customer`.
-9. **A confirmação legal é a da tela.** O e-mail com o protocolo sai por job
+9. **Reembolso de pedido com solicitação aberta passa pela solicitação.** O
+   gancho do `settle` só enxerga `refund.return_request`; um reembolso feito
+   pela tela antiga do pedido não devolveria o estoque de uma desistência
+   antes do envio. A tela do pedido mostra a solicitação aberta e leva a ela
+   em vez de oferecer o reembolso solto.
+10. **A confirmação legal é a da tela.** O e-mail com o protocolo sai por job
    depois do commit; falha no e-mail não impede nem desfaz a solicitação.
 
 ## Decisões do negócio (2026-10-31)
@@ -233,7 +246,9 @@ reembolso estiver em `processing`.
 * RSpec: comprador só nos próprios pedidos; protocolo na resposta; ateliê sem
   acesso a pedidos de outro; só admin reembolsa; `rate_limit`; e-mails
   enfileirados; foto inacessível sem login e para outro comprador ou ateliê;
-  solicitação criada com as vendas fechadas.
+  solicitação criada com as vendas fechadas; a tela do pedido com solicitação
+  aberta leva a ela em vez de oferecer o reembolso solto; segunda desistência
+  com a primeira aberta acrescenta itens, sem criar outra solicitação.
 * Sistema: comprador abre a solicitação pelo pedido e vê o protocolo.
 
 ## Critérios de aceite
@@ -248,7 +263,7 @@ reembolso estiver em `processing`.
   pedido como enviado.
 * Depois do envio, reembolsar não devolve estoque; só "peça recebida de
   volta" devolve, e uma vez.
-* As nove regras de implementação estão cobertas por teste.
+* As dez regras de implementação estão cobertas por teste.
 
 ## Ao retomar
 
