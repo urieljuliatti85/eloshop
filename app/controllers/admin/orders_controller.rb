@@ -61,6 +61,28 @@ module Admin
       redirect_to admin_order_path(params[:id]), alert: "Não foi possível confirmar o reembolso com o Mercado Pago (#{e.message}). Confira o pagamento lá antes de tentar de novo."
     end
 
+    # Registra um reembolso que o admin já fez por fora do Mercado Pago, quando o
+    # provedor não consegue (ateliê sem saldo no split 1:1 ou pagamento com
+    # mais de 180 dias). Nada é cobrado nem devolvido por aqui: o dinheiro já
+    # saiu, e o registro fecha a contabilidade, o status do pedido e os avisos.
+    def manual_refund
+      order = Order.find(params[:id])
+      payment = order.payments.where(status: %w[paid partially_refunded]).order(created_at: :desc).first!
+
+      Payments::Refund.new(
+        payment: payment,
+        amount_cents: refund_amount_cents(payment),
+        idempotency_key: params.require(:idempotency_key),
+        chargeback_acknowledged: params[:chargeback_acknowledged] == "1",
+        manual_reference: params[:manual_reference],
+        recorded_by: Current.user
+      ).call
+
+      redirect_to admin_order_path(order), notice: "Reembolso feito por outro meio registrado. O comprador e o ateliê foram avisados."
+    rescue Payments::Refund::InvalidRefund, ActiveRecord::RecordNotFound => e
+      redirect_to admin_order_path(params[:id]), alert: e.message
+    end
+
     def cancel
       order = Order.find(params[:id])
       Orders::Cancel.new.call(order)

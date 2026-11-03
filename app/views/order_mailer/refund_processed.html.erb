@@ -13,10 +13,17 @@
   <% unless @fully_refunded %>
     Total já reembolsado neste pedido: <%= format_price(@payment.refunded_amount_cents) %> de <%= format_price(@payment.amount_cents) %><br>
   <% end %>
-  Forma de pagamento: <%= payment_method_label(@payment) %>
+  <% unless @refund.settled_by_manual? %>
+    Forma de pagamento: <%= payment_method_label(@payment) %>
+  <% end %>
 </p>
 
-<p>O prazo para o valor aparecer depende do meio de pagamento e do seu banco ou operadora do cartão. Se passar de alguns dias e você não vir o valor, responda este e-mail com o número do pedido que verificamos.</p>
+<% if @refund.settled_by_manual? %>
+  <p>Como o Mercado Pago não conseguiu fazer esta devolução, nós a fizemos <strong>diretamente para você</strong>, por transferência ou PIX, pelo meio combinado com você. Ela não aparece na fatura do cartão nem na sua conta do Mercado Pago.</p>
+  <p>Se o valor não tiver chegado, responda este e-mail com o número do pedido que verificamos.</p>
+<% else %>
+  <p>O prazo para o valor aparecer depende do meio de pagamento e do seu banco ou operadora do cartão. Se passar de alguns dias e você não vir o valor, responda este e-mail com o número do pedido que verificamos.</p>
+<% end %>
 
 <p>
   <a href="<%= order_url(@order) %>" style="display: inline-block; background-color: #c2410c; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">

@@ -178,6 +178,36 @@
               <p class="text-xs text-slate-500">Em branco, reembolsa o saldo total de <%= format_price(payment.remaining_refundable_cents) %>.</p>
               <%= form.submit "Solicitar reembolso", class: "rounded-xl bg-rose-700 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-800", data: { turbo_confirm: "Confirma o reembolso deste pagamento?" } %>
             <% end %>
+
+            <details class="mt-5 border-t border-slate-100 pt-5 text-sm">
+              <summary class="cursor-pointer font-semibold text-slate-700">O Mercado Pago não consegue devolver? Registrar reembolso feito por outro meio</summary>
+              <p class="mt-2 text-slate-600">Use só depois de devolver o dinheiro ao comprador por transferência ou PIX, quando o Mercado Pago recusa (ateliê sem saldo) ou o pagamento passou de 180 dias. Nada é cobrado nem devolvido por aqui: o registro fecha o pedido, a comissão e avisa comprador e ateliê.</p>
+              <%= form_with url: manual_refund_admin_order_path(@order), method: :post, class: "mt-3 space-y-3" do |form| %>
+                <%= form.hidden_field :idempotency_key, value: SecureRandom.uuid %>
+                <% if payment.chargeback_reported? %>
+                  <label class="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                    <%= form.check_box :chargeback_acknowledged, { class: "mt-0.5" }, "1", "0" %>
+                    <span>Este pagamento tem chargeback. Conferi a disputa e confirmo o registro mesmo assim.</span>
+                  </label>
+                <% end %>
+                <%= form.label :amount, "Valor devolvido (R$)", for: "manual_refund_amount", class: "block font-semibold text-slate-700" %>
+                <%= form.text_field :amount, id: "manual_refund_amount", inputmode: "decimal", placeholder: number_with_precision(payment.remaining_refundable_cents.fdiv(100), precision: 2, separator: ","), class: "w-full rounded-xl border border-slate-200 px-3 py-2" %>
+                <%= form.label :manual_reference, "Comprovante (identificador do PIX ou da transferência)", for: "manual_refund_reference", class: "block font-semibold text-slate-700" %>
+                <%= form.text_field :manual_reference, id: "manual_refund_reference", required: true, minlength: 3, maxlength: 500, class: "w-full rounded-xl border border-slate-200 px-3 py-2" %>
+                <%= form.submit "Registrar reembolso feito por outro meio", class: "rounded-xl border border-rose-300 px-4 py-2 font-semibold text-rose-800 hover:bg-rose-50", data: { turbo_confirm: "O dinheiro já foi devolvido ao comprador por fora do Mercado Pago? Este registro não pode ser desfeito." } %>
+              <% end %>
+            </details>
+          <% end %>
+          <% manual_refunds = payment.payment_refunds.select(&:settled_by_manual?) %>
+          <% if manual_refunds.any? %>
+            <div class="mt-5 border-t border-slate-100 pt-5 text-sm">
+              <p class="font-semibold text-slate-700">Reembolsos feitos por outro meio</p>
+              <ul class="mt-2 space-y-1 text-slate-600">
+                <% manual_refunds.each do |manual| %>
+                  <li><%= format_price(manual.amount_cents) %> em <%= l(manual.created_at, format: :short) %> — <%= manual.manual_reference %> (<%= manual.recorded_by&.email_address %>)</li>
+                <% end %>
+              </ul>
+            </div>
           <% end %>
         <% else %>
           <p class="mt-4 text-sm text-slate-500">Nenhuma tentativa de pagamento registrada.</p>

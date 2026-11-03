@@ -53,4 +53,24 @@ class OrderMailerTest < ActionMailer::TestCase
 
     assert_match "reembolso total", OrderMailer.refund_processed(refund).html_part.body.to_s
   end
+
+  test "refund_processed tells the buyer a manual refund came directly, not through the card or Mercado Pago" do
+    order = build_order
+    payment = order.payments.create!(
+      gateway: "fake", status: :refunded, external_id: "fake-3", amount_cents: order.total_cents,
+      application_fee_cents: 0, refunded_amount_cents: order.total_cents
+    )
+    refund = payment.payment_refunds.create!(
+      idempotency_key: "mail-3", amount_cents: order.total_cents, application_fee_amount_cents: 0, status: :approved,
+      settlement: :manual, manual_reference: "PIX interno 42", recorded_by: users(:one)
+    )
+
+    email = OrderMailer.refund_processed(refund)
+    [ email.html_part.body.to_s, email.text_part.body.to_s ].each do |body|
+      assert_match "diretamente para você", body
+      assert_match "não aparece na fatura", body
+      assert_no_match "depende do meio de pagamento", body
+      assert_no_match "PIX interno 42", body, "o comprovante é registro interno do admin"
+    end
+  end
 end

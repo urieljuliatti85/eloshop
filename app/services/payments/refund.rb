@@ -7,15 +7,28 @@ module Payments
     # Pago (decisão de 2026-11-03).
     class ChargebackReported < InvalidRefund; end
 
-    def initialize(payment:, amount_cents:, idempotency_key:, gateway: Gateways.build(payment.gateway), chargeback_acknowledged: false)
+    # `manual_reference` + `recorded_by` registram um reembolso que o admin já
+    # fez por fora do Mercado Pago (transferência ou PIX ao comprador), quando
+    # o provedor não consegue: ateliê sem saldo no split 1:1 ou pagamento com
+    # mais de 180 dias. Passa pelo mesmo caminho do reembolso pelo gateway, só
+    # sem chamar o Mercado Pago (Gateways::ManualRefund).
+    def initialize(payment:, amount_cents:, idempotency_key:, gateway: nil, chargeback_acknowledged: false,
+                   manual_reference: nil, recorded_by: nil)
       @payment = payment
       @amount_cents = amount_cents.to_i
       @idempotency_key = idempotency_key
-      @gateway = gateway
+      @manual = manual_reference.present? || recorded_by.present?
+      @manual_reference = manual_reference.to_s.strip.presence
+      @recorded_by = recorded_by
+      @gateway = gateway || (@manual ? Gateways::ManualRefund.new : Gateways.build(payment.gateway))
       @chargeback_acknowledged = chargeback_acknowledged
     end
 
     def call
+      if @manual && (@recorded_by.nil? || @manual_reference.to_s.length < 3)
+        raise InvalidRefund, "informe o comprovante do reembolso feito por outro meio (ex.: identificador do PIX ou da transferência)"
+      end
+
       existing = PaymentRefund.find_by(idempotency_key: @idempotency_key)
       if existing && existing.payment_id != @payment.id
         raise InvalidRefund, "chave de idempotência pertence a outro pagamento"
@@ -70,6 +83,12 @@ module Payments
 
     private
 
+    def settlement_attributes
+      return {} unless @manual
+
+      { settlement: "manual", manual_reference: @manual_reference, recorded_by: @recorded_by }
+    end
+
     def notify_seller_of_refund
       order = @payment.order
       fully_refunded = @payment.refunded?
@@ -119,6 +138,7 @@ module Payments
 
         seller_order = @payment.order.seller_order
         @payment.payment_refunds.create!(
+          **settlement_attributes,
           idempotency_key: @idempotency_key,
           amount_cents: @amount_cents,
           application_fee_amount_cents: seller_order.platform_fee_refund_for(

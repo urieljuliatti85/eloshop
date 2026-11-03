@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_03_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_03_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -290,10 +290,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_150000) do
     t.integer "application_fee_amount_cents", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "settlement", default: "gateway", null: false
+    t.text "manual_reference"
+    t.bigint "recorded_by_id"
     t.index ["idempotency_key"], name: "index_payment_refunds_on_idempotency_key", unique: true
     t.index ["payment_id"], name: "index_payment_refunds_on_payment_id"
+    t.index ["recorded_by_id"], name: "index_payment_refunds_on_recorded_by_id"
     t.check_constraint "amount_cents > 0", name: "payment_refunds_amount_check"
     t.check_constraint "application_fee_amount_cents >= 0 AND application_fee_amount_cents <= amount_cents", name: "payment_refunds_fee_check"
+    t.check_constraint "settlement::text <> 'manual'::text OR recorded_by_id IS NOT NULL AND char_length(btrim(manual_reference)) >= 3 AND char_length(btrim(manual_reference)) <= 500", name: "payment_refunds_manual_proof_check"
+    t.check_constraint "settlement::text = ANY (ARRAY['gateway'::character varying, 'manual'::character varying]::text[])", name: "payment_refunds_settlement_check"
     t.check_constraint "status::text = ANY (ARRAY['processing'::character varying::text, 'approved'::character varying::text, 'failed'::character varying::text])", name: "payment_refunds_status_check"
   end
 
@@ -674,6 +680,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_150000) do
   add_foreign_key "orders", "customers"
   add_foreign_key "payment_events", "payments"
   add_foreign_key "payment_refunds", "payments", on_delete: :cascade
+  add_foreign_key "payment_refunds", "users", column: "recorded_by_id"
   add_foreign_key "payments", "orders"
   add_foreign_key "personalization_options", "products"
   add_foreign_key "product_materials", "materials"
