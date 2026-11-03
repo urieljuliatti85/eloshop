@@ -5,7 +5,7 @@ module Admin
     def create
       if PlatformSetting.open_sales!
         AnnounceSalesOpeningJob.perform_later
-        redirect_to admin_root_path, notice: "Vendas abertas. Os artesãos aprovados vão receber o aviso por e-mail."
+        redirect_to admin_root_path, notice: "Vendas abertas. Os ateliês aprovados e os da vitrine vão receber o aviso por e-mail."
       else
         redirect_to admin_root_path, alert: "As vendas já estavam abertas."
       end
