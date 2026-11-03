@@ -19,6 +19,11 @@
                 <span class="rounded-full px-3 py-1 text-xs font-semibold <%= order.confirmed? ? "bg-green-100 text-green-800" : order.cancelled? ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800" %>">
                   <%= t("orders.statuses.#{order.status}") %>
                 </span>
+                <% if (open_kinds = @open_return_kinds[order.id]) %>
+                  <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 ring-1 ring-amber-200">
+                    <%= open_kinds.include?("withdrawal") ? "Desistência solicitada" : "Solicitação aberta" %>
+                  </span>
+                <% end %>
               </div>
               <p class="mt-2 text-sm text-ink-muted">
                 <%= l(order.created_at.to_date, format: :short) %> ·

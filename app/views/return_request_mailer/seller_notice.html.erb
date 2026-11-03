@@ -1,0 +1,19 @@
+<p>Olá, <%= @return_request.seller_order.seller.name %>!</p>
+
+<p><%= @message %></p>
+
+<p>
+  Pedido: <strong>#<%= @order.id %></strong><br>
+  Solicitação: <strong><%= @return_request.protocol %></strong> · <%= @return_request.kind_label %><br>
+  Situação: <%= @return_request.status_label %>
+</p>
+
+<p>Quem responde e decide é a EloShop. Se precisarmos de alguma informação sua, entramos em contato.</p>
+
+<p>
+  <a href="<%= seller_order_url(@order) %>" style="display: inline-block; background-color: #c2410c; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+    Ver o pedido no painel
+  </a>
+</p>
+
+<p>Equipe EloShop</p>

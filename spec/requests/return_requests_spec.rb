@@ -46,6 +46,49 @@ RSpec.describe "Return requests (desistência pelo site)", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    it "after withdrawing, shows the open withdrawal instead of offering to withdraw again" do
+      withdrawal = ReturnRequests::Open.new(seller_order: order.seller_order, customer: customer, kind: :withdrawal).call.return_request
+      sign_in_customer
+
+      get order_path(order)
+
+      expect(response.body).to include("Você pediu para desistir desta compra", withdrawal.protocol, order_return_request_path(order, withdrawal))
+      expect(response.body).not_to include(new_order_return_request_path(order))
+
+      get new_order_return_request_path(order)
+      expect(response).to redirect_to(order_return_request_path(order, withdrawal))
+    end
+
+    it "offers only the kinds that are not open yet" do
+      ReturnRequests::Open.new(seller_order: order.seller_order, customer: customer, kind: :delivery_issue).call
+      sign_in_customer
+
+      get order_path(order)
+      expect(response.body).to include(new_order_return_request_path(order))
+
+      get new_order_return_request_path(order)
+      # Só o formulário: o sino do topo também mostra a notificação da solicitação aberta.
+      choices = Nokogiri::HTML(response.body).css("form fieldset").text
+      expect(choices).to include("Desistência da compra", "Problema com o produto")
+      expect(choices).not_to include("Problema na entrega")
+    end
+
+    it "labels the order in the list while a request is open" do
+      other_order = paid_order_for(customer)
+      ReturnRequests::Open.new(seller_order: order.seller_order, customer: customer, kind: :withdrawal).call
+      ReturnRequests::Open.new(seller_order: other_order.seller_order, customer: customer, kind: :delivery_issue).call
+      untouched = paid_order_for(customer)
+      sign_in_customer
+
+      get orders_path
+
+      cards = Nokogiri::HTML(response.body).css("article")
+      card_for = ->(o) { cards.find { |card| card.text.include?("Pedido ##{o.id}") }.text }
+      expect(card_for.call(order)).to include("Desistência solicitada")
+      expect(card_for.call(other_order)).to include("Solicitação aberta")
+      expect(card_for.call(untouched)).not_to include("Desistência solicitada", "Solicitação aberta")
+    end
+
     it "keeps cancelling an unpaid order" do
       order.update!(status: :pending)
       order.seller_order.update!(status: :pending)

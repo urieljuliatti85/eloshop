@@ -1,7 +1,7 @@
 module SellerPortal
   class OrdersController < BaseController
     def index
-      @seller_orders = current_seller.seller_orders.includes(:shipment, order: :customer).order(created_at: :desc)
+      @seller_orders = current_seller.seller_orders.includes(:shipment, :open_return_requests, order: :customer).order(created_at: :desc)
     end
 
     def show

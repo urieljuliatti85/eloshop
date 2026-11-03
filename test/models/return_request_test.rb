@@ -86,6 +86,25 @@ class ReturnRequestTest < ActiveSupport::TestCase
     end
   end
 
+  test "an open kind leaves the list of kinds the buyer can still open, and an open withdrawal empties it" do
+    assert_equal ReturnRequest.kinds.keys, ReturnRequest.available_kinds(@seller_order)
+
+    open_request(kind: :delivery_issue)
+    assert_equal %w[withdrawal product_issue], ReturnRequest.available_kinds(@seller_order)
+
+    withdrawal = open_request(kind: :withdrawal)
+    assert_empty ReturnRequest.available_kinds(@seller_order)
+
+    withdrawal.record_update!(author: @admin, new_status: "closed")
+    assert_equal %w[withdrawal product_issue], ReturnRequest.available_kinds(@seller_order)
+  end
+
+  test "an unpaid order has no kinds available" do
+    @seller_order.update!(status: :pending)
+
+    assert_empty ReturnRequest.available_kinds(@seller_order)
+  end
+
   test "the withdrawal window is informative and unknown without a delivery date" do
     return_request = open_request(kind: :withdrawal)
     assert_nil return_request.within_withdrawal_window?

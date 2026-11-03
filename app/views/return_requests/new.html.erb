@@ -18,7 +18,7 @@
     <fieldset>
       <legend class="text-sm font-semibold text-ink">Motivo</legend>
       <div class="mt-3 space-y-3">
-        <% ReturnRequest::KIND_LABELS.each do |kind, label| %>
+        <% ReturnRequest::KIND_LABELS.slice(*@available_kinds).each do |kind, label| %>
           <label class="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-4 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50">
             <%= form.radio_button :kind, kind, required: true, class: "mt-1 size-4 shrink-0 accent-brand-600" %>
             <span>

@@ -19,6 +19,14 @@ class ReturnRequestsController < StorefrontController
       return
     end
 
+    @available_kinds = ReturnRequest.available_kinds(@seller_order)
+    if @available_kinds.empty?
+      open_request = @seller_order.return_requests.open.order(:created_at).first
+      redirect_to order_return_request_path(@order, open_request),
+        notice: "Você já tem uma solicitação aberta neste pedido. Acompanhe por aqui ou responda o e-mail do protocolo."
+      return
+    end
+
     @return_request = @seller_order.return_requests.new(kind: params[:kind])
   end
 
@@ -37,10 +45,12 @@ class ReturnRequestsController < StorefrontController
     end
     redirect_to order_return_request_path(@order, result.return_request), notice: notice
   rescue ReturnRequests::Open::NotEligible => e
+    @available_kinds = ReturnRequest.available_kinds(@seller_order).presence || ReturnRequest.kinds.keys
     @return_request = @seller_order.return_requests.new(return_request_params.slice(:kind, :description))
     flash.now[:alert] = e.message.upcase_first
     render :new, status: :unprocessable_entity
   rescue ActiveRecord::RecordInvalid => e
+    @available_kinds = ReturnRequest.available_kinds(@seller_order).presence || ReturnRequest.kinds.keys
     @return_request = @seller_order.return_requests.new(return_request_params.slice(:kind, :description))
     flash.now[:alert] = e.record.errors.full_messages.to_sentence
     render :new, status: :unprocessable_entity

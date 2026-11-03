@@ -1,0 +1,13 @@
+Olá, <%= @return_request.seller_order.seller.name %>!
+
+<%= @message %>
+
+Pedido: #<%= @order.id %>
+Solicitação: <%= @return_request.protocol %> · <%= @return_request.kind_label %>
+Situação: <%= @return_request.status_label %>
+
+Quem responde e decide é a EloShop. Se precisarmos de alguma informação sua, entramos em contato.
+
+Ver o pedido no painel: <%= seller_order_url(@order) %>
+
+Equipe EloShop

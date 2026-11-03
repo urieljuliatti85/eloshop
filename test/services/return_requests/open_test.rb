@@ -26,14 +26,18 @@ class ReturnRequests::OpenTest < ActiveSupport::TestCase
     assert_equal return_request.protocol, event.metadata["protocol"]
   end
 
-  test "e-mails the protocol to the buyer and notifies admins and the atelier" do
-    assert_enqueued_emails 1 do
-      assert_difference -> { Notification.where(kind: "return_request_opened").count }, User.admin.count + 1 do
+  test "e-mails the buyer and the atelier and notifies the buyer, admins and the atelier" do
+    assert_enqueued_emails 2 do
+      assert_difference -> { Notification.where(kind: "return_request_opened").count }, User.admin.count + 2 do
         open(kind: :withdrawal)
       end
     end
     seller_notification = Notification.find_by!(recipient: @seller_order.seller, kind: "return_request_opened")
     assert_match "Não envie a peça", seller_notification.body
+    buyer_notification = Notification.find_by!(recipient: @customer, kind: "return_request_opened")
+    return_request = @seller_order.return_requests.sole
+    assert_match return_request.protocol, buyer_notification.title
+    assert_equal "/orders/#{@seller_order.order.id}/solicitacoes/#{return_request.id}", buyer_notification.url
   end
 
   test "a broken queue never takes the protocol away from the buyer: the request stays and the failure is reported" do
@@ -63,10 +67,10 @@ class ReturnRequests::OpenTest < ActiveSupport::TestCase
     assert_equal User.admin.count, Notification.where(recipient_type: "User", kind: "return_request_opened").where.not(recipient_id: @seller_order.seller.users.select(:id)).count
   end
 
-  test "a message added to an open request notifies the admins" do
+  test "a message added to an open request notifies the admins and the atelier" do
     return_request = open(kind: :withdrawal).return_request
 
-    assert_difference -> { Notification.where(kind: "return_request_updated").count }, User.admin.count do
+    assert_difference -> { Notification.where(kind: "return_request_updated").count }, User.admin.count + 1 do
       result = open(kind: :withdrawal, description: "Informação nova.")
       assert result.appended
     end
@@ -93,7 +97,8 @@ class ReturnRequests::OpenTest < ActiveSupport::TestCase
     first = open(kind: :withdrawal).return_request
 
     assert_no_difference -> { ReturnRequest.count } do
-      assert_no_enqueued_emails do
+      # Só o e-mail do ateliê: o comprador é quem escreveu.
+      assert_enqueued_emails 1 do
         result = open(kind: :withdrawal, description: "Também a outra peça.")
         refute result.created
         assert_equal first, result.return_request

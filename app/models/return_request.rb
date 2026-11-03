@@ -64,6 +64,20 @@ class ReturnRequest < ApplicationRecord
     seller_order.status.in?(ELIGIBLE_SELLER_ORDER_STATUSES)
   end
 
+  # Motivos que o comprador ainda pode abrir pela tela. Um motivo já aberto
+  # sai da lista (o atendimento segue na solicitação dele), e a desistência
+  # aberta encerra a lista: enquanto o comprador desiste, os outros motivos
+  # não fazem sentido. O servidor continua aceitando um envio repetido
+  # (aba antiga, duplo clique), que vira mensagem na solicitação aberta.
+  def self.available_kinds(seller_order)
+    return [] unless eligible?(seller_order)
+
+    open_kinds = seller_order.return_requests.open.pluck(:kind)
+    return [] if open_kinds.include?("withdrawal")
+
+    kinds.keys - open_kinds
+  end
+
   # Segunda a sexta, sem feriados (decisão de 2026-10-31). Aberta no sábado ou
   # no domingo, conta a partir da segunda.
   def self.respond_by_for(time)

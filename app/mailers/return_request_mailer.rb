@@ -11,6 +11,17 @@ class ReturnRequestMailer < ApplicationMailer
     )
   end
 
+  # Cópia por e-mail do aviso do painel do ateliê, em toda movimentação da
+  # solicitação (ReturnRequests::Notifications). O ateliê não decide: o texto
+  # diz o que aconteceu e, na desistência antes do envio, que não envie.
+  def seller_notice(return_request, recipient, title, message)
+    @return_request = return_request
+    @order = return_request.order
+    @message = message
+
+    mail(to: recipient, subject: "#{title} — EloShop")
+  end
+
   def updated(return_request_update)
     @update = return_request_update
     @return_request = return_request_update.return_request

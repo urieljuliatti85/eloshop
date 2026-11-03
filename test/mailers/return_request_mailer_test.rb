@@ -32,4 +32,16 @@ class ReturnRequestMailerTest < ActionMailer::TestCase
       assert_match "Reembolso solicitado.", body
     end
   end
+
+  test "seller_notice tells the atelier what happened and links to the order in the panel" do
+    email = ReturnRequestMailer.seller_notice(@return_request, "atelie@example.com", "Desistência no pedido", "Não envie a peça.")
+
+    assert_equal [ "atelie@example.com" ], email.to
+    assert_equal "Desistência no pedido — EloShop", email.subject
+    [ email.html_part.body.to_s, email.text_part.body.to_s ].each do |body|
+      assert_match "Não envie a peça.", body
+      assert_match @return_request.protocol, body
+      assert_match "/painel/orders/#{@return_request.order.id}", body
+    end
+  end
 end

@@ -91,7 +91,13 @@
 
     <%# Pedido pago não se cancela por aqui (Orders::Cancel recusa e manda
         usar reembolso): o caminho é a solicitação com protocolo (ADR 008). %>
-    <% if ReturnRequest.eligible?(@seller_order) %>
+    <% open_withdrawal = @seller_order.return_requests.open.kind_withdrawal.first %>
+    <% if open_withdrawal %>
+      <%= link_to order_return_request_path(@order, open_withdrawal),
+            class: "inline-flex min-h-11 items-center rounded-full bg-amber-50 px-6 text-sm font-semibold text-amber-900 hover:bg-amber-100" do %>
+        Você pediu para desistir desta compra (<span class="whitespace-nowrap"><%= open_withdrawal.protocol %></span>) · acompanhar
+      <% end %>
+    <% elsif ReturnRequest.available_kinds(@seller_order).any? %>
       <%= link_to "Desistir da compra ou relatar um problema", new_order_return_request_path(@order),
             class: "inline-flex min-h-11 items-center rounded-full border border-red-200 px-6 text-sm font-semibold text-red-700 hover:bg-red-50" %>
     <% elsif @order.pending? %>

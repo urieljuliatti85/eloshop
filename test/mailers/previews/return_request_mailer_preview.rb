@@ -25,6 +25,15 @@ class ReturnRequestMailerPreview < ActionMailer::Preview
     ReturnRequestMailer.updated(update)
   end
 
+  # Preview this email at http://localhost:3000/rails/mailers/return_request_mailer/seller_notice
+  def seller_notice
+    request = return_request
+    ReturnRequestMailer.seller_notice(
+      request, "atelie@eloshop.test", "Desistência no pedido ##{request.order.id}",
+      "O comprador pediu para desistir do pedido ##{request.order.id} (#{request.protocol}). Não envie a peça: a EloShop vai responder ao comprador."
+    )
+  end
+
   private
 
   def return_request

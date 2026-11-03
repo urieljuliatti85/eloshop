@@ -12,6 +12,7 @@ module AdminHelper
   }.freeze
 
   ADMIN_STATUS_TONES = {
+    "return_request" => "admin-badge--warning", "overdue" => "admin-badge--danger",
     "pending" => "admin-badge--warning", "authorized" => "admin-badge--warning",
     "draft" => "admin-badge--neutral", "confirmed" => "admin-badge--success",
     "paid" => "admin-badge--success", "delivered" => "admin-badge--success",

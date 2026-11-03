@@ -90,6 +90,16 @@ RSpec.describe "Admin return requests", type: :request do
     expect(response.body).not_to include("<script>alert", "onerror=")
   end
 
+  it "labels the order in the admin order list while a request is open" do
+    return_request
+    sign_in_admin
+
+    get admin_orders_path
+
+    row = Nokogiri::HTML(response.body).css("tbody tr").find { |tr| tr.text.include?("##{seller_order.order.id}") }
+    expect(row.text).to include("Desistência solicitada")
+  end
+
   it "shows the open request on the order page, pointing to it" do
     return_request
     sign_in_admin
