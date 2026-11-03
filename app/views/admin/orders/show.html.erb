@@ -163,6 +163,16 @@
           <% if payment.paid? || payment.partially_refunded? %>
             <%= form_with url: refund_admin_order_path(@order), method: :post, class: "mt-5 space-y-3 border-t border-slate-100 pt-5" do |form| %>
               <%= form.hidden_field :idempotency_key, value: SecureRandom.uuid %>
+              <% if payment.chargeback_reported? %>
+                <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="alert">
+                  <p class="font-semibold">O comprador contestou este pagamento no cartão (chargeback).</p>
+                  <p class="mt-1">Se a contestação for aceita, o dinheiro já volta ao comprador por ela. Confira a disputa no Mercado Pago antes de reembolsar.</p>
+                  <label class="mt-2 flex items-start gap-2">
+                    <%= form.check_box :chargeback_acknowledged, { class: "mt-0.5" }, "1", "0" %>
+                    <span>Conferi a disputa e confirmo o reembolso mesmo assim.</span>
+                  </label>
+                </div>
+              <% end %>
               <%= form.label :amount, "Reembolso (R$)", class: "block text-sm font-semibold text-slate-700" %>
               <%= form.text_field :amount, inputmode: "decimal", placeholder: number_with_precision(payment.remaining_refundable_cents.fdiv(100), precision: 2, separator: ","), class: "w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" %>
               <p class="text-xs text-slate-500">Em branco, reembolsa o saldo total de <%= format_price(payment.remaining_refundable_cents) %>.</p>

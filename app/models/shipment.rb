@@ -59,10 +59,22 @@ class Shipment < ApplicationRecord
 
   private
 
+  # Trava o SellerOrder antes do envio, e não só a linha do envio: é o mesmo
+  # lock que Payments::Refund toma ao reservar o valor de um reembolso. Assim
+  # "marcar como enviado" e "reembolsar" ficam serializados — ou o envio
+  # entra primeiro e o reembolso acontece depois de enviado, ou o reembolso
+  # integral reserva o valor primeiro e o envio é recusado. Ordem dos locks:
+  # SellerOrder → Shipment aqui; Payment → SellerOrder no reembolso; nenhum
+  # caminho trava Shipment antes de SellerOrder.
   def transition_to!(new_status, timestamp)
-    with_lock do
+    seller_order.with_lock do
+      lock!
       unless seller_order.confirmed? || seller_order.partially_refunded?
         raise InvalidStatusTransition, "o pagamento precisa estar confirmado antes de atualizar a entrega"
+      end
+
+      if new_status == "shipped" && seller_order.full_refund_in_progress?
+        raise InvalidStatusTransition, "há um reembolso integral em andamento neste pedido; não envie a peça"
       end
 
       unless ALLOWED_STATUS_TRANSITIONS.fetch(status).include?(new_status)

@@ -131,6 +131,25 @@ module Gateways
       raise InsufficientFunds.new(e.message, release_date: release_date_for(payment))
     end
 
+    # Reembolsos que o Mercado Pago tem para o pagamento. O cabeçalho
+    # `X-Render-In-Process-Refunds` faz reembolso em contingência (PIX) aparecer
+    # como `in_process` em vez de sumir da lista — sem ele, a reconciliação
+    # concluiria "não existe" para um reembolso que ainda pode ser aprovado.
+    def refunds_for(payment:)
+      response = get(
+        "/v1/payments/#{payment.external_id}/refunds",
+        access_token: access_token_for(payment.order),
+        headers: { "X-Render-In-Process-Refunds" => "true" }
+      )
+      Array(response).map do |refund|
+        RemoteRefund.new(
+          external_id: refund["id"].to_s,
+          status: refund_status(refund["status"]),
+          amount_cents: (BigDecimal(refund["amount"].to_s) * 100).round.to_i
+        )
+      end
+    end
+
     # Autenticidade via HMAC-SHA256 sobre um manifesto montado com o id do
     # recurso, o x-request-id e o timestamp do próprio cabeçalho x-signature.
     # Comparação timing-safe.
@@ -333,8 +352,9 @@ module Gateways
       nil
     end
 
-    def get(path, access_token:)
+    def get(path, access_token:, headers: {})
       request = Net::HTTP::Get.new(path)
+      headers.each { |key, value| request[key] = value }
       perform(request, access_token: access_token)
     end
 
@@ -366,6 +386,13 @@ module Gateways
       JSON.parse(response.body.to_s)
     rescue JSON::ParserError
       raise RequestFailed, "resposta ilegível do Mercado Pago em #{request.path}"
+    rescue Timeout::Error, SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError => e
+      # Tempo esgotado, conexão recusada ou derrubada: a chamada pode ter
+      # chegado ao Mercado Pago, então é falha ambígua (`RequestFailed`, nunca
+      # `RequestRejected`) — quem chama mantém a tentativa aberta. Sem isso a
+      # exceção de socket escapava crua e o admin via um 500 no reembolso
+      # (QA de 2026-11-03). Mesma lista do Marketplace::MercadoPagoOauth.
+      raise RequestFailed, "sem resposta do Mercado Pago em #{request.path} (#{e.class.name})"
     end
 
     # Permanente, e não mais temporário: foi este log que identificou a causa do

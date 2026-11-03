@@ -73,6 +73,20 @@ class SellerOrder < ApplicationRecord
     production_started_at.present?
   end
 
+  # Um reembolso que, somado ao que já foi devolvido, zera o pagamento e ainda
+  # espera a resposta do Mercado Pago. Enquanto isso o envio fica travado
+  # (ver Shipment#transition_to!): a chamada ao gateway leva segundos, e sem a
+  # trava o ateliê poderia postar a peça de um pedido cujo dinheiro já está
+  # voltando ao comprador. A fonte é o próprio `PaymentRefund` em
+  # `processing`, então a trava some sozinha quando o reembolso é aprovado
+  # (o pedido vira `refunded`) ou recusado (`failed`).
+  def full_refund_in_progress?
+    order.payments.where(status: %w[paid partially_refunded]).any? do |payment|
+      processing_cents = payment.payment_refunds.processing.sum(:amount_cents)
+      processing_cents.positive? && processing_cents >= payment.remaining_refundable_cents
+    end
+  end
+
   # Irreversível de propósito: o marco serve de prova numa disputa, então o
   # vendedor não pode desfazê-lo para reabrir ou fechar o direito do comprador.
   def start_production!

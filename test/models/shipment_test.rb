@@ -33,6 +33,36 @@ class ShipmentTest < ActiveSupport::TestCase
     assert_in_delta Time.current, @shipment.delivered_at, 1.second
   end
 
+  test "refuses to ship while a full refund is still processing, and allows it again once the attempt fails" do
+    payment = paid_payment_for(@seller_order)
+    refund = payment.payment_refunds.create!(idempotency_key: "full-in-flight", amount_cents: payment.amount_cents, application_fee_amount_cents: 0)
+
+    error = assert_raises(Shipment::InvalidStatusTransition) { @shipment.mark_shipped! }
+    assert_match "reembolso integral em andamento", error.message
+    assert_predicate @shipment.reload, :pending?
+
+    refund.update!(status: "failed")
+    @shipment.mark_shipped!
+    assert_predicate @shipment.reload, :shipped?
+  end
+
+  test "a partial refund in progress does not block shipping" do
+    payment = paid_payment_for(@seller_order)
+    payment.payment_refunds.create!(idempotency_key: "partial-in-flight", amount_cents: payment.amount_cents - 1, application_fee_amount_cents: 0)
+
+    @shipment.mark_shipped!
+    assert_predicate @shipment.reload, :shipped?
+  end
+
+  test "a full refund in progress does not block confirming delivery of a shipped order" do
+    payment = paid_payment_for(@seller_order)
+    @shipment.mark_shipped!
+    payment.payment_refunds.create!(idempotency_key: "after-shipping", amount_cents: payment.amount_cents, application_fee_amount_cents: 0)
+
+    @shipment.mark_delivered!
+    assert_predicate @shipment.reload, :delivered?
+  end
+
   test "does not advance delivery before payment confirmation" do
     error = assert_raises(Shipment::InvalidStatusTransition) { @shipment.mark_shipped! }
 
@@ -94,5 +124,14 @@ class ShipmentTest < ActiveSupport::TestCase
     assert_changes -> { @shipment.reload.status }, from: "shipped", to: "delivered" do
       @shipment.mark_delivered!
     end
+  end
+
+  private
+
+  def paid_payment_for(seller_order)
+    seller_order.update!(status: :confirmed)
+    payment = payments(:one)
+    payment.update!(status: "paid")
+    payment
   end
 end

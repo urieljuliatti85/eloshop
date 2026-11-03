@@ -78,6 +78,43 @@ module Payments
       end
     end
 
+    test "tells the seller once when a refund is approved, with the total wording only when it empties the payment" do
+      payment = build_paid_payment
+      seller = payment.order.seller_order.seller
+      refunds = -> { seller.notifications.order_refunded }
+
+      assert_difference(-> { refunds.call.count }, 1) do
+        Refund.new(payment: payment, amount_cents: 500, idempotency_key: "seller-partial").call
+      end
+      assert_equal "Reembolso parcial", refunds.call.order(:id).last.title
+
+      assert_no_difference(-> { refunds.call.count }) do
+        Refund.new(payment: payment, amount_cents: 500, idempotency_key: "seller-partial").call
+      end
+
+      assert_difference(-> { refunds.call.count }, 1) do
+        Refund.new(payment: payment, amount_cents: payment.reload.remaining_refundable_cents, idempotency_key: "seller-total").call
+      end
+      last = refunds.call.order(:id).last
+      assert_equal "Reembolso total", last.title
+      assert_equal "/painel/orders/#{payment.order_id}", last.url
+    end
+
+    test "does not tell the seller while the refund is processing or after a rejection" do
+      payment = build_paid_payment
+      processing = Object.new
+      processing.define_singleton_method(:refund) { |**| Gateways::RefundIntent.new(external_id: "r-p", status: "processing") }
+      rejecting = Object.new
+      rejecting.define_singleton_method(:refund) { |**| raise Gateways::MercadoPago::RequestRejected, "Mercado Pago respondeu 404" }
+
+      assert_no_difference(-> { Notification.order_refunded.count }) do
+        Refund.new(payment: payment, amount_cents: 300, idempotency_key: "seller-processing", gateway: processing).call
+        assert_raises(Gateways::MercadoPago::RequestRejected) do
+          Refund.new(payment: payment, amount_cents: 300, idempotency_key: "seller-rejected", gateway: rejecting).call
+        end
+      end
+    end
+
     test "does not tell the buyer while the gateway still reports the refund as processing" do
       payment = build_paid_payment
       processing = Object.new
@@ -120,6 +157,67 @@ module Payments
 
       retried = Refund.new(payment: payment, amount_cents: payment.amount_cents, idempotency_key: "second-try").call
       assert retried.approved?
+    end
+
+    test "reusing the key of a rejected attempt is refused instead of silently returning the failure" do
+      payment = build_paid_payment
+      rejecting = Object.new
+      rejecting.define_singleton_method(:refund) { |**| raise Gateways::MercadoPago::InsufficientFunds, "sem saldo" }
+
+      assert_raises(Gateways::MercadoPago::InsufficientFunds) do
+        Refund.new(payment: payment, amount_cents: payment.amount_cents, idempotency_key: "attempt-1", gateway: rejecting).call
+      end
+
+      error = assert_raises(Refund::InvalidRefund) do
+        Refund.new(payment: payment, amount_cents: payment.amount_cents, idempotency_key: "attempt-1").call
+      end
+      assert_match "outra chave", error.message
+
+      assert Refund.new(payment: payment, amount_cents: payment.amount_cents, idempotency_key: "attempt-2").call.approved?
+    end
+
+    test "a full refund reserves the amount before calling the gateway, so the seller cannot ship meanwhile" do
+      payment = build_paid_payment
+      shipment = payment.order.seller_order.shipment
+      ship_error = nil
+      gateway = Object.new
+      gateway.define_singleton_method(:refund) do |**|
+        begin
+          shipment.reload.mark_shipped!
+        rescue Shipment::InvalidStatusTransition => e
+          ship_error = e
+        end
+        Gateways::RefundIntent.new(external_id: "mp-full", status: "approved")
+      end
+
+      Refund.new(payment: payment, amount_cents: payment.amount_cents, idempotency_key: "full-before-ship", gateway: gateway).call
+
+      assert_match "reembolso integral em andamento", ship_error&.message.to_s
+      assert shipment.reload.pending?
+      assert payment.order.seller_order.reload.refunded?
+    end
+
+    test "refuses to refund a charged-back payment unless the admin acknowledges the dispute" do
+      payment = build_paid_payment
+      ProcessWebhook.new(event_id: "cb-#{SecureRandom.hex(4)}", external_id: payment.external_id, status: "charged_back").call
+      assert payment.reload.paid?, "o chargeback só sinaliza; o pagamento segue paid"
+
+      assert_no_difference("PaymentRefund.count") do
+        assert_raises(Refund::ChargebackReported) do
+          Refund.new(payment: payment, amount_cents: 500, idempotency_key: "cb-blocked").call
+        end
+      end
+
+      refund = Refund.new(payment: payment, amount_cents: 500, idempotency_key: "cb-acknowledged", chargeback_acknowledged: true).call
+      assert refund.approved?
+    end
+
+    test "a payment without chargeback refunds without any acknowledgement" do
+      payment = build_paid_payment
+      ProcessWebhook.new(event_id: "dec-#{SecureRandom.hex(4)}", external_id: payment.external_id, status: "declined").call
+
+      assert_not payment.reload.chargeback_reported?
+      assert Refund.new(payment: payment, amount_cents: 500, idempotency_key: "no-cb").call.approved?
     end
 
     test "an ambiguous gateway failure keeps the refund processing and the amount reserved" do
