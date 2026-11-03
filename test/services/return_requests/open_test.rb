@@ -40,18 +40,24 @@ class ReturnRequests::OpenTest < ActiveSupport::TestCase
     broken_mail = Object.new
     def broken_mail.deliver_later = raise(ActiveRecord::ConnectionNotEstablished, "fila fora do ar")
 
-    original = ReturnRequestMailer.method(:opened)
-    ReturnRequestMailer.define_singleton_method(:opened) { |*| broken_mail }
-    begin
-      result = nil
-      assert_error_reported(ActiveRecord::ConnectionNotEstablished) do
-        result = open(kind: :withdrawal)
+    result = nil
+    captured = nil
+    with_opened_mail(broken_mail) do
+      captured = capture_sentry_exceptions do
+        assert_error_reported(ActiveRecord::ConnectionNotEstablished) do
+          result = open(kind: :withdrawal)
+        end
       end
-      assert result.created
-      assert_predicate result.return_request, :persisted?
-    ensure
-      ReturnRequestMailer.define_singleton_method(:opened, original)
     end
+
+    assert result.created
+    assert_predicate result.return_request, :persisted?
+    # O sentry-rails não ouve o Rails.error: a falha precisa ir ao Sentry
+    # explicitamente, dizendo qual solicitação ficou sem e-mail.
+    error, options = captured.sole
+    assert_kind_of ActiveRecord::ConnectionNotEstablished, error
+    assert_equal result.return_request.id, options.dig(:tags, :return_request_id)
+    assert_equal result.return_request.protocol, options.dig(:tags, :protocol)
     # Os outros avisos não dependem do e-mail.
     assert Notification.exists?(recipient: @seller_order.seller, kind: "return_request_opened")
     assert_equal User.admin.count, Notification.where(recipient_type: "User", kind: "return_request_opened").where.not(recipient_id: @seller_order.seller.users.select(:id)).count
@@ -116,6 +122,25 @@ class ReturnRequests::OpenTest < ActiveSupport::TestCase
   end
 
   private
+
+  # Minitest 6 não traz mais `stub`; troca o método só durante o bloco.
+  def with_opened_mail(mail)
+    original = ReturnRequestMailer.method(:opened)
+    ReturnRequestMailer.define_singleton_method(:opened) { |*| mail }
+    yield
+  ensure
+    ReturnRequestMailer.define_singleton_method(:opened, original)
+  end
+
+  def capture_sentry_exceptions
+    captured = []
+    original = Sentry.method(:capture_exception)
+    Sentry.define_singleton_method(:capture_exception) { |error, **options| captured << [ error, options ] }
+    yield
+    captured
+  ensure
+    Sentry.define_singleton_method(:capture_exception, original)
+  end
 
   def open(kind:, description: nil)
     ReturnRequests::Open.new(seller_order: @seller_order, customer: @customer, kind: kind, description: description).call

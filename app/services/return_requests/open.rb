@@ -74,9 +74,8 @@ module ReturnRequests
       Result.new(return_request: return_request, created: true, appended: false)
     end
 
-    # Depois do commit, e cada aviso por conta própria: a falha de um (fila
-    # fora do ar, erro ao gravar a notificação) vai para o Sentry e não
-    # derruba os outros nem a resposta. A confirmação legal é o protocolo na
+    # Depois do commit, e cada aviso por conta própria (ver
+    # ReturnRequests.deliver_safely): a confirmação legal é o protocolo na
     # tela (ADR 008, regra 10) — ela não pode depender da fila.
     def notify_opened(return_request)
       order = @seller_order.order
@@ -115,7 +114,7 @@ module ReturnRequests
     end
 
     def deliver_safely(return_request, &block)
-      Rails.error.handle(context: { return_request_id: return_request.id }, &block)
+      ReturnRequests.deliver_safely(return_request, &block)
     end
 
     def url_helpers

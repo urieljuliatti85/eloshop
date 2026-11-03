@@ -55,15 +55,13 @@ module Admin
       params.fetch(:return_request_update, {}).permit(:body, :status)
     end
 
-    # Fora da transação de record_update!, e cada aviso por conta própria: a
-    # falha de um vai para o Sentry sem derrubar os outros nem a resposta — o
-    # atendimento já está gravado.
+    # Fora da transação de record_update!, e cada aviso por conta própria (ver
+    # ReturnRequests.deliver_safely): o atendimento já está gravado.
     def notify(return_request, update)
       order = return_request.order
-      context = { return_request_id: return_request.id }
 
-      Rails.error.handle(context: context) { ReturnRequestMailer.updated(update).deliver_later }
-      Rails.error.handle(context: context) do
+      ReturnRequests.deliver_safely(return_request) { ReturnRequestMailer.updated(update).deliver_later }
+      ReturnRequests.deliver_safely(return_request) do
         Notification.create!(
           recipient: order.customer,
           kind: :return_request_updated,
@@ -75,7 +73,7 @@ module Admin
       return unless update.status_change? && !return_request.open?
 
       # O fim de uma desistência destrava o envio no painel (decisão A).
-      Rails.error.handle(context: context) do
+      ReturnRequests.deliver_safely(return_request) do
         Notification.create!(
           recipient: return_request.seller_order.seller,
           kind: :return_request_updated,

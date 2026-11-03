@@ -97,6 +97,9 @@ RSpec.describe "Admin return requests", type: :request do
     get admin_order_path(seller_order.order)
 
     expect(response.body).to include("Solicitação aberta", admin_return_request_path(return_request))
+    # A trilha do pedido ganha o evento, com rótulo traduzido.
+    expect(response.body).to include("Solicitação pós-venda aberta")
+    expect(response.body).not_to include("translation_missing")
   end
 
   private
