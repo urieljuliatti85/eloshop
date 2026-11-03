@@ -24,6 +24,7 @@ module Admin
       @pending_reviews_count = Review.pending.count
 
       load_seller_and_revenue_overview
+      load_sales_opening_audience
 
       @funnel_snapshot = ::Analytics::FunnelReport.new.snapshot
       load_google_analytics
@@ -45,6 +46,17 @@ module Admin
       @platform_fee_cents = SellerOrder.joins(:order)
         .where(orders: { status: %w[confirmed partially_refunded refunded] })
         .sum("platform_fee_cents - platform_fee_refunded_cents")
+    end
+
+    # Quem o botão "Abrir vendas" avisa (AnnounceSalesOpeningJob percorre
+    # `Seller.publicly_listed`): aprovados e pendentes liberados na vitrine.
+    # Só interessa enquanto as vendas estão fechadas.
+    def load_sales_opening_audience
+      return if PlatformSetting.sales_open?
+
+      counts = Seller.publicly_listed.group(:status).count
+      @sales_opening_approved_count = counts.fetch("approved", 0)
+      @sales_opening_showcased_count = counts.fetch("pending", 0)
     end
 
     def load_google_analytics

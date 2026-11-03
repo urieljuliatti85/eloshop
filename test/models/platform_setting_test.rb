@@ -31,7 +31,7 @@ class PlatformSettingTest < ActiveSupport::TestCase
   test "the pre-launch notice says ready only when every step is done" do
     assert_match "Sua loja está pronta.", PlatformSetting.pre_launch_notice(ready: true)
     assert_match "Sua loja está quase pronta", PlatformSetting.pre_launch_notice(ready: false)
-    assert_match "meados de novembro de 2026", PlatformSetting.pre_launch_notice(ready: false)
+    assert_match "As vendas abrem em breve e avisaremos por e-mail.", PlatformSetting.pre_launch_notice(ready: false)
   end
 
   test "the database allows a single row" do

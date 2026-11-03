@@ -23,7 +23,7 @@ RSpec.describe "Seller registrations", type: :request do
 
     get new_seller_registration_path
 
-    expect(response.body).to include("Pré-cadastro aberto", "Monte sua loja agora e comece a vender na abertura.", "meados de novembro de 2026", "Começar meu cadastro")
+    expect(response.body).to include("Pré-cadastro aberto", "Monte sua loja agora e comece a vender na abertura.", "As vendas da EloShop abrem em breve.", "Começar meu cadastro")
   end
 
   it "drops the pre-registration invitation once sales are open" do

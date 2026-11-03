@@ -5,7 +5,7 @@ class PlatformSetting < ApplicationRecord
   # Aviso ao artesão durante o pré-cadastro, no painel e no e-mail de
   # aprovação: "pronta" quando todos os primeiros passos estão feitos
   # (`Seller#setup_steps`). A data é promessa do negócio — mude aqui se mudar.
-  SALES_OPENING_PROMISE = "As vendas abrem a partir de meados de novembro de 2026 e avisaremos por e-mail.".freeze
+  SALES_OPENING_PROMISE = "As vendas abrem em breve e avisaremos por e-mail.".freeze
   PRE_LAUNCH_READY_NOTICE = "Sua loja está pronta. #{SALES_OPENING_PROMISE}".freeze
   PRE_LAUNCH_INCOMPLETE_NOTICE = "Sua loja está quase pronta, siga os passos, integre com o Mercado Pago e adicione produtos. #{SALES_OPENING_PROMISE}".freeze
 
