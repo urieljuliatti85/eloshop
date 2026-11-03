@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_03_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_03_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -442,6 +442,53 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_160000) do
     t.check_constraint "stock_quantity >= 0", name: "products_stock_quantity_check"
   end
 
+  create_table "return_request_items", force: :cascade do |t|
+    t.bigint "return_request_id", null: false
+    t.bigint "order_item_id", null: false
+    t.integer "quantity", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_item_id"], name: "index_return_request_items_on_order_item_id"
+    t.index ["return_request_id", "order_item_id"], name: "idx_on_return_request_id_order_item_id_e928f5b641", unique: true
+    t.index ["return_request_id"], name: "index_return_request_items_on_return_request_id"
+    t.check_constraint "quantity > 0", name: "return_request_items_quantity_check"
+  end
+
+  create_table "return_request_updates", force: :cascade do |t|
+    t.bigint "return_request_id", null: false
+    t.string "author_type", null: false
+    t.bigint "author_id", null: false
+    t.text "body"
+    t.string "from_status"
+    t.string "to_status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_type", "author_id"], name: "index_return_request_updates_on_author"
+    t.index ["return_request_id"], name: "index_return_request_updates_on_return_request_id"
+    t.check_constraint "author_type::text = ANY (ARRAY['Customer'::character varying, 'User'::character varying]::text[])", name: "return_request_updates_author_type_check"
+    t.check_constraint "body IS NULL OR char_length(body) <= 2000", name: "return_request_updates_body_length_check"
+    t.check_constraint "char_length(btrim(COALESCE(body, ''::text))) >= 1 OR to_status IS NOT NULL", name: "return_request_updates_content_check"
+  end
+
+  create_table "return_requests", force: :cascade do |t|
+    t.bigint "seller_order_id", null: false
+    t.string "kind", null: false
+    t.string "status", default: "received", null: false
+    t.text "description"
+    t.date "respond_by", null: false
+    t.datetime "resolved_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.virtual "protocol", type: :string, as: "((('ELO-'::text || ((EXTRACT(year FROM created_at))::integer)::text) || '-'::text) || lpad((id)::text, 6, '0'::text))", stored: true
+    t.index ["protocol"], name: "index_return_requests_on_protocol", unique: true
+    t.index ["seller_order_id", "kind"], name: "index_return_requests_one_open_per_kind", unique: true, where: "((status)::text = ANY ((ARRAY['received'::character varying, 'in_progress'::character varying, 'awaiting_return'::character varying])::text[]))"
+    t.index ["seller_order_id"], name: "index_return_requests_on_seller_order_id"
+    t.index ["status", "respond_by"], name: "index_return_requests_on_status_and_respond_by"
+    t.check_constraint "description IS NULL OR char_length(description) <= 2000", name: "return_requests_description_length_check"
+    t.check_constraint "kind::text = ANY (ARRAY['withdrawal'::character varying, 'product_issue'::character varying, 'delivery_issue'::character varying]::text[])", name: "return_requests_kind_check"
+    t.check_constraint "status::text = ANY (ARRAY['received'::character varying, 'in_progress'::character varying, 'awaiting_return'::character varying, 'resolved'::character varying, 'closed'::character varying]::text[])", name: "return_requests_status_check"
+  end
+
   create_table "reviews", force: :cascade do |t|
     t.bigint "customer_id", null: false
     t.bigint "product_id", null: false
@@ -692,6 +739,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_160000) do
   add_foreign_key "product_variants", "products"
   add_foreign_key "products", "categories"
   add_foreign_key "products", "sellers"
+  add_foreign_key "return_request_items", "order_items"
+  add_foreign_key "return_request_items", "return_requests"
+  add_foreign_key "return_request_updates", "return_requests"
+  add_foreign_key "return_requests", "seller_orders"
   add_foreign_key "reviews", "customers"
   add_foreign_key "reviews", "products"
   add_foreign_key "seller_orders", "orders", on_delete: :cascade

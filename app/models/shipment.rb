@@ -77,6 +77,14 @@ class Shipment < ApplicationRecord
         raise InvalidStatusTransition, "há um reembolso integral em andamento neste pedido; não envie a peça"
       end
 
+      # O comprador desistiu antes do envio (ADR 008, decisão A): postar agora
+      # criaria um frete de ida e volta. Libera quando a EloShop fecha a
+      # solicitação (ex.: o comprador voltou atrás).
+      if new_status == "shipped" && (withdrawal = seller_order.return_requests.open.kind_withdrawal.first)
+        raise InvalidStatusTransition,
+          "o comprador pediu para desistir da compra (#{withdrawal.protocol}); não envie a peça. A EloShop vai responder e avisar se o envio voltar a valer"
+      end
+
       unless ALLOWED_STATUS_TRANSITIONS.fetch(status).include?(new_status)
         raise InvalidStatusTransition, "não é possível transicionar a entrega de #{status} para #{new_status}"
       end

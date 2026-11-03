@@ -88,6 +88,9 @@ Rails.application.routes.draw do
       end
     end
 
+    # Solicitações pós-venda (ADR 008): fila com prazo, atendimento e status.
+    resources :return_requests, only: %i[index show update], path: "solicitacoes"
+
     resources :notifications, only: %i[index] do
       member { patch :mark_as_read }
     end
@@ -247,6 +250,8 @@ Rails.application.routes.draw do
       patch :deliver
     end
     resources :messages, only: %i[index create], controller: "order_messages"
+    # Desistência ou problema pelo site, com protocolo (ADR 008, Decreto 7.962).
+    resources :return_requests, only: %i[new create show], path: "solicitacoes"
     resource :payment, only: %i[new create] do
       get :status
     end

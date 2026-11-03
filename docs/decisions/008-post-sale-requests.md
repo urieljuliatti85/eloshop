@@ -137,11 +137,12 @@ reembolso estiver em `processing`.
    `RequestRejected` em `call`, o `settle` com status não aprovado e a
    desistência por tempo em `ReconcileRefunds`, que não passa pelo `settle`);
    um status próprio ficaria preso. Só a aprovação gera efeito na solicitação.
-6. **Protocolo vindo de uma sequence do Postgres** (`ELO-2026-000123`), como
-   `DEFAULT` da coluna (`nextval`), o que mantém `protocol` `NOT NULL` num
-   passo só; nunca `MAX + 1`, que disputa sob concorrência e daria erro ao
-   comprador na confirmação imediata. A numeração não reinicia por ano.
-   (Derivar do `id` num segundo `UPDATE` exigiria a coluna anulável.)
+6. **Protocolo gerado pelo banco a partir do `id`** (`ELO-2026-000123`):
+   coluna gerada (`stored`) com o ano de `created_at` e o `id`, `NOT NULL` e
+   única num passo só, sem `MAX + 1`, que disputaria sob concorrência e daria
+   erro ao comprador na confirmação imediata. A numeração não reinicia por
+   ano. Usa a sequence do próprio `id` porque o `schema.rb` não exporta uma
+   sequence avulsa para o banco de teste (implementado na Fase 1).
 7. **Fotos por controller próprio**, que autoriza comprador, ateliê (por
    `current_seller`) ou admin e redireciona para uma URL de serviço de curta
    duração (`blob.url`). A rota padrão do Active Storage
@@ -218,7 +219,7 @@ pedido (decisão B sem custo de tela: a Fase 2 só passa a deixar escolher).
 `payment_refunds.return_request_id` fica para a Fase 2.
 
 **Regras de implementação que valem na Fase 1:** 3 (ordem de travas), 4
-(desistência trava o envio), 6 (protocolo por sequence), 8 (fora de
+(desistência trava o envio), 6 (protocolo gerado a partir do `id`), 8 (fora de
 `require_sales_open`, `rate_limit`, escopo por `Current.customer`) e 10
 (confirmação legal é a da tela). As regras 1, 2, 5, 7 e 9 dependem do que fica
 para a Fase 2 e passam a valer junto com ela.

@@ -19,6 +19,21 @@
     <% end %>
   </header>
 
+  <%# A solicitação aberta vem antes do reembolso: é nela que o comprador vê a
+      resposta e o protocolo (ADR 008). %>
+  <% open_return_requests = @order.seller_orders.flat_map { |seller_order| seller_order.return_requests.open.to_a } %>
+  <% if open_return_requests.any? %>
+    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+      <% open_return_requests.each do |return_request| %>
+        <p>
+          Solicitação aberta: <%= link_to return_request.protocol, admin_return_request_path(return_request), class: "admin-link" %>
+          (<%= return_request.kind_label.downcase %>, responder até <%= l(return_request.respond_by, format: :short) %>).
+          Depois de reembolsar aqui, registre o desfecho na solicitação para o comprador ser avisado.
+        </p>
+      <% end %>
+    </div>
+  <% end %>
+
   <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(21rem,0.65fr)]">
     <div class="space-y-6">
       <section class="admin-card overflow-hidden">

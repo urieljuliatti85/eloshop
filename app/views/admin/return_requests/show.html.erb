@@ -1,0 +1,112 @@
+<div class="space-y-8">
+  <header>
+    <%= link_to "← Voltar para solicitações", admin_return_requests_path, class: "admin-link mb-3 inline-block text-sm" %>
+    <p class="admin-section-label mb-2"><%= @return_request.kind_label %></p>
+    <div class="flex flex-wrap items-center gap-3">
+      <h1><%= @return_request.protocol %></h1>
+      <%= admin_status_badge(@return_request.status, label: @return_request.status_label) %>
+      <% if @return_request.overdue? %><%= admin_status_badge("overdue", label: "Atrasada") %><% end %>
+    </div>
+    <p class="mt-2 text-sm text-slate-500">
+      Aberta em <%= l(@return_request.created_at, format: :short) %> · responder até <%= l(@return_request.respond_by, format: :short) %>
+    </p>
+  </header>
+
+  <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(21rem,0.65fr)]">
+    <div class="space-y-6">
+      <section class="admin-card p-5 sm:p-6">
+        <h2>Histórico</h2>
+        <ol class="mt-4 space-y-4">
+          <% @updates.each do |update| %>
+            <li class="rounded-xl border border-slate-200 p-4">
+              <p class="text-sm text-slate-500">
+                <%= update.author_type == "Customer" ? "Comprador" : "EloShop (#{update.author.email_address})" %> · <%= l(update.created_at, format: :short) %>
+                <% if update.status_change? %>
+                  · <span class="font-semibold text-slate-900"><%= ReturnRequest::STATUS_LABELS.fetch(update.to_status) %></span>
+                <% end %>
+              </p>
+              <% if update.body.present? %>
+                <div class="mt-2 text-sm text-slate-800"><%= simple_format(update.body) %></div>
+              <% end %>
+            </li>
+          <% end %>
+        </ol>
+      </section>
+
+      <% if @return_request.open? %>
+        <section class="admin-card p-5 sm:p-6">
+          <h2>Responder ao comprador</h2>
+          <%= form_with scope: :return_request_update, url: admin_return_request_path(@return_request), method: :patch, class: "mt-4 space-y-4" do |form| %>
+            <div>
+              <%= form.label :body, "Resposta (vai por e-mail e aparece na página da solicitação)" %>
+              <%= form.text_area :body, rows: 5, maxlength: 2000, class: "w-full" %>
+            </div>
+            <div>
+              <%= form.label :status, "Situação" %>
+              <%= form.select :status,
+                    [ [ "Manter: #{@return_request.status_label}", "" ] ] +
+                      ReturnRequest::STATUS_TRANSITIONS.fetch(@return_request.status).map { |status| [ ReturnRequest::STATUS_LABELS.fetch(status), status ] },
+                    {}, class: "w-full" %>
+              <% if @return_request.kind_withdrawal? %>
+                <p class="mt-2 text-sm text-slate-500">Enquanto a desistência estiver aberta, o ateliê não consegue marcar o pedido como enviado. Resolver ou encerrar libera o envio.</p>
+              <% end %>
+            </div>
+            <%= form.submit "Salvar e avisar o comprador", class: "admin-button admin-button--primary" %>
+          <% end %>
+        </section>
+      <% end %>
+    </div>
+
+    <aside class="space-y-6">
+      <section class="admin-card p-5 sm:p-6">
+        <h2>Pedido</h2>
+        <dl class="mt-4 space-y-2 text-sm">
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">Pedido</dt><dd><%= link_to "##{@order.id}", admin_order_path(@order), class: "admin-link" %></dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">Comprador</dt><dd><%= @order.customer.name %> · <%= @order.customer.email %></dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">Ateliê</dt><dd><%= @seller_order.seller.name %></dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">Situação do pedido</dt><dd><%= admin_status_badge(@order.status) %></dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">Envio</dt><dd><%= @seller_order.shipment ? admin_status_badge(@seller_order.shipment.status) : "—" %></dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">Produção iniciada</dt><dd><%= @seller_order.production_started? ? l(@seller_order.production_started_at, format: :short) : "Não" %></dd></div>
+          <div class="flex justify-between gap-3">
+            <dt class="text-slate-500">Recebido em</dt>
+            <dd><%= @return_request.delivered_on ? l(@return_request.delivered_on, format: :short) : "Não registrado" %></dd>
+          </div>
+          <% if @return_request.kind_withdrawal? %>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-500">Dentro dos 7 dias</dt>
+              <dd>
+                <%= { true => "Sim", false => "Não", nil => "Sem data de recebimento" }.fetch(@return_request.within_withdrawal_window?) %>
+              </dd>
+            </div>
+            <p class="text-xs text-slate-500">Só informativo: a desistência nunca é recusada por prazo nem por produção.</p>
+          <% end %>
+        </dl>
+      </section>
+
+      <section class="admin-card p-5 sm:p-6">
+        <h2>Itens</h2>
+        <ul class="mt-4 space-y-2 text-sm">
+          <% @items.each do |item| %>
+            <li><%= item.quantity %> × <%= item.order_item.product_name %></li>
+          <% end %>
+        </ul>
+      </section>
+
+      <section class="admin-card p-5 sm:p-6">
+        <h2>Reembolso</h2>
+        <% refunds = @payments.flat_map(&:payment_refunds) %>
+        <% if refunds.any? %>
+          <ul class="mt-4 space-y-2 text-sm">
+            <% refunds.sort_by(&:created_at).each do |refund| %>
+              <li><%= format_price(refund.amount_cents) %> · <%= admin_status_badge(refund.status) %> · <%= l(refund.created_at, format: :short) %></li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="mt-4 text-sm text-slate-500">Nenhum reembolso neste pedido.</p>
+        <% end %>
+        <p class="mt-4 text-sm text-slate-500">O reembolso é feito na tela do pedido; a devolução ao estoque, no cadastro do produto.</p>
+        <%= link_to "Ir para o pedido e reembolsar", admin_order_path(@order), class: "admin-button admin-button--secondary mt-4 inline-flex" %>
+      </section>
+    </aside>
+  </div>
+</div>

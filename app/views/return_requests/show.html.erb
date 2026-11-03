@@ -1,0 +1,38 @@
+<% content_for :title, "Solicitação #{@return_request.protocol}" %>
+
+<div class="mx-auto w-full max-w-2xl">
+  <%= link_to "← Pedido ##{@order.id}", order_path(@order), class: "mb-6 inline-block text-sm font-semibold text-brand-600 hover:underline" %>
+
+  <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="text-sm font-semibold uppercase tracking-wider text-brand-600"><%= @return_request.kind_label %></p>
+      <h1 class="mt-1 text-3xl font-black tracking-tight text-ink">Protocolo <%= @return_request.protocol %></h1>
+      <p class="mt-2 text-sm text-ink-muted">Pedido #<%= @order.id %> · aberta em <%= l(@return_request.created_at, format: :short) %></p>
+    </div>
+    <span class="inline-flex w-fit items-center rounded-full bg-mist-100 px-3 py-1 text-xs font-semibold text-ink"><%= @return_request.status_label %></span>
+  </header>
+
+  <% if @return_request.open? %>
+    <p class="mt-6 rounded-xl bg-mist-100 px-4 py-3 text-sm text-ink">
+      A EloShop responde até <strong><%= l(@return_request.respond_by, format: :short) %></strong>. Você recebe cada atualização por e-mail.
+      Para mandar fotos ou mais detalhes, responda o e-mail do protocolo.
+    </p>
+  <% end %>
+
+  <h2 class="mt-8 font-semibold text-ink">Histórico</h2>
+  <ol class="mt-3 space-y-4">
+    <% @updates.each do |update| %>
+      <li class="rounded-xl border border-gray-200 p-4">
+        <p class="text-sm text-ink-muted">
+          <%= update.author_type == "Customer" ? "Você" : "EloShop" %> · <%= l(update.created_at, format: :short) %>
+          <% if update.status_change? %>
+            · <span class="font-semibold text-ink"><%= ReturnRequest::STATUS_LABELS.fetch(update.to_status) %></span>
+          <% end %>
+        </p>
+        <% if update.body.present? %>
+          <div class="mt-2 text-sm text-ink"><%= simple_format(update.body) %></div>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</div>

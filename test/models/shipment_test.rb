@@ -46,6 +46,36 @@ class ShipmentTest < ActiveSupport::TestCase
     assert_predicate @shipment.reload, :shipped?
   end
 
+  test "refuses to ship while a withdrawal is open, and allows it again once the request is closed" do
+    @seller_order.update!(status: :confirmed)
+    return_request = ReturnRequests::Open.new(seller_order: @seller_order, customer: customers(:one), kind: :withdrawal).call.return_request
+
+    error = assert_raises(Shipment::InvalidStatusTransition) { @shipment.mark_shipped! }
+    assert_match "desistir da compra (#{return_request.protocol})", error.message
+    assert_predicate @shipment.reload, :pending?
+
+    return_request.record_update!(author: users(:one), new_status: "closed")
+    @shipment.mark_shipped!
+    assert_predicate @shipment.reload, :shipped?
+  end
+
+  test "other open requests do not block shipping" do
+    @seller_order.update!(status: :confirmed)
+    ReturnRequests::Open.new(seller_order: @seller_order, customer: customers(:one), kind: :delivery_issue).call
+
+    @shipment.mark_shipped!
+    assert_predicate @shipment.reload, :shipped?
+  end
+
+  test "a withdrawal opened after shipping does not block confirming delivery" do
+    @seller_order.update!(status: :confirmed)
+    @shipment.mark_shipped!
+    ReturnRequests::Open.new(seller_order: @seller_order, customer: customers(:one), kind: :withdrawal).call
+
+    @shipment.mark_delivered!
+    assert_predicate @shipment.reload, :delivered?
+  end
+
   test "a partial refund in progress does not block shipping" do
     payment = paid_payment_for(@seller_order)
     payment.payment_refunds.create!(idempotency_key: "partial-in-flight", amount_cents: payment.amount_cents - 1, application_fee_amount_cents: 0)

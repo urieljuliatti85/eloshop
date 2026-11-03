@@ -14,7 +14,8 @@ class OrderEvent < ApplicationRecord
     order_confirmed: "order_confirmed",
     order_cancelled: "order_cancelled",
     refund_processed: "refund_processed",
-    production_started: "production_started"
+    production_started: "production_started",
+    return_request_opened: "return_request_opened"
   }
 
   validates :kind, presence: true

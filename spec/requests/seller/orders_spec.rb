@@ -396,6 +396,24 @@ RSpec.describe "Seller orders", type: :request do
     end
   end
 
+  describe "with a withdrawal open (ADR 008, decisão A)" do
+    it "warns the atelier and refuses marking the order as shipped" do
+      order = create_order_for(own_product)
+      order.update!(status: :confirmed)
+      order.seller_order.update!(status: :confirmed)
+      shipment = create_shipment_for(order)
+      return_request = ReturnRequests::Open.new(seller_order: order.seller_order, customer: customer, kind: :withdrawal).call.return_request
+
+      get seller_order_path(order)
+      expect(response.body).to include(return_request.protocol, "Não envie a peça")
+
+      patch ship_seller_order_path(order), params: { carrier: "Correios", tracking_code: "AA123BR" }
+      expect(response).to redirect_to(seller_order_path(order))
+      expect(flash[:alert]).to include("desistir da compra", return_request.protocol)
+      expect(shipment.reload).to be_pending
+    end
+  end
+
   private
 
   def create_order_for(product)

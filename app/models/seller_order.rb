@@ -14,6 +14,7 @@ class SellerOrder < ApplicationRecord
   has_many :order_items, dependent: :restrict_with_error
   has_many :order_messages, dependent: :destroy
   has_one :shipment, dependent: :destroy
+  has_many :return_requests, dependent: :restrict_with_error
 
   enum :status, {
     pending: "pending",

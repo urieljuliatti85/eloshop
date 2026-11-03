@@ -70,6 +70,7 @@ module AdminHelper
       { key: :products, label: "Produtos", path: admin_products_path, icon: :products, controllers: %w[products product_variants personalization_options product_images] },
       { key: :sellers, label: "Artesãos", path: admin_sellers_path, icon: :customers, controllers: %w[sellers] },
       { key: :orders, label: "Pedidos", path: admin_orders_path, icon: :orders, controllers: %w[orders] },
+      { key: :return_requests, label: "Solicitações", path: admin_return_requests_path, icon: :orders, controllers: %w[return_requests] },
       { key: :customers, label: "Clientes", path: admin_customers_path, icon: :customers, controllers: %w[customers] },
       { key: :admins, label: "Administradores", path: admin_admins_path, icon: :customers, controllers: %w[admins] },
       { key: :categories, label: "Categorias", path: admin_categories_path, icon: :categories, controllers: %w[categories] },

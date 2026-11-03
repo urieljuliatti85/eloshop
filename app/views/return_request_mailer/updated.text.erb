@@ -1,0 +1,12 @@
+Olá, <%= @order.customer.name %>!
+
+Sua solicitação <%= @return_request.protocol %>, do pedido #<%= @order.id %>, foi atualizada.
+<% if @update.status_change? %>
+Situação: <%= ReturnRequest::STATUS_LABELS.fetch(@update.to_status) %>
+<% end %><% if @update.body.present? %>
+Resposta da EloShop:
+<%= @update.body %>
+<% end %>
+Ver a solicitação: <%= order_return_request_url(@order, @return_request) %>
+
+Equipe EloShop

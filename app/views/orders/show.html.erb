@@ -89,7 +89,12 @@
       <%= link_to "Pagar agora", new_order_payment_path(@order), class: "inline-block w-fit rounded-full bg-brand-600 px-8 py-3 text-sm font-semibold text-white hover:bg-brand-700" %>
     <% end %>
 
-    <% if @order.pending? || @order.confirmed? %>
+    <%# Pedido pago não se cancela por aqui (Orders::Cancel recusa e manda
+        usar reembolso): o caminho é a solicitação com protocolo (ADR 008). %>
+    <% if ReturnRequest.eligible?(@seller_order) %>
+      <%= link_to "Desistir da compra ou relatar um problema", new_order_return_request_path(@order),
+            class: "inline-flex min-h-11 items-center rounded-full border border-red-200 px-6 text-sm font-semibold text-red-700 hover:bg-red-50" %>
+    <% elsif @order.pending? %>
       <%= button_to "Cancelar pedido", cancel_order_path(@order), method: :post,
             class: "inline-block w-fit rounded-full border border-red-200 px-8 py-3 text-sm font-semibold text-red-700 hover:bg-red-50",
             form: { data: { turbo_confirm: "Cancelar este pedido?" } } %>
@@ -110,6 +115,22 @@
       <%= link_to "Falar com o ateliê", order_messages_path(@order), class: "inline-flex min-h-11 items-center rounded-full border border-brand-200 px-6 text-sm font-semibold text-brand-700 hover:bg-brand-50" %>
     <% end %>
   </div>
+
+  <% if (return_requests = @seller_order.return_requests.order(created_at: :desc).to_a).any? %>
+    <section class="mb-8" aria-labelledby="return-requests-title">
+      <h2 id="return-requests-title" class="mb-3 font-semibold text-ink">Solicitações</h2>
+      <ul class="divide-y divide-gray-200 border-y border-gray-200">
+        <% return_requests.each do |return_request| %>
+          <li>
+            <%= link_to order_return_request_path(@order, return_request), class: "flex min-h-11 items-center justify-between gap-3 py-3 text-sm hover:text-brand-700" do %>
+              <span><span class="font-semibold text-ink"><%= return_request.protocol %></span> · <%= return_request.kind_label %></span>
+              <span class="text-ink-muted"><%= return_request.status_label %></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
 
   <h2 class="mb-3 font-semibold text-ink">Itens</h2>
   <div class="divide-y divide-gray-200 border-y border-gray-200">
