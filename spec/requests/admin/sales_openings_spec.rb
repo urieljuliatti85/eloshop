@@ -35,7 +35,7 @@ RSpec.describe "Admin sales opening", type: :request do
   it "counts on the dashboard who the opening will notify" do
     approved_before = Seller.publicly_listed.approved.count
     showcased_before = Seller.publicly_listed.pending.count
-    approved_seller
+    2.times { create_seller(status: :approved, approved_at: Time.current) }
     2.times { create_seller(status: :pending, showcased_at: Time.current) }
     create_seller(status: :pending)
     create_seller(status: :approved, approved_at: Time.current, hidden_at: Time.current)
@@ -45,7 +45,7 @@ RSpec.describe "Admin sales opening", type: :request do
     get admin_root_path
 
     expect(response.body).to include(
-      "Serão avisados: #{approved_before + 1} ateliês aprovados e #{showcased_before + 2} na vitrine."
+      "Serão avisados: #{approved_before + 2} ateliês aprovados e #{showcased_before + 2} na vitrine."
     )
   end
 
