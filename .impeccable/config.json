@@ -20,6 +20,15 @@
         "value": "space grotesk",
         "createdAt": "2026-10-22T17:35:30.117Z",
         "reason": "Fontes de título escolhíveis pelo artesão no tema da vitrine (SellerTheme::HEADING_FONTS), não do design system do painel; etapa 2 aprovada pelo usuário em 2026-10-22"
+      },
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "app/assets/tailwind/application.css"
+        ],
+        "createdAt": "2026-11-02T16:56:54.795Z",
+        "reason": "Claude: .admin-top-tabs .admin-tab (border-b-2) é traço de aba ativa numa célula reta da grade, sem border-radius; o rounded-2xl é do .admin-more-menu na regra seguinte. Conferido nas capturas a 375px."
       }
     ]
   }
