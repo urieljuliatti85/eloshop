@@ -101,6 +101,8 @@ Se B for aceito, a implementação se divide em três etapas, e só a primeira d
 
 **Etapa 2 — etiqueta e rastreio.** Depende da decisão 1. O `tracking_code` já tem coluna.
 
+**Condição de segurança para a Etapa 2 (2026-11-04).** O retorno do OAuth da SuperFrete é um GET feito pelo servidor dela, sem a sessão do ateliê, então o `state` não está mais preso ao navegador de quem iniciou (ver `docs/shipping.md`, "Retorno do OAuth"). Sobra um golpe de consentimento: um atacante inicia a conexão no próprio ateliê e convence outra pessoa, logada na SuperFrete, a autorizar pelo link dele em até 10 minutos — a conta dela, com a carteira, fica ligada ao ateliê do atacante. Aceito pelo Uriel enquanto o token só cota. **Antes de comprar etiqueta pela carteira**, reforçar a vinculação (por exemplo, exigir que o e-mail da conta SuperFrete confira com o do ateliê, ou confirmação por e-mail antes da primeira etiqueta).
+
 **Etapa 3 — webhook de status.** Preenche `shipped_at` e `delivered_at`, reaproveitando o padrão idempotente do Mercado Pago.
 
 O risco principal é o agregador virar dependência do checkout. A mitigação é manter a tabela atual como fallback — **não deletá-la**.
