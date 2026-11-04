@@ -6,8 +6,11 @@ class CreateCategorySuggestions < ActiveRecord::Migration[8.1]
       # caixa, acento e espaço. É por ela que sugestões iguais viram uma só.
       t.string :normalized_key, null: false, limit: 80
       t.string :status, null: false, default: "pending"
-      t.references :category, foreign_key: true
-      t.references :decided_by_user, foreign_key: { to_table: :users }
+      # `on_delete: :nullify` nas duas: apagar a categoria criada (sem produtos)
+      # ou remover o admin que decidiu não pode esbarrar no histórico da
+      # sugestão. Aceita com `category_id` nulo = categoria apagada depois.
+      t.references :category, foreign_key: { on_delete: :nullify }
+      t.references :decided_by_user, foreign_key: { to_table: :users, on_delete: :nullify }
       t.datetime :decided_at
       t.timestamps
     end
@@ -19,8 +22,6 @@ class CreateCategorySuggestions < ActiveRecord::Migration[8.1]
     add_index :category_suggestions, %i[status created_at]
     add_check_constraint :category_suggestions, "status IN ('pending', 'accepted', 'rejected')",
       name: "category_suggestions_status_check"
-    add_check_constraint :category_suggestions, "status <> 'accepted' OR category_id IS NOT NULL",
-      name: "category_suggestions_accepted_has_category"
 
     # Quem sugeriu: um ateliê uma vez por sugestão. `notified_at` torna o
     # e-mail da decisão idempotente por ateliê.

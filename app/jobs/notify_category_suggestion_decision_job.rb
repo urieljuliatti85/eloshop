@@ -16,6 +16,8 @@ class NotifyCategorySuggestionDecisionJob < ApplicationJob
 
     suggestion = request.category_suggestion
     return if suggestion.pending?
+    # Aceita e com a categoria já apagada pelo admin: não há o que oferecer.
+    return if suggestion.accepted? && suggestion.category.nil?
 
     recipient = request.seller.users.order(:created_at).first&.email_address
     return if recipient.blank?

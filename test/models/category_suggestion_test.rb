@@ -186,9 +186,51 @@ class CategorySuggestionTest < ActiveSupport::TestCase
     assert_equal 2, CategorySuggestion.where(normalized_key: "taxidermia").count
   end
 
-  test "the database requires a category on an accepted suggestion" do
-    suggestion = CategorySuggestion.create!(name: "Origami")
+  # Apagar a categoria criada (sem produtos) ou remover o admin que decidiu
+  # esbarrava na FK e virava erro 500 nas telas do admin.
+  test "deleting the accepted category keeps the suggestion history" do
+    suggestion = CategorySuggestion.suggest!(seller: @seller, name: "Origami").suggestion
+    suggestion.accept!(name: "Origami", parent: nil, admin: @admin)
 
-    assert_raises(ActiveRecord::StatementInvalid) { suggestion.update_columns(status: "accepted") }
+    assert suggestion.category.destroy
+    suggestion.reload
+    assert suggestion.accepted?
+    assert_nil suggestion.category
+  end
+
+  test "removing the admin who decided keeps the decision" do
+    admin = User.create!(email_address: "decisor-#{SecureRandom.hex(3)}@example.com", password: "password123", role: :admin)
+    suggestion = CategorySuggestion.suggest!(seller: @seller, name: "Vitral").suggestion
+    suggestion.reject!(admin: admin)
+
+    assert admin.destroy
+    suggestion.reload
+    assert suggestion.rejected?
+    assert_nil suggestion.decided_by_user
+    assert_not_nil suggestion.decided_at
+  end
+
+  # Corrida: o ateliê entra na sugestão depois de o admin decidir e de os
+  # avisos saírem. O pedido novo precisa se avisar sozinho.
+  test "a request that joins a suggestion already decided is notified on its own" do
+    suggestion = CategorySuggestion.suggest!(seller: @seller, name: "Cestaria").suggestion
+    suggestion.reject!(admin: @admin)
+    late = suggestion.requests.create!(seller: @other_seller)
+
+    assert_enqueued_with(job: NotifyCategorySuggestionDecisionJob, args: [ late ]) do
+      CategorySuggestion.send(:notify_late_request, suggestion, late)
+    end
+  end
+
+  test "a request on a pending suggestion, or an old request, is not notified early" do
+    suggestion = CategorySuggestion.suggest!(seller: @seller, name: "Cestaria").suggestion
+    fresh = suggestion.requests.create!(seller: @other_seller)
+    old = CategorySuggestionRequest.find(fresh.id)
+
+    assert_no_enqueued_jobs do
+      CategorySuggestion.send(:notify_late_request, suggestion, fresh)
+      suggestion.update_columns(status: "rejected")
+      CategorySuggestion.send(:notify_late_request, suggestion, old)
+    end
   end
 end

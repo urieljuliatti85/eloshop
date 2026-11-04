@@ -79,6 +79,30 @@ RSpec.describe "Admin category suggestions", type: :request do
       expect(suggestion.reload).to be_pending
     end
 
+    it "deletes a category created from a suggestion and keeps the history on the list" do
+      patch accept_admin_category_suggestion_path(suggestion), params: { category_suggestion: { name: "Macramê", parent_id: "" } }
+      category = suggestion.reload.category
+
+      delete admin_category_path(category)
+
+      expect(response).to redirect_to(admin_categories_path)
+      expect(Category.exists?(category.id)).to be(false)
+      get admin_category_suggestions_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("a categoria foi apagada depois")
+    end
+
+    it "removes an admin who decided a suggestion" do
+      other_admin = User.create!(email_address: "decisor-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :admin)
+      suggestion.reject!(admin: other_admin)
+
+      delete admin_admin_path(other_admin)
+
+      expect(response).to redirect_to(admin_admins_path)
+      expect(User.exists?(other_admin.id)).to be(false)
+      expect(suggestion.reload).to be_rejected
+    end
+
     it "rejects and notifies; a second decision changes nothing" do
       expect do
         patch reject_admin_category_suggestion_path(suggestion)

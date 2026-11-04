@@ -52,6 +52,18 @@ class NotifyCategorySuggestionDecisionJobTest < ActiveJob::TestCase
     end
   end
 
+  test "an accepted suggestion whose category was deleted sends nothing" do
+    suggestion = CategorySuggestion.suggest!(seller: @seller, name: "Pirografia").suggestion
+    suggestion.accept!(name: "Pirografia", parent: nil, admin: @admin)
+    suggestion.category.destroy
+    # Lido do banco, como o job recebe em produção (GlobalID).
+    request = CategorySuggestionRequest.find(suggestion.requests.sole.id)
+
+    assert_no_emails do
+      NotifyCategorySuggestionDecisionJob.perform_now(request)
+    end
+  end
+
   test "a pending suggestion sends nothing" do
     suggestion = CategorySuggestion.suggest!(seller: @seller, name: "Vitral").suggestion
 

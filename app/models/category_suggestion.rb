@@ -47,6 +47,7 @@ class CategorySuggestion < ApplicationRecord
 
     suggestion = pending_for!(candidate)
     request = suggestion.requests.create_or_find_by!(seller: seller)
+    notify_late_request(suggestion, request)
 
     outcome =
       if suggestion.previously_new_record? then :created
@@ -70,6 +71,19 @@ class CategorySuggestion < ApplicationRecord
     pending.create_or_find_by!(normalized_key: candidate.normalized_key) { |suggestion| suggestion.name = candidate.name }
   end
   private_class_method :pending_for!
+
+  # O admin pode decidir entre a leitura da pendente e a criação do pedido:
+  # o aviso dele já saiu sem este ateliê, então o pedido avisa por conta
+  # própria. O job ignora o pedido já avisado, então não há e-mail em dobro.
+  def self.notify_late_request(suggestion, request)
+    return unless request.previously_new_record?
+    # Consulta à parte, sem `reload`: recarregar zera o `previously_new_record?`
+    # que o `suggest!` usa para dizer se a sugestão foi criada agora.
+    return if pending.exists?(suggestion.id)
+
+    NotifyCategorySuggestionDecisionJob.perform_later(request)
+  end
+  private_class_method :notify_late_request
 
   # Cria a categoria e encerra a sugestão numa transação só, com a linha
   # travada: dois cliques (ou dois admins) não criam nada em dobro nem mandam

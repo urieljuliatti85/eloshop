@@ -50,8 +50,10 @@
             <%= button_to "Recusar", reject_admin_category_suggestion_path(suggestion), method: :patch,
                   class: "admin-button admin-button--danger",
                   form: { data: { turbo_confirm: "Recusar \"#{suggestion.name}\"? Os ateliês que sugeriram recebem o aviso por e-mail." } } %>
-          <% elsif suggestion.accepted? %>
+          <% elsif suggestion.accepted? && suggestion.category %>
             <p class="text-sm text-slate-600">Criada como <strong><%= @category_tree.breadcrumb_name(suggestion.category) %></strong> em <%= l(suggestion.decided_at, format: "%d/%m/%Y") %>.</p>
+          <% elsif suggestion.accepted? %>
+            <p class="text-sm text-slate-600">Aceita em <%= l(suggestion.decided_at, format: "%d/%m/%Y") %>; a categoria foi apagada depois.</p>
           <% else %>
             <p class="text-sm text-slate-600">Recusada em <%= l(suggestion.decided_at, format: "%d/%m/%Y") %>.</p>
           <% end %>

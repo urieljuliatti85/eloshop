@@ -129,7 +129,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_120000) do
     t.index ["decided_by_user_id"], name: "index_category_suggestions_on_decided_by_user_id"
     t.index ["normalized_key"], name: "index_category_suggestions_on_pending_key", unique: true, where: "((status)::text = 'pending'::text)"
     t.index ["status", "created_at"], name: "index_category_suggestions_on_status_and_created_at"
-    t.check_constraint "status::text <> 'accepted'::text OR category_id IS NOT NULL", name: "category_suggestions_accepted_has_category"
     t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'accepted'::character varying, 'rejected'::character varying]::text[])", name: "category_suggestions_status_check"
   end
 
@@ -743,8 +742,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_120000) do
   add_foreign_key "categories", "categories", column: "parent_id"
   add_foreign_key "category_suggestion_requests", "category_suggestions"
   add_foreign_key "category_suggestion_requests", "sellers"
-  add_foreign_key "category_suggestions", "categories"
-  add_foreign_key "category_suggestions", "users", column: "decided_by_user_id"
+  add_foreign_key "category_suggestions", "categories", on_delete: :nullify
+  add_foreign_key "category_suggestions", "users", column: "decided_by_user_id", on_delete: :nullify
   add_foreign_key "customer_sessions", "customers"
   add_foreign_key "fraud_alerts", "sellers", on_delete: :cascade
   add_foreign_key "funnel_events", "products"
