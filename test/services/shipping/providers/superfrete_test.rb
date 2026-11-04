@@ -97,6 +97,20 @@ module Shipping
         assert_equal "sandbox.superfrete.com", Superfrete.new(seller: @seller).send(:host)
       end
 
+      # Cada conta tem o próprio desconto: trocar de conta ou de ambiente muda
+      # a chave do cache de cotação, e a cotação antiga não é reaproveitada.
+      test "cache scope changes with the connected account and the environment" do
+        before = @provider.cache_scope
+
+        @seller.connect_superfrete!(access_token: "other-token", account: Marketplace::SuperfreteOauth::Account.new(id: "sf-2", email: nil))
+        other_account = Superfrete.new(seller: @seller).cache_scope
+
+        @seller.update!(superfrete_sandbox: true)
+        sandbox = Superfrete.new(seller: @seller).cache_scope
+
+        assert_equal 3, [ before, other_account, sandbox ].uniq.size
+      end
+
       private
 
       def quote

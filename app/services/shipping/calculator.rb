@@ -230,9 +230,13 @@ module Shipping
       end
     end
 
+    # Tudo o que muda o preço entra na chave: a versão do produto (peso,
+    # medidas e preço do seguro) e, do provedor, a conta e o ambiente — trocar
+    # de conta ou editar a peça não pode reaproveitar a cotação antiga.
     def cache_key
-      digest = cart_items.map { |item| "#{item.product_id}:#{item.quantity}" }.sort.join(",")
-      [ "shipping", provider_name, seller.id, seller.origin_zip_code, destination_zip_code, Digest::SHA256.hexdigest(digest) ].join("/")
+      digest = cart_items.map { |item| "#{item.product_id}:#{item.quantity}:#{item.product.cache_version}" }.sort.join(",")
+      [ "shipping", provider_name, provider.try(:cache_scope), seller.id, seller.origin_zip_code, destination_zip_code,
+        Digest::SHA256.hexdigest(digest) ].join("/")
     end
 
     def cart_items

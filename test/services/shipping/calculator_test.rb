@@ -82,6 +82,27 @@ module Shipping
       assert_equal "EloShop", quotes.sole.carrier
     end
 
+    test "quotes again when a product in the cart changes" do
+      cart = connected_seller_cart
+      calls = 0
+      provider = Object.new
+      provider.define_singleton_method(:quotes) do |**|
+        calls += 1
+        [ Quote.new(carrier: "Correios", service: "PAC", shipping_cents: 2000, estimated_days: 8) ]
+      end
+
+      Calculator.new(cart: cart, address: addresses(:one), provider: provider).quotes
+      Calculator.new(cart: cart, address: addresses(:one), provider: provider).quotes
+      assert_equal 1, calls
+
+      travel 1.second do
+        products(:one).update!(weight_grams: products(:one).weight_grams.to_i + 500)
+        Calculator.new(cart: Cart.find(cart.id), address: addresses(:one), provider: provider).quotes
+      end
+
+      assert_equal 2, calls
+    end
+
     test "does not call the provider when the seller has not connected" do
       cart = cart_with(products(:one))
       provider = Object.new

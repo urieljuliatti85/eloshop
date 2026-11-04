@@ -44,6 +44,13 @@ module Shipping
         response.filter_map { |option| build_quote(option) }
       end
 
+      # O que muda o preço sem mudar o carrinho: a conta conectada (cada uma
+      # tem o próprio desconto) e o ambiente. Entra na chave do cache do
+      # Calculator para que trocar de conta não reaproveite a cotação antiga.
+      def cache_scope
+        [ @seller.superfrete_account_id, @seller.superfrete_sandbox? ? "sandbox" : "production" ].join(":")
+      end
+
       private
 
       def product_payload(item)
