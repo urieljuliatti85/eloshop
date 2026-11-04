@@ -1,10 +1,10 @@
 <%# Aba "Quem vende": convence e orienta o artesão a aderir. Primeiro o que
     ele ganha, depois cartões numerados na ordem em que as coisas
-    acontecem. Os cartões 2 a 6 são as mesmas etapas, na mesma ordem, dos
-    Primeiros passos do painel (Seller#getting_started_steps), para quem se
-    cadastra reconhecer o caminho. A conexão com a SuperFrete fica de fora:
-    a cotação está desligada em produção (docs/shipping.md) e o frete do MVP
-    é o que o próprio artesão define. %>
+    acontecem. Os cartões depois do primeiro são as mesmas etapas, na mesma
+    ordem, dos Primeiros passos do painel (Seller#getting_started_steps),
+    para quem se cadastra reconhecer o caminho — inclusive a SuperFrete, que
+    só aparece onde a cotação está ligada (Seller#superfrete_required?, a
+    mesma condição da etapa). %>
 <% launch_fee = fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS)
    standard_fee = fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS)
    tag_classes = {
@@ -28,16 +28,21 @@
      { title: "Cadastre uma chave PIX no Mercado Pago", tag: [ "Obrigatório para PIX", :required ], color: "#8f1607",
        icon: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8"/><path d="m16 7 2 2"/><path d="m14 9 2 2"/>',
        body: "Pelo app do Mercado Pago, em poucos minutos. O painel mostra como." },
+     (if Shipping::Providers.enabled?
+        { title: "Conecte sua conta da SuperFrete", tag: [ "Obrigatório", :required ], color: "#76180a",
+          icon: '<path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>',
+          body: "Conta grátis na SuperFrete. É ela que cota o frete pelos Correios para o CEP do cliente." }
+      end),
      { title: "Cadastre sua primeira peça", tag: [ "Pode ser rascunho", :note ], color: "#5c1a0b",
        icon: '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
        body: "Fotos, preço, peso, medidas e prazo. Dá para salvar e terminar depois." },
      { title: "Aguarde a aprovação da EloShop", tag: [ "Feito pela EloShop", :note ], color: "var(--color-ink)",
        icon: '<path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/>',
        body: "A EloShop confirma que a conta é real e libera seu catálogo na loja." }
-   ]
+   ].compact
    after_steps = [
      { title: "Receba os pedidos e envie",
-       body: "O pedido chega no painel com os itens e o endereço de entrega. O frete é você quem define: valor fixo por produto, retirada gratuita no ateliê ou o cálculo padrão da loja." },
+       body: "O pedido chega no painel com os itens e o endereço de entrega. #{Shipping::Providers.enabled? ? "O frete é você quem escolhe: o valor fixo que definiu em cada produto ou o calculado na hora pela SuperFrete, além da retirada gratuita no ateliê." : "O frete é você quem define: valor fixo por produto, retirada gratuita no ateliê ou o cálculo padrão da loja."}" },
      { title: "Receba o pagamento",
        body: "O valor cai direto na sua conta do Mercado Pago, já sem a comissão da EloShop. A tarifa do Mercado Pago na transação é sua, como em qualquer venda por ele." }
    ]
@@ -49,6 +54,9 @@
   <p class="mt-4 max-w-2xl text-lg leading-relaxed text-ink-muted">
     Cada ateliê na EloShop vende as próprias peças, com o próprio preço. O pagamento do cliente cai
     direto na sua conta do Mercado Pago, e a plataforma fica só com uma comissão quando você vende.
+    <% if Shipping::Providers.enabled? %>
+      Para vender, conecte também a sua conta da SuperFrete: é por ela que o frete é cotado pelos Correios para o CEP do cliente.
+    <% end %>
   </p>
 
   <%# Vantagens num fluxo da esquerda para a direita (.processo, em
@@ -113,7 +121,7 @@
   <p class="mt-2 max-w-2xl text-ink-muted">Na ordem em que você faz. Depois do cadastro, o painel do ateliê mostra estas mesmas etapas e marca cada uma que ficou pronta.</p>
 
   <ol role="list" data-carousel-target="track"
-      class="fluxo__lista relative -mx-10 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-10 px-10 pb-2 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-6 lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0">
+      class="fluxo__lista relative -mx-10 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-10 px-10 pb-2 [scrollbar-width:none] lg:mx-0 lg:grid <%= start_steps.size > 6 ? 'lg:grid-cols-7' : 'lg:grid-cols-6' %> lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0">
     <% start_steps.each_with_index do |step, index| %>
       <% label, kind = step[:tag] %>
       <li data-carousel-target="slide" style="--passo: <%= step[:color] %>"
@@ -148,6 +156,9 @@
     <p class="text-sm leading-relaxed text-ink">
       <strong class="text-brand-700">Exigência obrigatória:</strong> a conta do Mercado Pago conectada precisa ter uma
       <strong>chave PIX cadastrada</strong>. Sem ela, os pagamentos por PIX dos seus clientes são recusados. O cartão não depende disso.
+      <% if Shipping::Providers.enabled? %>
+        E a <strong>conta da SuperFrete conectada</strong>: sem ela, a EloShop não aprova o ateliê para vender. O cadastro na SuperFrete é gratuito.
+      <% end %>
     </p>
     <p class="text-sm leading-relaxed text-ink">
       <strong>Bom saber:</strong> o e-mail da sua conta do Mercado Pago pode ser diferente do seu cadastro aqui, e a EloShop não coleta nem guarda seus documentos.

@@ -50,12 +50,13 @@ class HowItWorksControllerTest < ActionDispatch::IntegrationTest
       "Informe o endereço do ateliê",
       "Conecte sua Conta Vendedor do Mercado Pago",
       "Cadastre uma chave PIX no Mercado Pago",
+      "Conecte sua conta da SuperFrete",
       "Cadastre sua primeira peça",
       "Aguarde a aprovação da EloShop",
       "Receba os pedidos e envie",
       "Receba o pagamento"
     ], titles
-    assert_select "[data-tab-name='vende'] ol[start='7']"
+    assert_select "[data-tab-name='vende'] ol[start='8']"
   end
 
   test "seller tab invites to sign up and to log in" do
@@ -65,10 +66,20 @@ class HowItWorksControllerTest < ActionDispatch::IntegrationTest
     assert_select "[data-tab-name='vende'] a[href='#{seller_login_path}']"
   end
 
-  test "seller tab does not offer a shipping provider connection, still off in production" do
+  # A SuperFrete entra no passo a passo junto com a etapa do painel: só onde
+  # a cotação está ligada (Seller#superfrete_required?).
+  test "seller tab shows the SuperFrete step only while remote quotes are enabled" do
     get how_it_works_path(aba: "vende")
+    assert_includes response.body, "Conecte sua conta da SuperFrete"
+    assert_includes response.body, "Para vender, conecte também a sua conta da SuperFrete"
+    assert_includes response.body, "<strong>conta da SuperFrete conectada</strong>"
 
+    previous = Rails.configuration.x.shipping.remote_quotes_enabled
+    Rails.configuration.x.shipping.remote_quotes_enabled = false
+    get how_it_works_path(aba: "vende")
     assert_not_includes response.body, "SuperFrete"
+  ensure
+    Rails.configuration.x.shipping.remote_quotes_enabled = previous
   end
 
   test "seller benefits and steps become carousels on mobile, without autoplay" do
@@ -81,8 +92,8 @@ class HowItWorksControllerTest < ActionDispatch::IntegrationTest
     benefits, steps = carousels
     assert_equal 4, benefits.css("[data-carousel-target='slide']").size
     assert_equal 4, benefits.css("[data-carousel-target='dot']").size
-    assert_equal 6, steps.css("[data-carousel-target='slide']").size
-    assert_equal 6, steps.css("[data-carousel-target='dot']").size
+    assert_equal 7, steps.css("[data-carousel-target='slide']").size
+    assert_equal 7, steps.css("[data-carousel-target='dot']").size
     assert_equal "01", steps.at_css(".fluxo__selo-numero").text
     assert carousels.all? { |carousel| carousel.at_css("[data-carousel-target='controls']").key?("hidden") }
   end
