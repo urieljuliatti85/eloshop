@@ -29,7 +29,7 @@
     <p class="text-xs font-bold uppercase tracking-wide <%= done ? 'text-emerald-700' : 'text-brand-700' %>"><%= done ? "Feito" : "Agora" %> · etapa <%= number %> de <%= steps.size %></p>
     <h3 id="current-step-title" class="mt-1 flex flex-wrap items-center gap-2 text-xl font-bold leading-tight text-stone-950">
       <%= not_accepted ? "Conta do Mercado Pago não aceita" : titles[current] %>
-      <% if current == :mercado_pago && account_state == :not_connected %><span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-800">Obrigatório</span><% end %>
+      <% if (current == :mercado_pago && account_state == :not_connected) || (current == :superfrete && !done) %><span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-800">Obrigatório</span><% end %>
     </h3>
 
     <% if not_accepted %>

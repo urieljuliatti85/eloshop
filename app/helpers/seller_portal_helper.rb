@@ -8,6 +8,8 @@ module SellerPortalHelper
         body: "Comece por aqui: acompanhe o que já está pronto e o que falta para o seu ateliê vender." },
       { path: seller_atelier_path, title: "Dados do Ateliê",
         body: "Cadastre o endereço de origem do ateliê. Ele é usado nas suas entregas." },
+      { path: seller_shipping_settings_path, title: "Frete e entregas",
+        body: "Conecte aqui a sua conta da SuperFrete, com o passo a passo. Ela cota o frete pelos Correios e é obrigatória para vender." },
       { path: seller_mercado_pago_guide_path, title: "Conta no Mercado Pago",
         body: "Conecte a conta que vai receber seus pagamentos. Sem ela não é possível publicar produtos.",
         alert: "Não se esqueça de cadastrar a sua chave pix na sua conta Mercado Pago!" },
@@ -36,8 +38,9 @@ module SellerPortalHelper
       step_tab.call(:address, "Endereço", controller_name == "ateliers"),
       step_tab.call(:mercado_pago, "Mercado Pago", controller_name == "mercado_pago_guides"),
       step_tab.call(:pix_key, "PIX", controller_name == "pix_key_guides"),
+      (step_tab.call(:superfrete, "Frete", controller_name == "shipping_settings") if steps.key?(:superfrete)),
       step_tab.call(:product, "Peça", controller_name.in?(%w[products product_variants personalization_options]))
-    ]
+    ].compact
   end
 
   # Com o cadastro pronto, as abas viram o trabalho do dia na ordem em que
@@ -52,6 +55,7 @@ module SellerPortalHelper
         mark_label: "#{to_prepare_count} para preparar e enviar" },
       { icon: :new_product, label: "Nova peça", path: new_seller_product_path },
       { icon: :products, label: "Produtos", path: seller_products_path },
+      { icon: :superfrete, label: "Frete", path: seller_shipping_settings_path },
       { icon: :messages, label: "Mensagens", path: seller_messages_path }
     ].each { |tab| tab[:active] = tab[:path] == active_path }
   end

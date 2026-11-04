@@ -29,7 +29,9 @@ module SellerPortal
     def set_getting_started_block(step_slug = nil)
       @getting_started_steps = current_seller.setup_steps
       @getting_started_current_step = GettingStartedController::STEP_SLUGS.key(step_slug) || @getting_started_steps.key(false)
+      @getting_started_current_step = @getting_started_steps.key(false) unless @getting_started_steps.key?(@getting_started_current_step)
       set_mercado_pago_oauth_state
+      set_superfrete_oauth_state
     end
 
     # A conexão com a SuperFrete só aparece quando dá para usá-la: cotações

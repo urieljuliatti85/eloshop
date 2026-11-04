@@ -5,7 +5,8 @@
     etapas). `mark`: :done (✓ verde), :next (ponto vermelho) ou um número
     (contagem em vermelho, com `mark_label` para o leitor de tela). A altura
     (h-16) é a `--seller-tabs-height` que o layout define para o resto da
-    página abrir espaço. As duas listas têm cinco abas (`grid-cols-5`). %>
+    página abrir espaço. As listas têm cinco ou seis abas: a coluna acompanha
+    (classes literais, para o Tailwind gerar as duas). %>
 <% icons = {
      home: '<path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/>',
      address: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
@@ -15,10 +16,11 @@
      orders: '<path d="M4 8 12 4l8 4v8l-8 4-8-4z"/><path d="m4 8 8 4 8-4"/><path d="M12 12v8"/>',
      new_product: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/>',
      products: '<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>',
-     messages: '<path d="M20 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>'
+     messages: '<path d="M20 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>',
+     superfrete: '<path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>'
    } %>
 <nav aria-label="<%= label %>" data-mobile-tabs class="fixed inset-x-0 bottom-0 z-40 border-t border-brand-100 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(120,40,10,0.08)] sm:hidden">
-  <ul class="grid h-16 grid-cols-5">
+  <ul class="grid h-16 <%= tabs.size > 5 ? 'grid-cols-6' : 'grid-cols-5' %>">
     <% tabs.each do |tab| %>
       <% mark = tab[:mark] %>
       <li>

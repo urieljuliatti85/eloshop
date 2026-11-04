@@ -52,7 +52,7 @@ module SellerPortal
 
     def destroy
       current_seller.disconnect_superfrete!
-      redirect_to seller_atelier_path, notice: "Conta SuperFrete desconectada na EloShop. Para encerrar o acesso por completo, remova também a integração no painel da SuperFrete."
+      redirect_back_or_to seller_atelier_path, notice: "Conta SuperFrete desconectada na EloShop. Para encerrar o acesso por completo, remova também a integração no painel da SuperFrete."
     end
 
     private

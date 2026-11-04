@@ -77,6 +77,7 @@ RSpec.describe "Seller dashboard", type: :request do
       pix_key_confirmed_at: Time.current, **attributes
     )
     seller.products.create!(name: "Primeira peça", sku: "PRONTO-#{SecureRandom.hex(3)}", price_cents: 5_000, stock_quantity: 1)
+    connect_superfrete!(seller)
   end
 
   it "opens with the page title and the Primeiros passos block before the work summary while setup is pending" do
@@ -221,7 +222,7 @@ RSpec.describe "Seller dashboard", type: :request do
       expect(response.body).not_to include("Desconectar")
     end
 
-    it "shows no setup box at all when the five steps are done and the account is accepted" do
+    it "shows no setup box at all when every step is done and the account is accepted" do
       connect_account!
       seller.update!(
         origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
@@ -229,6 +230,7 @@ RSpec.describe "Seller dashboard", type: :request do
         pix_key_confirmed_at: Time.current
       )
       seller.products.create!(name: "Primeira peça", sku: "PRONTO-DASH", price_cents: 5_000, stock_quantity: 1)
+      connect_superfrete!(seller)
 
       get seller_root_path
 
@@ -277,16 +279,16 @@ RSpec.describe "Seller dashboard", type: :request do
       Nokogiri::HTML(response.body).at_css("section[aria-labelledby='setup-title']")
     end
 
-    it "shows all five steps in the strip and opens the first pending one with the address form" do
+    it "shows all six steps in the strip and opens the first pending one with the address form" do
       seller.update!(status: :pending, approved_at: nil)
 
       get seller_root_path
 
       strip = setup_block.css("ol[aria-label='Etapas para preparar o ateliê'] li")
-      expect(strip.size).to eq(5)
+      expect(strip.size).to eq(6)
       expect(strip.first.at_css("a")["aria-current"]).to eq("step")
       expect(setup_block.at_css("#current-step-title").text.squish).to eq("Preencha o endereço do ateliê")
-      expect(setup_block.text.squish).to include("Agora · etapa 1 de 5")
+      expect(setup_block.text.squish).to include("Agora · etapa 1 de 6")
       form = setup_block.at_css("form[action='#{seller_origin_address_path}']")
       expect(form).to be_present
       expect(form.at_css("input[name='seller[origin_zip_code]']")).to be_present
@@ -313,7 +315,7 @@ RSpec.describe "Seller dashboard", type: :request do
       frame = Nokogiri::HTML(response.body).at_css("turbo-frame#primeiros-passos")
       expect(frame["data-turbo-action"]).to eq("advance")
       hrefs = frame.css("ol[aria-label='Etapas para preparar o ateliê'] a").map { |node| node["href"] }
-      expect(hrefs).to eq(%w[endereco mercado-pago chave-pix primeira-peca aprovacao].map { |slug| seller_root_path(etapa: slug) })
+      expect(hrefs).to eq(%w[endereco mercado-pago chave-pix superfrete primeira-peca aprovacao].map { |slug| seller_root_path(etapa: slug) })
       expect(frame.css("a").map { |node| node["href"] }).not_to include(seller_getting_started_path)
     end
 
@@ -325,10 +327,19 @@ RSpec.describe "Seller dashboard", type: :request do
 
       get seller_root_path(etapa: "endereco")
 
-      expect(setup_block.text.squish).to include("Feito · etapa 1 de 5")
+      expect(setup_block.text.squish).to include("Feito · etapa 1 de 6")
       expect(setup_block.at_css("input[type='submit']")["value"]).to eq("Salvar endereço")
       next_link = setup_block.css("a").find { |node| node.text.squish == "Próxima etapa: Conta do Mercado Pago" }
       expect(next_link["href"]).to eq(seller_root_path(etapa: "mercado-pago"))
+    end
+
+    it "marks the SuperFrete step as required until it is connected" do
+      get seller_root_path(etapa: "superfrete")
+      expect(setup_block.at_css("#current-step-title").text.squish).to eq("Conecte sua conta da SuperFrete Obrigatório")
+
+      connect_superfrete!(seller)
+      get seller_root_path(etapa: "superfrete")
+      expect(setup_block.at_css("#current-step-title").text.squish).to eq("Conecte sua conta da SuperFrete")
     end
 
     it "ignores an unknown step in the URL and opens the first pending one" do
@@ -355,17 +366,17 @@ RSpec.describe "Seller dashboard", type: :request do
       expect(setup_block).to be_present
       expect(setup_block.text.squish).to include("Primeiros passos")
       # A fixture do vendedor já nasce aprovado: só a etapa de aprovação está pronta.
-      expect(setup_block.text.squish).to include("1 de 5 etapas concluídas")
+      expect(setup_block.text.squish).to include("1 de 6 etapas concluídas")
     end
 
     it "counts the steps the same way the Primeiros passos page does" do
       seller.products.create!(name: "Primeira peça", sku: "PRIMEIRA-DASH", price_cents: 5_000, stock_quantity: 1)
 
       get seller_root_path
-      dashboard_count = response.body[/(\d) de 5 etapas concluídas/, 1]
+      dashboard_count = response.body[/(\d) de 6 etapas concluídas/, 1]
 
       get seller_getting_started_path
-      page_count = response.body[/(\d) de 5 etapas concluídas/, 1]
+      page_count = response.body[/(\d) de 6 etapas concluídas/, 1]
 
       expect(dashboard_count).to eq("2")
       expect(dashboard_count).to eq(page_count)
@@ -387,7 +398,7 @@ RSpec.describe "Seller dashboard", type: :request do
       expect(setup.text.squish).to include("Conta do Mercado Pago não aceita", "Ver como corrigir")
     end
 
-    it "disappears once the five steps are done" do
+    it "disappears once every step is done" do
       seller.update!(
         origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
         origin_neighborhood: "Bela Vista", origin_city: "São Paulo", origin_state: "SP",
@@ -397,6 +408,7 @@ RSpec.describe "Seller dashboard", type: :request do
         pix_key_confirmed_at: Time.current
       )
       seller.products.create!(name: "Primeira peça", sku: "PRIMEIRA-DASH2", price_cents: 5_000, stock_quantity: 1)
+      connect_superfrete!(seller)
 
       get seller_root_path
 

@@ -1,7 +1,7 @@
 <%# Etapas numa faixa horizontal de segmentos retos (sem pílulas nem
     cantos arredondados): o traço no topo de cada segmento diz o estado
-    (verde feita, vermelho atual, cinza pendente). No celular os cinco
-    segmentos cabem lado a lado só com o número (ou o ✓), e a linha abaixo
+    (verde feita, vermelho atual, cinza pendente). No celular os cinco ou
+    seis segmentos cabem lado a lado só com o número (ou o ✓), e a linha abaixo
     da faixa nomeia a etapa atual; do `sm` em diante cada segmento mostra o
     nome e a faixa rola se não couber.
     `relative` na lista: sem ele o texto sr-only (absoluto) escapava da
@@ -14,7 +14,7 @@
    slugs = SellerPortal::GettingStartedController::STEP_SLUGS
    step_path = local_assigns.fetch(:step_path) { ->(slug) { seller_getting_started_path(etapa: slug) } } %>
 <nav aria-label="Etapas">
-  <ol aria-label="Etapas para preparar o ateliê" class="relative grid grid-cols-5 border border-brand-100 bg-white sm:flex sm:snap-x sm:overflow-x-auto sm:[scrollbar-width:thin]">
+  <ol aria-label="Etapas para preparar o ateliê" class="relative grid <%= steps.size > 5 ? 'grid-cols-6' : 'grid-cols-5' %> border border-brand-100 bg-white sm:flex sm:snap-x sm:overflow-x-auto sm:[scrollbar-width:thin]">
     <% steps.each_with_index do |(step, done), index| %>
       <% current = step == current_step %>
       <li class="border-l border-brand-100 first:border-l-0 sm:min-w-[9.5rem] sm:flex-1 sm:snap-start">

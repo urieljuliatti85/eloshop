@@ -1,0 +1,24 @@
+<%# Etapa da SuperFrete (só existe com a cotação ligada no ambiente,
+    Seller#superfrete_required?). "Feita" é Seller#superfrete_ready?:
+    conectada no ambiente configurado e sem 401 desde a conexão. O passo a
+    passo completo mora em Frete e entregas. %>
+<p class="max-w-[68ch] text-base leading-7 text-stone-700 mt-4">A conta da SuperFrete cota o frete pelos Correios para o CEP do cliente e, em breve, emite as etiquetas, pagas pela carteira dela. A conexão é obrigatória para a EloShop aprovar o seu ateliê. O cadastro na SuperFrete é gratuito.</p>
+
+<h3 class="mt-6 font-bold text-stone-950">Como a conexão funciona</h3>
+<ol class="max-w-[68ch] text-base leading-7 text-stone-700 mt-2 list-decimal pl-5">
+  <li>Você abre a SuperFrete a partir da EloShop e entra na sua conta.</li>
+  <li>Autoriza a EloShop a cotar o frete e, depois, emitir as etiquetas.</li>
+  <li>A SuperFrete mostra a tela "Configurações Elo Shop": desligue Jadlog e Loggi e <strong>volte ao painel</strong>, porque ela não traz você de volta.</li>
+</ol>
+<p class="max-w-[68ch] rounded-xl bg-brand-50 px-4 py-3 text-base leading-7 text-stone-800 mt-4"><strong>Depois disso:</strong> você escolhe se o cliente paga o frete que você definiu em cada produto ou o calculado na hora.</p>
+
+<div class="mt-6 flex flex-col gap-3 border-t border-brand-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
+  <% if done %>
+    <%= link_to "Ver conexão", seller_shipping_settings_path, data: { turbo_frame: "_top" }, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
+  <% elsif @superfrete_connection_available %>
+    <%= link_to "Conectar SuperFrete", seller_superfrete_connect_path, class: "seller-button seller-button--primary justify-center", data: { turbo: false } %>
+    <%= link_to "Ver o passo a passo", seller_shipping_settings_path, data: { turbo_frame: "_top" }, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
+  <% else %>
+    <p class="w-full max-w-[68ch] rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">A conexão aguarda a configuração da SuperFrete pela plataforma.</p>
+  <% end %>
+</div>
