@@ -1,37 +1,53 @@
 module SellerPortal
-  # Conexão do ateliê com a SuperFrete (ADR 005). Tudo parte de
-  # `current_seller`: nenhuma ação aceita id de vendedor por parâmetro.
+  # Conexão do ateliê com a SuperFrete (ADR 005). `create` e `destroy` partem
+  # de `current_seller`: nenhuma ação aceita id de vendedor por parâmetro.
+  #
+  # O retorno (`callback`) é diferente: a SuperFrete entrega o `code` com um
+  # GET feito pelo servidor dela, não pelo navegador do ateliê (observado em
+  # produção em 2026-11-04: `axios`, IP do Google Cloud). Ele chega sem
+  # sessão, então é público, e quem diz de qual ateliê é a autorização é o
+  # `state` gravado em `create` (Seller#issue_superfrete_oauth_state!).
   class SuperfreteConnectionsController < BaseController
-    OAUTH_STATE_TTL = 10.minutes
+    allow_unauthenticated_access only: :callback
+    skip_before_action :require_seller!, :require_current_terms!, only: :callback
+    rate_limit to: 20, within: 1.minute, only: :callback, with: -> { head :too_many_requests }
 
     # Com as cotações externas desligadas no ambiente, conectar não teria
     # efeito — e em produção gravaria tokens de um app de sandbox.
-    before_action :require_remote_quotes_enabled, only: %i[create callback]
+    before_action :require_remote_quotes_enabled, only: :create
 
     def create
-      redirect_to oauth.authorization_url(state: issue_state), allow_other_host: true
+      redirect_to oauth.authorization_url(state: current_seller.issue_superfrete_oauth_state!), allow_other_host: true
     rescue Marketplace::SuperfreteOauth::ConfigurationError => e
-      discard_state
+      current_seller.discard_superfrete_oauth_state!
       redirect_to seller_atelier_path, alert: e.message
     end
 
     # A troca do código e a leitura da conta acontecem antes de gravar: se
     # qualquer uma falhar, a conexão anterior (se houver) continua intacta.
+    # Responde 200 no sucesso — é o que a SuperFrete espera —, com uma página
+    # que também serve a um navegador que chegue aqui.
     def callback
-      unless valid_state?(params[:state]) && params[:code].present?
-        redirect_to seller_atelier_path, alert: "Não foi possível validar o retorno da SuperFrete. Tente novamente."
-        return
+      return render_callback(:service_unavailable, "A conexão com a SuperFrete está indisponível no momento.") unless Shipping::Providers.enabled?
+
+      seller, reason = params[:code].present? ? Seller.claim_superfrete_oauth_state(params[:state]) : [ nil, "code_missing" ]
+      unless seller
+        report_state_rejection(reason)
+        return render_callback(:bad_request, "Não foi possível validar o retorno da SuperFrete. Volte ao painel e tente conectar de novo.")
       end
 
-      access_token = oauth.exchange(code: params[:code])
+      access_token = oauth.exchange(code: params[:code], state: params[:state])
       account = oauth.account(access_token: access_token)
-      previous_account_id = current_seller.superfrete_account_id
-      current_seller.connect_superfrete!(access_token: access_token, account: account, sandbox: oauth.sandbox?)
+      previous_account_id = seller.superfrete_account_id
+      seller.connect_superfrete!(access_token: access_token, account: account, sandbox: oauth.sandbox?)
 
-      redirect_to seller_atelier_path, notice: connected_notice(account, previous_account_id)
+      Rails.event.notify("marketplace.superfrete_oauth.connected", seller_id: seller.id,
+        account_changed: previous_account_id.present? && previous_account_id != account.id)
+      render_callback(:ok, connected_message(account, previous_account_id))
     rescue Marketplace::SuperfreteOauth::ConfigurationError,
       Marketplace::SuperfreteOauth::RequestFailed => e
-      redirect_to seller_atelier_path, alert: e.message
+      Rails.event.notify("marketplace.superfrete_oauth.failed", seller_id: seller&.id, reason: e.class.name.demodulize)
+      render_callback(:bad_gateway, e.message)
     end
 
     def destroy
@@ -42,14 +58,20 @@ module SellerPortal
     private
 
     # Quem paga as etiquetas é a carteira da conta conectada: trocar de conta
-    # sem perceber mudaria quem paga. O aviso diz qual ficou.
-    def connected_notice(account, previous_account_id)
+    # sem perceber mudaria quem paga. A mensagem diz qual ficou.
+    def connected_message(account, previous_account_id)
       who = account.email.presence || "a conta #{account.id}"
       if previous_account_id.present? && previous_account_id != account.id
         "Conta SuperFrete trocada: agora é #{who}. As etiquetas passam a ser pagas por essa conta."
       else
         "Conta SuperFrete conectada: #{who}."
       end
+    end
+
+    def render_callback(status, message)
+      @message = message
+      @success = status == :ok
+      render :callback, layout: false, status: status
     end
 
     def require_remote_quotes_enabled
@@ -62,61 +84,9 @@ module SellerPortal
       @oauth ||= Marketplace::SuperfreteOauth.new
     end
 
-    # `state` do OAuth: um valor imprevisível vai para a SuperFrete, só o
-    # digest fica na sessão, e o retorno é aceito uma vez, dentro do prazo,
-    # com comparação em tempo constante — sem ele, um terceiro poderia forçar
-    # a vinculação de uma conta (e de uma carteira) que não é do ateliê.
-    def issue_state
-      state = SecureRandom.urlsafe_base64(32)
-      session[:superfrete_oauth_state_digest] = Digest::SHA256.hexdigest(state)
-      session[:superfrete_oauth_created_at] = Time.current.to_i
-      state
-    end
-
-    def discard_state
-      session.delete(:superfrete_oauth_state_digest)
-      session.delete(:superfrete_oauth_created_at)
-    end
-
-    def valid_state?(received_state)
-      stored_digest = session.delete(:superfrete_oauth_state_digest)
-      stored_created_at = session.delete(:superfrete_oauth_created_at)
-
-      reason = state_rejection_reason(stored_digest, stored_created_at, received_state)
-      return true unless reason
-
-      report_state_rejection(reason, stored_digest, stored_created_at, received_state)
-      false
-    end
-
-    def state_rejection_reason(stored_digest, stored_created_at, received_state)
-      return "stored_digest_missing" if stored_digest.blank?
-      return "received_state_missing" if received_state.blank?
-      return "created_at_missing" if stored_created_at.blank?
-
-      begin
-        return "state_expired" if Time.zone.at(Integer(stored_created_at)) < OAUTH_STATE_TTL.ago
-      rescue ArgumentError, TypeError
-        return "created_at_unparseable"
-      end
-
-      received_digest = Digest::SHA256.hexdigest(received_state.to_s)
-      return "digest_mismatch" unless ActiveSupport::SecurityUtils.secure_compare(stored_digest, received_digest)
-
-      nil
-    end
-
-    # Só a PRESENÇA de cada peça e o motivo — nunca o state nem o digest, que
-    # são segredo de sessão (§43).
-    def report_state_rejection(reason, stored_digest, stored_created_at, received_state)
-      Rails.event.notify(
-        "marketplace.superfrete_oauth.state_rejected",
-        reason: reason,
-        stored_digest_present: stored_digest.present?,
-        created_at_present: stored_created_at.present?,
-        received_state_present: received_state.present?,
-        seller_id: current_seller&.id
-      )
+    # Só o motivo — nunca o state, o digest ou o code (§43).
+    def report_state_rejection(reason)
+      Rails.event.notify("marketplace.superfrete_oauth.state_rejected", reason: reason)
     rescue StandardError
       nil
     end

@@ -58,62 +58,100 @@ RSpec.describe "Seller SuperFrete connection", type: :request do
     end
   end
 
-  it "starts authorization with an unpredictable state" do
+  it "starts authorization with an unpredictable state, keeping only its digest on the seller" do
     state = start_authorization
 
     expect(response).to redirect_to(%r{\Ahttps://sandbox\.superfrete\.com/#/auth/authorize\?})
     expect(state.length).to be >= 32
+    expect(seller.reload.superfrete_oauth_state_digest).to eq(Digest::SHA256.hexdigest(state))
   end
 
-  it "connects the current seller after a valid callback, recording the account" do
-    state = start_authorization
-    allow(oauth).to receive(:exchange).with(code: "valid-code").and_return("superfrete-token")
-    allow(oauth).to receive(:account).with(access_token: "superfrete-token").and_return(account)
+  # A SuperFrete entrega o `code` com um GET do servidor dela: o retorno chega
+  # sem a sessão do ateliê, e é o `state` que diz de quem é a autorização.
+  describe "callback, called by SuperFrete's server without the seller session" do
+    it "connects the seller who started the authorization and answers 200" do
+      state = start_authorization
+      expect(oauth).to receive(:exchange).with(code: "valid-code", state: state).and_return("superfrete-token")
+      allow(oauth).to receive(:account).with(access_token: "superfrete-token").and_return(account)
+      reset!
 
-    get seller_superfrete_callback_path, params: { code: "valid-code", state: state }
+      get seller_superfrete_callback_path, params: { code: "valid-code", state: state }
 
-    expect(response).to redirect_to(seller_atelier_path)
-    expect(flash[:notice]).to include("atelie@example.com")
-    seller.reload
-    expect(seller).to be_superfrete_connected
-    expect(seller.superfrete_access_token).to eq("superfrete-token")
-    expect([ seller.superfrete_account_id, seller.superfrete_sandbox ]).to eq([ "sf-1", true ])
-  end
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("atelie@example.com")
+      seller.reload
+      expect(seller).to be_superfrete_connected
+      expect(seller.superfrete_access_token).to eq("superfrete-token")
+      expect([ seller.superfrete_account_id, seller.superfrete_sandbox ]).to eq([ "sf-1", true ])
+      expect(seller.superfrete_oauth_state_digest).to be_nil
+    end
 
-  it "says so when the seller reconnects with a different account" do
-    seller.connect_superfrete!(access_token: "old", account: Marketplace::SuperfreteOauth::Account.new(id: "sf-old", email: nil))
-    state = start_authorization
-    allow(oauth).to receive(:exchange).and_return("new-token")
-    allow(oauth).to receive(:account).and_return(account)
+    it "says so when the seller reconnects with a different account" do
+      seller.connect_superfrete!(access_token: "old", account: Marketplace::SuperfreteOauth::Account.new(id: "sf-old", email: nil))
+      state = start_authorization
+      allow(oauth).to receive(:exchange).and_return("new-token")
+      allow(oauth).to receive(:account).and_return(account)
+      reset!
 
-    get seller_superfrete_callback_path, params: { code: "valid-code", state: state }
+      get seller_superfrete_callback_path, params: { code: "valid-code", state: state }
 
-    expect(flash[:notice]).to include("trocada")
-    expect(seller.reload.superfrete_account_id).to eq("sf-1")
-  end
+      expect(response.body).to include("trocada")
+      expect(seller.reload.superfrete_account_id).to eq("sf-1")
+    end
 
-  # O `state` é a defesa contra CSRF no retorno: sem ele, um terceiro poderia
-  # forçar a vinculação de uma conta — e de uma carteira — que não é do ateliê.
-  it "refuses a callback with a forged state" do
-    start_authorization
-    expect(oauth).not_to receive(:exchange)
+    # Sem a sessão, o `state` é a única defesa: sem ele, qualquer um gravaria
+    # um token — e uma carteira — num ateliê alheio.
+    it "refuses a forged state without exchanging the code" do
+      start_authorization
+      expect(oauth).not_to receive(:exchange)
+      reset!
 
-    get seller_superfrete_callback_path, params: { code: "valid-code", state: "forged-state" }
+      get seller_superfrete_callback_path, params: { code: "valid-code", state: "forged-state" }
 
-    expect(response).to redirect_to(seller_atelier_path)
-    expect(seller.reload).not_to be_superfrete_connected
-  end
+      expect(response).to have_http_status(:bad_request)
+      expect(seller.reload).not_to be_superfrete_connected
+    end
 
-  it "keeps the previous connection when reading the account fails" do
-    seller.connect_superfrete!(access_token: "old", account: Marketplace::SuperfreteOauth::Account.new(id: "sf-old", email: nil))
-    state = start_authorization
-    allow(oauth).to receive(:exchange).and_return("new-token")
-    allow(oauth).to receive(:account).and_raise(Marketplace::SuperfreteOauth::RequestFailed, "A SuperFrete não informou a conta conectada.")
+    it "accepts each state only once" do
+      state = start_authorization
+      allow(oauth).to receive(:exchange).and_return("superfrete-token")
+      allow(oauth).to receive(:account).and_return(account)
+      reset!
 
-    get seller_superfrete_callback_path, params: { code: "valid-code", state: state }
+      get seller_superfrete_callback_path, params: { code: "valid-code", state: state }
+      expect(response).to have_http_status(:ok)
 
-    expect(flash[:alert]).to include("não informou a conta")
-    expect(seller.reload.superfrete_access_token).to eq("old")
+      get seller_superfrete_callback_path, params: { code: "other-code", state: state }
+      expect(response).to have_http_status(:bad_request)
+      expect(oauth).to have_received(:exchange).once
+    end
+
+    it "refuses an expired state" do
+      state = start_authorization
+      expect(oauth).not_to receive(:exchange)
+      reset!
+
+      travel Seller::SUPERFRETE_OAUTH_STATE_TTL + 1.second do
+        get seller_superfrete_callback_path, params: { code: "valid-code", state: state }
+      end
+
+      expect(response).to have_http_status(:bad_request)
+      expect(seller.reload).not_to be_superfrete_connected
+    end
+
+    it "keeps the previous connection when reading the account fails" do
+      seller.connect_superfrete!(access_token: "old", account: Marketplace::SuperfreteOauth::Account.new(id: "sf-old", email: nil))
+      state = start_authorization
+      allow(oauth).to receive(:exchange).and_return("new-token")
+      allow(oauth).to receive(:account).and_raise(Marketplace::SuperfreteOauth::RequestFailed, "A SuperFrete não informou a conta conectada.")
+      reset!
+
+      get seller_superfrete_callback_path, params: { code: "valid-code", state: state }
+
+      expect(response).to have_http_status(:bad_gateway)
+      expect(response.body).to include("não informou a conta")
+      expect(seller.reload.superfrete_access_token).to eq("old")
+    end
   end
 
   context "with remote quotes disabled in the environment" do
@@ -135,9 +173,12 @@ RSpec.describe "Seller SuperFrete connection", type: :request do
     end
 
     it "refuses a callback without exchanging the code" do
+      state = seller.issue_superfrete_oauth_state!
       expect(oauth).not_to receive(:exchange)
 
-      get seller_superfrete_callback_path, params: { code: "codigo", state: "estado" }
+      get seller_superfrete_callback_path, params: { code: "codigo", state: state }
+
+      expect(response).to have_http_status(:service_unavailable)
 
       expect(seller.reload).not_to be_superfrete_connected
     end
