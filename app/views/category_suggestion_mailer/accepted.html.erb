@@ -1,0 +1,11 @@
+<p>Olá, <%= @seller.name %>!</p>
+
+<p>A categoria que você sugeriu foi aprovada e já está disponível na EloShop:</p>
+
+<p><strong><%= @category_path %></strong></p>
+
+<p>Para usá-la, abra o produto no seu painel e escolha essa categoria na lista. Os seus produtos não mudam sozinhos.</p>
+
+<p><a href="<%= seller_products_url %>"><%= seller_products_url %></a></p>
+
+<p>Obrigado por ajudar a organizar a loja.<br>Equipe EloShop</p>

@@ -5,6 +5,7 @@ module Admin
 
     def index
       @categories = paginate_array(@category_tree.categories)
+      @pending_suggestions_count = CategorySuggestion.pending.count
     end
 
     def new
