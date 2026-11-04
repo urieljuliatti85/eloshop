@@ -469,9 +469,20 @@ class Seller < ApplicationRecord
   end
 
   # O token não expira: um 401 é a integração removida do lado da SuperFrete.
-  # `update_columns` porque roda no meio de uma cotação, sem validação.
+  # Só revoga se o token que levou o 401 ainda for o gravado: uma cotação com
+  # o token antigo pode responder depois de o ateliê reconectar, e esse 401
+  # atrasado não pode derrubar a conexão nova (achado do QA, 2026-11-04). Por
+  # isso o UPDATE é condicionado ao ciphertext, no banco, e não à cópia em
+  # memória — que pode estar desatualizada no meio da cotação.
   def mark_superfrete_revoked!
-    update_columns(superfrete_revoked_at: Time.current) if superfrete_revoked_at.nil?
+    now = Time.current
+    revoked = self.class.where(id: id, superfrete_access_token_ciphertext: superfrete_access_token_ciphertext, superfrete_revoked_at: nil)
+      .update_all(superfrete_revoked_at: now)
+    return false if revoked.zero?
+
+    self.superfrete_revoked_at = now
+    clear_attribute_changes([ :superfrete_revoked_at ])
+    true
   end
 
   def connect_superfrete!(access_token:, account:, sandbox: false)

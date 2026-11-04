@@ -113,7 +113,7 @@ RSpec.describe "Pre-registration (sales closed)", type: :request do
 
     get seller_root_path
 
-    expect(response.body).to include("Sua loja está quase pronta.", "Siga os passos, integre com o Mercado Pago e adicione produtos.", PlatformSetting::SALES_OPENING_PROMISE, "Ver primeiros passos")
+    expect(response.body).to include("Sua loja está quase pronta.", "Siga os passos, integre com o Mercado Pago e a SuperFrete e adicione produtos.", PlatformSetting::SALES_OPENING_PROMISE, "Ver primeiros passos")
     expect(response.body).not_to include("Sua loja está pronta.")
   end
 

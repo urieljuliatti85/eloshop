@@ -78,6 +78,26 @@ module Shipping
         assert_nil Shipping::Providers.for(@seller)
       end
 
+      # Corrida achada no QA (2026-11-04): uma cotação com o token antigo ainda
+      # em voo quando o ateliê reconecta. O 401 desse token chega depois e não
+      # pode marcar como revogada a conexão nova — senão o ateliê, recém
+      # reconectado, perde a etapa e a aprovação até reconectar de novo.
+      test "a late 401 from the previous token does not revoke a newer connection" do
+        stale_provider = Superfrete.new(seller: Seller.find(@seller.id))
+        Seller.find(@seller.id).connect_superfrete!(access_token: "new-token",
+          account: Marketplace::SuperfreteOauth::Account.new(id: "sf-new", email: nil))
+        fake_http = Object.new
+        fake_http.define_singleton_method(:request) do |_request|
+          Net::HTTPUnauthorized.new("1.1", "401", "Unauthorized").tap { |response| response.define_singleton_method(:body) { "{}" } }
+        end
+        stale_provider.instance_variable_set(:@http, fake_http)
+
+        assert_raises(Superfrete::Unavailable) { stale_provider.quotes(origin_zip_code: "01001000", destination_zip_code: "20000000", items: items) }
+
+        assert_nil @seller.reload.superfrete_revoked_at
+        assert @seller.superfrete_ready?
+      end
+
       test "raises Unavailable on a network failure" do
         fake_http = Object.new
         fake_http.define_singleton_method(:request) { |_request| raise Net::OpenTimeout, "internal host" }

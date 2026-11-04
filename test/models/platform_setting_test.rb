@@ -34,6 +34,18 @@ class PlatformSettingTest < ActiveSupport::TestCase
     assert_match "As vendas abrem em breve e avisaremos por e-mail.", PlatformSetting.pre_launch_notice(ready: false)
   end
 
+  # Painel e e-mail usam a mesma frase; a SuperFrete entra onde a etapa existe.
+  test "the almost-ready notice names SuperFrete only while remote quotes are enabled" do
+    assert_match "integre com o Mercado Pago e a SuperFrete", PlatformSetting.pre_launch_notice(ready: false)
+
+    previous = Rails.configuration.x.shipping.remote_quotes_enabled
+    Rails.configuration.x.shipping.remote_quotes_enabled = false
+    assert_no_match "SuperFrete", PlatformSetting.pre_launch_notice(ready: false)
+    assert_equal "Siga os passos, integre com o Mercado Pago e adicione produtos.", PlatformSetting.pre_launch_steps_hint
+  ensure
+    Rails.configuration.x.shipping.remote_quotes_enabled = previous
+  end
+
   test "the database allows a single row" do
     assert_raises(ActiveRecord::StatementInvalid) { PlatformSetting.create!(id: 2) }
   end

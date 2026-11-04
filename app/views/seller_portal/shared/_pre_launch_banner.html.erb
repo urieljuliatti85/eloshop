@@ -13,7 +13,7 @@
       <p class="max-w-2xl text-base leading-relaxed text-white/90"><%= PlatformSetting::SALES_OPENING_PROMISE %></p>
     <% else %>
       <h2 id="pre-launch-title" class="text-2xl font-black leading-tight tracking-tight sm:text-3xl">Sua loja está quase pronta.</h2>
-      <p class="max-w-2xl text-base leading-relaxed text-white/90">Siga os passos, integre com o Mercado Pago e adicione produtos. <%= PlatformSetting::SALES_OPENING_PROMISE %></p>
+      <p class="max-w-2xl text-base leading-relaxed text-white/90"><%= PlatformSetting.pre_launch_steps_hint %> <%= PlatformSetting::SALES_OPENING_PROMISE %></p>
     <% end %>
 
     <% if !ready %>
