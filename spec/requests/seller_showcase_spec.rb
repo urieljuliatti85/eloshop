@@ -151,6 +151,7 @@ RSpec.describe "Seller showcase", type: :request do
 
     it "keeps an approved seller in the store after it disconnects Mercado Pago, without selling" do
       seller.connect_mercado_pago!(mercado_pago_credentials)
+      connect_superfrete!(seller)
       seller.approve!(kyc_level_6_confirmed: true)
       product
       seller.disconnect_mercado_pago!

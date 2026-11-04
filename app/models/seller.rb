@@ -161,12 +161,29 @@ class Seller < ApplicationRecord
   end
 
   def approve!(kyc_level_6_confirmed: false)
-    unless mercado_pago_connected? && approvable_account? && kyc_level_6_confirmed
-      raise VerificationRequired, "Conecte uma conta Mercado Pago de produção e confirme o KYC nível 6 antes da aprovação."
+    unless approval_requirements_met? && kyc_level_6_confirmed
+      raise VerificationRequired, approval_requirements_message
     end
 
     now = Time.current
     update!(status: :approved, approved_at: now, showcased_at: showcased_at || now)
+  end
+
+  # O que precisa estar pronto antes de o admin aprovar (além da confirmação
+  # do KYC, que é dele): fonte única para `approve!` e para a tela do admin.
+  # A SuperFrete entra só para quem ainda não foi aprovado — a regra não toca
+  # `Product#purchase_blocker`, então quem já vende continua vendendo e uma
+  # pane ou a chave da cotação desligada não param a loja.
+  def approval_requirements_met?
+    mercado_pago_connected? && approvable_account? && (superfrete_ready? || !superfrete_required?)
+  end
+
+  def approval_requirements_message
+    if superfrete_required?
+      "Conecte uma conta Mercado Pago de produção e a conta da SuperFrete, e confirme o KYC nível 6 antes da aprovação."
+    else
+      "Conecte uma conta Mercado Pago de produção e confirme o KYC nível 6 antes da aprovação."
+    end
   end
 
   # Libera o ateliê pendente para aparecer na loja sem o Mercado Pago, depois
@@ -276,14 +293,17 @@ class Seller < ApplicationRecord
   # fonte única: a página e o cartão do painel inicial leem daqui, para os dois
   # nunca discordarem sobre o que já está pronto. `pix_key` é declaração do
   # vendedor (o Mercado Pago não permite consultar se há chave PIX).
+  # A conexão com a SuperFrete é obrigatória (decisão do Uriel, 2026-11-04)
+  # só onde a cotação externa está ligada: com a chave desligada não há como
+  # conectar, e exigir travaria todo cadastro. A etapa entra e sai com ela.
   def getting_started_steps
-    {
+    steps = {
       address: origin_address_complete?,
       mercado_pago: mercado_pago_connected?,
-      pix_key: pix_key_confirmed_at.present?,
-      product: products.exists?,
-      approval: approved?
+      pix_key: pix_key_confirmed_at.present?
     }
+    steps[:superfrete] = superfrete_ready? if superfrete_required?
+    steps.merge(product: products.exists?, approval: approved?)
   end
 
   # Pagos e ainda não despachados: o mesmo `:preparing` da linha do tempo do
@@ -437,13 +457,31 @@ class Seller < ApplicationRecord
     superfrete_connected? && superfrete_sandbox? == Marketplace::SuperfreteOauth.sandbox?
   end
 
+  # Pronta para cotar: conectada no ambiente configurado e sem 401 desde a
+  # conexão. É o "conectado" que a etapa, a aprovação e a cotação usam.
+  def superfrete_ready?
+    superfrete_environment_current? && superfrete_revoked_at.nil?
+  end
+
+  # A conexão só é exigida onde é possível fazê-la (chave da cotação ligada).
+  def superfrete_required?
+    Shipping::Providers.enabled?
+  end
+
+  # O token não expira: um 401 é a integração removida do lado da SuperFrete.
+  # `update_columns` porque roda no meio de uma cotação, sem validação.
+  def mark_superfrete_revoked!
+    update_columns(superfrete_revoked_at: Time.current) if superfrete_revoked_at.nil?
+  end
+
   def connect_superfrete!(access_token:, account:, sandbox: false)
     update!(
       superfrete_access_token_ciphertext: encrypt_credential(access_token, salt: CREDENTIAL_ENCRYPTION_SALT_SUPERFRETE),
       superfrete_account_id: account.id,
       superfrete_account_email: account.email,
       superfrete_connected_at: Time.current,
-      superfrete_sandbox: sandbox
+      superfrete_sandbox: sandbox,
+      superfrete_revoked_at: nil
     )
   end
 
@@ -571,7 +609,8 @@ class Seller < ApplicationRecord
     superfrete_account_id: nil,
     superfrete_account_email: nil,
     superfrete_connected_at: nil,
-    superfrete_sandbox: false
+    superfrete_sandbox: false,
+    superfrete_revoked_at: nil
   }.freeze
   CREDENTIAL_ENCRYPTION_SALT_CPF = "seller-owner-cpf".freeze
 

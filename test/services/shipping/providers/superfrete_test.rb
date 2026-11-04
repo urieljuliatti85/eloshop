@@ -70,6 +70,12 @@ module Shipping
           assert_not_includes error.message, "Rua do cliente"
           assert_equal({ provider: "superfrete", seller_id: @seller.id }, events.sole[:payload])
         end
+
+        # O 401 fica gravado: a conexão deixa de contar para a etapa, a
+        # aprovação e a cotação até o ateliê reconectar.
+        assert @seller.reload.superfrete_revoked_at
+        assert_not @seller.superfrete_ready?
+        assert_nil Shipping::Providers.for(@seller)
       end
 
       test "raises Unavailable on a network failure" do

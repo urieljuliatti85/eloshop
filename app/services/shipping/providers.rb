@@ -15,7 +15,7 @@ module Shipping
       return unless enabled?
       return unless seller
 
-      Superfrete.new(seller: seller) if seller.superfrete_environment_current?
+      Superfrete.new(seller: seller) if seller.superfrete_ready?
     end
 
     # Chave por ambiente (`config.x.shipping.remote_quotes_enabled`). Em
