@@ -82,6 +82,28 @@ module Shipping
       assert_equal "EloShop", quotes.sole.carrier
     end
 
+    # Disjuntor: com o provedor lento, cada endereço do checkout esperaria o
+    # timeout de novo. Depois de uma falha, o ateliê fica um minuto no frete
+    # dele, sem chamar o provedor.
+    test "stops calling a failing provider for a while and then tries again" do
+      cart = connected_seller_cart
+      calls = 0
+      provider = Object.new
+      provider.define_singleton_method(:quotes) { |**| calls += 1; raise Providers::Unavailable, "timeout" }
+
+      Calculator.new(cart: cart, address: addresses(:one), provider: provider).quotes
+      quotes = Calculator.new(cart: cart, address: addresses(:one), provider: provider).quotes
+
+      assert_equal 1, calls
+      assert_equal "EloShop", quotes.sole.carrier
+
+      travel Calculator::PROVIDER_COOLDOWN + 1.second do
+        Calculator.new(cart: cart, address: addresses(:one), provider: provider).quotes
+      end
+
+      assert_equal 2, calls
+    end
+
     test "quotes again when a product in the cart changes" do
       cart = connected_seller_cart
       calls = 0
