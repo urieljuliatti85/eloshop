@@ -28,7 +28,7 @@ module Marketplace
 
     test "exchanges the code server-to-server and returns the token" do
       captured = []
-      token = oauth(http: fake_http({ "access_token" => "seller-token", "expires" => "never", "token_type" => "Bearer" }, captured)).exchange(code: "auth-code")
+      token = oauth(http: fake_http({ "access_token" => "seller-token", "expires" => "never", "token_type" => "Bearer" }, captured)).exchange(code: "auth-code", state: "the-state")
 
       assert_equal "seller-token", token
       request = captured.sole
@@ -36,7 +36,7 @@ module Marketplace
       assert_equal SuperfreteOauth::USER_AGENT, request["User-Agent"]
       body = JSON.parse(request.body)
       assert_equal({ "grant_type" => "authorization_code", "client_id" => "client-id", "client_secret" => "client-secret",
-        "redirect_uri" => REDIRECT_URI, "code" => "auth-code" }, body)
+        "redirect_uri" => REDIRECT_URI, "code" => "auth-code", "state" => "the-state" }, body)
     end
 
     # No sandbox, a troca do token não vai para sandbox.superfrete.com.
@@ -47,7 +47,7 @@ module Marketplace
     end
 
     test "rejects a token response without access_token" do
-      assert_raises(SuperfreteOauth::RequestFailed) { oauth(http: fake_http({ "token_type" => "Bearer" })).exchange(code: "c") }
+      assert_raises(SuperfreteOauth::RequestFailed) { oauth(http: fake_http({ "token_type" => "Bearer" })).exchange(code: "c", state: "s") }
     end
 
     test "an HTTP error fails without leaking the response body" do
@@ -58,7 +58,7 @@ module Marketplace
         end
       end
 
-      error = assert_raises(SuperfreteOauth::RequestFailed) { oauth(http: http).exchange(code: "c") }
+      error = assert_raises(SuperfreteOauth::RequestFailed) { oauth(http: http).exchange(code: "c", state: "s") }
       assert_not_includes error.message, "vazado"
     end
 
@@ -66,7 +66,7 @@ module Marketplace
       http = Object.new
       http.define_singleton_method(:request) { |_request| raise Net::ReadTimeout }
 
-      assert_raises(SuperfreteOauth::RequestFailed) { oauth(http: http).exchange(code: "c") }
+      assert_raises(SuperfreteOauth::RequestFailed) { oauth(http: http).exchange(code: "c", state: "s") }
     end
 
     test "reads the connected account with the token" do

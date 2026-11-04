@@ -1,0 +1,17 @@
+<%# Resposta do retorno do OAuth da SuperFrete. Quem chama costuma ser o
+    servidor dela (sem sessão), por isso a página não depende de layout,
+    de usuário logado nem de assets: só diz o resultado e o caminho de volta. %>
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>SuperFrete · EloShop</title>
+  </head>
+  <body style="font-family: system-ui, sans-serif; max-width: 32rem; margin: 3rem auto; padding: 0 1rem; color: #292524; background: #fff;">
+    <h1 style="font-size: 1.25rem;"><%= @success ? "Conta SuperFrete conectada" : "Não foi possível conectar a SuperFrete" %></h1>
+    <p><%= @message %></p>
+    <p><%= link_to "Voltar ao painel do ateliê", seller_atelier_url %></p>
+  </body>
+</html>

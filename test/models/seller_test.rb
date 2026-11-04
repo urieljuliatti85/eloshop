@@ -910,4 +910,41 @@ class SellerTest < ActiveSupport::TestCase
     assert_not seller.reload.superfrete_connected?
     assert_nil seller.superfrete_account_id
   end
+
+  # O retorno do OAuth da SuperFrete chega sem sessão (GET do servidor dela):
+  # o `state` é o que liga a autorização ao ateliê.
+  test "the SuperFrete OAuth state belongs to the seller who issued it and works once" do
+    seller = sellers(:approved)
+    state = seller.issue_superfrete_oauth_state!
+
+    assert_not_includes seller.reload.superfrete_oauth_state_digest, state
+    assert_equal [ seller, nil ], Seller.claim_superfrete_oauth_state(state)
+    assert_equal [ nil, "state_unknown" ], Seller.claim_superfrete_oauth_state(state)
+  end
+
+  test "the SuperFrete OAuth state expires and is consumed even when expired" do
+    seller = sellers(:approved)
+    state = seller.issue_superfrete_oauth_state!
+
+    travel Seller::SUPERFRETE_OAUTH_STATE_TTL + 1.second do
+      assert_equal [ nil, "state_expired" ], Seller.claim_superfrete_oauth_state(state)
+    end
+    assert_nil seller.reload.superfrete_oauth_state_digest
+  end
+
+  test "an unknown or blank SuperFrete OAuth state finds no seller" do
+    sellers(:approved).issue_superfrete_oauth_state!
+
+    assert_equal [ nil, "state_unknown" ], Seller.claim_superfrete_oauth_state("forged")
+    assert_equal [ nil, "state_missing" ], Seller.claim_superfrete_oauth_state("")
+  end
+
+  test "a new SuperFrete OAuth state replaces the previous one" do
+    seller = sellers(:approved)
+    old_state = seller.issue_superfrete_oauth_state!
+    new_state = seller.issue_superfrete_oauth_state!
+
+    assert_equal [ nil, "state_unknown" ], Seller.claim_superfrete_oauth_state(old_state)
+    assert_equal [ seller, nil ], Seller.claim_superfrete_oauth_state(new_state)
+  end
 end

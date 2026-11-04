@@ -140,8 +140,8 @@ que os Correios não reconhecem responde `400` com
 `correios.origin_postcode`: a cotação cai no frete do ateliê sem avisá-lo —
 melhoria futura. Credenciais OAuth de plataforma pedidas no mesmo dia pelo
 formulário da SuperFrete (prazo de até 24 horas úteis); o formulário pede que o
-redirect "aceite GET e retorne 200", e o callback responde 302 quando chega sem
-`code` válido — ajustar se o cadastro for recusado por isso.
+redirect "aceite GET e retorne 200" — ver "Retorno do OAuth feito pelo
+servidor da SuperFrete", abaixo.
 
 **Credenciais recebidas em 2026-11-04**: a SuperFrete enviou o par de
 produção e o de sandbox, e recusou o redirect de sandbox em `localhost`,
@@ -149,6 +149,32 @@ pedindo uma URL remota. Como não há ambiente de homologação, a decisão
 (Uriel, 2026-11-04) foi validar direto com a credencial de produção — cotar
 não gasta saldo e as vendas estão fechadas — e informar a mesma URL de
 produção para o sandbox. Os valores vivem só nas variáveis da Railway.
+
+**Retorno do OAuth feito pelo servidor da SuperFrete (2026-11-04).** No
+primeiro teste em produção, o `GET /painel/superfrete/callback?code&state`
+chegou do servidor dela (`user_agent` `axios`, IP do Google Cloud), não do
+navegador do ateliê: sem sessão, o painel mandava para o login e nada era
+gravado, e o navegador ficava parado na SuperFrete. A documentação só diz
+"enviaremos para a redirect_uri ... com um GET", e o formulário pedia que o
+redirect "aceite GET e retorne 200". Desde então:
+
+* o `state` pendente fica no `Seller` (`superfrete_oauth_state_digest` e
+  `_issued_at`, só o digest, índice único), não na sessão
+  (`Seller#issue_superfrete_oauth_state!`);
+* o retorno é público (`allow_unauthenticated_access`, com `rate_limit`),
+  consome o `state` com um `UPDATE` condicionado ao digest — vale uma vez e por
+  10 minutos (`Seller.claim_superfrete_oauth_state`) — e grava no ateliê dono
+  dele;
+* a troca do código envia também o `state`, como a documentação pede;
+* responde **200** no sucesso, 400 com `state` inválido, 502 quando a
+  SuperFrete falha e 503 com a cotação desligada, sempre com uma página
+  simples que serve também a um navegador. O ateliê volta ao painel por conta
+  própria e vê a conta conectada no cartão da SuperFrete.
+
+Sem a sessão, um golpe de consentimento passa a ser possível (o ateliê de um
+atacante recebendo a conta SuperFrete de quem autorizar pelo link dele): aceito
+enquanto o token só cota, com condição registrada no ADR 005 para antes da
+etiqueta.
 
 **Resiliência e ambiente (2026-11-04, revisão de arquitetura antes de ligar a
 cotação em produção):**

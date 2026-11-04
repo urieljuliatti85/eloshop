@@ -451,6 +451,44 @@ class Seller < ApplicationRecord
     update!(SUPERFRETE_DISCONNECTED)
   end
 
+  # `state` do OAuth da SuperFrete. O retorno é um GET feito pelo servidor
+  # dela, sem a sessão do ateliê, então quem liga o retorno ao ateliê é este
+  # valor: imprevisível, só o digest fica gravado, vale uma vez e por
+  # SUPERFRETE_OAUTH_STATE_TTL. Sem ele, qualquer um poderia gravar um token
+  # (e uma carteira) num ateliê alheio. `update_columns` porque é dado
+  # transitório do fluxo — não passa por validação nem vira versão.
+  SUPERFRETE_OAUTH_STATE_TTL = 10.minutes
+
+  def issue_superfrete_oauth_state!
+    state = SecureRandom.urlsafe_base64(32)
+    update_columns(superfrete_oauth_state_digest: Digest::SHA256.hexdigest(state), superfrete_oauth_state_issued_at: Time.current)
+    state
+  end
+
+  def discard_superfrete_oauth_state!
+    update_columns(superfrete_oauth_state_digest: nil, superfrete_oauth_state_issued_at: nil)
+  end
+
+  # O ateliê dono do `state`, consumindo-o, ou nil (com o motivo, para o
+  # log). O consumo é um UPDATE condicionado ao digest: dois retornos
+  # simultâneos com o mesmo `state` não conectam duas vezes. Expirado também
+  # é consumido.
+  def self.claim_superfrete_oauth_state(state)
+    return [ nil, "state_missing" ] if state.blank?
+
+    digest = Digest::SHA256.hexdigest(state.to_s)
+    seller = find_by(superfrete_oauth_state_digest: digest)
+    return [ nil, "state_unknown" ] unless seller
+
+    claimed = where(id: seller.id, superfrete_oauth_state_digest: digest)
+      .update_all(superfrete_oauth_state_digest: nil, superfrete_oauth_state_issued_at: nil)
+    return [ nil, "state_already_used" ] unless claimed == 1
+    return [ nil, "state_expired" ] if seller.superfrete_oauth_state_issued_at.blank? ||
+      seller.superfrete_oauth_state_issued_at < SUPERFRETE_OAUTH_STATE_TTL.ago
+
+    [ seller, nil ]
+  end
+
   def superfrete_access_token
     decrypt_credential(superfrete_access_token_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_SUPERFRETE)
   end

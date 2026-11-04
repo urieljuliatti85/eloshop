@@ -78,8 +78,8 @@ module Marketplace
     end
 
     # Troca o `code` pelo token, servidor a servidor: o `client_secret` nunca
-    # passa pelo navegador.
-    def exchange(code:)
+    # passa pelo navegador. A documentação pede o mesmo `state` do passo 1.
+    def exchange(code:, state:)
       require_configuration!
 
       payload = post_json(
@@ -88,7 +88,8 @@ module Marketplace
         client_id: @client_id,
         client_secret: @client_secret,
         redirect_uri: @redirect_uri,
-        code: code
+        code: code,
+        state: state
       )
       access_token = payload["access_token"].to_s
       raise RequestFailed, "A SuperFrete devolveu credenciais inválidas." if access_token.blank?
