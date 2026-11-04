@@ -1,0 +1,67 @@
+<% status_labels = { "pending" => "Pendente", "accepted" => "Aceita", "rejected" => "Recusada" }
+   status_badges = { "pending" => "pending", "accepted" => "active", "rejected" => "inactive" }
+   # Só categorias que aparecem na loja: sob uma mãe desabilitada, a nova
+   # nasceria escondida, e o e-mail diria ao ateliê que ela está disponível.
+   parent_options = @category_tree.visible
+     .map { |category| [ @category_tree.breadcrumb_name(category), category.id ] }
+     .sort_by { |label, _id| I18n.transliterate(label).downcase } %>
+<div class="space-y-8">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="admin-section-label mb-2">Organização do catálogo</p>
+      <h1>Categorias sugeridas</h1>
+      <p class="mt-2 text-sm text-slate-500">Pedidos dos ateliês que não acharam a categoria da peça. Aceitar cria a categoria; aceitar ou recusar avisa por e-mail todos os ateliês que sugeriram. O produto do ateliê não muda sozinho.</p>
+    </div>
+    <%= link_to "Voltar às categorias", admin_categories_path, class: "admin-button admin-button--secondary" %>
+  </header>
+
+  <% if @suggestions.any? %>
+    <%= render "admin/shared/pagination", pagination: @pagination, position: :top %>
+    <div class="space-y-4">
+      <% @suggestions.each do |suggestion| %>
+        <section class="admin-card space-y-4 p-5 sm:p-6" aria-labelledby="suggestion-<%= suggestion.id %>-title">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="suggestion-<%= suggestion.id %>-title" class="text-base font-bold text-slate-900"><%= suggestion.name %></h2>
+            <%= admin_status_badge(status_badges.fetch(suggestion.status), label: status_labels.fetch(suggestion.status)) %>
+          </div>
+
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">Sugerida por</p>
+            <ul class="mt-1 space-y-1 text-sm text-slate-700">
+              <% suggestion.requests.sort_by(&:created_at).each do |requester| %>
+                <% email = requester.seller.users.min_by(&:created_at)&.email_address %>
+                <li><%= requester.seller.name %><% if email %> · <%= email %><% end %> · <%= l(requester.created_at, format: "%d/%m/%Y") %></li>
+              <% end %>
+            </ul>
+          </div>
+
+          <% if suggestion.pending? %>
+            <%= form_with scope: :category_suggestion, url: accept_admin_category_suggestion_path(suggestion), method: :patch, class: "grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end" do |form| %>
+              <div>
+                <%= form.label :name, "Nome da categoria", for: "suggestion_#{suggestion.id}_name" %>
+                <%= form.text_field :name, value: suggestion.name, id: "suggestion_#{suggestion.id}_name", required: true, class: "w-full" %>
+              </div>
+              <div>
+                <%= form.label :parent_id, "Categoria-mãe", for: "suggestion_#{suggestion.id}_parent" %>
+                <%= form.select :parent_id, options_for_select(parent_options), { include_blank: "Nenhuma — categoria de topo" }, id: "suggestion_#{suggestion.id}_parent", class: "w-full" %>
+              </div>
+              <%= form.submit "Aceitar", class: "admin-button admin-button--brand" %>
+            <% end %>
+            <%= button_to "Recusar", reject_admin_category_suggestion_path(suggestion), method: :patch,
+                  class: "admin-button admin-button--danger",
+                  form: { data: { turbo_confirm: "Recusar \"#{suggestion.name}\"? Os ateliês que sugeriram recebem o aviso por e-mail." } } %>
+          <% elsif suggestion.accepted? && suggestion.category %>
+            <p class="text-sm text-slate-600">Criada como <strong><%= @category_tree.breadcrumb_name(suggestion.category) %></strong> em <%= l(suggestion.decided_at, format: "%d/%m/%Y") %>.</p>
+          <% elsif suggestion.accepted? %>
+            <p class="text-sm text-slate-600">Aceita em <%= l(suggestion.decided_at, format: "%d/%m/%Y") %>; a categoria foi apagada depois.</p>
+          <% else %>
+            <p class="text-sm text-slate-600">Recusada em <%= l(suggestion.decided_at, format: "%d/%m/%Y") %>.</p>
+          <% end %>
+        </section>
+      <% end %>
+    </div>
+    <%= render "admin/shared/pagination", pagination: @pagination %>
+  <% else %>
+    <div class="admin-empty-state">Nenhuma categoria sugerida pelos ateliês.</div>
+  <% end %>
+</div>

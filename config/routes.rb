@@ -71,6 +71,12 @@ Rails.application.routes.draw do
     end
 
     resources :categories, except: %i[show]
+    resources :category_suggestions, path: "categorias-sugeridas", only: :index do
+      member do
+        patch :accept
+        patch :reject
+      end
+    end
 
     resources :coupons, except: %i[show]
 
@@ -155,6 +161,8 @@ Rails.application.routes.draw do
     get "superfrete/callback", to: "superfrete_connections#callback", as: :superfrete_callback
     delete "superfrete", to: "superfrete_connections#destroy", as: :superfrete_connection
     patch "frete/preferencia", to: "shipping_preferences#update", as: :shipping_preference
+
+    resources :category_suggestions, path: "categorias/sugestoes", only: :create
 
     resources :products, except: :destroy do
       member do

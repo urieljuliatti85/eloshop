@@ -1,0 +1,22 @@
+<%# Fica dentro do formulário do produto, logo abaixo da categoria, mas o campo
+    e o botão pertencem ao formulário irmão (`form="category-suggestion-form"`,
+    ver _form): enviar a sugestão não envia nem valida o produto. A resposta
+    (Turbo Stream) troca este bloco inteiro pela mensagem. %>
+<% message ||= nil
+   tone ||= nil
+   value ||= nil
+   tone_class = { success: "border-emerald-200 bg-emerald-50 text-emerald-900", info: "border-brand-200 bg-brand-50 text-stone-800", error: "border-red-200 bg-red-50 text-red-800" }[tone] %>
+<div id="category-suggestion" class="rounded-xl border border-stone-200 bg-stone-50 p-4">
+  <label for="category_suggestion_name" class="text-sm font-semibold text-stone-700">Não tem a categoria que procura?</label>
+  <p id="category_suggestion_hint" class="mt-1 text-xs text-stone-500">Escreva abaixo. Analisaremos e, se for aprovada, informaremos e disponibilizaremos para você.</p>
+  <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+    <input type="text" id="category_suggestion_name" name="category_suggestion[name]" form="category-suggestion-form"
+           value="<%= value %>" maxlength="<%= CategorySuggestion::NAME_MAX_LENGTH %>" autocomplete="off"
+           aria-describedby="category_suggestion_hint<%= ' category_suggestion_message' if message %>"
+           class="seller-input min-w-0 flex-1">
+    <button type="submit" form="category-suggestion-form" class="seller-button seller-button--secondary justify-center">Enviar sugestão</button>
+  </div>
+  <% if message %>
+    <p id="category_suggestion_message" role="status" class="mt-2 rounded-lg border px-3 py-2 text-sm <%= tone_class %>"><%= message %></p>
+  <% end %>
+</div>

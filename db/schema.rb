@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_03_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_04_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -103,6 +103,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_200000) do
     t.index ["parent_id", "name"], name: "index_categories_on_parent_id_and_name", unique: true
     t.index ["parent_id"], name: "index_categories_on_parent_id"
     t.index ["slug"], name: "index_categories_on_slug", unique: true
+  end
+
+  create_table "category_suggestion_requests", force: :cascade do |t|
+    t.bigint "category_suggestion_id", null: false
+    t.bigint "seller_id", null: false
+    t.datetime "notified_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_suggestion_id", "seller_id"], name: "index_category_suggestion_requests_on_suggestion_and_seller", unique: true
+    t.index ["category_suggestion_id"], name: "index_category_suggestion_requests_on_category_suggestion_id"
+    t.index ["seller_id"], name: "index_category_suggestion_requests_on_seller_id"
+  end
+
+  create_table "category_suggestions", force: :cascade do |t|
+    t.string "name", limit: 60, null: false
+    t.string "normalized_key", limit: 80, null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "category_id"
+    t.bigint "decided_by_user_id"
+    t.datetime "decided_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_category_suggestions_on_category_id"
+    t.index ["decided_by_user_id"], name: "index_category_suggestions_on_decided_by_user_id"
+    t.index ["normalized_key"], name: "index_category_suggestions_on_pending_key", unique: true, where: "((status)::text = 'pending'::text)"
+    t.index ["status", "created_at"], name: "index_category_suggestions_on_status_and_created_at"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'accepted'::character varying, 'rejected'::character varying]::text[])", name: "category_suggestions_status_check"
   end
 
   create_table "coupons", force: :cascade do |t|
@@ -713,6 +740,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_03_200000) do
   add_foreign_key "carts", "coupons"
   add_foreign_key "carts", "customers"
   add_foreign_key "categories", "categories", column: "parent_id"
+  add_foreign_key "category_suggestion_requests", "category_suggestions"
+  add_foreign_key "category_suggestion_requests", "sellers"
+  add_foreign_key "category_suggestions", "categories", on_delete: :nullify
+  add_foreign_key "category_suggestions", "users", column: "decided_by_user_id", on_delete: :nullify
   add_foreign_key "customer_sessions", "customers"
   add_foreign_key "fraud_alerts", "sellers", on_delete: :cascade
   add_foreign_key "funnel_events", "products"

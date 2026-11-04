@@ -5,7 +5,10 @@
       <h1>Categorias</h1>
       <p class="mt-2 text-sm text-slate-500">Estruture como os clientes encontram os produtos.</p>
     </div>
-    <%= link_to "Nova categoria", new_admin_category_path, class: "admin-button admin-button--brand" %>
+    <div class="flex flex-wrap gap-2">
+      <%= link_to "Categorias sugeridas (#{@pending_suggestions_count})", admin_category_suggestions_path, class: "admin-button admin-button--secondary" %>
+      <%= link_to "Nova categoria", new_admin_category_path, class: "admin-button admin-button--brand" %>
+    </div>
   </header>
 
   <% if @categories.any? %>

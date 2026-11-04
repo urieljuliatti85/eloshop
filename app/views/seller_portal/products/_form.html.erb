@@ -20,6 +20,7 @@
     <div><%= form.label :images, "Mais fotos", class: label_class %><%= form.file_field :images, aria: field_error_aria(form, :images), multiple: true, accept: "image/png,image/jpeg,image/webp", class: file_class %><%= field_error(form, :images) %><p class="mt-1 text-xs text-stone-500">PNG, JPEG ou WEBP, até 5 MB por foto e <%= Product::IMAGES_MAX_COUNT %> fotos no total.</p></div>
     <div><%= form.label :description, "Descrição", class: label_class %><%= form.text_area :description, aria: field_error_aria(form, :description), rows: 6, class: field_class %><%= field_error(form, :description) %></div>
     <div><%= form.label :category_id, class: label_class do %>Categoria <%= publish_marker %><% end %><%= form.select :category_id, options_for_select(category_tree.breadcrumb_options, product.category_id), { include_blank: "Selecione uma categoria" }, aria: field_error_aria(form, :category_id), data: { required_fields_target: "field", publish_required: true }, class: field_class %><%= field_error(form, :category_id) %><p class="mt-1 text-xs text-stone-500">É como o cliente encontra o seu produto.</p></div>
+    <%= render "seller_portal/category_suggestions/field" %>
   </section>
 
   <section class="<%= section_class %>" aria-labelledby="product-section-price">
@@ -98,3 +99,4 @@
     <% end %>
   </div>
 <% end %>
+<%= render "seller_portal/category_suggestions/form" %>

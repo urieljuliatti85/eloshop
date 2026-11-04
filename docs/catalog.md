@@ -115,6 +115,22 @@ Categorias são uma árvore (`parent`/`children`). As perguntas de hierarquia ex
 
 `Category::Tree` carrega sempre a árvore completa de propósito: um breadcrumb calculado sobre um recorte devolveria um caminho truncado, sem erro nenhum.
 
+### Sugestão de categoria pelo ateliê (2026-11-04)
+
+No cadastro do produto, abaixo da categoria, o ateliê pode sugerir uma categoria que não achou. O admin vê as sugestões em **Categorias → Categorias sugeridas** (`/admin/categorias-sugeridas`), com o nome e os ateliês que pediram (nome e e-mail). Ele aceita escolhendo a categoria-mãe, e pode corrigir o nome, ou recusa. As duas decisões avisam por e-mail todos os ateliês que sugeriram.
+
+* **Uma sugestão por nome.** `CategorySuggestion#normalized_key` é `name.squish.parameterize`, a mesma regra do slug de `Category` (ignora caixa, acento e espaço). Um índice único **parcial** sobre as pendentes garante isso no banco, inclusive com dois ateliês sugerindo ao mesmo tempo (`create_or_find_by!`). Quem sugeriu fica em `CategorySuggestionRequest`, único por sugestão e ateliê. A chave tem até 80 caracteres (o `parameterize` pode crescer o nome: "Æ" vira "ae"); acima disso, o nome é recusado com mensagem, não com erro do banco. Recusada, a chave fica livre: o mesmo nome pode voltar como sugestão nova (decisão de 2026-11-04).
+* **Nome que já existe é recusado na hora**, com o caminho da categoria. A comparação usa o slug **e** o nome de todas as categorias, inclusive as inativas (elas continuam no seletor do ateliê) e as renomeadas (renomear mantém o slug antigo).
+* **Aceitar** trava a sugestão, cria a categoria pelo próprio model (o `after_commit` invalida o cache de `Category::Tree`, e ela aparece no seletor na hora) e encerra a sugestão, tudo numa transação. O slug é único na árvore inteira: um nome que já existe sob outra mãe é recusado com uma mensagem, e a sugestão continua pendente. Decidir duas vezes não faz nada. A mãe precisa estar na loja: o seletor só oferece categorias visíveis, e o model recusa uma mãe desabilitada ou sob uma desabilitada, porque a categoria nova nasceria escondida e o e-mail diria ao ateliê que ela está disponível.
+* **O produto não muda sozinho** (decisão de 2026-11-04): o e-mail de aceite convida o ateliê a escolher a categoria nova. Enquanto isso, o produto pode ficar em rascunho sem categoria, que só é exigida para publicar.
+* **O envio não depende do produto.** O campo e o botão ficam dentro do formulário do produto, mas pertencem a um formulário irmão (`form="category-suggestion-form"`): não levam os campos nem as fotos do produto e não passam pela validação dele. A resposta é um Turbo Stream que troca o bloco pela mensagem. Limite de 5 sugestões por hora por ateliê.
+* **Histórico sobrevive a exclusões.** As FKs de `category_id` e `decided_by_user_id` são `on_delete: :nullify`: o admin pode apagar uma categoria criada a partir de sugestão (sem produtos) e remover outro admin que decidiu sugestões. A sugestão aceita fica com a categoria nula e a tela mostra "a categoria foi apagada depois"; o job não manda aceite de categoria que não existe mais.
+* **E-mail por ateliê.** Depois do commit, `NotifyCategorySuggestionDecisionJob` é enfileirado uma vez para cada ateliê, e `notified_at` impede o segundo envio. Um ateliê que entra numa sugestão no instante em que o admin a decide (depois de os avisos saírem) tem o próprio aviso enfileirado pelo `suggest!`. Se o processo morrer entre o commit e o enfileiramento, a sugestão decidida fica com pedidos sem `notified_at`. Para reenviar, via `railway ssh`:
+
+  ```bash
+  bin/rails runner 'CategorySuggestionRequest.joins(:category_suggestion).where(notified_at: nil).where.not(category_suggestions: { status: "pending" }).find_each { |r| NotifyCategorySuggestionDecisionJob.perform_later(r) }'
+  ```
+
 ## Relação com estoque
 
 A disponibilidade de compra de um produto (pode ou não ser adicionado ao carrinho/comprado) é derivada do estado de estoque, cuja fonte de verdade e regras estão descritas em `docs/inventory.md`. O catálogo não deve duplicar essa lógica — apenas consultar a disponibilidade centralizada.

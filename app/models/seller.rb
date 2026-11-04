@@ -54,6 +54,7 @@ class Seller < ApplicationRecord
   has_many :seller_reports, dependent: :destroy
   has_many :fraud_alerts, dependent: :destroy
   has_many :notifications, as: :recipient, dependent: :destroy
+  has_many :category_suggestion_requests, dependent: :destroy
 
   # Ids de vendedores com uma aceitação registrada para a versão vigente dos
   # termos (`terms_accepted?` faz a mesma pergunta por vendedor, um a um —
