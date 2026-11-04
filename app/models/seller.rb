@@ -429,6 +429,14 @@ class Seller < ApplicationRecord
     superfrete_access_token_ciphertext.present?
   end
 
+  # A conexão guarda o ambiente em que foi feita, e a cotação segue esse
+  # registro. Se a instalação trocar de ambiente (por exemplo, de sandbox
+  # para produção), um token antigo de teste cotaria preço de teste num
+  # pedido real: só vale cotar quando os dois batem — senão, reconectar.
+  def superfrete_environment_current?
+    superfrete_connected? && superfrete_sandbox? == Marketplace::SuperfreteOauth.sandbox?
+  end
+
   def connect_superfrete!(access_token:, account:, sandbox: false)
     update!(
       superfrete_access_token_ciphertext: encrypt_credential(access_token, salt: CREDENTIAL_ENCRYPTION_SALT_SUPERFRETE),

@@ -8,13 +8,14 @@ module Shipping
     # ateliê ou a tabela interna — a cotação real nunca derruba o checkout.
     class Unavailable < StandardError; end
 
-    # O provedor conectado pelo ateliê, ou nil quando ele não conectou nenhum
-    # ou quando as cotações externas estão desligadas neste ambiente.
+    # O provedor conectado pelo ateliê, ou nil quando ele não conectou nenhum,
+    # quando conectou em outro ambiente (sandbox x produção) ou quando as
+    # cotações externas estão desligadas neste ambiente.
     def self.for(seller)
       return unless enabled?
       return unless seller
 
-      Superfrete.new(seller: seller) if seller.superfrete_connected?
+      Superfrete.new(seller: seller) if seller.superfrete_environment_current?
     end
 
     # Chave por ambiente (`config.x.shipping.remote_quotes_enabled`). Em

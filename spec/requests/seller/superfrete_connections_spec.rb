@@ -37,6 +37,25 @@ RSpec.describe "Seller SuperFrete connection", type: :request do
       expect(page.at_css("form[action='#{seller_superfrete_connection_path}']")).to be_present
       expect(page.at_css("form[action='#{seller_shipping_preference_path}']")).to be_present
     end
+
+    it "asks to reconnect when the connection was made in another SuperFrete environment" do
+      allow(Marketplace::SuperfreteOauth).to receive(:sandbox?).and_return(false)
+      seller.connect_superfrete!(access_token: "token", account: account, sandbox: true)
+
+      get seller_atelier_path
+
+      expect(response.body).to include("foi feita no ambiente de teste e não serve para cotar o frete agora")
+      expect(Nokogiri::HTML(response.body).at_css("form[action='#{seller_superfrete_connection_path}']")).to be_present
+    end
+
+    it "does not ask to reconnect when the connection matches the configured environment" do
+      allow(Marketplace::SuperfreteOauth).to receive(:sandbox?).and_return(true)
+      seller.connect_superfrete!(access_token: "token", account: account, sandbox: true)
+
+      get seller_atelier_path
+
+      expect(response.body).not_to include("não serve para cotar o frete agora")
+    end
   end
 
   it "starts authorization with an unpredictable state" do

@@ -18,6 +18,14 @@ module Shipping
     # limit dos provedores não é documentado (ADR 005).
     CACHE_TTL = 30.minutes
 
+    # Disjuntor: depois de uma falha, o ateliê fica este tempo sem cotar e
+    # vai direto ao frete dele. Sem isso, um provedor lento (que estoura o
+    # timeout em vez de recusar) custaria segundos por endereço do checkout,
+    # a cada recarga, e prenderia as poucas threads do Puma — a loja inteira
+    # pararia, não só o checkout. É por ateliê porque 401 (token revogado) e
+    # CEP de origem inválido são falhas dele, não do provedor.
+    PROVIDER_COOLDOWN = 1.minute
+
     # Rótulo da opção do vendedor no checkout: deixa claro ao cliente que o
     # valor vem de quem envia, não de uma cotação da transportadora.
     SELLER_DEFINED_SERVICE = "Frete definido pelo ateliê"
@@ -81,14 +89,20 @@ module Shipping
     def remote_quotes
       return [] unless provider
       return [] unless seller.origin_zip_code.present?
+      return [] if Rails.cache.exist?(cooldown_key)
 
       cheapest_and_fastest(cached_remote_quotes)
     rescue Providers::Unavailable => e
       # A cotação real é uma otimização do valor, não um requisito do
       # checkout: registrar e seguir com a tabela vale mais que derrubar a
       # compra.
+      Rails.cache.write(cooldown_key, true, expires_in: PROVIDER_COOLDOWN)
       Rails.event.notify("shipping.provider_unavailable", provider: provider_name, reason: e.message)
       []
+    end
+
+    def cooldown_key
+      [ "shipping", provider_name, "cooldown", seller.id ].join("/")
     end
 
     def cached_remote_quotes
@@ -230,9 +244,13 @@ module Shipping
       end
     end
 
+    # Tudo o que muda o preço entra na chave: a versão do produto (peso,
+    # medidas e preço do seguro) e, do provedor, a conta e o ambiente — trocar
+    # de conta ou editar a peça não pode reaproveitar a cotação antiga.
     def cache_key
-      digest = cart_items.map { |item| "#{item.product_id}:#{item.quantity}" }.sort.join(",")
-      [ "shipping", provider_name, seller.id, seller.origin_zip_code, destination_zip_code, Digest::SHA256.hexdigest(digest) ].join("/")
+      digest = cart_items.map { |item| "#{item.product_id}:#{item.quantity}:#{item.product.cache_version}" }.sort.join(",")
+      [ "shipping", provider_name, provider.try(:cache_scope), seller.id, seller.origin_zip_code, destination_zip_code,
+        Digest::SHA256.hexdigest(digest) ].join("/")
     end
 
     def cart_items
