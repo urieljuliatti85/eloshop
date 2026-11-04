@@ -41,6 +41,13 @@ module Marketplace
     # A SuperFrete exige nome da aplicação e contato técnico no User-Agent.
     USER_AGENT = "EloShop (contato@eloshop.shop)".freeze
 
+    # Ambiente configurado (sandbox ou produção). É a resposta única para
+    # "qual SuperFrete esta instalação usa": a conexão grava o ambiente no
+    # ateliê, e a cotação só vale quando os dois batem (Seller#superfrete_environment_current?).
+    def self.sandbox?(value = ENV["SUPERFRETE_SANDBOX"])
+      TRUE_VALUES.include?(value.to_s.downcase)
+    end
+
     def initialize(client_id: ENV["SUPERFRETE_CLIENT_ID"],
                     client_secret: ENV["SUPERFRETE_CLIENT_SECRET"],
                     redirect_uri: ENV["SUPERFRETE_REDIRECT_URI"],
@@ -49,7 +56,7 @@ module Marketplace
       @client_id = client_id
       @client_secret = client_secret
       @redirect_uri = redirect_uri
-      @sandbox = TRUE_VALUES.include?(sandbox.to_s.downcase)
+      @sandbox = self.class.sandbox?(sandbox)
       @http = http
     end
 
