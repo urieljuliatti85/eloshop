@@ -143,10 +143,45 @@ formulário da SuperFrete (prazo de até 24 horas úteis); o formulário pede qu
 redirect "aceite GET e retorne 200", e o callback responde 302 quando chega sem
 `code` válido — ajustar se o cadastro for recusado por isso.
 
+**Credenciais recebidas em 2026-11-04**: a SuperFrete enviou o par de
+produção e o de sandbox, e recusou o redirect de sandbox em `localhost`,
+pedindo uma URL remota. Como não há ambiente de homologação, a decisão
+(Uriel, 2026-11-04) foi validar direto com a credencial de produção — cotar
+não gasta saldo e as vendas estão fechadas — e informar a mesma URL de
+produção para o sandbox. Os valores vivem só nas variáveis da Railway.
+
+**Resiliência e ambiente (2026-11-04, revisão de arquitetura antes de ligar a
+cotação em produção):**
+
+* **Disjuntor por ateliê** (`Shipping::Calculator::PROVIDER_COOLDOWN`, 1
+  minuto). `OrdersController#new` cota uma vez por endereço do cliente, em
+  série, e uma falha não fica em cache: com a SuperFrete lenta (estourando o
+  timeout de 3 s + 5 s em vez de recusar), cada endereço e cada recarga
+  esperavam de novo, e com 2 threads no Puma (o Solid Queue roda no mesmo
+  processo) dois clientes no checkout paravam a loja inteira. Agora a primeira
+  falha marca o ateliê em `Rails.cache` e, por um minuto, ele vai direto ao
+  frete que definiu. É por ateliê porque `401` (token revogado) e CEP de
+  origem inválido são falhas dele; numa queda geral, o primeiro cliente de
+  cada ateliê ainda espera o timeout uma vez por minuto.
+* **Ambiente da conexão.** O ateliê grava o ambiente (`superfrete_sandbox`) ao
+  conectar, e a cotação segue esse registro. `Shipping::Providers.for` só cota
+  quando ele bate com o configurado (`Seller#superfrete_environment_current?`,
+  `Marketplace::SuperfreteOauth.sandbox?` como fonte única); senão o painel
+  pede para reconectar. Sem isso, uma conexão feita no sandbox continuaria
+  cotando preço de teste depois da troca para produção — e, na etapa da
+  etiqueta, compraria etiqueta de teste para um pedido pago.
+* **Chave do cache** inclui a conta conectada, o ambiente
+  (`Superfrete#cache_scope`) e a versão de cada produto (`cache_version`):
+  trocar de conta ou editar peso e medidas não reaproveita a cotação antiga.
+* **Comportamento conhecido, sem correção por ora**: a opção escolhida é
+  reencontrada por transportadora + serviço, não pelo preço. Se o cache de 30
+  minutos expirar entre abrir o checkout e confirmar, o pedido grava o preço
+  novo; o cliente vê o total antes de pagar. Corrigir (recusar e pedir nova
+  escolha) só se aparecer reclamação.
+
 **Ainda não feito**: etiqueta (`cart` → `checkout`, pago pela carteira do
 ateliê; exige o CPF do cliente, que será coletado no checkout — decisão de
-2026-10-30) e rastreio por webhook (HMAC-SHA256 em `X-ME-Signature`). A
-verificação ponta a ponta no sandbox depende das credenciais de plataforma.
+2026-10-30) e rastreio por webhook (HMAC-SHA256 em `X-ME-Signature`).
 
 ## Endereço de origem do ateliê
 
