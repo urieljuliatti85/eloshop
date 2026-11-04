@@ -176,6 +176,27 @@ atacante recebendo a conta SuperFrete de quem autorizar pelo link dele): aceito
 enquanto o token só cota, com condição registrada no ADR 005 para antes da
 etiqueta.
 
+**Conexão obrigatória para aprovar (decisão do Uriel, 2026-11-04).** Onde a
+cotação está ligada (`Seller#superfrete_required?`, a mesma chave
+`SHIPPING_REMOTE_QUOTES_ENABLED`), conectar a SuperFrete é etapa dos Primeiros
+passos (`:superfrete`, entre a chave PIX e a primeira peça) e requisito de
+`Seller#approve!` (`Seller#approval_requirements_met?`, também usado pela tela
+do admin), para **todos** os ateliês: publicar já exige frete de entrega, então
+não existe ateliê "só retirada" a dispensar. A regra **não** entra em
+`Product#purchase_blocker`: quem já foi aprovado continua vendendo (vê a etapa
+pendente e o aviso "quase pronta"), e uma pane da SuperFrete ou a chave
+desligada não param a loja — com a chave desligada, a etapa some e a exigência
+cai. "Conectado" é `Seller#superfrete_ready?`: ambiente certo e sem 401 desde a
+conexão — um 401 na cotação grava `superfrete_revoked_at` e o painel pede para
+reconectar. Conectar não obriga a usar a cotação: o ateliê segue escolhendo
+qual frete o cliente paga.
+
+O passo a passo fica em **Frete e entregas** (`/painel/frete`,
+`SellerPortal::ShippingSettingsController`), no menu Configuração, no tour e
+na aba "Frete" do celular; o cartão de conexão é o mesmo partial de Dados do
+Ateliê (`superfrete_connections/_banner`). O "Como funciona" (aba Quem vende)
+mostra a etapa na mesma condição.
+
 **Resiliência e ambiente (2026-11-04, revisão de arquitetura antes de ligar a
 cotação em produção):**
 
