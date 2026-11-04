@@ -114,9 +114,11 @@ module Shipping
       end
 
       # O token não expira: um 401 quer dizer que o ateliê revogou a
-      # integração do lado da SuperFrete. O checkout segue com o frete dele;
-      # o evento é o sinal para pedir que reconecte.
+      # integração do lado da SuperFrete. O checkout segue com o frete dele, e
+      # a revogação fica gravada: a conexão deixa de contar (etapa, aprovação
+      # e cotação) e o painel pede para reconectar.
       def report_revoked_token
+        @seller.mark_superfrete_revoked!
         Rails.event.notify("shipping.provider_unauthorized", provider: "superfrete", seller_id: @seller.id)
       end
 

@@ -8,7 +8,8 @@ module SellerPortal
       current_seller.update!(provider_quotes_preferred: preferred)
 
       notice = preferred ? "Seus pedidos passam a cobrar o frete calculado pelo provedor." : "Seus pedidos passam a cobrar o frete que você definiu em cada produto."
-      redirect_to seller_atelier_path, notice: notice
+      # Volta para onde a escolha foi feita: Dados do Ateliê ou Frete e entregas.
+      redirect_back_or_to seller_atelier_path, notice: notice
     end
   end
 end

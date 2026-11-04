@@ -7,10 +7,21 @@ class PlatformSetting < ApplicationRecord
   # (`Seller#setup_steps`). A data é promessa do negócio — mude aqui se mudar.
   SALES_OPENING_PROMISE = "As vendas abrem em breve e avisaremos por e-mail.".freeze
   PRE_LAUNCH_READY_NOTICE = "Sua loja está pronta. #{SALES_OPENING_PROMISE}".freeze
-  PRE_LAUNCH_INCOMPLETE_NOTICE = "Sua loja está quase pronta, siga os passos, integre com o Mercado Pago e adicione produtos. #{SALES_OPENING_PROMISE}".freeze
 
   def self.pre_launch_notice(ready:)
-    ready ? PRE_LAUNCH_READY_NOTICE : PRE_LAUNCH_INCOMPLETE_NOTICE
+    ready ? PRE_LAUNCH_READY_NOTICE : "Sua loja está quase pronta, #{pre_launch_steps_hint.downcase_first} #{SALES_OPENING_PROMISE}"
+  end
+
+  # O que falta, no aviso de "quase pronta" do painel e do e-mail — uma frase
+  # só, para os dois não divergirem (o painel tinha cópia própria e ficou sem
+  # a SuperFrete, achado do QA de 2026-11-04). A SuperFrete entra onde a etapa
+  # existe (Seller#superfrete_required?).
+  def self.pre_launch_steps_hint
+    if Shipping::Providers.enabled?
+      "Siga os passos, integre com o Mercado Pago e a SuperFrete e adicione produtos."
+    else
+      "Siga os passos, integre com o Mercado Pago e adicione produtos."
+    end
   end
 
   def self.instance

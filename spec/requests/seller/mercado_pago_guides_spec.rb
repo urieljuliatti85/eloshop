@@ -201,7 +201,7 @@ RSpec.describe "Seller Mercado Pago guide", type: :request do
 
       strip = Nokogiri::HTML(response.body).css("section[aria-labelledby='setup-title'] ol[aria-label='Etapas para preparar o ateliê'] li")
       titles = strip.map { |step| step.at_css(".sr-only").text.squish }
-      expect(titles.index("Etapa 2: Conta do Mercado Pago")).to be < titles.index("Etapa 5: Aprovação e recebimento")
+      expect(titles.index("Etapa 2: Conta do Mercado Pago")).to be < titles.index("Etapa 6: Aprovação e recebimento")
     end
 
     it "replaces the warning with a connected label once connected" do

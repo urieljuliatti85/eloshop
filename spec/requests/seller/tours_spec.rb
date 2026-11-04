@@ -19,11 +19,12 @@ RSpec.describe "Seller tour", type: :request do
       expect(doc.at_css("body")["data-tour-auto-value"]).to eq("true")
       steps = JSON.parse(doc.at_css("body")["data-tour-steps-value"])
       expect(steps.map { |step| step["path"] }).to eq([
-        seller_getting_started_path, seller_atelier_path, seller_mercado_pago_guide_path,
-        seller_pix_key_guide_path, new_seller_product_path
+        seller_getting_started_path, seller_atelier_path, seller_shipping_settings_path,
+        seller_mercado_pago_guide_path, seller_pix_key_guide_path, new_seller_product_path
       ])
-      expect(steps[2]["alert"]).to eq("Não se esqueça de cadastrar a sua chave pix na sua conta Mercado Pago!")
-      expect(steps[3]["title"]).to eq("Cadastro da Chave Pix")
+      expect(steps[2]["title"]).to eq("Frete e entregas")
+      expect(steps[3]["alert"]).to eq("Não se esqueça de cadastrar a sua chave pix na sua conta Mercado Pago!")
+      expect(steps[4]["title"]).to eq("Cadastro da Chave Pix")
     end
 
     it "does not start on its own once completed" do

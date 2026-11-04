@@ -31,6 +31,7 @@ RSpec.describe "Admin sellers", type: :request do
   it "lets platform admins approve a seller" do
     sign_in_as(admin)
     seller.connect_mercado_pago!(mercado_pago_credentials)
+    connect_superfrete!(seller)
 
     patch approve_admin_seller_path(seller), params: { kyc_level_6_confirmed: "1" }
 
@@ -41,6 +42,7 @@ RSpec.describe "Admin sellers", type: :request do
   it "emails the seller when approved" do
     sign_in_as(admin)
     seller.connect_mercado_pago!(mercado_pago_credentials)
+    connect_superfrete!(seller)
 
     expect do
       patch approve_admin_seller_path(seller), params: { kyc_level_6_confirmed: "1" }
@@ -78,6 +80,7 @@ RSpec.describe "Admin sellers", type: :request do
     sign_in_as(admin)
     allow(Marketplace::MercadoPagoOauth).to receive(:sandbox?).and_return(true)
     seller.connect_mercado_pago!(mercado_pago_credentials(test_account: true, live_mode: false))
+    connect_superfrete!(seller)
 
     get admin_seller_path(seller)
 
@@ -96,6 +99,20 @@ RSpec.describe "Admin sellers", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(Nokogiri::HTML(response.body).at_css("input#kyc_level_6_confirmed")["disabled"]).to eq("disabled")
+  end
+
+  # A conexão com a SuperFrete é obrigatória para aprovar (decisão de
+  # 2026-11-04): a tela desabilita e o servidor recusa, pela mesma regra.
+  it "does not approve a seller without SuperFrete, in the form and on the server" do
+    sign_in_as(admin)
+    seller.connect_mercado_pago!(mercado_pago_credentials)
+
+    get admin_seller_path(seller)
+    expect(response.body).to include("A conta da SuperFrete ainda não está conectada")
+    expect(Nokogiri::HTML(response.body).at_css("input[type=submit][value='Aprovar artesão']")["disabled"]).to eq("disabled")
+
+    patch approve_admin_seller_path(seller), params: { kyc_level_6_confirmed: "1" }
+    expect(seller.reload).not_to be_approved
   end
 
   it "shows the seller's own connection link when Mercado Pago is not connected yet" do
@@ -261,6 +278,7 @@ RSpec.describe "Admin sellers", type: :request do
   it "lets platform admins hide an approved seller from the storefront" do
     sign_in_as(admin)
     seller.connect_mercado_pago!(mercado_pago_credentials)
+    connect_superfrete!(seller)
     seller.approve!(kyc_level_6_confirmed: true)
 
     patch hide_admin_seller_path(seller)
@@ -273,6 +291,7 @@ RSpec.describe "Admin sellers", type: :request do
   it "notifies the seller when the platform suspends the account" do
     sign_in_as(admin)
     seller.connect_mercado_pago!(mercado_pago_credentials)
+    connect_superfrete!(seller)
     seller.approve!(kyc_level_6_confirmed: true)
 
     patch suspend_admin_seller_path(seller)
@@ -286,6 +305,7 @@ RSpec.describe "Admin sellers", type: :request do
   it "lets platform admins unhide a seller" do
     sign_in_as(admin)
     seller.connect_mercado_pago!(mercado_pago_credentials)
+    connect_superfrete!(seller)
     seller.approve!(kyc_level_6_confirmed: true)
     seller.hide!
 

@@ -5,6 +5,7 @@ module SellerPortal
       address: "endereco",
       mercado_pago: "mercado-pago",
       pix_key: "chave-pix",
+      superfrete: "superfrete",
       product: "primeira-peca",
       approval: "aprovacao"
     }.freeze
@@ -14,6 +15,7 @@ module SellerPortal
       address: "Preencha o endereço do ateliê",
       mercado_pago: "Conecte sua conta do Mercado Pago",
       pix_key: "Cadastre uma chave PIX no Mercado Pago",
+      superfrete: "Conecte sua conta da SuperFrete",
       product: "Cadastre seu primeiro produto",
       approval: "Entenda como você recebe"
     }.freeze
@@ -23,6 +25,7 @@ module SellerPortal
       address: "Endereço do ateliê",
       mercado_pago: "Conta do Mercado Pago",
       pix_key: "Chave PIX",
+      superfrete: "SuperFrete",
       product: "Primeira peça",
       approval: "Aprovação e recebimento"
     }.freeze
@@ -30,10 +33,14 @@ module SellerPortal
     def show
       @steps = current_seller.getting_started_steps
       @completed_steps_count = @steps.count { |_step, completed| completed }
-      @current_step = STEP_SLUGS.key(params[:etapa]) || @steps.find { |_step, completed| !completed }&.first
+      # Uma etapa que não vale neste ambiente (a SuperFrete com a cotação
+      # desligada) cai na próxima pendente, como se não viesse na URL.
+      requested = STEP_SLUGS.key(params[:etapa])
+      @current_step = (requested if @steps.key?(requested)) || @steps.find { |_step, completed| !completed }&.first
       @next_pending_step = @steps.keys.drop(@steps.keys.index(@current_step).to_i + 1).find { |step| !@steps[step] } if @current_step
 
       set_mercado_pago_oauth_state
+      set_superfrete_oauth_state
     end
   end
 end

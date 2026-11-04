@@ -131,7 +131,7 @@ Rails.application.routes.draw do
     root to: "dashboard#index"
     # Uma etapa por tela; sem etapa na URL, abre a próxima pendente.
     get "primeiros-passos(/:etapa)", to: "getting_started#show", as: :getting_started,
-      constraints: { etapa: /endereco|mercado-pago|chave-pix|primeira-peca|aprovacao/ }
+      constraints: { etapa: /endereco|mercado-pago|chave-pix|superfrete|primeira-peca|aprovacao/ }
     # Endereço de origem preenchido dentro dos Primeiros passos do painel inicial.
     resource :origin_address, only: :update, controller: "origin_addresses", path: "primeiros-passos/endereco"
     post "tour/concluir", to: "tours#complete", as: :tour_completion
@@ -161,6 +161,8 @@ Rails.application.routes.draw do
     get "superfrete/callback", to: "superfrete_connections#callback", as: :superfrete_callback
     delete "superfrete", to: "superfrete_connections#destroy", as: :superfrete_connection
     patch "frete/preferencia", to: "shipping_preferences#update", as: :shipping_preference
+    # Frete e entregas: o passo a passo da SuperFrete, a conexão e a escolha do frete.
+    get "frete", to: "shipping_settings#show", as: :shipping_settings
 
     resources :category_suggestions, path: "categorias/sugestoes", only: :create
 

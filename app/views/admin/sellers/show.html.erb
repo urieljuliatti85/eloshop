@@ -100,6 +100,21 @@
         <p class="mt-2 break-all rounded border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-600"><%= seller_atelier_url %></p>
       <% end %>
     </section>
+
+    <section class="admin-card p-6">
+      <p class="admin-section-label">SuperFrete</p>
+      <% if @seller.superfrete_ready? %>
+        <p class="mt-2 font-semibold text-emerald-700">Conta conectada</p>
+        <p class="mt-2 text-sm text-slate-500">Conta: <%= @seller.superfrete_account_email.presence || @seller.superfrete_account_id %></p>
+        <p class="mt-1 text-sm text-slate-500">Conectada em: <%= l(@seller.superfrete_connected_at, format: :short) %></p>
+      <% elsif @seller.superfrete_connected? %>
+        <p class="mt-2 font-semibold text-amber-700">Conexão sem validade</p>
+        <p class="mt-2 text-sm text-slate-500"><%= @seller.superfrete_revoked_at ? "A SuperFrete recusou o acesso em #{l(@seller.superfrete_revoked_at, format: :short)}." : "Feita em outro ambiente (teste x produção)." %> O artesão precisa reconectar.</p>
+      <% else %>
+        <p class="mt-2 font-semibold text-amber-700">Conta ainda não conectada</p>
+        <p class="mt-2 text-sm text-slate-500">O passo a passo está em Frete e entregas, no painel do artesão.</p>
+      <% end %>
+    </section>
   </div>
 
   <% if @seller.pending? %>
@@ -119,12 +134,15 @@
     <section class="admin-card p-6">
       <h2>Aprovação do artesão</h2>
       <p class="mt-2 text-sm text-slate-500">O Mercado Pago exige conta de vendedor com identificação KYC nível 6 para o split 1:1. Confirme a situação no ambiente do Mercado Pago; a EloShop não recebe nem armazena os documentos.</p>
+      <% if @seller.superfrete_required? && !@seller.superfrete_ready? %>
+        <p class="mt-2 text-sm font-semibold text-amber-700">A conta da SuperFrete ainda não está conectada: a aprovação exige a conexão.</p>
+      <% end %>
       <%# A mesma condição de `Seller#approve!`, e não uma cópia própria: a
           tela desabilitava por `mercado_pago_live_mode?`, que deixou de ser o
           critério quando a aprovação passou a aceitar conta de teste em
           sandbox — o modelo aprovaria e o formulário não deixava nem marcar a
           caixa. Regra de disponibilidade tem fonte única (§19). %>
-      <% approvable = @seller.mercado_pago_connected? && @seller.approvable_account? %>
+      <% approvable = @seller.approval_requirements_met? %>
       <%= form_with url: approve_admin_seller_path(@seller), method: :patch, class: "mt-5 space-y-4" do |form| %>
         <label class="flex items-start gap-3 text-sm text-slate-700">
           <%= check_box_tag :kyc_level_6_confirmed, "1", false, required: true, disabled: !approvable, class: "mt-1 rounded border-slate-300" %>

@@ -13,7 +13,7 @@ RSpec.describe "Seller getting started", type: :request do
     expect(response).to redirect_to(seller_login_path)
   end
 
-  it "opens the next pending step and lists all five as a notebook index" do
+  it "opens the next pending step and lists all six as a notebook index" do
     sign_in_as(user)
 
     get seller_getting_started_path
@@ -22,9 +22,9 @@ RSpec.describe "Seller getting started", type: :request do
     doc = Nokogiri::HTML(response.body)
     index = doc.css("ol[aria-label='Etapas para preparar o ateliê'] a")
     expect(index.map { |link| link.text.squish }).to all(be_present)
-    expect(index.map { |link| link["href"] }).to eq(%w[endereco mercado-pago chave-pix primeira-peca aprovacao].map { |slug| seller_getting_started_path(etapa: slug) })
+    expect(index.map { |link| link["href"] }).to eq(%w[endereco mercado-pago chave-pix superfrete primeira-peca aprovacao].map { |slug| seller_getting_started_path(etapa: slug) })
     expect(doc.at_css("a[aria-current='step']")["href"]).to eq(seller_getting_started_path(etapa: "endereco"))
-    expect(response.body).to include("0 de 5 etapas concluídas", "Preencha o endereço do ateliê", edit_seller_atelier_path)
+    expect(response.body).to include("0 de 6 etapas concluídas", "Preencha o endereço do ateliê", edit_seller_atelier_path)
   end
 
   it "shows one step per page, each with its own action" do
@@ -37,6 +37,10 @@ RSpec.describe "Seller getting started", type: :request do
     expect(response.body).to include("Cadastre uma chave PIX no Mercado Pago", "Gerenciar chaves Pix", seller_pix_key_guide_path)
     expect(response.body.scan("Ver o passo a passo com imagens").size).to eq(1)
     expect(response.body).not_to include(seller_mercado_pago_connect_path)
+
+    allow(Marketplace::SuperfreteOauth).to receive(:new).and_return(instance_double(Marketplace::SuperfreteOauth, configured?: true))
+    get seller_getting_started_path(etapa: "superfrete")
+    expect(response.body).to include("Conecte sua conta da SuperFrete", seller_superfrete_connect_path, seller_shipping_settings_path)
 
     get seller_getting_started_path(etapa: "primeira-peca")
     expect(response.body).to include("Cadastre seu primeiro produto", new_seller_product_path)
@@ -60,7 +64,7 @@ RSpec.describe "Seller getting started", type: :request do
     get seller_getting_started_path(etapa: "chave-pix")
 
     expect(response.body).to include("Feito", "Ainda não cadastrei")
-    expect(response.body).to include("Próxima etapa: Primeira peça", seller_getting_started_path(etapa: "primeira-peca"))
+    expect(response.body).to include("Próxima etapa: SuperFrete", seller_getting_started_path(etapa: "superfrete"))
   end
 
   it "tells a seller who is not approved yet how the launch commission will work" do
@@ -109,16 +113,17 @@ RSpec.describe "Seller getting started", type: :request do
       pix_key_confirmed_at: Time.current
     )
     seller.products.create!(name: "Primeira peça", sku: "PRIMEIRA-1", price_cents: 5_000, stock_quantity: 1)
+    connect_superfrete!(seller)
     sign_in_as(user)
 
     get seller_getting_started_path
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("5 de 5 etapas concluídas", "Ateliê pronto", seller_root_path)
+    expect(response.body).to include("6 de 6 etapas concluídas", "Ateliê pronto", seller_root_path)
     steps = Nokogiri::HTML(response.body).css("ol[aria-label='Etapas para preparar o ateliê'] li")
-    expect(steps.count { |step| step.text.include?("(feita)") }).to eq(5)
+    expect(steps.count { |step| step.text.include?("(feita)") }).to eq(6)
 
-    { "endereco" => "Revisar endereço", "mercado-pago" => "Ver conexão", "primeira-peca" => "Gerenciar produtos", "aprovacao" => "Acompanhar pedidos" }.each do |slug, action|
+    { "endereco" => "Revisar endereço", "mercado-pago" => "Ver conexão", "superfrete" => "Ver conexão", "primeira-peca" => "Gerenciar produtos", "aprovacao" => "Acompanhar pedidos" }.each do |slug, action|
       get seller_getting_started_path(etapa: slug)
       expect(response.body).to include(action)
     end

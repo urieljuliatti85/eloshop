@@ -14,15 +14,26 @@
         em <%= l(current_seller.superfrete_connected_at, format: :short) %>. Ambiente: <%= current_seller.superfrete_sandbox? ? "teste" : "produção" %>.
         As etiquetas são pagas pela carteira dessa conta.
       </p>
-      <% unless current_seller.superfrete_environment_current? %>
+      <% if !current_seller.superfrete_environment_current? %>
         <p class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900" role="status">
           Esta conexão foi feita no ambiente de <%= current_seller.superfrete_sandbox? ? "teste" : "produção" %> e não serve para cotar o frete agora.
+          Desconecte e conecte de novo; até lá, o frete dos seus produtos segue o valor que você definiu.
+        </p>
+      <% elsif current_seller.superfrete_revoked_at %>
+        <p class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900" role="status">
+          A SuperFrete recusou o acesso em <%= l(current_seller.superfrete_revoked_at, format: :short) %>: a integração parece ter sido removida do lado dela.
           Desconecte e conecte de novo; até lá, o frete dos seus produtos segue o valor que você definiu.
         </p>
       <% end %>
       <%= render "seller_portal/shared/shipping_preference" %>
     <% elsif @superfrete_connection_available %>
-      <p class="mt-2 text-sm leading-6 text-stone-600">Conecte a sua conta da SuperFrete para cotar o frete na hora, pelo CEP do cliente, com PAC, SEDEX e Mini Envios. A conta e a carteira continuam suas.</p>
+      <p class="mt-2 text-sm leading-6 text-stone-600">
+        <span class="mr-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-800">Obrigatório para vender</span>
+        Conecte a sua conta da SuperFrete para cotar o frete na hora, pelo CEP do cliente, com PAC, SEDEX e Mini Envios. A conta e a carteira continuam suas.
+      </p>
+      <% unless controller_name == "shipping_settings" %>
+        <p class="mt-2 text-sm"><%= link_to "Ver o passo a passo da conexão", seller_shipping_settings_path, class: "font-bold text-brand-700 underline underline-offset-4" %></p>
+      <% end %>
     <% else %>
       <div class="mt-3"><%= render "seller_portal/shared/shipping_in_development" %></div>
     <% end %>

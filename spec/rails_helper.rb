@@ -37,6 +37,7 @@ end
 RSpec.configure do |config|
   config.include AuthenticationHelpers
   config.include QueryHelpers
+  config.include SuperfreteHelpers
   config.include ActiveSupport::Testing::TimeHelpers
 
   # cache_store é :memory_store em teste (ver config/environments/test.rb)

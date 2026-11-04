@@ -34,18 +34,20 @@ RSpec.describe "Seller mobile tabs", type: :request do
       mercado_pago_live_mode: true, mercado_pago_test_account: false, pix_key_confirmed_at: Time.current
     )
     seller.products.create!(name: "Primeira peça", sku: "ABAS-1", price_cents: 5_000, stock_quantity: 1)
+    connect_superfrete!(seller)
   end
 
-  it "shows the four seller steps and the start, only on mobile, while setup is pending" do
+  it "shows the five seller steps and the start, only on mobile, while setup is pending" do
     get seller_root_path
 
     expect(tabs["class"].split).to include("sm:hidden")
     links = tabs.css("a")
-    expect(labels(tabs)).to eq([ "Início", "Endereço", "Mercado Pago", "PIX", "Peça" ])
+    expect(labels(tabs)).to eq([ "Início", "Endereço", "Mercado Pago", "PIX", "Frete", "Peça" ])
     expect(links.map { |link| link["href"] }).to eq([
       seller_root_path,
-      *%w[endereco mercado-pago chave-pix primeira-peca].map { |slug| seller_root_path(etapa: slug, anchor: "primeiros-passos") }
+      *%w[endereco mercado-pago chave-pix superfrete primeira-peca].map { |slug| seller_root_path(etapa: slug, anchor: "primeiros-passos") }
     ])
+    expect(tabs.at_css("ul")["class"].split).to include("grid-cols-6")
   end
 
   it "marks the page the seller is on, the finished steps and the next one" do
@@ -84,15 +86,16 @@ RSpec.describe "Seller mobile tabs", type: :request do
   describe "once setup is done" do
     before { complete_setup! }
 
-    it "orders the day's work as it happens: orders, new piece, catalog and messages" do
+    it "orders the day's work as it happens: orders, new piece, catalog, shipping and messages" do
       get seller_root_path
 
       expect(tabs).to be_nil
       expect(work_tabs["class"].split).to include("sm:hidden")
-      expect(labels(work_tabs)).to eq([ "Início", "Pedidos", "Nova peça", "Produtos", "Mensagens" ])
+      expect(labels(work_tabs)).to eq([ "Início", "Pedidos", "Nova peça", "Produtos", "Frete", "Mensagens" ])
       expect(work_tabs.css("a").map { |link| link["href"] }).to eq([
-        seller_root_path, seller_orders_path, new_seller_product_path, seller_products_path, seller_messages_path
+        seller_root_path, seller_orders_path, new_seller_product_path, seller_products_path, seller_shipping_settings_path, seller_messages_path
       ])
+      expect(work_tabs.at_css("ul")["class"].split).to include("grid-cols-6")
       expect(work_tabs.css("a").first["aria-current"]).to eq("page")
     end
 

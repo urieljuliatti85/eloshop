@@ -90,6 +90,7 @@ class SellerTest < ActiveSupport::TestCase
     seller = sellers(:pending)
     seller.connect_mercado_pago!(mercado_pago_credentials)
 
+    connect_superfrete(seller)
     seller.approve!(kyc_level_6_confirmed: true)
     assert_predicate seller, :approved?
     assert_not_nil seller.approved_at
@@ -106,6 +107,7 @@ class SellerTest < ActiveSupport::TestCase
   test "suspension stops charging but keeps the credentials to refund past sales" do
     seller = sellers(:pending)
     seller.connect_mercado_pago!(mercado_pago_credentials)
+    connect_superfrete(seller)
     seller.approve!(kyc_level_6_confirmed: true)
     assert_predicate seller, :mercado_pago_connected?
 
@@ -177,6 +179,7 @@ class SellerTest < ActiveSupport::TestCase
   test "hiding does not change status nor disconnect Mercado Pago" do
     seller = sellers(:pending)
     seller.connect_mercado_pago!(mercado_pago_credentials)
+    connect_superfrete(seller)
     seller.approve!(kyc_level_6_confirmed: true)
 
     seller.hide!
@@ -189,6 +192,7 @@ class SellerTest < ActiveSupport::TestCase
   test "unhiding reverses hide! without touching approval" do
     seller = sellers(:pending)
     seller.connect_mercado_pago!(mercado_pago_credentials)
+    connect_superfrete(seller)
     seller.approve!(kyc_level_6_confirmed: true)
     seller.hide!
 
@@ -216,6 +220,7 @@ class SellerTest < ActiveSupport::TestCase
     # variável de ambiente estar setada na máquina de quem roda a suíte.
     with_sandbox(nil) do
       assert_raises(Seller::VerificationRequired) do
+        connect_superfrete(seller)
         seller.approve!(kyc_level_6_confirmed: true)
       end
     end
@@ -231,6 +236,7 @@ class SellerTest < ActiveSupport::TestCase
     assert_equal "seller-refresh-token", seller.mercado_pago_refresh_token
     assert_not_includes seller.mercado_pago_access_token_ciphertext, "seller-access-token"
 
+    connect_superfrete(seller)
     seller.approve!(kyc_level_6_confirmed: true)
     seller.disconnect_mercado_pago!
 
@@ -247,6 +253,7 @@ class SellerTest < ActiveSupport::TestCase
   test "reconnecting the same Mercado Pago account keeps the approval and stores the public key" do
     seller = sellers(:pending)
     seller.connect_mercado_pago!(mercado_pago_credentials(public_key: nil))
+    connect_superfrete(seller)
     seller.approve!(kyc_level_6_confirmed: true)
 
     assert_predicate seller, :approved?
@@ -367,6 +374,7 @@ class SellerTest < ActiveSupport::TestCase
     legacy_seller.update_columns(owner_full_name: nil, cpf_ciphertext: nil, cpf_hash: nil)
 
     legacy_seller.connect_mercado_pago!(mercado_pago_credentials)
+    connect_superfrete(legacy_seller)
     legacy_seller.approve!(kyc_level_6_confirmed: true)
 
     assert_predicate legacy_seller.reload, :approved?
@@ -435,6 +443,7 @@ class SellerTest < ActiveSupport::TestCase
   test "approval keeps the seller listed after disconnecting Mercado Pago, without selling" do
     seller = sellers(:pending)
     seller.connect_mercado_pago!(mercado_pago_credentials)
+    connect_superfrete(seller)
     seller.approve!(kyc_level_6_confirmed: true)
     assert_not_nil seller.showcased_at
 
@@ -450,6 +459,7 @@ class SellerTest < ActiveSupport::TestCase
     showcased_at = seller.showcased_at
 
     seller.connect_mercado_pago!(mercado_pago_credentials)
+    connect_superfrete(seller)
     seller.approve!(kyc_level_6_confirmed: true)
 
     assert_equal showcased_at, seller.showcased_at
@@ -463,6 +473,20 @@ class SellerTest < ActiveSupport::TestCase
   end
 
   private
+
+  # A aprovação exige a SuperFrete conectada onde a cotação está ligada (como
+  # no ambiente de teste): os testes de aprovação conectam antes.
+  def with_remote_quotes_enabled(value)
+    previous = Rails.configuration.x.shipping.remote_quotes_enabled
+    Rails.configuration.x.shipping.remote_quotes_enabled = value
+    yield
+  ensure
+    Rails.configuration.x.shipping.remote_quotes_enabled = previous
+  end
+
+  def connect_superfrete(seller)
+    seller.connect_superfrete!(access_token: "superfrete-token", account: Marketplace::SuperfreteOauth::Account.new(id: "sf-#{seller.id}", email: nil))
+  end
 
   # O modo sandbox vem de variável de ambiente (lida por
   # Marketplace::MercadoPagoOauth), então o teste a define e restaura em vez
@@ -487,6 +511,7 @@ class SellerTest < ActiveSupport::TestCase
     seller.connect_mercado_pago!(mercado_pago_credentials)
     assert_equal :awaiting_approval, seller.onboarding_stage
 
+    connect_superfrete(seller)
     seller.approve!(kyc_level_6_confirmed: true)
     assert_equal :awaiting_first_product, seller.onboarding_stage
 
@@ -625,6 +650,7 @@ class SellerTest < ActiveSupport::TestCase
 
     with_sandbox("true") do
       assert seller.approvable_account?
+      connect_superfrete(seller)
       seller.approve!(kyc_level_6_confirmed: true)
     end
 
@@ -653,6 +679,7 @@ class SellerTest < ActiveSupport::TestCase
     seller = Seller.create!(name: "Ateliê real", owner_full_name: "Ana Lua", cpf: "98765432100")
     seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: true, test_account: false))
 
+    connect_superfrete(seller)
     seller.approve!(kyc_level_6_confirmed: true)
 
     assert seller.reload.approved?
@@ -666,10 +693,10 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.reload.mercado_pago_test_account
   end
 
-  test "getting_started_steps reflects address, Mercado Pago, PIX key, first product and approval" do
+  test "getting_started_steps reflects address, Mercado Pago, PIX key, SuperFrete, first product and approval" do
     seller = Seller.create!(name: "Ateliê dos passos", owner_full_name: "Ana Passos", cpf: "11144477735")
 
-    assert_equal({ address: false, mercado_pago: false, pix_key: false, product: false, approval: false }, seller.getting_started_steps)
+    assert_equal({ address: false, mercado_pago: false, pix_key: false, superfrete: false, product: false, approval: false }, seller.getting_started_steps)
 
     seller.update!(
       origin_zip_code: "01310100", origin_street: "Avenida Paulista", origin_number: "1000",
@@ -679,8 +706,40 @@ class SellerTest < ActiveSupport::TestCase
       pix_key_confirmed_at: Time.current
     )
     seller.products.create!(name: "Primeira peça", sku: "PASSOS-1", price_cents: 5_000, stock_quantity: 1)
+    connect_superfrete(seller)
 
-    assert_equal({ address: true, mercado_pago: true, pix_key: true, product: true, approval: true }, seller.getting_started_steps)
+    assert_equal({ address: true, mercado_pago: true, pix_key: true, superfrete: true, product: true, approval: true }, seller.getting_started_steps)
+  end
+
+  # Com a cotação desligada não há como conectar: a etapa some, e exigir a
+  # conexão travaria todo cadastro (decisão de 2026-11-04).
+  test "the SuperFrete step and its approval requirement exist only while remote quotes are enabled" do
+    seller = Seller.create!(name: "Ateliê sem cotação", owner_full_name: "Ana Cota", cpf: "11144477735")
+    seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: true, test_account: false))
+
+    assert_raises(Seller::VerificationRequired) { seller.approve!(kyc_level_6_confirmed: true) }
+
+    with_remote_quotes_enabled(false) do
+      assert_not seller.getting_started_steps.key?(:superfrete)
+      seller.approve!(kyc_level_6_confirmed: true)
+    end
+    assert seller.reload.approved?
+  end
+
+  test "approval requires a SuperFrete connection that is current and not revoked" do
+    seller = Seller.create!(name: "Ateliê revogado", owner_full_name: "Ana Revoga", cpf: "11144477735")
+    seller.connect_mercado_pago!(mercado_pago_credentials(live_mode: true, test_account: false))
+    connect_superfrete(seller)
+    seller.mark_superfrete_revoked!
+
+    assert_not seller.superfrete_ready?
+    assert_not seller.getting_started_steps[:superfrete]
+    assert_raises(Seller::VerificationRequired) { seller.approve!(kyc_level_6_confirmed: true) }
+
+    connect_superfrete(seller)
+    assert_nil seller.superfrete_revoked_at, "reconectar limpa a revogação"
+    seller.approve!(kyc_level_6_confirmed: true)
+    assert seller.reload.approved?
   end
 
   test "setup_steps keeps a connected but not accepted Mercado Pago account as pending" do
