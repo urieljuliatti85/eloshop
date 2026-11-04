@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_04_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_04_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -648,9 +648,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_120000) do
     t.boolean "superfrete_sandbox", default: false, null: false
     t.boolean "provider_quotes_preferred", default: false, null: false
     t.datetime "mercado_pago_disconnected_at"
+    t.string "superfrete_oauth_state_digest"
+    t.datetime "superfrete_oauth_state_issued_at"
     t.index ["cpf_hash"], name: "index_sellers_on_cpf_hash", unique: true, where: "(cpf_hash IS NOT NULL)"
     t.index ["mercado_pago_user_id"], name: "index_sellers_on_mercado_pago_user_id", unique: true, where: "(mercado_pago_user_id IS NOT NULL)"
     t.index ["slug"], name: "index_sellers_on_slug", unique: true
+    t.index ["superfrete_oauth_state_digest"], name: "index_sellers_on_superfrete_oauth_state_digest", unique: true, where: "(superfrete_oauth_state_digest IS NOT NULL)"
     t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'approved'::character varying::text, 'suspended'::character varying::text])", name: "sellers_status_check"
   end
 
