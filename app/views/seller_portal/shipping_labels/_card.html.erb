@@ -1,0 +1,46 @@
+<%# Etiqueta pela SuperFrete (ShippingLabel). Aparece junto do envio manual,
+    que continua valendo para quem prefere comprar no site da SuperFrete. %>
+<%# `refunding`: o pedido foi ou está sendo reembolsado. A etiqueta comprada
+    continua aqui, só com o cancelamento, para o valor voltar à carteira. %>
+<% refunding = local_assigns.fetch(:refunding, false) %>
+<% label = shipment.shipping_labels.order(:created_at).last %>
+<% cancel_button = capture do %>
+  <%= button_to "Cancelar etiqueta", seller_order_shipping_label_path(order), method: :delete, class: "seller-button seller-button--secondary",
+        form: { data: { turbo_confirm: "Cancelar a etiqueta? Só dá para cancelar antes de postar. Se ela tiver sido paga, o valor volta para a sua carteira na SuperFrete." } } %>
+<% end %>
+<div class="mt-5 rounded-2xl border border-brand-100 bg-white p-4 sm:p-5" data-shipping-label-card>
+  <h3 class="text-lg font-bold">Etiqueta pela SuperFrete</h3>
+  <% if refunding %>
+    <% if label&.active? %>
+      <p class="mt-1 text-sm text-ink" data-label-refunding>O valor deste pedido foi ou está sendo devolvido ao comprador. Não poste a peça: cancele a etiqueta para o valor dela voltar à sua carteira na SuperFrete.</p>
+      <div class="mt-4 flex flex-wrap gap-3"><%= cancel_button %></div>
+    <% end %>
+  <% elsif label&.purchased? %>
+    <p class="mt-1 text-sm text-ink">
+      <strong><%= label.service_name %></strong> · <%= format_price(label.price_cents || label.quoted_price_cents) %>
+      <% if label.tracking_code.present? %> · rastreio <strong><%= label.tracking_code %></strong><% end %>
+    </p>
+    <p class="mt-1 text-sm text-ink-muted">Imprima, cole na caixa e poste. Depois, marque o pedido como enviado abaixo.</p>
+    <div class="mt-4 flex flex-wrap gap-3">
+      <%= link_to "Imprimir etiqueta", print_seller_order_shipping_label_path(order), target: "_blank", rel: "noopener", class: "seller-button seller-button--primary" %>
+      <%= cancel_button %>
+    </div>
+  <% elsif label&.in_progress? %>
+    <%# Conferir e cancelar em todo estado em andamento: se o job morreu no
+        meio (deploy, erro), é o caminho de saída. Conferir nunca reenvia o
+        pagamento (ShippingLabels::Purchase). %>
+    <p class="mt-1 text-sm text-ink" data-label-status="<%= label.status %>">
+      <%= label.purchasing? ? "Confirmando o pagamento da etiqueta com a SuperFrete. Nada é cobrado duas vezes: só conferimos o pedido lá." : "Gerando a etiqueta na SuperFrete. Atualize a página em instantes." %>
+    </p>
+    <div class="mt-4 flex flex-wrap gap-3">
+      <%= button_to "Conferir de novo", reconcile_seller_order_shipping_label_path(order), method: :post, class: "seller-button seller-button--secondary" %>
+      <%= cancel_button %>
+    </div>
+  <% else %>
+    <% if label&.failure_message.present? %>
+      <p class="mt-1 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900" data-label-failure>A última tentativa não gerou etiqueta: <%= label.failure_message %></p>
+    <% end %>
+    <p class="mt-1 text-sm text-ink-muted">Compre a etiqueta por aqui, com o saldo da sua carteira na SuperFrete, sem digitar os dados do cliente.</p>
+    <%= link_to "Gerar etiqueta", new_seller_order_shipping_label_path(order), class: "seller-button seller-button--primary mt-4" %>
+  <% end %>
+</div>

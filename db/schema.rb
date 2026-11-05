@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_05_101412) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_05_141633) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -670,6 +670,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_05_101412) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
+  create_table "shipping_labels", force: :cascade do |t|
+    t.bigint "shipment_id", null: false
+    t.string "status", default: "draft", null: false
+    t.string "provider_order_id"
+    t.integer "service_code", null: false
+    t.string "service_name", null: false
+    t.integer "quoted_price_cents", null: false
+    t.integer "price_cents"
+    t.integer "height_cm", null: false
+    t.integer "width_cm", null: false
+    t.integer "length_cm", null: false
+    t.integer "weight_grams", null: false
+    t.string "tracking_code"
+    t.boolean "sandbox", null: false
+    t.string "superfrete_account_id", null: false
+    t.string "failure_message"
+    t.datetime "purchased_at"
+    t.datetime "cancelled_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider_order_id"], name: "index_shipping_labels_on_provider_order_id", unique: true
+    t.index ["shipment_id"], name: "index_shipping_labels_on_shipment_id"
+    t.index ["shipment_id"], name: "index_shipping_labels_one_active_per_shipment", unique: true, where: "((status)::text = ANY ((ARRAY['draft'::character varying, 'cart_created'::character varying, 'purchasing'::character varying, 'purchased'::character varying])::text[]))"
+    t.check_constraint "(status::text = ANY (ARRAY['draft'::character varying, 'failed'::character varying, 'cancelled'::character varying]::text[])) OR provider_order_id IS NOT NULL", name: "shipping_labels_provider_order_check"
+    t.check_constraint "height_cm > 0 AND width_cm > 0 AND length_cm > 0 AND weight_grams > 0", name: "shipping_labels_package_check"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'cart_created'::character varying, 'purchasing'::character varying, 'purchased'::character varying, 'cancelled'::character varying, 'failed'::character varying]::text[])", name: "shipping_labels_status_check"
+  end
+
   create_table "shipments", force: :cascade do |t|
     t.string "carrier", null: false
     t.string "service", null: false
@@ -791,6 +819,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_05_101412) do
   add_foreign_key "seller_terms_acceptances", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "shipments", "seller_orders", on_delete: :cascade
+  add_foreign_key "shipping_labels", "shipments"
   add_foreign_key "users", "sellers"
   add_foreign_key "wishlist_items", "customers"
   add_foreign_key "wishlist_items", "products"

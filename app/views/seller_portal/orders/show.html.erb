@@ -61,8 +61,10 @@
       <p class="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">Aguarde a confirmação do pagamento antes de preparar e enviar este pedido.</p>
     <% elsif @seller_order.cancelled? || @seller_order.refunded? %>
       <p class="mt-5 rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-700">Este pedido não pode mais avançar na entrega.</p>
+      <%= render "seller_portal/shipping_labels/refund_card", shipment: shipment, order: @order %>
     <% elsif shipment&.pending? && @seller_order.full_refund_in_progress? %>
       <p class="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">O valor deste pedido está sendo devolvido ao comprador. Não envie a peça enquanto o reembolso estiver em andamento.</p>
+      <%= render "seller_portal/shipping_labels/refund_card", shipment: shipment, order: @order %>
     <% elsif shipment&.pending? %>
       <% if @seller_order.production_start_applicable? %>
         <div class="mt-5 rounded-2xl border border-brand-100 bg-brand-50/50 p-4 sm:p-5">
@@ -81,6 +83,7 @@
               class: "seller-button seller-button--primary mt-5",
               form: { data: { turbo_confirm: "O pedido já está pronto para o cliente retirar?" } } %>
       <% else %>
+        <% if ShippingLabels.enabled? %><%= render "seller_portal/shipping_labels/card", shipment: shipment, order: @order %><% end %>
         <%= form_with url: ship_seller_order_path(@order), method: :patch, class: "mt-5 rounded-2xl border border-brand-100 bg-brand-50/50 p-4 sm:p-5" do |form| %>
           <h3 class="text-lg font-bold">Detalhes do Envio</h3>
           <p class="mt-1 text-sm text-ink-muted">Informe como o pedido foi enviado. O código de rastreamento é opcional.</p>
@@ -126,7 +129,7 @@
           </div>
           <div class="mt-4">
             <%= form.label :tracking_code, "Código de rastreamento (opcional)", class: "block text-sm font-semibold text-ink" %>
-            <%= form.text_field :tracking_code, value: shipment.tracking_code, autocomplete: "off",
+            <%= form.text_field :tracking_code, value: shipment.tracking_code.presence || shipment.shipping_labels.purchased.pick(:tracking_code), autocomplete: "off",
                   class: "mt-1 block min-h-11 w-full rounded-xl border-brand-200 bg-white px-3 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500",
                   placeholder: "Ex.: AA123456789BR" %>
           </div>

@@ -226,10 +226,63 @@ cotação em produção):**
   novo; o cliente vê o total antes de pagar. Corrigir (recusar e pedir nova
   escolha) só se aparecer reclamação.
 
-**Ainda não feito**: etiqueta (`cart` → `checkout`, pago pela carteira do
-ateliê; exige o CPF do cliente, que será coletado no checkout — decisão de
-2026-10-30) e rastreio por webhook (HMAC-SHA256 em `X-ME-Signature`). Decisões
-e desenho no ADR 005, "Etapa 2 e 3 — decisões e desenho (2026-11-05)".
+**Etiqueta pelo painel** (2026-11-05, ver abaixo). **Ainda não feito**: rastreio
+por webhook (HMAC-SHA256 em `X-ME-Signature`). Decisões e desenho no ADR 005,
+"Etapa 2 e 3 — decisões e desenho (2026-11-05)".
+
+### Etiqueta pelo painel (2026-11-05)
+
+No detalhe do pedido pago que aguarda envio, o ateliê vê o cartão **Etiqueta
+pela SuperFrete** ao lado do envio manual, que continua valendo
+(`SellerPortal::ShippingLabelsController`, `/painel/orders/:id/etiqueta`).
+
+1. **Pacote e serviço** (`/etiqueta/nova`): medidas sugeridas pelas peças, o
+   ateliê corrige para a caixa real e cota. A tela mostra preço, prazo, as
+   medidas finais (a SuperFrete arredonda) e, quando a etiqueta custa mais que o
+   frete pago pelo cliente, a diferença que fica com o ateliê.
+2. **Pedido** (`ShippingLabels::Request`): recota no servidor (o preço nunca vem
+   do navegador), confere as pré-condições e grava a etiqueta em `draft`. A
+   compra segue em job (`PurchaseShippingLabelJob`).
+3. **Compra** (`ShippingLabels::Purchase`): cria o pedido na SuperFrete e grava o
+   id **antes** de pagar; com o envio travado, confere de novo desistência e
+   reembolso e paga. Depois de um resultado incerto (timeout, 5xx), o pagamento
+   **nunca é reenviado**: a consulta do pedido decide, e enquanto a SuperFrete
+   mostrar pendente a etiqueta fica "confirmando", com **Conferir de novo** e
+   **Cancelar** no painel.
+4. **Imprimir** pede um link novo à SuperFrete a cada clique (o PDF não é
+   guardado; só `https` é aceito). **Cancelar** é só por clique do ateliê, antes
+   da postagem, e o valor volta para a carteira dele.
+
+Saídas que o ateliê sempre tem (QA de 2026-11-05):
+
+* etiqueta em andamento (inclusive presa em `draft` ou `cart_created` porque o
+  job morreu num deploy) mostra **Conferir de novo** e **Cancelar**;
+* com o pedido reembolsado ou em reembolso, a etiqueta ativa continua no
+  painel, só com **Cancelar**, para o valor voltar à carteira;
+* se o pedido criado na SuperFrete sair **mais caro que o cotado**, a compra
+  não paga: cancela o pedido lá e pede nova cotação;
+* dois jobs para a mesma etiqueta em rascunho: o que perde a corrida cancela
+  o pedido que criou lá, para não deixar pedido órfão.
+
+Pré-condições (`ShippingLabels::Guard`): chave ligada, SuperFrete conectada no
+ambiente certo, **e-mail da conta SuperFrete igual ao de um acesso do ateliê**
+(condição de segurança do ADR 005), CPF de quem recebe no pedido, endereço de
+origem e nome completo do responsável; com o envio travado, pedido pago
+aguardando envio, sem reembolso integral em andamento, sem desistência aberta
+e sem outra etiqueta ativa (índice único parcial no banco).
+
+O estado vive em `ShippingLabel` (`draft → cart_created → purchasing →
+purchased`, mais `cancelled` e `failed`), com transições por `UPDATE`
+condicionado. A resposta crua da SuperFrete nunca é gravada:
+`ShippingLabels::Client` extrai só id, status, rastreio, preço, serviço e link.
+Timeouts: 8 s nas chamadas feitas durante a requisição do painel, 20 s no job.
+
+**Ligar em produção**: `SHIPPING_LABELS_ENABLED=true` na Railway, **depois** da
+compra real verificada (saldo no sandbox ou uma etiqueta de produção). O que
+ainda não foi exercitado contra a API: a resposta do checkout com saldo, o
+rastreio devolvido nela e o estorno do cancelamento. O código de rastreio é
+gravado na etiqueta e preenche o campo do envio manual; marcar como enviado
+continua com o ateliê até o webhook (PR 4).
 
 ### Etiqueta e rastreio: o que o sandbox mostrou (2026-11-05)
 

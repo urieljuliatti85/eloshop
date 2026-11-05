@@ -1,0 +1,62 @@
+<% content_for :title, "Gerar etiqueta — Pedido ##{@order.id}" %>
+<div class="mx-auto max-w-3xl space-y-6">
+  <header>
+    <%= link_to "← Pedido ##{@order.id}", seller_order_path(@order), class: "inline-flex min-h-11 items-center text-sm font-semibold text-brand-600" %>
+    <h1 class="mt-3 text-3xl font-black tracking-tight">Gerar etiqueta</h1>
+    <p class="mt-2 text-sm text-ink-muted">A etiqueta é paga com o saldo da sua carteira na SuperFrete<%= " (#{current_seller.superfrete_account_email})" if current_seller.superfrete_account_email.present? %>.</p>
+  </header>
+
+  <% if @blocker %>
+    <div class="seller-card text-sm leading-6 text-ink" role="alert" data-label-blocker><%= @blocker %></div>
+  <% else %>
+    <section class="seller-card" aria-labelledby="package_heading">
+      <h2 id="package_heading" class="text-xl font-bold">1. Pacote</h2>
+      <p class="mt-1 text-sm text-ink-muted">Meça a caixa já embalada. Sugerimos as medidas das peças cadastradas; corrija se a caixa for outra.</p>
+      <%= form_with url: new_seller_order_shipping_label_path(@order), method: :get, class: "mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4" do %>
+        <% [ [ :height_cm, "Altura (cm)" ], [ :width_cm, "Largura (cm)" ], [ :length_cm, "Comprimento (cm)" ], [ :weight_grams, "Peso (g)" ] ].each do |field, label| %>
+          <div>
+            <%= label_tag field, label, class: "block text-sm font-semibold text-ink" %>
+            <%= number_field_tag field, @package[field], min: 1, step: 1, required: true, inputmode: "numeric", class: "seller-input mt-1 min-h-11 w-full" %>
+          </div>
+        <% end %>
+        <div class="col-span-2 sm:col-span-4">
+          <%= submit_tag "Cotar etiqueta", name: nil, class: "seller-button seller-button--secondary" %>
+        </div>
+      <% end %>
+    </section>
+
+    <% if @quote_error %>
+      <div class="seller-card text-sm text-red-800" role="alert"><%= @quote_error %></div>
+    <% elsif @options %>
+      <section class="seller-card" aria-labelledby="service_heading">
+        <h2 id="service_heading" class="text-xl font-bold">2. Serviço</h2>
+        <% if @options.empty? %>
+          <p class="mt-2 text-sm text-ink" data-no-label-options>Nenhum serviço dos Correios atende este pacote e destino. Confira as medidas e o peso.</p>
+        <% else %>
+          <%= form_with url: seller_order_shipping_label_path(@order), method: :post, class: "mt-4 space-y-3",
+                data: { turbo_confirm: "Confirma a compra da etiqueta? O valor sai da sua carteira na SuperFrete." } do %>
+            <% @package.each do |field, value| %><%= hidden_field_tag field, value, id: nil %><% end %>
+            <% @options.each_with_index do |option, index| %>
+              <% difference = @shipment.shipping_cents - option.price_cents %>
+              <label class="flex items-start gap-3 rounded-2xl border border-brand-100 px-4 py-4 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50" data-label-option="<%= option.service_code %>">
+                <%= radio_button_tag :service_code, option.service_code, index.zero?, required: true, class: "mt-1" %>
+                <span class="min-w-0 flex-1 text-sm">
+                  <span class="block font-semibold text-ink"><%= option.carrier %> · <%= option.service_name %> — <%= format_price(option.price_cents) %></span>
+                  <span class="mt-1 block text-ink-muted">Entrega em até <%= pluralize(option.delivery_days, "dia útil", plural: "dias úteis") %> depois da postagem · caixa de <%= option.height_cm %> × <%= option.width_cm %> × <%= option.length_cm %> cm, <%= option.weight_grams %> g</span>
+                  <span class="mt-1 block <%= difference.negative? ? 'font-semibold text-amber-800' : 'text-ink-muted' %>">
+                    <% if difference.negative? %>
+                      O cliente pagou <%= format_price(@shipment.shipping_cents) %> de frete: a diferença de <%= format_price(-difference) %> fica por sua conta.
+                    <% else %>
+                      O cliente pagou <%= format_price(@shipment.shipping_cents) %> de frete.
+                    <% end %>
+                  </span>
+                </span>
+              </label>
+            <% end %>
+            <%= submit_tag "Comprar etiqueta", name: nil, class: "seller-button seller-button--primary" %>
+          <% end %>
+        <% end %>
+      </section>
+    <% end %>
+  <% end %>
+</div>

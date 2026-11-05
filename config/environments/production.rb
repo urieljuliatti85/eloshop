@@ -98,4 +98,7 @@ Rails.application.configure do
   # ateliê, e um ateliê conectado a um app de sandbox não pode passar a cobrar
   # preço de teste porque um provedor começou a aceitar as chamadas.
   config.x.shipping.remote_quotes_enabled = ENV["SHIPPING_REMOTE_QUOTES_ENABLED"] == "true"
+  # Etiqueta comprada pela carteira do ateliê (ADR 005, "Etapa 2 e 3"):
+  # desligada até a validação com saldo real.
+  config.x.shipping.labels_enabled = ENV["SHIPPING_LABELS_ENABLED"] == "true"
 end
