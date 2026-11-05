@@ -415,6 +415,12 @@ conta, com remetente e destinatário explícitos, e a colar o código de rastrei
 aqui. O formulário do produto orienta a simular o envio no mesmo site para
 definir as duas faixas.
 
+O código de rastreio digitado é normalizado (sem espaços, em maiúsculas), só
+aceita letras, números e hífen e não pode repetir o de outro pedido — o índice
+único é global. Formato inválido e código repetido recebem a mesma mensagem,
+para a resposta não confirmar que o código existe em pedido de outro ateliê
+(`Shipment::InvalidTrackingCode`).
+
 Essa atualização é deliberadamente manual: não cria etiqueta, não afirma que
 uma transportadora confirmou a entrega e não depende da integração bloqueada
 com o Melhor Envio. Quando a Etapa 3 do ADR 005 existir, os webhooks do
