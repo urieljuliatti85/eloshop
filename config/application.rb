@@ -43,5 +43,8 @@ module Eloshop
     # de produção, onde os testes e o sandbox dependem dela; produção decide
     # pela variável de ambiente (ver config/environments/production.rb).
     config.x.shipping.remote_quotes_enabled = true
+    # Compra de etiqueta pela carteira do ateliê (ShippingLabels). Mesma
+    # lógica: ligada fora de produção, decidida por variável em produção.
+    config.x.shipping.labels_enabled = true
   end
 end

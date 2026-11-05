@@ -18,6 +18,7 @@ class Shipment < ApplicationRecord
   }.freeze
 
   belongs_to :seller_order
+  has_many :shipping_labels, dependent: :restrict_with_error
   delegate :order, to: :seller_order
 
   enum :status, {

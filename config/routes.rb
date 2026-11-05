@@ -188,6 +188,10 @@ Rails.application.routes.draw do
         patch :ship
         patch :deliver
       end
+      resource :shipping_label, path: "etiqueta", path_names: { new: "nova" }, only: %i[new create destroy] do
+        get :print, path: "imprimir"
+        post :reconcile, path: "conferir"
+      end
     end
     get "mensagens", to: "order_messages#index", as: :messages
     get "orders/:order_id/messages", to: "order_messages#show", as: :order_messages
