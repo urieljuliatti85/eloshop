@@ -2,7 +2,7 @@
 
 <div class="container mx-auto max-w-3xl px-5 py-16">
   <h1 class="text-3xl font-bold text-ink">Política de Privacidade</h1>
-  <p class="mt-2 text-sm text-ink-muted">Última atualização: 30 de outubro de 2026.</p>
+  <p class="mt-2 text-sm text-ink-muted">Última atualização: 5 de novembro de 2026.</p>
 
   <div class="mt-10 space-y-10 text-ink-muted [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-ink [&_h3]:mb-2 [&_h3]:mt-6 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-ink [&_li]:mt-1 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-5 [&_p]:mt-3 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">
     <section>
@@ -27,6 +27,7 @@
         <li><strong>Cadastro:</strong> nome e e-mail.</li>
         <li><strong>Endereços:</strong> rua, número, complemento, bairro, cidade, estado e CEP, para entrega dos pedidos.</li>
         <li><strong>Sessão:</strong> endereço IP e identificador do navegador (user agent), para manter você conectado com segurança. Sessões inativas por 30 dias expiram automaticamente.</li>
+        <li><strong>Quem recebe o pedido:</strong> nome, <strong>CPF</strong> e, se você quiser, telefone de quem vai receber. Os Correios exigem nome e CPF do destinatário na etiqueta de envio, por isso o CPF é pedido só em compras com entrega (não na retirada no ateliê) e fica armazenado de forma criptografada.</li>
         <li><strong>Pedidos:</strong> um retrato ("snapshot") do que foi comprado, preço, endereço de entrega e eventuais personalizações que você escreveu (por exemplo, um nome para gravação em uma peça).</li>
         <li><strong>Avaliações de produtos:</strong> nota, comentário e se a compra foi verificada.</li>
         <li><strong>Lista de desejos:</strong> produtos que você salvou.</li>
@@ -52,7 +53,6 @@
       <ul>
         <li><strong>Dados de cartão de crédito.</strong> O número do cartão nunca passa pelos nossos servidores: a tokenização é feita diretamente no seu navegador pelo Mercado Pago. Armazenamos apenas a bandeira e os últimos 4 dígitos, para você reconhecer o cartão usado.</li>
         <li><strong>Documentos de identidade</strong> (RG, CNH, comprovantes) de clientes ou vendedores — isso é responsabilidade do Mercado Pago no processo de verificação do vendedor.</li>
-        <li><strong>CPF de clientes.</strong></li>
       </ul>
     </section>
 
@@ -87,9 +87,9 @@
     <section>
       <h2>4. Com quem compartilhamos seus dados</h2>
       <ul>
-        <li><strong>Vendedor da compra:</strong> recebe os dados necessários para produzir, embalar e enviar seu pedido (nome, endereço de entrega, itens comprados, personalizações e mensagens do pedido).</li>
+        <li><strong>Vendedor da compra:</strong> recebe os dados necessários para produzir, embalar e enviar seu pedido (nome, endereço de entrega, itens comprados, personalizações e mensagens do pedido). Enquanto prepara o envio de um pedido pago, vê também o CPF e o telefone de quem recebe, para emitir a etiqueta; depois do envio, o CPF aparece mascarado.</li>
         <li><strong>Mercado Pago:</strong> processa pagamentos e recebe os dados necessários para isso (nome, e-mail, valor da compra). No caso de vendedores, também realiza a verificação de identidade (KYC) durante a conexão da conta.</li>
-        <li><strong>SuperFrete:</strong> quando o ateliê conecta a própria conta, recebe para cotar o frete apenas CEP de origem e destino, peso, dimensões e valor declarado dos produtos — nunca nome, e-mail ou outros dados pessoais do cliente.</li>
+        <li><strong>SuperFrete:</strong> quando o ateliê conecta a própria conta, recebe para cotar o frete apenas CEP de origem e destino, peso, dimensões e valor declarado dos produtos. Para emitir a etiqueta, o ateliê informa à SuperFrete o nome, o CPF, o endereço e, se houver, o telefone de quem recebe — dados que os Correios exigem para o envio.</li>
         <li><strong>Sentry (monitoramento de erros):</strong> recebe informações técnicas para identificar falhas no sistema. Configuramos esse serviço para <strong>não</strong> enviar dados pessoais (nomes, e-mails, endereços, dados de pagamento) — apenas o necessário para diagnóstico técnico.</li>
         <li><strong>Google Analytics:</strong> apenas se você consentir, recebe dados de navegação anônimos/agregados.</li>
       </ul>
@@ -108,7 +108,7 @@
     <section>
       <h2>6. Segurança</h2>
       <ul>
-        <li>Dados sensíveis como o CPF do vendedor e os tokens de acesso ao Mercado Pago e à SuperFrete são armazenados <strong>criptografados</strong>.</li>
+        <li>Dados sensíveis como o CPF do vendedor, o CPF de quem recebe o pedido e os tokens de acesso ao Mercado Pago e à SuperFrete são armazenados <strong>criptografados</strong>.</li>
         <li>Senhas nunca são armazenadas em texto simples.</li>
         <li>Campos sensíveis (senha, e-mail, CPF, tokens) são automaticamente ocultados dos nossos registros técnicos (logs).</li>
         <li>Comunicação com os gateways de pagamento é feita de forma segura e autenticada.</li>

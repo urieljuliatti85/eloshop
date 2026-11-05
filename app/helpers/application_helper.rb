@@ -86,6 +86,15 @@ module ApplicationHelper
     number_to_currency(cents / 100r)
   end
 
+  # Telefone guardado só em dígitos (Checkout::Recipient): "27999991234" →
+  # "(27) 99999-1234"; com 10 dígitos, "(27) 3333-1234".
+  def format_phone(digits)
+    digits = digits.to_s
+    return digits unless digits.match?(/\A\d{10,11}\z/)
+
+    "(#{digits[0, 2]}) #{digits[2..-5]}-#{digits[-4..]}"
+  end
+
   # "8%" / "12,5%": taxa em basis points como o vendedor lê.
   def fee_rate_label(rate_bps)
     number_to_percentage(rate_bps.fdiv(100), precision: 2, strip_insignificant_zeros: true, separator: ",")

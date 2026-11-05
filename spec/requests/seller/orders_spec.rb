@@ -268,6 +268,28 @@ RSpec.describe "Seller orders", type: :request do
       expect(response.body).not_to include("Frete pago pelo cliente")
     end
 
+    # O ateliê compra a etiqueta com o CPF de quem recebe: inteiro só no
+    # pedido pago que aguarda envio; antes do pagamento e depois do envio,
+    # mascarado.
+    it "shows the full recipient CPF only while a paid order awaits dispatch" do
+      order = create_order_for(own_product)
+      order.update!(recipient_name: "Ana Souza", recipient_cpf: "52998224725", recipient_phone: "27999991234")
+      shipment = create_shipment_for(order)
+
+      get seller_order_path(order)
+      expect(response.body).to include("Ana Souza", "***.***.***-25", "(27) 99999-1234")
+      expect(response.body).not_to include("529.982.247-25")
+
+      order.confirm!
+      get seller_order_path(order)
+      expect(response.body).to include("529.982.247-25")
+
+      shipment.mark_shipped!
+      get seller_order_path(order)
+      expect(response.body).not_to include("529.982.247-25")
+      expect(response.body).to include("***.***.***-25")
+    end
+
     it "does not show the sending steps once the order was shipped" do
       order = create_order_for(own_product)
       order.confirm!

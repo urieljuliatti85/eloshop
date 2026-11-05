@@ -4,15 +4,28 @@ module Checkout
   # idempotência, concorrência) que este serviço implementa.
   class CreateOrder
     class Failed < StandardError; end
+
+    # Dados de quem recebe inválidos. Separado de `Failed` de propósito: o
+    # checkout volta ao formulário com o que foi digitado, em vez de mandar
+    # para o carrinho.
+    class InvalidRecipient < StandardError
+      attr_reader :recipient
+
+      def initialize(recipient)
+        @recipient = recipient
+        super(recipient.errors.map(&:message).to_sentence)
+      end
+    end
     SHIPPING_CENTS = Shipping::Calculator::BASE_CENTS
 
     # `shipping_quote_id` identifica a opção de frete escolhida pelo cliente,
     # nunca o preço dela: o valor é sempre recalculado aqui (ver #create_order!
     # e docs/checkout.md — o servidor não confia no que vem do navegador).
-    def initialize(cart:, customer:, address:, idempotency_key:, shipping_quote_id: nil)
+    def initialize(cart:, customer:, address:, recipient:, idempotency_key:, shipping_quote_id: nil)
       @cart = cart
       @customer = customer
       @address = address
+      @recipient = recipient
       @idempotency_key = idempotency_key
       @shipping_quote_id = shipping_quote_id
     end
@@ -49,6 +62,10 @@ module Checkout
       # depende de nada que a trava protege (estoque, preço do item); o valor
       # continua recalculado no servidor a partir do id escolhido.
       shipping = Shipping::Calculator.new(cart: @cart, address: @address).call(quote_id: @shipping_quote_id)
+      # O CPF depende da modalidade (retirada não gera etiqueta), que só se
+      # conhece depois da cotação.
+      delivery = !shipping.local_pickup?
+      raise InvalidRecipient, @recipient unless @recipient.valid_for?(delivery: delivery)
 
       Order.transaction do
         cart_items = lock_and_revalidate_cart_items!
@@ -64,6 +81,10 @@ module Checkout
           discount_cents: discount,
           total_cents: subtotal + shipping.shipping_cents - discount,
           shipping_address_snapshot: address_snapshot,
+          recipient_name: @recipient.name,
+          recipient_phone: @recipient.phone,
+          # Retirada não precisa de CPF: não é gravado nem se foi digitado.
+          recipient_cpf: (@recipient.cpf if delivery),
           idempotency_key: @idempotency_key,
           coupon: coupon
         )

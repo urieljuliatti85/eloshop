@@ -10,7 +10,7 @@ module Orders
       cart = Cart.create!(session_token: SecureRandom.hex(10))
       cart.cart_items.create!(product: product, quantity: 1)
 
-      order = Checkout::CreateOrder.new(cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
+      order = Checkout::CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
       [ order, product ]
     end
 
@@ -63,7 +63,7 @@ module Orders
       variant = product.product_variants.create!(sku: "SKU-VAR-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 3, color: "Azul")
       cart = Cart.create!(session_token: SecureRandom.hex(10))
       cart.cart_items.create!(product: product, product_variant: variant, quantity: 1)
-      order = Checkout::CreateOrder.new(cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
+      order = Checkout::CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
       create_pix_payment(order, expires_at: 2.hours.ago)
 
       CancelExpired.new.call
@@ -80,7 +80,7 @@ module Orders
         production_time_min_days: 5, production_time_max_days: 10)
       cart = Cart.create!(session_token: SecureRandom.hex(10))
       cart.cart_items.create!(product: product, quantity: 1)
-      order = Checkout::CreateOrder.new(cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
+      order = Checkout::CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
       create_pix_payment(order, expires_at: 2.hours.ago)
 
       CancelExpired.new.call

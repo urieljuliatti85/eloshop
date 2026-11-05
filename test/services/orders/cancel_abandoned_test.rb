@@ -9,7 +9,7 @@ module Orders
         price_cents: 1000, stock_quantity: stock_quantity, currency: "BRL", status: "active")
       cart = Cart.create!(session_token: SecureRandom.hex(10))
       cart.cart_items.create!(product: product, quantity: 1)
-      order = Checkout::CreateOrder.new(cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
+      order = Checkout::CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
       [ order, product ]
     end
 

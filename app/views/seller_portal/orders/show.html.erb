@@ -95,7 +95,7 @@
                 Acesse a <%= link_to "SuperFrete", "https://web.superfrete.com", target: "_blank", rel: "noopener noreferrer", class: "font-semibold underline" %> com a sua conta e compre a etiqueta:
                 <ul class="mt-1 list-disc space-y-1 pl-5">
                   <li><strong>Remetente:</strong> você, com o endereço de onde a peça sai.</li>
-                  <li><strong>Destinatário:</strong> o cliente que fez esta compra. O nome e o endereço dele estão no quadro <strong>“Endereço de entrega”</strong> deste pedido.</li>
+                  <li><strong>Destinatário:</strong> quem o cliente indicou para receber. Nome, CPF e endereço estão no quadro <strong>“Endereço de entrega”</strong> deste pedido.</li>
                 </ul>
               </li>
               <li data-shipping-paid>
@@ -188,7 +188,13 @@
     <aside class="seller-card">
       <h2 class="text-xl font-bold"><%= shipment&.local_pickup? ? "Dados para retirada" : "Endereço de entrega" %></h2>
       <address class="mt-4 not-italic text-sm leading-6 text-ink-muted">
-        <p class="font-semibold text-ink"><%= @order.customer.name %></p>
+        <p class="font-semibold text-ink"><%= @order.recipient_display_name %></p>
+        <%# CPF inteiro só enquanto o ateliê prepara o envio, que é quando ele
+            compra a etiqueta; depois, mascarado. %>
+        <% if (recipient_cpf = @order.recipient_cpf) %>
+          <p data-recipient-cpf>CPF <%= shipment&.awaiting_dispatch? ? Cpf.format(recipient_cpf) : Cpf.mask(recipient_cpf) %></p>
+        <% end %>
+        <% if @order.recipient_phone.present? %><p><%= format_phone(@order.recipient_phone) %></p><% end %>
         <p><%= [address["street"], address["number"]].compact_blank.join(", ") %></p>
         <% if address["complement"].present? %><p><%= address["complement"] %></p><% end %>
         <p><%= [address["neighborhood"], address["city"]].compact_blank.join(" — ") %><%= "/#{address['state']}" if address["state"].present? %></p>

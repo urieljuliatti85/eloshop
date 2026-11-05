@@ -27,7 +27,7 @@ Você recebe: <%= format_price(@seller_order.seller_amount_cents) %>
 
 Enviar para:
 <% address = @order.shipping_address_snapshot %>
-<%= @order.customer.name %>
+<%= @order.recipient_display_name %>
 <%= address["street"] %>, <%= address["number"] %>
 <% if address["complement"].present? %>
 <%= address["complement"] %>

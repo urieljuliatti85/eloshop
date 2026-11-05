@@ -190,6 +190,7 @@
 
   <h2 class="mb-2 mt-8 font-semibold text-ink">Endereço de entrega</h2>
   <p class="text-sm text-ink-muted">
+    <span class="block font-semibold text-ink"><%= @order.recipient_display_name %></span>
     <%= @order.shipping_address_snapshot["street"] %>, <%= @order.shipping_address_snapshot["number"] %>
     - <%= @order.shipping_address_snapshot["city"] %>/<%= @order.shipping_address_snapshot["state"] %>
   </p>

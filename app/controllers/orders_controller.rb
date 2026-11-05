@@ -18,12 +18,7 @@ class OrdersController < StorefrontController
   end
 
   def new
-    @cart = Current.cart
-    @addresses = Current.customer.addresses
-    @shipping_quotes = @addresses.index_with { |address| shipping_quotes_for(address) }
-    @selected_address = @addresses.find { |address| @shipping_quotes[address].present? }
-    @shipping = @shipping_quotes[@selected_address]&.first
-    @shipping_cents = @shipping&.shipping_cents
+    prepare_checkout(recipient: default_recipient)
     checkout_started = session[:checkout_idempotency_key].blank?
     session[:checkout_idempotency_key] ||= SecureRandom.hex(20)
     Analytics::Funnel.track("checkout_started") if checkout_started
@@ -37,12 +32,17 @@ class OrdersController < StorefrontController
       cart: Current.cart,
       customer: Current.customer,
       address: address,
+      recipient: Checkout::Recipient.from_params(params[:recipient]),
       idempotency_key: idempotency_key,
       shipping_quote_id: params[:shipping_quote_id].presence
     ).call
 
     session.delete(:checkout_idempotency_key)
     redirect_to new_order_payment_path(order), notice: "Pedido \##{order.id} criado. Finalize o pagamento para confirmá-lo."
+  rescue Checkout::CreateOrder::InvalidRecipient => e
+    prepare_checkout(recipient: e.recipient, address: address, shipping_quote_id: params[:shipping_quote_id].presence)
+    flash.now[:alert] = "Confira os dados de quem vai receber o pedido."
+    render :new, status: :unprocessable_content
   rescue Checkout::CreateOrder::Failed => e
     redirect_to cart_path, alert: e.message
   rescue Shipping::Calculator::Unavailable => e
@@ -96,6 +96,30 @@ class OrdersController < StorefrontController
 
   def ensure_cart_not_empty
     redirect_to cart_path, alert: "Seu carrinho está vazio." if Current.cart.cart_items.empty?
+  end
+
+  # Monta a revisão do pedido. Ao voltar de um erro no destinatário, mantém o
+  # endereço e a modalidade que o cliente tinha escolhido.
+  def prepare_checkout(recipient:, address: nil, shipping_quote_id: nil)
+    @cart = Current.cart
+    @addresses = Current.customer.addresses
+    @shipping_quotes = @addresses.index_with { |candidate| shipping_quotes_for(candidate) }
+    @selected_address = [ address, *@addresses ].compact.find { |candidate| @shipping_quotes[candidate].present? }
+    options = @shipping_quotes[@selected_address] || []
+    @shipping = options.find { |option| option.id == shipping_quote_id } || options.first
+    @selected_shipping_quote_id = @shipping&.id
+    @shipping_cents = @shipping&.shipping_cents
+    @recipient = recipient
+  end
+
+  # Nome e telefone do último pedido, para quem compra de novo; senão, o nome
+  # da conta. O CPF não é preenchido: não volta em texto plano para a página.
+  def default_recipient
+    last_order = Current.customer.orders.where.not(recipient_name: nil).order(created_at: :desc).first
+    Checkout::Recipient.new(
+      name: last_order&.recipient_name || Current.customer.name,
+      phone: last_order&.recipient_phone
+    )
   end
 
   def shipping_quotes_for(address)

@@ -122,12 +122,72 @@ RSpec.describe "Orders", type: :request do
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
 
       expect do
-        post orders_path, params: { address_id: address.id }
+        post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       end.to change(Order, :count).by(1)
 
       order = Order.last
       expect(response).to redirect_to(new_order_payment_path(order))
       expect(order.customer).to eq(customer)
+    end
+
+    # Destinatário (Checkout::Recipient): a etiqueta exige o CPF de quem
+    # recebe; sem ele, o checkout volta ao formulário com o que foi digitado.
+    it "returns to the checkout form, keeping what was typed, when the delivery has no recipient CPF" do
+      sign_in_customer
+      add_to_cart
+      cart = CartItem.last.cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+
+      expect do
+        post orders_path, params: { recipient: { name: "Ana Souza", phone: "(27) 99999-1234" }, address_id: address.id }
+      end.not_to change(Order, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      page = Nokogiri::HTML(response.body)
+      expect(page.at_css("#recipient_name")["value"]).to eq("Ana Souza")
+      expect(page.at_css("#recipient_phone")["value"]).to eq("27999991234")
+      expect(page.at_css("#recipient_cpf_error").text).to include("Informe o CPF")
+      expect(page.at_css("input[name='address_id'][checked]")["value"]).to eq(address.id.to_s)
+      expect(customer.reload.orders).to be_empty
+      expect(cart.cart_items.count).to eq(1)
+    end
+
+    it "keeps the typed CPF formatted when it is invalid" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+
+      post orders_path, params: { recipient: { name: "Ana Souza", cpf: "52998224724" }, address_id: address.id }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      page = Nokogiri::HTML(response.body)
+      expect(page.at_css("#recipient_cpf")["value"]).to eq("529.982.247-24")
+      expect(page.at_css("#recipient_cpf_error").text).to include("CPF inválido")
+    end
+
+    it "treats a recipient sent as text as missing, without a server error" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+
+      post orders_path, params: { recipient: "Ana", address_id: address.id }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(Order.where(customer: customer)).to be_empty
+    end
+
+    it "records the recipient with the CPF encrypted" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+
+      post orders_path, params: { recipient: { name: "Ana Souza", cpf: "529.982.247-25", phone: "" }, address_id: address.id }
+
+      order = Order.last
+      expect(order.recipient_name).to eq("Ana Souza")
+      expect(order.recipient_phone).to be_nil
+      expect(order.recipient_cpf).to eq("52998224725")
+      expect(order.recipient_cpf_ciphertext).not_to include("52998224725")
     end
 
     it "empties the cart after creating the order" do
@@ -136,7 +196,7 @@ RSpec.describe "Orders", type: :request do
       cart_id = CartItem.last.cart_id
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
 
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
 
       expect(Cart.find(cart_id).cart_items).to be_empty
     end
@@ -154,12 +214,12 @@ RSpec.describe "Orders", type: :request do
       other_state = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
       same_state = customer.addresses.create!(street: "Rua Vitória", number: "2", neighborhood: "Centro", city: "Vitória", state: "ES", zip_code: "29018-120")
 
-      post orders_path, params: { address_id: other_state.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: other_state.id }
 
       expect(Order.last.shipping_cents).to eq(7000)
 
       add_to_cart
-      post orders_path, params: { address_id: same_state.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: same_state.id }
 
       expect(Order.last.shipping_cents).to eq(2000)
     end
@@ -175,7 +235,7 @@ RSpec.describe "Orders", type: :request do
       address = customer.addresses.create!(street: "Rua Vitória", number: "2", neighborhood: "Centro", city: "Vitória", state: "ES", zip_code: "29018-120")
       address.update_columns(state: " es ")
 
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
 
       expect(Order.last.shipping_cents).to eq(2000)
     end
@@ -193,7 +253,7 @@ RSpec.describe "Orders", type: :request do
       other_state = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
       quote_id = Shipping::Calculator.new(cart: Cart.last, address: same_state).quotes.first.id
 
-      post orders_path, params: { address_id: other_state.id, shipping_quote_id: quote_id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: other_state.id, shipping_quote_id: quote_id }
 
       expect(Order.last.shipping_cents).to eq(3500)
     end
@@ -206,7 +266,7 @@ RSpec.describe "Orders", type: :request do
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
 
       expect do
-        post orders_path, params: { address_id: address.id, shipping_quote_id: "frete-de-graca" }
+        post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id, shipping_quote_id: "frete-de-graca" }
       end.not_to change(Order, :count)
 
       expect(response).to redirect_to(new_order_path)
@@ -224,7 +284,7 @@ RSpec.describe "Orders", type: :request do
         estimated_days: 0
       ).id
 
-      post orders_path, params: { address_id: address.id, shipping_quote_id: pickup_id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id, shipping_quote_id: pickup_id }
 
       shipment = Order.last.seller_orders.sole.shipment
       expect(response).to redirect_to(new_order_payment_path(Order.last))
@@ -239,7 +299,7 @@ RSpec.describe "Orders", type: :request do
       other_address = other_customer.addresses.create!(street: "Rua Alheia", number: "2", neighborhood: "Bairro", city: "Rio", state: "RJ", zip_code: "02000-000")
 
       expect do
-        post orders_path, params: { address_id: other_address.id }
+        post orders_path, params: { recipient: checkout_recipient_params, address_id: other_address.id }
       end.not_to change(Order, :count)
 
       expect(response).to have_http_status(:not_found)
@@ -252,7 +312,7 @@ RSpec.describe "Orders", type: :request do
       product.update!(stock_quantity: 0)
 
       expect do
-        post orders_path, params: { address_id: address.id }
+        post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       end.not_to change(Order, :count)
 
       expect(response).to redirect_to(cart_path)
@@ -261,8 +321,8 @@ RSpec.describe "Orders", type: :request do
     it "rate limits checkout attempts per customer even when the IP changes" do
       sign_in_customer
 
-      5.times { |i| post orders_path, params: { address_id: 0 }, headers: { "X-Real-IP" => "203.0.113.#{i + 1}" } }
-      post orders_path, params: { address_id: 0 }, headers: { "X-Real-IP" => "203.0.113.99" }
+      5.times { |i| post orders_path, params: { recipient: checkout_recipient_params, address_id: 0 }, headers: { "X-Real-IP" => "203.0.113.#{i + 1}" } }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: 0 }, headers: { "X-Real-IP" => "203.0.113.99" }
 
       follow_redirect!
       expect(response.body).to include("Muitas tentativas")
@@ -271,9 +331,9 @@ RSpec.describe "Orders", type: :request do
     it "rate limits repeated checkout attempts" do
       sign_in_customer
 
-      10.times { post orders_path, params: { address_id: 0 } }
+      10.times { post orders_path, params: { recipient: checkout_recipient_params, address_id: 0 } }
 
-      post orders_path, params: { address_id: 0 }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: 0 }
 
       follow_redirect!
       expect(response.body).to include("Muitas tentativas")
@@ -281,11 +341,23 @@ RSpec.describe "Orders", type: :request do
   end
 
   describe "GET /orders/:id" do
+    it "shows the recipient name but never the recipient CPF" do
+      sign_in_customer
+      add_to_cart
+      address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
+      post orders_path, params: { recipient: { name: "Ana Souza", cpf: "529.982.247-25" }, address_id: address.id }
+
+      get order_path(Order.last)
+
+      expect(response.body).to include("Ana Souza")
+      expect(response.body).not_to include("52998224725", "529.982.247-25")
+    end
+
     it "shows the customer's own order" do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       order = Order.last
 
       get order_path(order)
@@ -300,7 +372,7 @@ RSpec.describe "Orders", type: :request do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       order = Order.last
 
       get order_path(order)
@@ -318,7 +390,7 @@ RSpec.describe "Orders", type: :request do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       order = Order.last
       post order_payment_path(order), params: { payment_method: "pix" }
 
@@ -358,7 +430,7 @@ RSpec.describe "Orders", type: :request do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       order = Order.last
 
       other_customer = Customer.create!(name: "Outro pedido", email: "other-order@example.com", password: "password123")
@@ -376,7 +448,7 @@ RSpec.describe "Orders", type: :request do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       order = Order.last
 
       post cancel_order_path(order)
@@ -390,7 +462,7 @@ RSpec.describe "Orders", type: :request do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       order = Order.last
       order.payments.create!(gateway: "fake", external_id: "fake-cancel-own", status: :paid, amount_cents: order.total_cents, application_fee_cents: 0)
 
@@ -404,7 +476,7 @@ RSpec.describe "Orders", type: :request do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       order = Order.last
 
       other_customer = Customer.create!(name: "Outro cancelamento", email: "other-cancel@example.com", password: "password123")
@@ -426,7 +498,7 @@ RSpec.describe "Orders", type: :request do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       order = Order.last
       order.confirm!
       shipment = create_shipment_for(order)
@@ -448,7 +520,7 @@ RSpec.describe "Orders", type: :request do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       order = Order.last
       order.confirm!
       create_shipment_for(order).mark_shipped!
@@ -463,7 +535,7 @@ RSpec.describe "Orders", type: :request do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       order = Order.last
       shipment = create_shipment_for(order)
 
@@ -477,7 +549,7 @@ RSpec.describe "Orders", type: :request do
       sign_in_customer
       add_to_cart
       address = customer.addresses.create!(street: "Rua Teste", number: "1", neighborhood: "Centro", city: "São Paulo", state: "SP", zip_code: "01000-000")
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
       order = Order.last
       order.confirm!
       shipment = create_shipment_for(order)
