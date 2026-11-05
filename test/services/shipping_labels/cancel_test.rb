@@ -48,6 +48,27 @@ module ShippingLabels
       assert_not @client.called?(:cancel)
     end
 
+    # QA de 2026-11-05 (R1): o job morreu no meio e a etiqueta ficava presa,
+    # sem botão e sem poder cancelar, bloqueando uma nova.
+    test "cancels a label stuck before reaching SuperFrete without calling it" do
+      label = build_label(status: :draft)
+
+      Cancel.new(label, client: @client).call
+
+      assert label.reload.cancelled?
+      assert_empty @client.calls
+      assert_not @shipment.shipping_labels.active.exists?
+    end
+
+    test "cancels a label stuck with an unpaid order at SuperFrete" do
+      label = build_label(status: :cart_created)
+
+      Cancel.new(label, client: @client).call
+
+      assert label.reload.cancelled?
+      assert @client.called?(:cancel)
+    end
+
     test "keeps the label when SuperFrete does not answer" do
       @client.cancel_result = Client::Ambiguous.new("sem resposta")
       label = build_label(status: :purchased)

@@ -693,8 +693,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_05_141633) do
     t.index ["provider_order_id"], name: "index_shipping_labels_on_provider_order_id", unique: true
     t.index ["shipment_id"], name: "index_shipping_labels_on_shipment_id"
     t.index ["shipment_id"], name: "index_shipping_labels_one_active_per_shipment", unique: true, where: "((status)::text = ANY ((ARRAY['draft'::character varying, 'cart_created'::character varying, 'purchasing'::character varying, 'purchased'::character varying])::text[]))"
+    t.check_constraint "(status::text = ANY (ARRAY['draft'::character varying, 'failed'::character varying, 'cancelled'::character varying]::text[])) OR provider_order_id IS NOT NULL", name: "shipping_labels_provider_order_check"
     t.check_constraint "height_cm > 0 AND width_cm > 0 AND length_cm > 0 AND weight_grams > 0", name: "shipping_labels_package_check"
-    t.check_constraint "status::text = 'draft'::text OR provider_order_id IS NOT NULL OR status::text = 'failed'::text", name: "shipping_labels_provider_order_check"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'cart_created'::character varying, 'purchasing'::character varying, 'purchased'::character varying, 'cancelled'::character varying, 'failed'::character varying]::text[])", name: "shipping_labels_status_check"
   end
 

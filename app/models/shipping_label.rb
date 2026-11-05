@@ -3,8 +3,9 @@
 # idempotência, por isso os estados são explícitos:
 #
 #   draft → cart_created → purchasing → purchased → cancelled
-#     ↘          ↘   ↘         ↘    ↘
-#      failed  failed cancelled failed cancelled
+#
+# Todo estado ativo pode ir para `cancelled` (clique do ateliê); `draft`,
+# `cart_created` e `purchasing` também para `failed`.
 #
 # * `draft`: pedida no painel, ainda sem nada na SuperFrete.
 # * `cart_created`: o pedido existe lá (`provider_order_id` gravado), sem
@@ -20,7 +21,7 @@ class ShippingLabel < ApplicationRecord
   ACTIVE_STATUSES = %w[draft cart_created purchasing purchased].freeze
 
   TRANSITIONS = {
-    "draft" => %w[cart_created failed],
+    "draft" => %w[cart_created failed cancelled],
     "cart_created" => %w[purchasing cancelled failed],
     "purchasing" => %w[purchased cart_created failed cancelled],
     "purchased" => %w[cancelled],

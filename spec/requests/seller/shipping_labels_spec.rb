@@ -141,6 +141,72 @@ RSpec.describe "Seller shipping labels", type: :request do
     end.to have_enqueued_job(PurchaseShippingLabelJob).with(label)
   end
 
+  # Regressões do QA de 2026-11-05.
+  describe "ways out the atelier always has" do
+    it "offers checking again and cancelling a label stuck before payment (job died midway)" do
+      order = paid_order_for(seller)
+      label = create_label(order, status: :draft, provider_order_id: nil)
+
+      get seller_order_path(order)
+      buttons = Nokogiri::HTML(response.body).css("[data-shipping-label-card] button").map { |button| button.text.squish }
+      expect(buttons).to include("Conferir de novo", "Cancelar etiqueta")
+
+      delete seller_order_shipping_label_path(order)
+      expect(label.reload).to be_cancelled
+    end
+
+    it "keeps the purchased label cancellable while a full refund is in progress, without the print button" do
+      order = paid_order_for(seller)
+      create_label(order, status: :purchased)
+      payment = order.payments.create!(gateway: "fake", external_id: "fake-#{SecureRandom.hex(3)}", status: "paid", amount_cents: order.total_cents)
+      payment.payment_refunds.create!(idempotency_key: SecureRandom.hex(6), amount_cents: payment.amount_cents, application_fee_amount_cents: 0)
+
+      get seller_order_path(order)
+
+      card = Nokogiri::HTML(response.body).at_css("[data-shipping-label-card]")
+      expect(card.at_css("[data-label-refunding]")).to be_present
+      expect(card.text).to include("Cancelar etiqueta")
+      expect(card.text).not_to include("Imprimir etiqueta")
+    end
+
+    it "keeps the purchased label cancellable after the order was refunded" do
+      order = paid_order_for(seller)
+      label = create_label(order, status: :purchased)
+      order.seller_order.update!(status: :refunded)
+      allow(client).to receive(:cancel).and_return(true)
+
+      get seller_order_path(order)
+      expect(Nokogiri::HTML(response.body).at_css("[data-shipping-label-card] [data-label-refunding]")).to be_present
+
+      delete seller_order_shipping_label_path(order)
+      expect(label.reload).to be_cancelled
+    end
+  end
+
+  describe "package measures" do
+    it "does not quote, and explains, when the measures are not positive whole numbers" do
+      order = paid_order_for(seller)
+      allow(client).to receive(:quote)
+
+      get new_seller_order_shipping_label_path(order, height_cm: "abc", width_cm: "-5", length_cm: "1e9", weight_grams: "")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("números inteiros maiores que zero")
+      expect(client).not_to have_received(:quote)
+    end
+
+    it "says the order already has a label instead of offering the form again" do
+      order = paid_order_for(seller)
+      create_label(order, status: :purchased)
+      allow(client).to receive(:quote)
+
+      get new_seller_order_shipping_label_path(order, height_cm: 10, width_cm: 15, length_cm: 20, weight_grams: 500)
+
+      expect(Nokogiri::HTML(response.body).at_css("[data-label-blocker]").text).to include("Já existe uma etiqueta")
+      expect(client).not_to have_received(:quote)
+    end
+  end
+
   private
 
   def info(print_url:)

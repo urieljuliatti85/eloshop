@@ -16,7 +16,7 @@ module ShippingLabels
       raise Refused, "O pedido já foi enviado; a etiqueta não pode mais ser cancelada por aqui." unless @label.shipment.pending?
 
       status_before = @label.status
-      cancel_at_provider
+      cancel_at_provider if @label.provider_order_id.present?
       @label.advance!(from: status_before, to: :cancelled, cancelled_at: Time.current) ||
         raise(Refused, "A etiqueta mudou enquanto você cancelava. Atualize a página.")
       @label
@@ -24,8 +24,11 @@ module ShippingLabels
 
     private
 
+    # Toda etiqueta ativa: inclusive a presa em `draft` ou `cart_created`
+    # quando o job morreu no meio (deploy, erro inesperado), que sem isto
+    # bloquearia o pedido para sempre. Nesses dois estados nada foi cobrado.
     def cancellable?
-      @label.cart_created? || @label.purchasing? || @label.purchased?
+      @label.active?
     end
 
     def cancel_at_provider

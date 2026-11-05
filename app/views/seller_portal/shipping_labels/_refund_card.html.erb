@@ -1,0 +1,5 @@
+<%# Pedido reembolsado ou em reembolso com etiqueta ainda ativa e não postada:
+    o ateliê precisa do cancelamento para o valor voltar à carteira. %>
+<% if ShippingLabels.enabled? && shipment&.pending? && !shipment.local_pickup? && shipment.shipping_labels.active.exists? %>
+  <%= render "seller_portal/shipping_labels/card", shipment: shipment, order: order, refunding: true %>
+<% end %>

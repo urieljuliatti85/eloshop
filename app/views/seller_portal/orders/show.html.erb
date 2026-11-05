@@ -61,8 +61,10 @@
       <p class="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">Aguarde a confirmação do pagamento antes de preparar e enviar este pedido.</p>
     <% elsif @seller_order.cancelled? || @seller_order.refunded? %>
       <p class="mt-5 rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-700">Este pedido não pode mais avançar na entrega.</p>
+      <%= render "seller_portal/shipping_labels/refund_card", shipment: shipment, order: @order %>
     <% elsif shipment&.pending? && @seller_order.full_refund_in_progress? %>
       <p class="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">O valor deste pedido está sendo devolvido ao comprador. Não envie a peça enquanto o reembolso estiver em andamento.</p>
+      <%= render "seller_portal/shipping_labels/refund_card", shipment: shipment, order: @order %>
     <% elsif shipment&.pending? %>
       <% if @seller_order.production_start_applicable? %>
         <div class="mt-5 rounded-2xl border border-brand-100 bg-brand-50/50 p-4 sm:p-5">

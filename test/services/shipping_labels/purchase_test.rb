@@ -132,6 +132,44 @@ module ShippingLabels
       assert label.reload.draft?
     end
 
+    # QA de 2026-11-05 (N1): o pedido criado lá saiu mais caro que o cotado e
+    # a compra pagava sem o ateliê ver.
+    test "does not pay when SuperFrete's order costs more than the quote the atelier approved" do
+      @client.cart_result = { id: "sf-order-1", price_cents: 9_999 }
+      label = build_label(quoted_price_cents: 2_351)
+
+      purchase(label)
+
+      assert label.reload.cancelled?
+      assert_equal "O preço da etiqueta mudou de R$ 23,51 para R$ 99,99. Nada foi cobrado: cote de novo.", label.failure_message
+      assert_not @client.called?(:checkout)
+      assert @client.called?(:cancel)
+    end
+
+    test "pays when SuperFrete's order costs the same or less than the quote" do
+      @client.cart_result = { id: "sf-order-1", price_cents: 2_300 }
+
+      label = build_label(quoted_price_cents: 2_351)
+      purchase(label)
+
+      assert label.reload.purchased?
+    end
+
+    # QA de 2026-11-05 (C3): dois jobs com a etiqueta em rascunho criavam dois
+    # pedidos lá; o do perdedor ficava pendente e órfão.
+    test "the job that loses the race to record the order cancels the one it created" do
+      label = build_label
+      @client.cart_result = lambda do
+        ShippingLabel.where(id: label.id).update_all(status: "cart_created", provider_order_id: "sf-order-winner", price_cents: 2351)
+        { id: "sf-order-loser", price_cents: 2351 }
+      end
+
+      purchase(label)
+
+      assert_equal "sf-order-winner", label.reload.provider_order_id
+      assert_includes @client.calls, [ :cancel, "sf-order-loser" ]
+    end
+
     test "a purchased label is left alone" do
       label = build_label(status: :purchased)
 

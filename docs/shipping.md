@@ -253,6 +253,17 @@ pela SuperFrete** ao lado do envio manual, que continua valendo
    guardado; só `https` é aceito). **Cancelar** é só por clique do ateliê, antes
    da postagem, e o valor volta para a carteira dele.
 
+Saídas que o ateliê sempre tem (QA de 2026-11-05):
+
+* etiqueta em andamento (inclusive presa em `draft` ou `cart_created` porque o
+  job morreu num deploy) mostra **Conferir de novo** e **Cancelar**;
+* com o pedido reembolsado ou em reembolso, a etiqueta ativa continua no
+  painel, só com **Cancelar**, para o valor voltar à carteira;
+* se o pedido criado na SuperFrete sair **mais caro que o cotado**, a compra
+  não paga: cancela o pedido lá e pede nova cotação;
+* dois jobs para a mesma etiqueta em rascunho: o que perde a corrida cancela
+  o pedido que criou lá, para não deixar pedido órfão.
+
 Pré-condições (`ShippingLabels::Guard`): chave ligada, SuperFrete conectada no
 ambiente certo, **e-mail da conta SuperFrete igual ao de um acesso do ateliê**
 (condição de segurança do ADR 005), CPF de quem recebe no pedido, endereço de

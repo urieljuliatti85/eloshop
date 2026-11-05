@@ -40,7 +40,11 @@ module ShippingLabels
       end
 
       cart = @client.create_cart(Payload.new(@label, order_url: @order_url).to_h)
-      @label.advance!(from: :draft, to: :cart_created, provider_order_id: cart.fetch(:id), price_cents: cart[:price_cents])
+      return if @label.advance!(from: :draft, to: :cart_created, provider_order_id: cart.fetch(:id), price_cents: cart[:price_cents])
+
+      # Outro job (ou "Conferir de novo") chegou antes e já gravou o pedido
+      # dele: o que este criou ficaria pendente e órfão na SuperFrete.
+      cancel_quietly(cart.fetch(:id))
     rescue Client::Rejected => e
       @label.advance!(from: :draft, to: :failed, failure_message: e.message)
     rescue Client::Ambiguous => e
@@ -50,7 +54,7 @@ module ShippingLabels
     def pay
       blocked = nil
       @label.seller_order.with_lock do
-        blocked = Guard.blocker(@label.shipment)
+        blocked = Guard.blocker(@label.shipment) || price_changed_message
         @label.advance!(from: :cart_created, to: :purchasing) unless blocked
       end
 
@@ -87,6 +91,18 @@ module ShippingLabels
       raise Retry, e.message
     end
 
+    # O ateliê aprovou o preço cotado. Se o pedido criado na SuperFrete sair
+    # mais caro, não paga: a diferença sairia da carteira dele sem ele ver.
+    def price_changed_message
+      return if @label.price_cents.nil? || @label.price_cents <= @label.quoted_price_cents
+
+      "O preço da etiqueta mudou de #{money(@label.quoted_price_cents)} para #{money(@label.price_cents)}. Nada foi cobrado: cote de novo."
+    end
+
+    def money(cents)
+      ActiveSupport::NumberHelper.number_to_currency(cents / 100r, unit: "R$", separator: ",", delimiter: ".", format: "%u %n")
+    end
+
     def mark_purchased(tracking:, price_cents:)
       @label.advance!(from: :purchasing, to: :purchased, tracking_code: tracking, price_cents: price_cents || @label.price_cents,
         purchased_at: Time.current, failure_message: nil)
@@ -99,8 +115,8 @@ module ShippingLabels
     end
 
     # O pedido pendente na SuperFrete não cobra nada; cancelar é só arrumação.
-    def cancel_quietly
-      @client.cancel(@label.provider_order_id, reason: CANCEL_REASON)
+    def cancel_quietly(provider_order_id = @label.provider_order_id)
+      @client.cancel(provider_order_id, reason: CANCEL_REASON)
     rescue Client::Error
       nil
     end

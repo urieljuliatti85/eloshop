@@ -13,9 +13,14 @@ module SellerPortal
     # na SuperFrete e mostra preço, prazo e as medidas finais — a SuperFrete
     # arredonda para o mínimo do serviço.
     def new
-      @blocker = ShippingLabels::Guard.account_blocker(current_seller, @order) || ShippingLabels::Guard.blocker(@shipment)
-      @package = requested_package.presence || suggested_package
-      return if @blocker || requested_package.blank?
+      @blocker = ShippingLabels::Guard.account_blocker(current_seller, @order) || ShippingLabels::Guard.blocker(@shipment) || active_label_message
+      @package = suggested_package.merge(requested_package)
+      return if @blocker || params.permit(*PACKAGE_FIELDS).to_h.compact_blank.empty?
+
+      unless complete_package?
+        @quote_error = "Informe altura, largura, comprimento e peso em números inteiros maiores que zero."
+        return
+      end
 
       @options = ShippingLabels.client_for(current_seller, interactive: true).quote(
         origin_zip_code: current_seller.origin_zip_code.to_s.gsub(/\D/, ""),
@@ -74,6 +79,14 @@ module SellerPortal
 
     def active_label!
       @shipment.shipping_labels.active.first!
+    end
+
+    def active_label_message
+      "Já existe uma etiqueta para este pedido." if @shipment.shipping_labels.active.exists?
+    end
+
+    def complete_package?
+      PACKAGE_FIELDS.all? { |field| requested_package[field].to_i.positive? }
     end
 
     # Só as quatro medidas, como inteiros; o que não for número fica de fora.

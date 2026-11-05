@@ -38,8 +38,10 @@ class CreateShippingLabels < ActiveRecord::Migration[8.1]
     add_check_constraint :shipping_labels,
       "height_cm > 0 AND width_cm > 0 AND length_cm > 0 AND weight_grams > 0",
       name: "shipping_labels_package_check"
+    # Sem id na SuperFrete só antes de chegar lá: rascunho, ou rascunho que
+    # falhou ou foi cancelado pelo ateliê.
     add_check_constraint :shipping_labels,
-      "status IN ('draft') OR provider_order_id IS NOT NULL OR status = 'failed'",
+      "status IN ('draft', 'failed', 'cancelled') OR provider_order_id IS NOT NULL",
       name: "shipping_labels_provider_order_check"
   end
 end
