@@ -32,7 +32,7 @@ class FullPurchaseFlowTest < ActionDispatch::IntegrationTest
 
     # Cliente finaliza o checkout
     assert_difference("Order.count", 1) do
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
     end
     order = Order.last
     assert_redirected_to new_order_payment_path(order)

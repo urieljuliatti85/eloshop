@@ -38,9 +38,40 @@ class CheckoutShippingByAddressTest < ApplicationSystemTestCase
     assert_selector "[data-checkout-target='total']", text: "R$ 124,90"
 
     # Os grupos dos outros endereços ficam desabilitados e não vão no envio.
+    fill_in "CPF", with: "52998224725"
+    assert_field "CPF", with: "529.982.247-25"
     click_button "Ir para pagamento"
     assert_text "Finalize o pagamento"
-    assert_equal 3500, Order.order(:id).last.shipping_cents
+    order = Order.order(:id).last
+    assert_equal 3500, order.shipping_cents
+    assert_equal "52998224725", order.recipient_cpf
+  end
+
+  # A etiqueta exige o CPF de quem recebe; a retirada no ateliê não gera
+  # etiqueta (ADR 005, "Etapa 2 e 3").
+  test "asks for the CPF on delivery and not on local pickup" do
+    visit product_path(@product.seller, @product.slug)
+    click_button "Adicionar ao carrinho"
+    assert_current_path cart_path
+
+    sign_in_as_customer(@customer)
+    visit new_order_path
+
+    orders_before = Order.count
+    find("label", text: "Rua das Flores, 123").click
+    assert_text "Obrigatório para entrega."
+    click_button "Ir para pagamento"
+    assert_no_text "Finalize o pagamento"
+    assert_equal orders_before, Order.count
+
+    find("label", text: "Retirada no ateliê").click
+    assert_text "Opcional na retirada no ateliê."
+    click_button "Ir para pagamento"
+    assert_text "Finalize o pagamento"
+    order = Order.order(:id).last
+    assert_equal "Retirada no ateliê", order.shipment.service
+    assert_nil order.recipient_cpf_ciphertext
+    assert_equal @customer.name, order.recipient_name
   end
 
   private

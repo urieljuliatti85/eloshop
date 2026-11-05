@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["address", "optionGroup", "shippingOption", "shipping", "total"]
+  static targets = ["address", "optionGroup", "shippingOption", "shipping", "total", "cpf", "cpfRequirement"]
   static values = { subtotal: Number }
 
   connect() {
@@ -28,6 +28,8 @@ export default class extends Controller {
   }
 
   update() {
+    this.toggleCpfRequirement()
+
     const shippingCents = this.selectedShippingCents()
     if (shippingCents === null) return
 
@@ -38,11 +40,27 @@ export default class extends Controller {
   // A modalidade escolhida manda quando existe; o endereço só carrega a opção
   // mais barata, que é o resumo exibido na lista.
   selectedShippingCents() {
-    const selected =
+    const selected = this.selectedOption()
+    return selected ? Number(selected.dataset.shippingCents) : null
+  }
+
+  selectedOption() {
+    return (
       this.shippingOptionTargets.find((option) => option.checked && !option.disabled) ||
       this.addressTargets.find((address) => address.checked)
+    )
+  }
 
-    return selected ? Number(selected.dataset.shippingCents) : null
+  // O CPF só é obrigatório com entrega: a retirada no ateliê não gera
+  // etiqueta. O servidor valida de novo (Checkout::Recipient).
+  toggleCpfRequirement() {
+    if (!this.hasCpfTarget) return
+
+    const pickup = this.selectedOption()?.dataset.localPickup === "true"
+    this.cpfTarget.required = !pickup
+    if (this.hasCpfRequirementTarget) {
+      this.cpfRequirementTarget.textContent = pickup ? "Opcional na retirada no ateliê." : "Obrigatório para entrega."
+    }
   }
 
   currency(cents) {

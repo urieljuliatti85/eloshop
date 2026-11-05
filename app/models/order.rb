@@ -55,7 +55,37 @@ class Order < ApplicationRecord
     seller_orders.first&.shipment
   end
 
+  # CPF do destinatário (Checkout::Recipient), exigido pela etiqueta. Fica
+  # cifrado com salt próprio; o texto plano só existe para quem prepara o
+  # envio (o ateliê deste pedido) e para a compra da etiqueta. Telas de
+  # consulta usam `masked_recipient_cpf`.
+  def recipient_cpf=(value)
+    digits = Cpf.digits(value).presence
+    self.recipient_cpf_ciphertext = digits && recipient_cpf_encryptor.encrypt_and_sign(digits)
+  end
+
+  def recipient_cpf
+    recipient_cpf_encryptor.decrypt_and_verify(recipient_cpf_ciphertext) if recipient_cpf_ciphertext.present?
+  end
+
+  def masked_recipient_cpf
+    Cpf.mask(recipient_cpf)
+  end
+
+  # Pedidos anteriores ao checkout com destinatário não têm nome gravado: o
+  # comprador era o destinatário.
+  def recipient_display_name
+    recipient_name.presence || customer.name
+  end
+
   private
+
+  RECIPIENT_CPF_ENCRYPTION_SALT = "order-recipient-cpf".freeze
+
+  def recipient_cpf_encryptor
+    key = Rails.application.key_generator.generate_key(RECIPIENT_CPF_ENCRYPTION_SALT, ActiveSupport::MessageEncryptor.key_len)
+    ActiveSupport::MessageEncryptor.new(key, cipher: "aes-256-gcm", serializer: JSON)
+  end
 
   def transition_to!(new_status)
     unless ALLOWED_STATUS_TRANSITIONS.fetch(status).include?(new_status)

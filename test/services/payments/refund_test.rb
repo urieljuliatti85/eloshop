@@ -10,7 +10,7 @@ module Payments
       product = Product.create!(seller: sellers(:approved), name: "Reembolsável", sku: "REF-#{SecureRandom.hex(4)}", price_cents: 1_000, stock_quantity: 2, status: :active)
       cart = Cart.create!(session_token: SecureRandom.hex(10))
       cart.cart_items.create!(product: product, quantity: 1)
-      order = Checkout::CreateOrder.new(cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
+      order = Checkout::CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
       payment = Authorize.new(order: order).call
       ProcessWebhook.new(event_id: SecureRandom.hex(10), external_id: payment.external_id, status: "approved").call
       payment.reload

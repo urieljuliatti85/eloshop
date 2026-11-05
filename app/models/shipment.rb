@@ -34,6 +34,12 @@ class Shipment < ApplicationRecord
     service == Shipping::Quote::LOCAL_PICKUP_SERVICE
   end
 
+  # Pago e ainda por postar: a janela em que o ateliê compra a etiqueta e,
+  # por isso, vê o CPF inteiro do destinatário no painel.
+  def awaiting_dispatch?
+    pending? && !local_pickup? && (seller_order.confirmed? || seller_order.partially_refunded?)
+  end
+
   def mark_shipped!(carrier: nil, service: nil, tracking_code: nil)
     tracking_code = normalized_tracking_code(tracking_code)
 

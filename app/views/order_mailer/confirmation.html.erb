@@ -28,6 +28,7 @@ Seu pedido <strong>#<%= @order.id %></strong> está em preparação e o ateliê 
 <h3>Entrega</h3>
 <% address = @order.shipping_address_snapshot %>
 <p>
+  <%= @order.recipient_display_name %><br>
   <%= address["street"] %>, <%= address["number"] %><br>
   <% if address["complement"].present? %><%= address["complement"] %><br><% end %>
   <%= address["neighborhood"] %> — <%= address["city"] %>/<%= address["state"] %><br>

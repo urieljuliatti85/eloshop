@@ -32,7 +32,7 @@
               <label class="flex items-start gap-3 rounded-2xl border border-gray-200 px-4 py-4 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 <%= 'opacity-60' unless quote %>">
                 <%= radio_button_tag :address_id, address.id, address == @selected_address,
                       disabled: quote.nil?, required: true, class: "mt-1",
-                      data: { checkout_target: "address", action: "change->checkout#selectAddress", shipping_cents: quote&.shipping_cents } %>
+                      data: { checkout_target: "address", action: "change->checkout#selectAddress", shipping_cents: quote&.shipping_cents, local_pickup: quote&.local_pickup? } %>
                 <span class="min-w-0 flex-1 text-sm">
                   <span class="block font-semibold text-ink"><%= address.street %>, <%= address.number %></span>
                   <span class="mt-1 block text-ink-muted"><%= [address.neighborhood, address.city, address.state].compact_blank.join(" · ") %> · CEP <%= address.zip_code %></span>
@@ -61,11 +61,11 @@
                 <h2 class="mt-1 text-xl font-semibold text-ink">Escolha como receber</h2>
 
                 <div class="mt-5 space-y-3">
-                  <% options.each_with_index do |option, index| %>
+                  <% options.each do |option| %>
                     <label class="flex items-start gap-3 rounded-2xl border border-gray-200 px-4 py-4 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
-                      <%= radio_button_tag :shipping_quote_id, option.id, active && index.zero?, required: true, disabled: !active, class: "mt-1",
+                      <%= radio_button_tag :shipping_quote_id, option.id, active && option.id == @selected_shipping_quote_id, required: true, disabled: !active, class: "mt-1",
                             id: "shipping_quote_#{address.id}_#{option.id}",
-                            data: { checkout_target: "shippingOption", action: "change->checkout#update", shipping_cents: option.shipping_cents } %>
+                            data: { checkout_target: "shippingOption", action: "change->checkout#update", shipping_cents: option.shipping_cents, local_pickup: option.local_pickup? } %>
                       <span class="min-w-0 flex-1 text-sm">
                         <span class="block font-semibold text-ink"><%= option.carrier %> · <%= option.service %></span>
                         <span class="mt-1 block text-ink-muted"><%= checkout_delivery_estimate_label(option, production_max_days) %> · <%= format_price(option.shipping_cents) %></span>
@@ -79,6 +79,8 @@
             <% end %>
           </div>
         <% end %>
+
+        <%= render "orders/recipient_fields", recipient: @recipient %>
 
         <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
           <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Produtos</p>

@@ -23,6 +23,7 @@ Total: <%= format_price(@order.total_cents) %>
 
 Entrega:
 <% address = @order.shipping_address_snapshot %>
+<%= @order.recipient_display_name %>
 <%= address["street"] %>, <%= address["number"] %>
 <% if address["complement"].present? %>
 <%= address["complement"] %>

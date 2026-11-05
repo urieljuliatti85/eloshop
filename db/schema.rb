@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_04_220000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_05_101412) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -292,6 +292,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_220000) do
     t.datetime "updated_at", null: false
     t.bigint "coupon_id"
     t.integer "discount_cents", default: 0, null: false
+    t.string "recipient_name"
+    t.string "recipient_phone"
+    t.text "recipient_cpf_ciphertext"
     t.index ["coupon_id"], name: "index_orders_on_coupon_id"
     t.index ["customer_id"], name: "index_orders_on_customer_id"
     t.index ["idempotency_key"], name: "index_orders_on_idempotency_key", unique: true

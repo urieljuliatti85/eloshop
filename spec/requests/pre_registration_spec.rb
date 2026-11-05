@@ -62,7 +62,7 @@ RSpec.describe "Pre-registration (sales closed)", type: :request do
     expect(response).to redirect_to(cart_path)
 
     expect do
-      post orders_path, params: { address_id: address.id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }
     end.not_to change(Order, :count)
     expect(response).to redirect_to(cart_path)
     expect(flash[:alert]).to include("ainda não abriram")
@@ -75,7 +75,7 @@ RSpec.describe "Pre-registration (sales closed)", type: :request do
     post cart_items_path, params: { product_id: product.id, quantity: 1 }
     close_sales
 
-    post orders_path, params: { address_id: address.id }, headers: { "Referer" => new_order_url }
+    post orders_path, params: { recipient: checkout_recipient_params, address_id: address.id }, headers: { "Referer" => new_order_url }
     expect(response).to redirect_to(cart_path)
 
     get new_order_path, headers: { "Referer" => new_order_url }

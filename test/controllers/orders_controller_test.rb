@@ -20,7 +20,7 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     add_item_to_current_cart(products(:one), quantity: 1)
 
     assert_difference("Order.count", 1) do
-      post orders_path, params: { address_id: addresses(:one).id }
+      post orders_path, params: { recipient: checkout_recipient_params, address_id: addresses(:one).id }
     end
 
     assert_redirected_to new_order_payment_path(Order.last)

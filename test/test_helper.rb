@@ -19,6 +19,18 @@ module ActiveSupport
     # um teste vazariam para o próximo (mesmo IP de teste em todos).
     setup { Rails.cache.clear }
 
+    # Destinatário válido para checkout com entrega (CPF exigido): ver
+    # Checkout::Recipient. Os testes do destinatário montam o próprio.
+    CHECKOUT_RECIPIENT_PARAMS = { name: "Cliente Teste", cpf: "529.982.247-25" }.freeze
+
+    def checkout_recipient
+      Checkout::Recipient.new(**CHECKOUT_RECIPIENT_PARAMS)
+    end
+
+    def checkout_recipient_params
+      CHECKOUT_RECIPIENT_PARAMS
+    end
+
     def capture_rails_events(name)
       events = []
       subscriber = Object.new

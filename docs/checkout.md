@@ -65,8 +65,21 @@ Ao criar o `Order`/`OrderItem`, o checkout deve gravar um snapshot de:
 
 * nome do produto, SKU e preço unitário no momento da compra
 * endereço de entrega utilizado
+* quem recebe: nome, CPF e telefone (ver abaixo)
 
 Pedidos já criados nunca devem depender dos dados atuais do produto, do cliente ou do endereço (ver `docs/domain.md`, seção `Order`).
+
+## Destinatário (2026-11-05)
+
+A etiqueta da SuperFrete exige nome e CPF de quem recebe (`to.document`, confirmado no sandbox — ver `docs/shipping.md` e ADR 005, "Etapa 2 e 3"). O checkout tem a seção **Quem vai receber** (`Checkout::Recipient`):
+
+* **nome** obrigatório, preenchido com o do último pedido ou o da conta;
+* **CPF** obrigatório **só com entrega** — a retirada no ateliê não gera etiqueta, e nela o CPF nem é gravado. Validado pelo módulo 11 (`Cpf.valid?`, o mesmo do cadastro do ateliê). Fica cifrado no `Order` (`recipient_cpf_ciphertext`, salt próprio) e nunca é pré-preenchido;
+* **telefone** opcional (os serviços dos Correios que oferecemos não exigem), guardado só em dígitos.
+
+Quem decide é `Checkout::CreateOrder`, depois da cotação (a modalidade diz se há entrega) e antes de travar estoque: `InvalidRecipient` faz o checkout voltar ao formulário (422) com o que foi digitado, endereço e modalidade mantidos. O navegador liga e desliga o `required` do CPF conforme a modalidade marcada, mas é só conveniência.
+
+**Quem vê o CPF:** o ateliê vê o CPF inteiro só enquanto o pedido está pago e aguarda envio (`Shipment#awaiting_dispatch?`), que é quando compra a etiqueta; antes e depois, mascarado. O admin vê mascarado; o comprador, na página do pedido e nos e-mails, vê só o nome. Pedidos anteriores não têm destinatário: o nome exibido é o do comprador (`Order#recipient_display_name`).
 
 ## Idempotência
 

@@ -22,6 +22,20 @@ class ShipmentTest < ActiveSupport::TestCase
     assert_in_delta Time.current, @shipment.shipped_at, 1.second
   end
 
+  test "awaits dispatch only while paid, pending and not a local pickup" do
+    assert_not @shipment.awaiting_dispatch?, "unpaid order"
+
+    @seller_order.update!(status: :confirmed)
+    assert @shipment.awaiting_dispatch?
+
+    @shipment.update!(service: Shipping::Quote::LOCAL_PICKUP_SERVICE)
+    assert_not @shipment.awaiting_dispatch?, "local pickup"
+
+    @shipment.update!(service: "PAC")
+    @shipment.mark_shipped!
+    assert_not @shipment.awaiting_dispatch?, "already shipped"
+  end
+
   test "normalizes the tracking code typed by the atelier" do
     @seller_order.update!(status: :confirmed)
 

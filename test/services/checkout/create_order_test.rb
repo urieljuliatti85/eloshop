@@ -7,11 +7,40 @@ module Checkout
       @address = addresses(:one)
     end
 
+    test "records who receives the order, with the CPF encrypted" do
+      cart = build_cart_with_item(build_product, quantity: 1)
+      recipient = Recipient.new(name: "Ana Souza", cpf: "529.982.247-25", phone: "(27) 99999-1234")
+
+      order = CreateOrder.new(recipient: recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+
+      assert_equal "Ana Souza", order.recipient_name
+      assert_equal "27999991234", order.recipient_phone
+      assert_not_includes order.recipient_cpf_ciphertext, "52998224725"
+      assert_equal "52998224725", order.reload.recipient_cpf
+    end
+
+    test "refuses a delivery without the recipient CPF before touching stock or the cart" do
+      product = build_product
+      cart = build_cart_with_item(product, quantity: 1)
+
+      orders_before = Order.count
+      stock_before = product.stock_quantity
+
+      error = assert_raises(CreateOrder::InvalidRecipient) do
+        CreateOrder.new(recipient: Recipient.new(name: "Ana Souza"), cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      end
+
+      assert error.recipient.errors[:cpf].any?
+      assert_equal orders_before, Order.count
+      assert_equal stock_before, product.reload.stock_quantity
+      assert_equal 1, cart.cart_items.count
+    end
+
     test "records an order_created event" do
       product = build_product
       cart = build_cart_with_item(product, quantity: 1)
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
 
       event = order.order_events.order_created.last
       assert event.present?
@@ -84,7 +113,7 @@ module Checkout
 
       order = with_shipping_provider(provider) do
         ActiveSupport::Notifications.subscribed(track_locks, "sql.active_record") do
-          CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+          CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
         end
       end
 
@@ -99,7 +128,7 @@ module Checkout
 
       order = nil
       capture_rails_events("checkout.order_created") do |events|
-        order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+        order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
 
         assert_equal 1, events.size
         assert_equal order.id, events.first.dig(:payload, :order_id)
@@ -129,7 +158,7 @@ module Checkout
       product.seller.update!(approved_at: 4.months.ago)
       cart = build_cart_with_item(product, quantity: 2)
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
 
       assert_equal 1_500, order.seller_order.platform_fee_rate_bps
       assert_equal 300, order.seller_order.platform_fee_cents
@@ -139,7 +168,7 @@ module Checkout
     test "keeps the rate recorded on an order after the seller leaves the launch period" do
       product = build_product(stock_quantity: 5)
       cart = build_cart_with_item(product, quantity: 2)
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
 
       travel_to 4.months.from_now do
         assert_equal 1_500, product.seller.reload.platform_fee_rate_bps
@@ -157,7 +186,7 @@ module Checkout
       idempotency_key = SecureRandom.hex(10)
 
       error = assert_raises(CreateOrder::Failed) do
-        CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: idempotency_key).call
+        CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: idempotency_key).call
       end
 
       assert_equal "O carrinho deve conter produtos de um único artesão.", error.message
@@ -170,7 +199,7 @@ module Checkout
 
       product.update!(price_cents: 2000)
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
 
       assert_equal 2000, order.subtotal_cents
       assert_equal 2000, order.order_items.first.unit_price_cents
@@ -184,7 +213,7 @@ module Checkout
 
       assert_no_difference("Order.count") do
         assert_raises(CreateOrder::Failed) do
-          CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+          CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
         end
       end
 
@@ -199,7 +228,7 @@ module Checkout
 
       assert_no_difference("Order.count") do
         assert_raises(CreateOrder::Failed) do
-          CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+          CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
         end
       end
     end
@@ -208,7 +237,7 @@ module Checkout
       cart = Cart.create!(session_token: SecureRandom.hex(10))
 
       assert_raises(CreateOrder::Failed) do
-        CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+        CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
       end
     end
 
@@ -221,8 +250,8 @@ module Checkout
       second_order = nil
 
       assert_difference("Order.count", 1) do
-        first_order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: key).call
-        second_order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: key).call
+        first_order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: key).call
+        second_order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: key).call
       end
 
       assert_equal first_order.id, second_order.id
@@ -233,7 +262,7 @@ module Checkout
       product = build_product(name: "Nome original")
       cart = build_cart_with_item(product, quantity: 1)
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
       item = order.order_items.first
 
       product.update!(name: "Nome alterado", price_cents: 99_999)
@@ -251,7 +280,7 @@ module Checkout
       )
       cart = build_cart_with_item(product, quantity: 3)
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
 
       assert_equal 0, product.reload.stock_quantity
       assert_equal "7 a 10 dias úteis", order.order_items.first.production_time_snapshot
@@ -261,7 +290,7 @@ module Checkout
       product = build_product(availability_type: "made_to_order", stock_quantity: 0, production_time_min_days: 1, production_time_max_days: 2)
       cart = build_cart_with_item(product, quantity: 5)
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
 
       assert order.persisted?
     end
@@ -271,7 +300,7 @@ module Checkout
       variant = build_variant(product, stock_quantity: 3, price_cents: 1500, size: "P", color: "Azul")
       cart = build_cart_with_item(product, quantity: 2, variant: variant)
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
       item = order.order_items.first
 
       assert_equal 1, variant.reload.stock_quantity
@@ -291,7 +320,7 @@ module Checkout
 
       assert_no_difference("Order.count") do
         assert_raises(CreateOrder::Failed) do
-          CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+          CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
         end
       end
 
@@ -306,7 +335,7 @@ module Checkout
       variant.update!(active: false)
 
       assert_raises(CreateOrder::Failed) do
-        CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+        CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
       end
     end
 
@@ -318,7 +347,7 @@ module Checkout
       product.discontinue!
 
       assert_raises(CreateOrder::Failed) do
-        CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+        CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
       end
     end
 
@@ -327,7 +356,7 @@ module Checkout
       variant = build_variant(product, size: "P", color: "Verde")
       cart = build_cart_with_item(product, quantity: 1, variant: variant)
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
       item = order.order_items.first
 
       variant.update!(size: "M", color: "Azul", price_cents: 9999)
@@ -343,7 +372,7 @@ module Checkout
         { "personalization_option_id" => option.id, "value" => "Maria" }
       ])
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
       item = order.order_items.first
 
       assert_equal [ { label: "Nome gravado", value: "Maria" } ], item.personalization_entries
@@ -356,7 +385,7 @@ module Checkout
         { "personalization_option_id" => option.id, "value" => "Maria" }
       ])
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
       item = order.order_items.first
 
       option.destroy!
@@ -370,7 +399,7 @@ module Checkout
       coupon = build_coupon(discount_type: "percentage", percentage: 10)
       cart.update!(coupon: coupon)
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
 
       assert_equal coupon, order.coupon
       assert_equal 1_000, order.discount_cents
@@ -385,7 +414,7 @@ module Checkout
       coupon = build_coupon(discount_type: "fixed", percentage: nil, amount_cents: 50_000)
       cart.update!(coupon: coupon)
 
-      order = CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+      order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
 
       assert_equal 1_000, order.discount_cents
       assert_equal CreateOrder::SHIPPING_CENTS, order.total_cents
@@ -400,7 +429,7 @@ module Checkout
       travel_to 2.days.from_now do
         assert_no_difference("Order.count") do
           assert_raises(CreateOrder::Failed) do
-            CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+            CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
           end
         end
       end
@@ -416,7 +445,7 @@ module Checkout
 
       assert_no_difference("Order.count") do
         assert_raises(CreateOrder::Failed) do
-          CreateOrder.new(cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
+          CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: @customer, address: @address, idempotency_key: SecureRandom.hex(10)).call
         end
       end
     end
@@ -429,7 +458,7 @@ module Checkout
       quote_id = Shipping::Quote.new(carrier: "EloShop", service: "Entrega padrão", shipping_cents: 0, estimated_days: 0).id
 
       order = CreateOrder.new(
-        cart: cart, customer: @customer, address: @address,
+        cart: cart, customer: @customer, address: @address, recipient: checkout_recipient,
         idempotency_key: SecureRandom.hex(10), shipping_quote_id: quote_id
       ).call
 
@@ -444,7 +473,7 @@ module Checkout
       assert_no_difference("Order.count") do
         assert_raises(Shipping::Calculator::Unavailable) do
           CreateOrder.new(
-            cart: cart, customer: @customer, address: @address,
+            cart: cart, customer: @customer, address: @address, recipient: checkout_recipient,
             idempotency_key: SecureRandom.hex(10), shipping_quote_id: "transportadora-inventada"
           ).call
         end

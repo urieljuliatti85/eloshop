@@ -8,14 +8,14 @@ import { Controller } from "@hotwired/stimulus"
 // O cursor é recolocado depois do mesmo número de dígitos em que estava, para
 // corrigir um dígito no meio do CPF não jogar o cursor para o fim.
 //
-// A validação usa o mesmo módulo 11 do servidor (Seller#cpf_must_be_valid):
+// A validação usa o mesmo módulo 11 do servidor (Cpf.valid?):
 // com os 11 dígitos digitados, ou ao sair do campo, a mensagem aparece logo
 // abaixo e o navegador não deixa enviar (setCustomValidity). Enquanto a
 // pessoa ainda digita, um CPF incompleto não é cobrado.
 //
 // É conveniência, não a validação de verdade: o servidor guarda só os dígitos
 // e valida de novo, então sem JavaScript o cadastro continua funcionando. A
-// mesma máscara existe no servidor (Seller.format_cpf) para a tela de erro
+// mesma máscara existe no servidor (Cpf.format) para a tela de erro
 // devolver o valor já formatado.
 export default class extends Controller {
   static targets = ["input", "message"]

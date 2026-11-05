@@ -7,7 +7,7 @@ class RecordOrderAnalyticsJobTest < ActiveJob::TestCase
     product = Product.create!(seller: sellers(:approved), name: "P", sku: "SKU-#{SecureRandom.hex(4)}", price_cents: 2500, stock_quantity: 5, currency: "BRL", status: "active")
     cart = Cart.create!(session_token: SecureRandom.hex(10))
     cart.cart_items.create!(product: product, quantity: 2)
-    Checkout::CreateOrder.new(cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
+    Checkout::CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
   end
 
   test "emite o evento de pedido confirmado com os valores do pedido" do

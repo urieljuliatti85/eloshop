@@ -92,7 +92,9 @@
           <% if @order.shipment %><%= admin_status_badge(@order.shipment.status) %><% end %>
         </div>
         <address class="mt-4 not-italic text-sm leading-6 text-slate-600">
-          <p class="font-semibold text-slate-900"><%= @order.customer.name %></p>
+          <p class="font-semibold text-slate-900"><%= @order.recipient_display_name %></p>
+          <% if @order.masked_recipient_cpf %><p>CPF <%= @order.masked_recipient_cpf %></p><% end %>
+          <% if @order.recipient_phone.present? %><p><%= format_phone(@order.recipient_phone) %></p><% end %>
           <p><%= [address["street"], address["number"]].compact_blank.join(", ") %></p>
           <% if address["complement"].present? %><p><%= address["complement"] %></p><% end %>
           <p><%= [address["neighborhood"], address["city"]].compact_blank.join(" — ") %><%= "/#{address['state']}" if address["state"].present? %></p>

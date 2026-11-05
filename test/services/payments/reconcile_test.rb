@@ -130,7 +130,7 @@ module Payments
       product = Product.create!(seller: sellers(:approved), name: "Produto #{SecureRandom.hex(4)}", sku: "SKU-#{SecureRandom.hex(4)}", price_cents: 1000, stock_quantity: 5, status: "active")
       cart = Cart.create!(session_token: SecureRandom.hex(10))
       cart.cart_items.create!(product: product, quantity: 1)
-      order = Checkout::CreateOrder.new(cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
+      order = Checkout::CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
       payment = Authorize.new(order: order, gateway: @gateway).call
       payment.update_columns(created_at: age.ago)
       payment

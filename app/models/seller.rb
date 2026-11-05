@@ -549,17 +549,14 @@ class Seller < ApplicationRecord
   attr_reader :cpf
 
   def cpf=(value)
-    @cpf = value.to_s.gsub(/\D/, "")
+    @cpf = Cpf.digits(value)
   end
 
   # Exibição apenas: "***.***.***-35". O CPF completo nunca volta para a
   # tela — só os dois últimos dígitos, suficientes para o vendedor reconhecer
   # o próprio cadastro sem reexpor o documento inteiro.
   def masked_cpf
-    digits = decrypted_cpf
-    return nil if digits.blank?
-
-    "***.***.***-#{digits.last(2)}"
+    Cpf.mask(decrypted_cpf)
   end
 
   # CPF completo formatado, só para telas administrativas (o admin da
@@ -578,11 +575,7 @@ class Seller < ApplicationRecord
   # (cpf_input_controller.js). Mais de 11 dígitos volta sem máscara, para a
   # tela de erro mostrar o que foi digitado em vez de cortar em silêncio.
   def self.format_cpf(value)
-    digits = value.to_s.gsub(/\D/, "")
-    return digits if digits.length > 11
-
-    formatted = [ digits[0, 3], digits[3, 3], digits[6, 3] ].compact_blank.join(".")
-    digits.length > 9 ? "#{formatted}-#{digits[9, 2]}" : formatted
+    Cpf.format(value)
   end
 
   def to_param
@@ -656,24 +649,10 @@ class Seller < ApplicationRecord
     self.cpf_hash = Digest::SHA256.hexdigest(cpf)
   end
 
-  # Módulo 11: valida os dois dígitos verificadores contra os 9 primeiros
-  # dígitos do CPF. Rejeita também sequências de dígito repetido (111...,
-  # 222...), que passam no módulo 11 mas não são CPF válido.
+  # Dígitos verificadores e sequência repetida: ver `Cpf.valid?`.
   def cpf_must_be_valid
     return errors.add(:cpf, "deve ter 11 dígitos") unless cpf.match?(/\A\d{11}\z/)
-    return errors.add(:cpf, "é inválido") if cpf.chars.uniq.one?
-    errors.add(:cpf, "é inválido") unless valid_cpf_checksum?(cpf)
-  end
-
-  def valid_cpf_checksum?(digits)
-    [ 9, 10 ].all? do |length|
-      base = digits[0...length]
-      weights = (length + 1).downto(2)
-      sum = base.chars.map(&:to_i).zip(weights).sum { |digit, weight| digit * weight }
-      remainder = (sum * 10) % 11
-      remainder = 0 if remainder == 10
-      remainder == digits[length].to_i
-    end
+    errors.add(:cpf, "é inválido") unless Cpf.valid?(cpf)
   end
 
   def decrypted_cpf

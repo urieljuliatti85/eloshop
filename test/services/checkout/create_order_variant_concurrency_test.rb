@@ -30,7 +30,7 @@ module Checkout
             go.pop
 
             begin
-              order = CreateOrder.new(cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
+              order = CreateOrder.new(recipient: checkout_recipient, cart: cart, customer: customer, address: address, idempotency_key: SecureRandom.hex(10)).call
               results_mutex.synchronize { results << { success: true, order: order } }
             rescue CreateOrder::Failed => e
               results_mutex.synchronize { results << { success: false, error: e.message } }
