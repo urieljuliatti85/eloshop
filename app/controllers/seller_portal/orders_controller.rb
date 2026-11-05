@@ -42,7 +42,7 @@ module SellerPortal
 
       message = shipment.local_pickup? ? "Pedido marcado como pronto para retirada." : "Pedido marcado como enviado."
       redirect_to seller_order_path(shipment.order), notice: message
-    rescue Shipment::InvalidStatusTransition => e
+    rescue Shipment::InvalidStatusTransition, Shipment::InvalidTrackingCode => e
       redirect_to seller_order_path(params[:id]), alert: e.message
     end
 
