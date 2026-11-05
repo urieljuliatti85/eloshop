@@ -325,6 +325,26 @@ RSpec.describe "Seller orders", type: :request do
       expect(notification.url).to eq(order_path(order))
     end
 
+    it "refuses a tracking code already used by another atelier's order without a server error" do
+      other_order = create_order_for(other_product)
+      other_order.confirm!
+      create_shipment_for(other_order).mark_shipped!(tracking_code: "AA123456789BR")
+
+      order = create_order_for(own_product)
+      order.confirm!
+      shipment = create_shipment_for(order)
+
+      expect do
+        patch ship_seller_order_path(order), params: { carrier: "Correios", service: "PAC", tracking_code: "aa 123 456 789 br" }
+      end.not_to have_enqueued_job(NotifyCustomerOfShipmentJob)
+
+      expect(response).to redirect_to(seller_order_path(order))
+      expect(flash[:alert]).to eq(Shipment::INVALID_TRACKING_CODE_MESSAGE)
+      expect(shipment.reload).to be_pending
+      expect(shipment.tracking_code).to be_nil
+      expect(customer.notifications.order_shipped).to be_empty
+    end
+
     it "does not advance an unpaid order" do
       order = create_order_for(own_product)
       shipment = create_shipment_for(order)

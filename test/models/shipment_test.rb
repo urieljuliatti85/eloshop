@@ -36,6 +36,49 @@ class ShipmentTest < ActiveSupport::TestCase
     assert_not @shipment.awaiting_dispatch?, "already shipped"
   end
 
+  test "normalizes the tracking code typed by the atelier" do
+    @seller_order.update!(status: :confirmed)
+
+    @shipment.mark_shipped!(tracking_code: " aa 123 456 789 br ")
+
+    assert_equal "AA123456789BR", @shipment.reload.tracking_code
+  end
+
+  test "keeps the tracking code empty when none is given" do
+    @seller_order.update!(status: :confirmed)
+
+    @shipment.mark_shipped!(tracking_code: "  ")
+
+    assert_nil @shipment.reload.tracking_code
+  end
+
+  test "rejects a tracking code with characters no carrier uses" do
+    @seller_order.update!(status: :confirmed)
+
+    error = assert_raises(Shipment::InvalidTrackingCode) do
+      @shipment.mark_shipped!(tracking_code: "<script>AA1</script>")
+    end
+
+    assert_equal Shipment::INVALID_TRACKING_CODE_MESSAGE, error.message
+    assert @shipment.reload.pending?
+  end
+
+  test "rejects a tracking code already used by another shipment, with the same message as a malformed one" do
+    @seller_order.update!(status: :confirmed)
+    other_seller_order = seller_orders(:two)
+    other_seller_order.update!(status: :confirmed)
+    Shipment.create!(seller_order: other_seller_order, carrier: "Correios", service: "PAC",
+      shipping_cents: 1_500, estimated_days: 5, tracking_code: "AA123456789BR")
+
+    error = assert_raises(Shipment::InvalidTrackingCode) do
+      @shipment.mark_shipped!(tracking_code: "aa123456789br")
+    end
+
+    assert_equal Shipment::INVALID_TRACKING_CODE_MESSAGE, error.message
+    assert @shipment.reload.pending?
+    assert_nil @shipment.shipped_at
+  end
+
   test "marks a shipped order as delivered and records the time" do
     @seller_order.update!(status: :confirmed)
     @shipment.mark_shipped!

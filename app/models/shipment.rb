@@ -1,5 +1,14 @@
 class Shipment < ApplicationRecord
   class InvalidStatusTransition < StandardError; end
+  class InvalidTrackingCode < StandardError; end
+
+  # Código digitado pelo ateliê. Letras, números e hífen cobrem Correios,
+  # Jadlog e Loggi; espaços de quem copia do comprovante são removidos.
+  TRACKING_CODE_FORMAT = /\A[A-Z0-9-]{1,40}\z/
+
+  # A mesma mensagem para formato inválido e código já usado em outro pedido:
+  # a resposta não confirma que o código existe em pedido de outro ateliê.
+  INVALID_TRACKING_CODE_MESSAGE = "Confira o código de rastreio: use só letras e números, como aparece no comprovante da postagem, e não repita o código de outro pedido."
 
   ALLOWED_STATUS_TRANSITIONS = {
     "pending" => %w[shipped],
@@ -32,14 +41,19 @@ class Shipment < ApplicationRecord
   end
 
   def mark_shipped!(carrier: nil, service: nil, tracking_code: nil)
+    tracking_code = normalized_tracking_code(tracking_code)
+
     transition_to!(
       "shipped",
       shipped_at: Time.current,
       carrier: carrier.presence || self.carrier,
       service: service.presence || self.service,
-      tracking_code: tracking_code.presence
+      tracking_code: tracking_code
     )
     seller_order.record_production_start_from_shipping!
+  rescue ActiveRecord::RecordNotUnique
+    # Corrida entre dois envios com o mesmo código: o índice único decide.
+    raise InvalidTrackingCode, INVALID_TRACKING_CODE_MESSAGE
   end
 
   def mark_delivered!
@@ -64,6 +78,20 @@ class Shipment < ApplicationRecord
   end
 
   private
+
+  # O índice único em `tracking_code` é global: sem esta checagem, um código
+  # repetido estourava `RecordNotUnique` no meio do envio e o painel
+  # respondia 500.
+  def normalized_tracking_code(raw)
+    code = raw.to_s.gsub(/\s+/, "").upcase.presence
+    return if code.nil?
+
+    if !TRACKING_CODE_FORMAT.match?(code) || Shipment.where(tracking_code: code).where.not(id: id).exists?
+      raise InvalidTrackingCode, INVALID_TRACKING_CODE_MESSAGE
+    end
+
+    code
+  end
 
   # Trava o SellerOrder antes do envio, e não só a linha do envio: é o mesmo
   # lock que Payments::Refund toma ao reservar o valor de um reembolso. Assim
