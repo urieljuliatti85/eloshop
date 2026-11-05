@@ -228,7 +228,53 @@ cotação em produção):**
 
 **Ainda não feito**: etiqueta (`cart` → `checkout`, pago pela carteira do
 ateliê; exige o CPF do cliente, que será coletado no checkout — decisão de
-2026-10-30) e rastreio por webhook (HMAC-SHA256 em `X-ME-Signature`).
+2026-10-30) e rastreio por webhook (HMAC-SHA256 em `X-ME-Signature`). Decisões
+e desenho no ADR 005, "Etapa 2 e 3 — decisões e desenho (2026-11-05)".
+
+### Etiqueta e rastreio: o que o sandbox mostrou (2026-11-05)
+
+Exercitado em `sandbox.superfrete.com` com token manual de integração, a partir
+da estação local, com script descartável (fora do repositório). Os carrinhos de
+teste foram cancelados e o webhook de teste apagado. A documentação oficial
+diverge da API em vários pontos; vale o que está aqui.
+
+* **`to.document` é obrigatório**: sem ele, `POST /api/v0/cart` responde `400`
+  com `errors["to.document"]`. Telefone do destinatário pode ir `null`.
+* **`service`** aceita inteiro (`1`) e também string (`"1"`).
+* **Referência da EloShop:** `options.tags: [{tag, url}]` é guardado e volta no
+  carrinho e na consulta do pedido. `tag`/`url` no topo do corpo são aceitos e
+  **ignorados**.
+* **Carrinho** devolve `{id, price, protocol, self_tracking, status: "pending", tags}`,
+  sem debitar. A SuperFrete **ajusta as medidas** para o mínimo do serviço (pedido
+  15×20 cm voltou 16×24 cm): a tela de compra deve mostrar as medidas finais.
+* **Checkout sem saldo:** `409` com `message` "Sem saldo na carteira! ...". Repetir
+  dá o mesmo `409`, sem efeito. Pedido cancelado: `409` "Este pedido está
+  cancelado e não pode ser pago". **Id inexistente: `500`** com mensagem genérica
+  — um `500` do checkout não prova que nada foi cobrado; a consulta do pedido
+  decide.
+* **Consulta** (`GET /api/v0/order/info/{id}`): id inexistente responde `400`
+  ("Pedido não encontrado"). **A resposta traz dados pessoais da conta do ateliê**
+  dentro de `service_calculated.data.user_config` (CPF, data de nascimento,
+  e-mail, telefone, histórico de IPs): **nunca gravar nem registrar a resposta
+  crua** — extrair só `id`, `status`, `tracking`, `price`, `service_id`.
+* **`print.url`** existe já no carrinho pendente e muda a cada consulta: pedir na
+  hora de imprimir, não guardar.
+* **Cancelamento:** `POST /api/v0/order/cancel` responde `200` com
+  `{"<id>": {"canceled": true}}`; repetir num pedido já cancelado dá `409` "Esse
+  pedido não pode mais ser cancelado!" — tratar como já cancelado, conferindo
+  pela consulta. O status volta como **`canceled`** (o webhook escreve
+  `order.cancelled`).
+* **Webhook:** `POST /api/v0/webhook` com o token da conta responde `201` com
+  `secret_token` de 64 caracteres hexadecimais, **que não volta na listagem**
+  (`GET /api/v0/webhook`); `DELETE /api/v0/webhook/{id}` responde `204`.
+  Perdido o segredo, o webhook tem de ser recriado.
+* **Conta nova tem limite de etiquetas:** a conta de sandbox (nível 1) mostrava
+  `limits.shipments_available: 5` em `GET /api/v0/user`. Se valer também em
+  produção, o ateliê novo esbarra no limite: a tela de compra deve mostrar o
+  erro da SuperFrete como recebido.
+* **Recarga PIX do sandbox** falhou pela interface com erro genérico; a compra
+  com saldo, o código de rastreio e o estorno do cancelamento ficam por
+  verificar.
 
 ## Endereço de origem do ateliê
 
