@@ -18,6 +18,10 @@ cotações externas obedecem à chave `SHIPPING_REMOTE_QUOTES_ENABLED` em produ�
 e o ateliê escolhe entre a cotação e o frete que definiu no produto. Etiqueta e
 rastreio seguem como Etapas 2 e 3, agora sobre a API da SuperFrete.
 
+**Atualização 2026-11-05 — decisões da etiqueta tomadas.** Quem paga a
+etiqueta e quem absorve a diferença de frete foram respondidas (o ateliê), e o
+desenho das Etapas 2 e 3 está em "Etapa 2 e 3 — decisões e desenho", no fim.
+
 Opções revisadas em 2026-09-06 com a documentação pública dos provedores
 ([Melhor Envio](https://docs.melhorenvio.com.br/reference/introducao-api-melhor-envio)).
 Preço e política desses serviços mudam: confirmar antes de assinar.
@@ -89,9 +93,9 @@ A pesquisa reforçou a escolha: o OAuth2 do Melhor Envio é o mesmo padrão já 
 
 Independentes do provedor escolhido:
 
-1. **Quem paga a etiqueta.** Com o cadastro por CPF confirmado, o caminho natural é **cada artesão com a própria conta**, conectada por OAuth como já acontece com o Mercado Pago: não mexe no split de comissão, e o saldo é dele. O custo é mais um passo no onboarding, e o artesão precisa manter saldo na carteira — se ela zerar, ele não emite etiqueta. A alternativa (plataforma compra e desconta do repasse) simplifica para o vendedor, mas mexe no split e faz a EloShop adiantar dinheiro. **Decisão ainda do negócio**, mas sem o impedimento que existiria se CPF não fosse aceito.
+1. **Quem paga a etiqueta.** Com o cadastro por CPF confirmado, o caminho natural é **cada artesão com a própria conta**, conectada por OAuth como já acontece com o Mercado Pago: não mexe no split de comissão, e o saldo é dele. O custo é mais um passo no onboarding, e o artesão precisa manter saldo na carteira — se ela zerar, ele não emite etiqueta. A alternativa (plataforma compra e desconta do repasse) simplifica para o vendedor, mas mexe no split e faz a EloShop adiantar dinheiro. **Decisão ainda do negócio**, mas sem o impedimento que existiria se CPF não fosse aceito. **Respondida em 2026-11-05: o ateliê paga, pela carteira da própria conta** (ver "Etapa 2 e 3", abaixo).
 2. **Frete grátis existe?** A partir de qual valor, e por conta de quem — plataforma ou artesão. Afeta carrinho, cupom e comissão.
-3. **Quem absorve a diferença** quando o frete real sai mais caro que o cobrado no checkout. Hoje a comissão exclui frete, então o vendedor absorveria por padrão.
+3. **Quem absorve a diferença** quando o frete real sai mais caro que o cobrado no checkout. Hoje a comissão exclui frete, então o vendedor absorveria por padrão. **Respondida em 2026-11-05: o ateliê absorve, e vê a diferença antes de comprar.**
 
 ## Consequences
 
@@ -104,5 +108,29 @@ Se B for aceito, a implementação se divide em três etapas, e só a primeira d
 **Condição de segurança para a Etapa 2 (2026-11-04).** O retorno do OAuth da SuperFrete é um GET feito pelo servidor dela, sem a sessão do ateliê, então o `state` não está mais preso ao navegador de quem iniciou (ver `docs/shipping.md`, "Retorno do OAuth"). Sobra um golpe de consentimento: um atacante inicia a conexão no próprio ateliê e convence outra pessoa, logada na SuperFrete, a autorizar pelo link dele em até 10 minutos — a conta dela, com a carteira, fica ligada ao ateliê do atacante. Aceito pelo Uriel enquanto o token só cota. **Antes de comprar etiqueta pela carteira**, reforçar a vinculação (por exemplo, exigir que o e-mail da conta SuperFrete confira com o do ateliê, ou confirmação por e-mail antes da primeira etiqueta).
 
 **Etapa 3 — webhook de status.** Preenche `shipped_at` e `delivered_at`, reaproveitando o padrão idempotente do Mercado Pago.
+
+### Etapa 2 e 3 — decisões e desenho (2026-11-05)
+
+Revisão de arquitetura de 2026-11-05, com a API da SuperFrete exercitada no sandbox no mesmo dia (resultados em `docs/shipping.md`, "Etiqueta e rastreio: o que o sandbox mostrou").
+
+**Decisões do Uriel (2026-11-05):**
+
+1. **Quem paga a etiqueta:** o ateliê, pela carteira da própria conta SuperFrete (decisão 1 acima, confirmada).
+2. **A diferença entre o frete cobrado e o custo da etiqueta fica com o ateliê** (decisão 3 acima). A comissão continua excluindo o frete. A tela de compra mostra a diferença antes de pagar.
+3. **Desistência ou reembolso integral bloqueiam a compra da etiqueta** com o mesmo lock e as mesmas checagens do envio (`Shipment#transition_to!`, ADR 008 decisão A). Etiqueta já comprada **não é cancelada sozinha**: o ateliê cancela com um clique (o estorno volta para a carteira dele), para que um cancelamento automático por engano não o faça perder a postagem.
+4. **O envio manual continua** para quem não usa a SuperFrete: a conexão é exigida para aprovar, não para vender.
+5. **CPF do comprador** obrigatório só em pedido com entrega (retirada não gera etiqueta); **telefone opcional** (Correios não exige; só a J&T, que não oferecemos).
+
+**Desenho:**
+
+* **A etiqueta tem estados próprios**, porque a SuperFrete não oferece idempotência e o checkout debita a carteira: `draft → cart_created → purchasing → purchased → cancelled`, mais `failed`. O id do carrinho é gravado **antes** do checkout; depois de timeout ou erro ambíguo, o estado é decidido consultando `GET /api/v0/order/info/{id}`, nunca recriando o carrinho. O carrinho leva a referência da EloShop em `options.tags`. A chamada externa fica **fora** da transação (regra do ADR 008): reserva sob o lock do `SellerOrder`, chama, fecha.
+* **Serviço e medidas são confirmados na compra**, com cotação nova, e não guardados no checkout: os pedidos com frete fixo do ateliê (a regra do lançamento) nunca passaram por cotação.
+* **Destinatário guardado no checkout:** nome, CPF (cifrado, fora de API, e-mails, logs e Sentry) e telefone opcional.
+* **Vinculação da conta antes da primeira compra** (condição de segurança acima): o e-mail da conta SuperFrete conectada tem de conferir com o do `User` do ateliê.
+* **O PDF não é guardado**: o link é pedido à SuperFrete a cada impressão, por ação do painel escopada por `current_seller`.
+* **Webhook por conta do ateliê:** o `POST /api/v0/webhook` é feito com o token da conta e devolve um `secret_token` próprio, que só aparece na criação. Cada ateliê tem o seu, guardado cifrado; a URL carrega um identificador opaco do ateliê para achar o segredo antes de verificar `X-ME-Signature` (HMAC-SHA256 do corpo bruto, comparação em tempo constante). O evento é gravado com chave única e processado em job; as transições seguem a ordem (`order.posted` → enviado, `order.delivered` → entregue) e o que não se aplica é ignorado com registro, nunca respondido com 500. O envio é localizado pelo id da SuperFrete, nunca pelo código de rastreio.
+* **Chave de ambiente própria** (`SHIPPING_LABELS_ENABLED`), desligada em produção até a validação.
+
+**Ainda a confirmar com a SuperFrete** (não se verifica com token manual de sandbox): se o token **OAuth** pode registrar webhook na conta do ateliê, e se a assinatura vem em hex ou base64.
 
 O risco principal é o agregador virar dependência do checkout. A mitigação é manter a tabela atual como fallback — **não deletá-la**.
