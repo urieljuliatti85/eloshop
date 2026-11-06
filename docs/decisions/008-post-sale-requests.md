@@ -2,10 +2,14 @@
 
 ## Status
 
-Proposed — desenho registrado em 2026-10-31, **sem implementação**. Reservada
-em 2026-10-31; implementação decidida em 2026-11-03, ainda sem código. As
-decisões de negócio listadas abaixo já foram tomadas; uma segue pendente com o
-advogado.
+Accepted — **Fase 1 implementada** (PR #312, mergeado em 2026-11-03); a
+**Fase 2 segue sem código**. Desenho registrado e reservado em 2026-10-31,
+implementação decidida em 2026-11-03. As decisões de negócio listadas abaixo
+já foram tomadas; uma segue pendente com o advogado.
+
+Falta, para a Fase 1 cumprir os critérios de aceite: validá-la no sandbox com o
+ateliê de teste (ver "Ao retomar") e confirmar com o advogado que ela atende à
+condição do parecer para publicar a política (#172).
 
 Revisado em 2026-11-03 (`/principal-reviewer`): o desenho foi mantido, com as
 decisões A e B do Uriel e as regras de implementação da seção "Regras de
@@ -349,11 +353,11 @@ volta", escolha das peças devolvidas, fotos, ateliê escrevendo na solicitaçã
 
 ## Ao retomar
 
-Branch prevista `feat/solicitacoes-pos-venda`, sem publicar a política junto
-(ela segue no #172 até as condições do parecer serem cumpridas).
+A política não é publicada junto: ela segue no #172 até as condições do
+parecer serem cumpridas.
 
-1. **Fase 1, antes de abrir as vendas:** um PR com o que está na seção
-   "Fase 1" — sem mexer em `Payments::Refund`. Os testes da trava de envio
+1. **Fase 1, antes de abrir as vendas — entregue no #312 (2026-11-03):** um PR
+   com o que está na seção "Fase 1", sem mexer em `Payments::Refund`. Os testes da trava de envio
    (regra 4) e do protocolo (regra 6) vêm antes do código.
 2. **Fase 2, depois da abertura, conforme o uso real:** um PR para o que mexe
    em dinheiro — `Payments::Refund` (`require_unshipped`, `return_request`),
