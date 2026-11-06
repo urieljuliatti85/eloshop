@@ -7,9 +7,15 @@ Accepted — **Fase 1 implementada** (PR #312, mergeado em 2026-11-03); a
 implementação decidida em 2026-11-03. As decisões de negócio listadas abaixo
 já foram tomadas; uma segue pendente com o advogado.
 
-Falta, para a Fase 1 cumprir os critérios de aceite: validá-la no sandbox com o
-ateliê de teste (ver "Ao retomar") e confirmar com o advogado que ela atende à
-condição do parecer para publicar a política (#172).
+**Fase 1 validada em produção em 2026-11-06** com o pedido 53 (contas do
+Uriel: comprador cliente 1 e Ateliê Teste): desistência aberta pelo pedido,
+protocolo na tela e no e-mail do comprador, envio recusado no painel do ateliê
+com a desistência aberta, atendimento e encerramento pela fila do admin, com
+avisos ao comprador e ao ateliê. O e-mail do ateliê não foi conferido em caixa
+de entrada: o login do Ateliê Teste usa um domínio que não recebe e-mail. O
+reembolso pela tela do pedido ficou fora do teste (ver "Ao retomar"). Falta
+só confirmar com o advogado que a Fase 1 atende à condição do parecer para
+publicar a política (#172).
 
 Revisado em 2026-11-03 (`/principal-reviewer`): o desenho foi mantido, com as
 decisões A e B do Uriel e as regras de implementação da seção "Regras de
@@ -367,7 +373,11 @@ parecer serem cumpridas.
    As seções "Testes previstos" e "Critérios de aceite" acima descrevem o
    desenho completo, ao fim da Fase 2.
 
-Validar a Fase 1 no sandbox com o ateliê de teste (compra, desistência,
-protocolo, envio travado e reembolso pela tela do pedido) antes de abrir as
-vendas. A Fase 2 repete a validação com "cancelar e reembolsar", comissão
+A Fase 1 foi validada em produção em 2026-11-06, e não no sandbox: desde
+2026-09-29 a produção usa o Mercado Pago real, e o pedido 53 era o único pago
+com comprador e ateliê do Uriel (os pedidos 54 e 55 são de terceiros e o teste
+manda e-mail de verdade). Desistência, protocolo, envio travado e atendimento
+pelo admin conferidos; o reembolso pela tela do pedido ficou de fora, porque o
+Ateliê Teste foi conectado com conta TESTUSER e o caminho já está validado em
+produção pelo pedido 55 (2026-11-03). A Fase 2 repete a validação com "cancelar e reembolsar", comissão
 proporcional devolvida e estoque.
