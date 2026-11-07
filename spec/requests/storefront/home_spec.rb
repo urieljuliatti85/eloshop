@@ -56,8 +56,8 @@ RSpec.describe "Storefront home", type: :request do
       get root_path
 
       doc = Nokogiri::HTML(response.body)
-      desktop = doc.at_css("header nav.md\\:flex").css("a").last
-      mobile = doc.css("header a.md\\:hidden[href='https://www.instagram.com/eloshop__']")
+      desktop = doc.at_css("header nav.lg\\:flex").css("a").last
+      mobile = doc.css("header a.lg\\:hidden[href='https://www.instagram.com/eloshop__']")
       expect(mobile.size).to eq(1)
       [ desktop, mobile.first ].each do |link|
         expect(link["href"]).to eq("https://www.instagram.com/eloshop__")

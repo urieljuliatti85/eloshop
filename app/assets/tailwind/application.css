@@ -159,12 +159,13 @@
   .account-tabs-sheet[hidden] { @apply hidden; }
   @media (width < 64rem) { body.account-area { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); } }
 
-  /* Loja: abas com os destinos do menu principal no celular, abaixo de `md`
-     (o corte do hambúrguer). Reaproveitam `.account-tab`. O body com
+  /* Loja: abas com os destinos do menu principal no celular e no tablet,
+     abaixo de `lg` (o corte do hambúrguer, o mesmo das abas da área do
+     cliente logo acima). Reaproveitam `.account-tab`. O body com
      `storefront-tabs-area` reserva a altura delas. O aviso de consentimento
      de métricas sobe por uma regra no fim do arquivo, fora de camada. */
-  .storefront-tabs { @apply fixed inset-x-0 bottom-0 z-40 border-t border-brand-100 bg-white shadow-[0_-8px_24px_rgba(120,40,10,0.08)] md:hidden; padding-bottom: env(safe-area-inset-bottom); }
-  @media (width < 48rem) { body.storefront-tabs-area { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); } }
+  .storefront-tabs { @apply fixed inset-x-0 bottom-0 z-40 border-t border-brand-100 bg-white shadow-[0_-8px_24px_rgba(120,40,10,0.08)] lg:hidden; padding-bottom: env(safe-area-inset-bottom); }
+  @media (width < 64rem) { body.storefront-tabs-area { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); } }
 
   .admin-body { @apply min-h-screen bg-[#eee9df] text-slate-900 antialiased; --admin-tabs-height: 4rem; }
   @media (width >= 64rem) { .admin-body { --admin-tabs-height: 0px; } }
@@ -403,7 +404,7 @@ body.products-background {
    utility `bottom-4`, e utilities vencem qualquer regra de `@layer
    components`, seja qual for a especificidade. CSS sem camada vence as
    camadas, então só assim o aviso sobe acima das abas inferiores da loja
-   (abaixo de `md`) em vez de cobri-las. */
-@media (width < 48rem) {
+   (abaixo de `lg`, o mesmo corte do topo) em vez de cobri-las. */
+@media (width < 64rem) {
   body.storefront-tabs-area [data-google-analytics-target="banner"] { bottom: calc(5rem + env(safe-area-inset-bottom)); }
 }
