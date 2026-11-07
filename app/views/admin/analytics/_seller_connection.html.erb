@@ -1,11 +1,12 @@
-<section class="space-y-4" aria-labelledby="seller-connection-title">
+<% title_id = "seller-connection-#{who.parameterize}-title" %>
+<section class="space-y-4" aria-labelledby="<%= title_id %>">
   <div>
-    <p class="admin-section-label">Entrada de vendedores</p>
-    <h2 id="seller-connection-title" class="mt-1">Conexão com o Mercado Pago</h2>
+    <p class="admin-section-label">Entrada de vendedores · <%= audience %></p>
+    <h2 id="<%= title_id %>" class="mt-1">Conexão com o Mercado Pago</h2>
     <p class="mt-1 text-sm text-slate-500">
       Últimos 30 dias. Taxa de conclusão (concluídas sobre cliques):
       <strong><%= connection.started.zero? ? "—" : number_to_percentage(connection.completion_rate, precision: 0) %></strong>.
-      Cada reconexão de um ateliê já conectado também conta.
+      Cada reconexão de um <%= who %> já conectado também conta.
     </p>
   </div>
   <div class="grid gap-4 lg:grid-cols-3">

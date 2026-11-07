@@ -1,13 +1,17 @@
 <div class="space-y-6">
   <header class="flex flex-wrap items-start justify-between gap-4">
     <div>
-      <%= link_to "← Voltar para artesãos", admin_sellers_path, class: "admin-link mb-3 inline-block text-sm" %>
-      <p class="admin-section-label">Marketplace</p>
+      <%= link_to "← Voltar para artesãos e distribuidores", admin_sellers_path, class: "admin-link mb-3 inline-block text-sm" %>
+      <p class="admin-section-label"><%= @seller.distributor? ? "Distribuidor de insumos" : "Ateliê" %></p>
       <h1><%= @seller.name %></h1>
       <p class="mt-2 text-sm text-slate-500"><%= @seller.users.first&.email_address %></p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      <% if @seller.hidden? %>
+      <%# Esconder vale para os dois tipos (decisão de 2026-11-07); os botões
+          do distribuidor voltam na Fase 26, quando a loja dele existir. Até
+          lá a ação continua aceita e só grava a marca (`hidden_at`). %>
+      <% if @seller.distributor? %>
+      <% elsif @seller.hidden? %>
         <%= button_to "Mostrar na vitrine", unhide_admin_seller_path(@seller), method: :patch, class: "admin-button admin-button--secondary" %>
       <% else %>
         <%= button_to "Esconder da vitrine", hide_admin_seller_path(@seller), method: :patch, class: "admin-button admin-button--secondary" %>
@@ -21,7 +25,7 @@
   <% if @fraud_alerts.any? %>
     <section class="admin-card border-amber-300 p-6">
       <p class="admin-section-label">Alertas de fraude abertos</p>
-      <p class="mt-1 text-sm text-slate-500">Só sinalizam: nada foi alterado no ateliê. A decisão é sua.</p>
+      <p class="mt-1 text-sm text-slate-500">Só sinalizam: nada foi alterado no cadastro. A decisão é sua.</p>
       <ul class="mt-4 divide-y divide-slate-200">
         <% @fraud_alerts.each do |alert| %>
           <li class="flex flex-wrap items-start justify-between gap-3 py-3">
@@ -43,24 +47,32 @@
       <div class="mt-2"><%= admin_status_badge(@seller.status) %></div>
       <p class="mt-3 text-sm text-slate-500">Etapa da entrada: <%= seller_onboarding_badge(@seller) %></p>
       <p class="mt-4 text-sm text-slate-500">Aprovado em: <%= @seller.approved_at ? l(@seller.approved_at, format: :short) : "—" %></p>
-      <p class="mt-1 text-sm text-slate-500">
-        Vitrine:
-        <% if @seller.hidden? %>
-          <span class="font-semibold text-amber-700">Escondida desde <%= l(@seller.hidden_at, format: :short) %></span>
-        <% else %>
-          <span class="font-semibold text-emerald-700">Visível</span>
-        <% end %>
-      </p>
+      <% if @seller.atelier? %>
+        <p class="mt-1 text-sm text-slate-500">
+          Vitrine:
+          <% if @seller.hidden? %>
+            <span class="font-semibold text-amber-700">Escondida desde <%= l(@seller.hidden_at, format: :short) %></span>
+          <% else %>
+            <span class="font-semibold text-emerald-700">Visível</span>
+          <% end %>
+        </p>
+      <% else %>
+        <p class="mt-1 text-sm text-slate-500">Vitrine: não aparece na vitrine de peças. A loja de insumos chega na Fase 26.</p>
+      <% end %>
     </section>
 
     <section class="admin-card p-6">
       <p class="admin-section-label">Dados do proprietário</p>
       <p class="mt-2 text-sm text-slate-500">Nome: <%= @seller.owner_full_name.presence || "—" %></p>
       <p class="mt-1 text-sm text-slate-500">CPF: <%= @seller.cpf_for_admin || "—" %></p>
+      <% if @seller.distributor? %>
+        <p class="mt-1 text-sm text-slate-500">CNPJ: <%= @seller.cnpj.present? ? Cnpj.format(@seller.cnpj) : "não informado" %></p>
+        <p class="mt-1 text-sm text-slate-500">Emite nota fiscal: <%= { true => "sim", false => "não" }.fetch(@seller.issues_invoices, "não informado") %></p>
+      <% end %>
     </section>
 
     <section class="admin-card p-6">
-      <p class="admin-section-label">Termos Comerciais do Marketplace</p>
+      <p class="admin-section-label"><%= @seller.distributor? ? "Termos Comerciais do Distribuidor" : "Termos Comerciais do Marketplace" %></p>
       <% acceptance = @seller.latest_terms_acceptance %>
       <% if acceptance %>
         <p class="mt-2 font-semibold text-emerald-700">Aceito</p>
@@ -84,7 +96,7 @@
       <% else %>
         <p class="mt-2 font-semibold text-emerald-700">Nenhuma denúncia pendente</p>
       <% end %>
-      <%= link_to "Ver denúncias deste ateliê", admin_seller_reports_path(seller_id: @seller.id), class: "admin-link mt-2 inline-block text-sm" %>
+      <%= link_to "Ver denúncias deste #{@seller.distributor? ? "distribuidor" : "ateliê"}", admin_seller_reports_path(seller_id: @seller.id), class: "admin-link mt-2 inline-block text-sm" %>
     </section>
 
     <section class="admin-card p-6">
@@ -96,11 +108,14 @@
         <p class="mt-1 text-sm text-slate-500">Conectada em: <%= l(@seller.mercado_pago_connected_at, format: :short) %></p>
       <% else %>
         <p class="mt-2 font-semibold text-amber-700">Conta ainda não conectada</p>
-        <p class="mt-2 text-sm text-slate-500">Envie este link para o artesão conectar a própria conta Mercado Pago (a EloShop nunca vê a senha dele):</p>
-        <p class="mt-2 break-all rounded border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-600"><%= seller_atelier_url %></p>
+        <p class="mt-2 text-sm text-slate-500">Envie este link para o <%= seller_kind_noun(@seller) %> conectar a própria conta Mercado Pago (a EloShop nunca vê a senha dele):</p>
+        <p class="mt-2 break-all rounded border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-600"><%= @seller.distributor? ? distributor_root_url : seller_atelier_url %></p>
       <% end %>
     </section>
 
+    <%# O frete do distribuidor é a Fase 28; até lá a SuperFrete não é dele
+        nem entra na aprovação (Seller#superfrete_required?). %>
+    <% if @seller.atelier? %>
     <section class="admin-card p-6">
       <p class="admin-section-label">SuperFrete</p>
       <% if @seller.superfrete_ready? %>
@@ -115,9 +130,10 @@
         <p class="mt-2 text-sm text-slate-500">O passo a passo está em Frete e entregas, no painel do artesão.</p>
       <% end %>
     </section>
+    <% end %>
   </div>
 
-  <% if @seller.pending? %>
+  <% if @seller.pending? && @seller.atelier? %>
     <section class="admin-card p-6">
       <h2>Vitrine do pré-cadastro</h2>
       <% if @seller.showcased? %>
@@ -132,7 +148,7 @@
 
   <% unless @seller.approved? %>
     <section class="admin-card p-6">
-      <h2>Aprovação do artesão</h2>
+      <h2>Aprovação do <%= seller_kind_noun(@seller) %></h2>
       <p class="mt-2 text-sm text-slate-500">O Mercado Pago exige conta de vendedor com identificação KYC nível 6 para o split 1:1. Confirme a situação no ambiente do Mercado Pago; a EloShop não recebe nem armazena os documentos.</p>
       <% if @seller.superfrete_required? && !@seller.superfrete_ready? %>
         <p class="mt-2 text-sm font-semibold text-amber-700">A conta da SuperFrete ainda não está conectada: a aprovação exige a conexão.</p>
@@ -148,7 +164,7 @@
           <%= check_box_tag :kyc_level_6_confirmed, "1", false, required: true, disabled: !approvable, class: "mt-1 rounded border-slate-300" %>
           <span>Confirmo que a conta conectada atende ao KYC nível 6 exigido pelo Mercado Pago.</span>
         </label>
-        <%= form.submit "Aprovar artesão", disabled: !approvable, class: "admin-button admin-button--brand disabled:cursor-not-allowed disabled:opacity-50" %>
+        <%= form.submit "Aprovar #{seller_kind_noun(@seller)}", disabled: !approvable, class: "admin-button admin-button--brand disabled:cursor-not-allowed disabled:opacity-50" %>
       <% end %>
     </section>
   <% end %>

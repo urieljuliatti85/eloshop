@@ -44,5 +44,22 @@ module Analytics
     test "rejects an unknown event name" do
       assert_raises(Funnel::InvalidEvent) { Funnel.track("seller_mp_connect_typo") }
     end
+
+    # ADR 007: o distribuidor conecta pela mesma rota, mas a entrada dos
+    # ateliês não pode se misturar com a dele (achado da revisão do #330).
+    test "splits the connection report by seller kind" do
+      distributor = Seller.create!(name: "Fios Analytics", owner_full_name: "Dona dos Fios", cpf: "52998224725", kind: "distributor")
+      Funnel.track("seller_mp_connect_started", seller: sellers(:approved))
+      Funnel.track("seller_mp_connect_started", seller: distributor)
+      Funnel.track("seller_mp_connect_completed", seller: distributor)
+
+      ateliers = FunnelReport.new.seller_connection_snapshot
+      distributors = FunnelReport.new.seller_connection_snapshot(kind: "distributor")
+
+      assert_equal [ sellers(:approved) ], ateliers.started_by.map(&:seller)
+      assert_equal 0, ateliers.completed
+      assert_equal [ distributor ], distributors.started_by.map(&:seller)
+      assert_equal 100.0, distributors.completion_rate
+    end
   end
 end

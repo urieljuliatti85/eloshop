@@ -1426,6 +1426,8 @@ Representar o insumo como produto comercial: unidade de venda, quantidade mínim
 * Nenhum texto padrão afirma "feito à mão" para insumo (`SeoHelper#product_meta_description`, e-mails e jobs com a versão do distribuidor)
 * Unidade e faixas na API (contrato regenerado pelo rswag) e no JSON-LD (`priceSpecification`)
 * Vitrine `/insumos`, fora de `/produtos`, da busca e do SEO das peças artesanais
+* Endereços públicos (decisão de 2026-11-07, ADR 007): lista `/distribuidores`, loja `/distribuidores/:slug` e produto `/distribuidores/:slug/insumos/:produto`, no formato do ateliê e fora de `/artesaos`
+* Esconder vale para o distribuidor (decisão de 2026-11-07): `Seller#hidden?` tira do ar a loja e os insumos dele sem suspender a conta, como no ateliê; os botões "Esconder/Mostrar" voltam à ficha do admin junto com a loja
 * Ponte com `Material` e `Technique` ("insumos para crochê")
 * SEO e dados estruturados da vitrine de insumos
 

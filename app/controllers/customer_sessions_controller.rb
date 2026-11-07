@@ -6,8 +6,10 @@ class CustomerSessionsController < StorefrontController
   def new
   end
 
+  # Sempre texto: sem a senha no POST, `authenticate_by` levantava
+  # ArgumentError e a porta respondia 500 (achado do QA, 2026-11-07).
   def create
-    if customer = Customer.authenticate_by(params.permit(:email, :password))
+    if customer = Customer.authenticate_by(email: params[:email].to_s, password: params[:password].to_s)
       start_new_customer_session_for(customer)
       associate_cart_with_customer(customer)
       redirect_to after_customer_authentication_url, notice: "Login realizado com sucesso."

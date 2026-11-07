@@ -214,6 +214,33 @@ Não são decisões de negócio, mas mudam o plano das fases:
   levar a unidade de venda e as faixas (`priceSpecification` com quantidade de
   referência no JSON-LD; contrato da API regenerado pelo rswag).
 
+## Endereços públicos do distribuidor (2026-11-07)
+
+Decisão do Uriel, no mesmo formato do ateliê (tipo de vendedor › loja › item)
+e fora de `/artesaos`, para não misturar com o catálogo nem com o SEO das
+peças:
+
+| | Ateliê | Distribuidor |
+|---|---|---|
+| Lista | `/artesaos` | `/distribuidores` |
+| Loja | `/artesaos/:slug` | `/distribuidores/:slug` |
+| Produto | `/artesaos/:slug/produtos/:produto` | `/distribuidores/:slug/insumos/:produto` |
+| Vitrine geral | `/produtos` | `/insumos` |
+
+O slug sai do nome no cadastro e é único entre ateliês e distribuidores
+juntos (`Seller#slug`), então os dois prefixos nunca disputam o mesmo
+endereço, e o slug não muda quando o nome muda, como no ateliê. As páginas
+entram na Fase 26; até lá o endereço fica reservado e é mostrado no cadastro e
+no painel, sem página no ar. Insumo nunca é servido em `/artesaos/...`
+(guarda em `spec/requests/distributor_storefront_guard_spec.rb`).
+
+**Esconder vale para o distribuidor (2026-11-07).** Como no ateliê, o admin
+tira a loja e os insumos do ar sem suspender a conta (por exemplo, durante a
+análise de uma denúncia). Até a Fase 26 a ação só grava `hidden_at`, e os
+botões ficam fora da ficha; com a loja no ar, eles voltam e a vitrine de
+insumos respeita a marca. "Liberar na vitrine" (`showcase!`) continua só do
+ateliê: é o pré-cadastro da vitrine de peças.
+
 ## Decisões pendentes
 
 1. **Declaração de emissão de nota fiscal** — obrigatória ou opcional; aguarda
@@ -229,6 +256,35 @@ Não são decisões de negócio, mas mudam o plano das fases:
    provedor se a mesma pessoa pode ter uma conta para o ateliê e outra para a
    distribuidora (ou se precisa de CNPJ). Não muda a decisão de CPF por tipo;
    muda o que o cadastro do distribuidor orienta.
+4. **Mensalidade e comissão do distribuidor** — análise de 2026-11-07, sem
+   decisão e sem mudança no código. **Até a revisão, o distribuidor paga só
+   comissão, sem mensalidade.**
+   * **Por que não cobrar mensalidade agora:**
+     * a demanda de insumos vem dos artesãos da própria EloShop e as vendas
+       ainda não abriram. Cobrar todo mês antes de haver comprador afasta os
+       primeiros distribuidores, enquanto a comissão só cobra quando ele vende;
+     * a comissão sai no split do Mercado Pago. Mensalidade é cobrança de
+       serviço: pede nota fiscal da EloShop e uma relação comercial mais
+       formal, o que esbarra na formalização ainda pendente com o advogado e o
+       contador (a EloShop não tem CNPJ);
+     * não há cobrança recorrente no sistema. Seria um projeto à parte:
+       assinatura no Mercado Pago, fora do split; inadimplência (aviso,
+       carência, suspensão e reativação); histórico de cobranças; termos; e o
+       destino dos pedidos em andamento de quem deixou de pagar. É maior que a
+       Fase 26 inteira;
+     * o rascunho dos termos do distribuidor e a página "Como funciona" dizem
+       "Não há mensalidade, no momento". O "no momento" deixa a porta aberta
+       sem prometer nada.
+   * **Quando reavaliar:** 3 meses depois da abertura das vendas de insumos,
+     com quanto cada distribuidor vende por mês e quanto paga de comissão. Se
+     houver volume, o formato recomendado é um **plano opcional** ("R$ X por
+     mês e comissão menor", escolhido pelo distribuidor quando compensa), no
+     lugar de uma mensalidade obrigatória.
+   * **Antes de ligar o cadastro em produção:** confirmar com dois ou três
+     distribuidores se 15% sobre insumo é viável. A margem de atacado é menor
+     que a de peça artesanal, e essa taxa (decidida igual à do ateliê) pode
+     afastar fornecedores. Se precisar mudar, a hora é agora, com os termos do
+     distribuidor ainda em rascunho com o advogado.
 
 ## Consequências
 

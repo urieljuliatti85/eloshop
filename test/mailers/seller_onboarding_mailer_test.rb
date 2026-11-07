@@ -11,4 +11,14 @@ class SellerOnboardingMailerTest < ActionMailer::TestCase
     assert_match "KYC", mail.body.encoded
     assert_match "/admin/sellers/#{seller.slug}", mail.body.encoded
   end
+
+  test "tells the platform when the seller waiting for approval is a distributor" do
+    distributor = Seller.create!(name: "Fios Aguardando", owner_full_name: "Dona dos Fios", cpf: "52998224725", kind: "distributor")
+
+    mail = SellerOnboardingMailer.awaiting_approval(distributor)
+
+    assert_includes mail.text_part.body.to_s, "(distribuidor de insumos)"
+    assert_includes mail.text_part.body.to_s, "Abrir o distribuidor no admin"
+    assert_not_includes mail.html_part.body.to_s, "ateliê"
+  end
 end

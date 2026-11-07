@@ -1,11 +1,20 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Confere, enquanto o artesão digita, se já existe um ateliê com o mesmo nome
+// Confere, enquanto a pessoa digita, se já existe um vendedor com o mesmo nome
 // (ou que gere o mesmo slug). Se existir, bloqueia o envio e oferece um nome
 // livre. O backend continua sendo quem garante a unicidade.
+//
+// Serve aos dois cadastros: o slug é único entre ateliês e distribuidores
+// (ADR 007), então a consulta é a mesma; mudam o prefixo do endereço e o
+// texto, que vêm dos values (o padrão é o do ateliê).
 export default class extends Controller {
   static targets = ["input", "status"]
-  static values = { url: String }
+  static values = {
+    url: String,
+    prefix: { type: String, default: "/artesaos" },
+    invalidMessage: { type: String, default: "Use letras ou números no nome do ateliê." },
+    takenMessage: { type: String, default: "Já existe um ateliê com esse nome (ou com uma URL igual)." }
+  }
 
   connect() {
     this.timeout = null
@@ -48,12 +57,12 @@ export default class extends Controller {
 
   render(result) {
     if (!result.valid) {
-      this.block("Use letras ou números no nome do ateliê.")
+      this.block(this.invalidMessageValue)
     } else if (result.available) {
       this.inputTarget.setCustomValidity("")
-      this.setStatus(`Nome disponível. Endereço: /artesaos/${result.slug}`, "text-green-700")
+      this.setStatus(`Nome disponível. Endereço: ${this.prefixValue}/${result.slug}`, "text-green-700")
     } else {
-      this.block("Já existe um ateliê com esse nome (ou com uma URL igual).", result.suggestion)
+      this.block(this.takenMessageValue, result.suggestion)
     }
   }
 

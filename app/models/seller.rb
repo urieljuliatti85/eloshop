@@ -215,12 +215,16 @@ class Seller < ApplicationRecord
   # da revisão do admin. Aprovado já aparece (e esconder é `hide!`); suspenso
   # precisa ser reaprovado.
   def showcase!
+    # O distribuidor nunca aparece na vitrine artesanal (ADR 007); liberar
+    # não teria efeito e só confundiria a ficha do admin.
+    raise VerificationRequired, "Distribuidor não aparece na vitrine de peças." if distributor?
     raise VerificationRequired, "Só um ateliê pendente pode ser liberado na vitrine." unless pending?
 
     update!(showcased_at: showcased_at || Time.current)
   end
 
   def unshowcase!
+    raise VerificationRequired, "Distribuidor não aparece na vitrine de peças." if distributor?
     raise VerificationRequired, "Só um ateliê pendente pode ser retirado da vitrine." unless pending?
 
     update!(showcased_at: nil)

@@ -1,4 +1,10 @@
 module AdminHelper
+  # Como o admin chama o vendedor, conforme o tipo (ADR 007): "artesão" ou
+  # "distribuidor". Uma fonte só para a ficha, os avisos e os e-mails ao admin.
+  def seller_kind_noun(seller)
+    seller.distributor? ? "distribuidor" : "artesão"
+  end
+
   ADMIN_STATUS_LABELS = {
     "pending" => "Pendente", "confirmed" => "Confirmado", "processing" => "Em produção",
     "ready_to_ship" => "Pronto para envio", "shipped" => "Enviado", "delivered" => "Entregue",

@@ -655,6 +655,16 @@ class SellerTest < ActiveSupport::TestCase
     assert_raises(Seller::VerificationRequired) { atelier.approve!(kyc_level_6_confirmed: true) }
   end
 
+
+  # ADR 007: o distribuidor nunca aparece na vitrine artesanal.
+  test "a distributor cannot be released to the artisan showcase" do
+    distributor = Seller.create!(name: "Fios Vitrine", owner_full_name: "Dona dos Fios", cpf: "52998224725", kind: "distributor")
+
+    error = assert_raises(Seller::VerificationRequired) { distributor.showcase! }
+    assert_equal "Distribuidor não aparece na vitrine de peças.", error.message
+    assert_nil distributor.reload.showcased_at
+  end
+
   private
 
   # A aprovação exige a SuperFrete conectada onde a cotação está ligada (como
