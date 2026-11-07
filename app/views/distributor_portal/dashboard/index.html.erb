@@ -6,7 +6,7 @@
   <header>
     <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Painel do distribuidor</p>
     <h1 class="mt-1 text-3xl font-black tracking-tight text-stone-950"><%= seller.name %></h1>
-    <p class="mt-2 max-w-2xl text-sm text-stone-600">Cadastro, conta de recebimento e aprovação. O cadastro dos insumos chega numa próxima etapa; até lá, nada deste cadastro aparece na loja.</p>
+    <p class="mt-2 max-w-2xl text-sm text-stone-600">Cadastro, conta de recebimento, aprovação e os seus insumos. A vitrine de insumos, onde os artesãos vão ver a sua loja, está em preparação.</p>
   </header>
 
   <%# Primeiros passos no topo enquanto falta alguma etapa: o mesmo bloco do
@@ -57,8 +57,14 @@
 
     <section class="seller-card-lg" aria-labelledby="insumos-titulo">
       <h2 id="insumos-titulo" class="text-lg font-bold text-stone-950">Insumos</h2>
-      <p class="mt-2 text-stone-700">O cadastro dos insumos chega numa próxima etapa: unidade de venda, quantidade mínima e preço por faixa de quantidade, numa vitrine separada das peças artesanais.</p>
-      <span class="mt-4 inline-flex rounded-full bg-sand-100 px-3 py-1 text-xs font-semibold text-ink">Em breve</span>
+      <% products = seller.products %>
+      <% if products.exists? %>
+        <p class="mt-2 text-stone-700"><%= pluralize(products.count, "insumo cadastrado", plural: "insumos cadastrados") %>, <%= pluralize(products.active.count, "publicado", plural: "publicados") %>. Eles aparecem na vitrine de insumos quando ela estiver no ar.</p>
+        <%= link_to "Ver insumos", distributor_products_path, class: "mt-4 inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
+      <% else %>
+        <p class="mt-2 text-stone-700">Cadastre o que você vende: unidade de venda, quantidade mínima e desconto por quantidade. Fica como rascunho até você publicar.</p>
+        <%= link_to "Novo insumo", new_distributor_product_path, class: "mt-4 seller-button seller-button--primary w-fit" %>
+      <% end %>
     </section>
 
     <section class="seller-card-lg" aria-labelledby="loja-titulo">

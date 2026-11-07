@@ -374,15 +374,15 @@ class Seller < ApplicationRecord
   # 2026-11-07): o distribuidor ainda não cadastra insumo (Fase 26, PR B) nem
   # conecta a SuperFrete (Fase 28), e uma etapa impossível deixava a lista
   # dele aberta para sempre, com efeito no painel, nas abas do celular, no
-  # e-mail de aprovação e no admin. "Primeiro insumo" e "SuperFrete" entram
-  # aqui quando as fases deles chegarem.
+  # e-mail de aprovação e no admin. "Primeiro insumo" entrou com o cadastro de
+  # insumos (Fase 26, PR B); "SuperFrete" entra com a Fase 28.
   def getting_started_steps
     steps = {
       address: origin_address_complete?,
       mercado_pago: mercado_pago_connected?,
       pix_key: pix_key_confirmed_at.present?
     }
-    return steps.merge(approval: approved?) if distributor?
+    return steps.merge(product: products.exists?, approval: approved?) if distributor?
 
     steps[:superfrete] = superfrete_ready? if superfrete_required?
     steps.merge(product: products.exists?, approval: approved?)
@@ -468,7 +468,7 @@ class Seller < ApplicationRecord
   # desatualizada em relação à conexão, à aprovação e aos pedidos.
   ONBOARDING_STAGES = %i[
     suspended awaiting_mercado_pago account_not_accepted awaiting_approval
-    awaiting_supply_catalog awaiting_first_product awaiting_first_sale selling
+    awaiting_first_product awaiting_first_sale selling
   ].freeze
 
   def onboarding_stage
@@ -476,10 +476,6 @@ class Seller < ApplicationRecord
     return :awaiting_mercado_pago unless mercado_pago_connected?
     return :account_not_accepted unless approvable_account?
     return :awaiting_approval unless approved?
-    # O distribuidor aprovado espera o cadastro de insumos existir (Fase 26,
-    # PR B); antes ele aparecia como "sem produto", algo que ainda não podia
-    # resolver (F3 do QA do #337).
-    return :awaiting_supply_catalog if distributor?
     return :awaiting_first_product unless products.exists?
     return :awaiting_first_sale unless seller_orders.where.not(status: %w[pending cancelled]).exists?
 

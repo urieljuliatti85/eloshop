@@ -31,8 +31,9 @@ class PanelPathsTest < ActiveSupport::TestCase
     assert_equal "/atacado/painel/dados/edit", panel_path(:edit_atelier, seller: @distributor)
     assert_equal "/atacado/painel/dados/cep/01310100", panel_path(:atelier_postal_code, cep: "01310100", seller: @distributor)
     assert_equal "/atacado/painel/avisos/7/mark_as_read", panel_path(:mark_as_read_notification, 7, seller: @distributor)
-    # O catálogo do distribuidor chega no PR B da Fase 26: até lá, erro alto.
-    assert_raises(NoMethodError) { panel_path(:products, seller: @distributor) }
+    assert_equal "/atacado/painel/insumos/novo", panel_path(:new_product, seller: @distributor)
+    # Pedidos do distribuidor chegam na Fase 27: até lá, erro alto.
+    assert_raises(NoMethodError) { panel_path(:orders, seller: @distributor) }
   end
 
   test "seller_panel_path_for is the root of each panel" do

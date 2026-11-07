@@ -1409,7 +1409,7 @@ Fases 22 e 23; pré-requisitos de negócio da Parte 4.
 
 ## FASE 26 — Catálogo de insumos
 
-Status: `[~]` — antecipada em 2026-11-07, em três PRs: A (domínio: unidade de venda com descrição, quantidade mínima com bloqueio pela fonte única, faixas de desconto em %), B (painel do distribuidor para cadastrar insumos) e C (páginas públicas `/insumos` e `/distribuidores`, SEO, JSON-LD e API). Decisões do Uriel em 2026-11-07: faixa como desconto em %, unidade em lista fixa com descrição opcional, navegação por material e técnica (ADR 007).
+Status: `[~]` — antecipada em 2026-11-07, em três PRs (A mergeado no #338; B, o cadastro de insumos em `/atacado/painel/insumos`, com unidade, mínimo, faixas em %, material e técnica, fotos e publicação sem categoria quando a distribuidora está aprovada ou liberada na vitrine): A (domínio: unidade de venda com descrição, quantidade mínima com bloqueio pela fonte única, faixas de desconto em %), B (painel do distribuidor para cadastrar insumos) e C (páginas públicas `/insumos` e `/distribuidores`, SEO, JSON-LD e API). Decisões do Uriel em 2026-11-07: faixa como desconto em %, unidade em lista fixa com descrição opcional, navegação por material e técnica (ADR 007).
 
 ### Objetivo
 

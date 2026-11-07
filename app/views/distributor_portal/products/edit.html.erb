@@ -1,0 +1,2 @@
+<% content_for :title, "Editar #{@product.name} | #{current_seller.name}" %>
+<div class="max-w-3xl"><%= link_to "← #{@product.name}", distributor_product_path(@product), class: "inline-flex min-h-11 items-center text-sm font-semibold text-brand-600" %><h1 class="my-6 text-3xl font-black tracking-tight">Editar insumo</h1><%= render "form", product: @product %></div>

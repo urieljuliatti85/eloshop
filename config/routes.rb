@@ -147,7 +147,7 @@ Rails.application.routes.draw do
     # tipo; "Dados da distribuidora" é `profile` (o `atelier` do ateliê).
     scope "painel" do
       get "primeiros-passos(/:etapa)", to: "getting_started#show", as: :getting_started,
-        constraints: { etapa: /endereco|mercado-pago|chave-pix|aprovacao/ }
+        constraints: { etapa: /endereco|mercado-pago|chave-pix|primeira-peca|aprovacao/ }
       resource :origin_address, only: :update, controller: "origin_addresses", path: "primeiros-passos/endereco"
       resource :pix_key_confirmation, only: %i[create destroy], path: "chave-pix"
       get "cadastro-chave-pix", to: "pix_key_guides#show", as: :pix_key_guide
@@ -157,6 +157,18 @@ Rails.application.routes.draw do
       get "dados/enderecos", to: "postal_codes#index", as: :profile_postal_codes
       resources :notifications, only: %i[index], path: "avisos" do
         member { patch :mark_as_read }
+      end
+
+      # Catálogo de insumos (Fase 26, PR B): mesmas ações do catálogo do
+      # ateliê, sem variantes, personalização e ações em lote, que entram
+      # quando os distribuidores pedirem.
+      resources :products, path: "insumos", except: :destroy, path_names: { new: "novo", edit: "editar" } do
+        member do
+          patch :publish
+          patch :unpublish
+          patch :discontinue
+        end
+        resources :product_images, path: "imagens", only: %i[destroy]
       end
     end
   end

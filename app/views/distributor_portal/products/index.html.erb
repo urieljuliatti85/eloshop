@@ -1,0 +1,46 @@
+<% content_for :title, "Insumos | #{current_seller.name}" %>
+
+<div class="space-y-6">
+  <header class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-black tracking-tight">Insumos</h1>
+      <p class="mt-1 text-sm text-ink-muted">Os insumos aparecem na vitrine de insumos quando ela estiver no ar, e só depois de publicados.</p>
+    </div>
+    <%= link_to "Novo insumo", new_distributor_product_path, class: "seller-button seller-button--primary w-fit" %>
+  </header>
+
+  <%= form_with url: distributor_products_path, method: :get, class: "flex max-w-md items-center rounded-full border border-brand-200 bg-white px-4 focus-within:border-brand-500" do %>
+    <label for="supply-search" class="sr-only">Buscar nos seus insumos</label>
+    <%= search_field_tag :q, params[:q], id: "supply-search", placeholder: "Buscar nos seus insumos", class: "min-h-11 w-full border-0 bg-transparent px-0 text-sm outline-none focus:ring-0" %>
+  <% end %>
+
+  <% if @products.any? %>
+    <ul role="list" class="grid gap-3">
+      <% @products.each do |product| %>
+        <li>
+          <%= link_to distributor_product_path(product), class: "seller-card flex items-center gap-4 transition hover:border-brand-300" do %>
+            <%= render "seller_portal/products/thumbnail", product: product %>
+            <span class="min-w-0 flex-1">
+              <span class="block truncate font-bold text-stone-950"><%= product.name %></span>
+              <span class="mt-1 block text-sm text-ink-muted">
+                <%= format_price(product.price_cents) %> por <%= product.sale_unit_name %>
+                · <%= product.stock_quantity %> em estoque
+                <%= "· mínimo #{product.min_order_quantity}" if product.min_order_quantity > 1 %>
+                <%= "· #{pluralize(product.price_tiers.size, 'faixa', plural: 'faixas')} de desconto" if product.price_tiers.any? %>
+              </span>
+            </span>
+            <%= seller_product_status_badge(product) %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% elsif params[:q].present? %>
+    <p class="seller-card text-sm text-ink-muted">Nenhum insumo encontrado para "<%= params[:q] %>".</p>
+  <% else %>
+    <section class="seller-card text-center">
+      <h2 class="text-lg font-bold">Cadastre o seu primeiro insumo</h2>
+      <p class="mx-auto mt-2 max-w-md text-sm text-ink-muted">Unidade de venda, quantidade mínima e desconto por quantidade. Ele fica como rascunho até você publicar.</p>
+      <%= link_to "Novo insumo", new_distributor_product_path, class: "seller-button seller-button--primary mt-5" %>
+    </section>
+  <% end %>
+</div>

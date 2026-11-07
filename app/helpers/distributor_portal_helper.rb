@@ -1,13 +1,17 @@
 module DistributorPortalHelper
   # Menu do painel do distribuidor (ADR 007): a mesma lista serve à barra
   # lateral (lg+) e ao painel do hambúrguer, como no painel do ateliê. Só o
-  # que o distribuidor já tem: o catálogo de insumos entra com o PR B da
-  # Fase 26, pedidos e mensagens com a 27, frete com a 28.
+  # que o distribuidor já tem: pedidos e mensagens entram com a Fase 27,
+  # frete com a 28.
   def distributor_nav_groups
     [
       [ "Operação", [
         [ "Visão geral", distributor_root_path ],
         [ "Avisos", distributor_notifications_path ]
+      ] ],
+      [ "Catálogo", [
+        [ "Insumos", distributor_products_path ],
+        [ "Novo insumo", new_distributor_product_path ]
       ] ],
       [ "Configuração", [
         [ "Primeiros passos", distributor_getting_started_path ],
@@ -46,15 +50,15 @@ module DistributorPortalHelper
         step_tab.call(:address, "Endereço", controller_name == "profiles"),
         step_tab.call(:mercado_pago, "Mercado Pago", controller_name == "mercado_pago_guides"),
         step_tab.call(:pix_key, "PIX", controller_name == "pix_key_guides"),
-        { icon: :notifications, label: "Avisos", path: distributor_notifications_path, active: controller_name == "notifications" }
+        step_tab.call(:product, "Insumo", controller_name == "products")
       ]
     else
       [
         { icon: :home, label: "Início", path: root },
+        { icon: :products, label: "Insumos", path: distributor_products_path },
+        { icon: :new_product, label: "Novo insumo", path: new_distributor_product_path },
         { icon: :notifications, label: "Avisos", path: distributor_notifications_path },
-        { icon: :profile, label: "Dados", path: distributor_profile_path },
-        { icon: :mercado_pago, label: "Mercado Pago", path: distributor_mercado_pago_guide_path },
-        { icon: :pix_key, label: "PIX", path: distributor_pix_key_guide_path }
+        { icon: :profile, label: "Dados", path: distributor_profile_path }
       ].each { |tab| tab[:active] = tab[:path] == distributor_active_nav_path }
     end
   end
