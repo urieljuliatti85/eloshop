@@ -32,18 +32,18 @@ RSpec.describe "Storefront home", type: :request do
       expect(response.body).to include("/produtos?q={search_term_string}")
     end
 
-    # ADR 007: o quarto banner convida o distribuidor de insumos; o cadastro
+    # ADR 007: o quarto banner convida o armarinho; o cadastro
     # só aparece com a chave ligada, senão o banner leva a "Como funciona".
     it "invites distributors in the fourth banner, following the signup switch" do
       get root_path
       banner = Nokogiri::HTML(response.body).at_css("[aria-roledescription='carrossel'] [aria-label='4 de 4']")
       expect(banner.text).to include("Venda insumos para quem faz à mão")
-      expect(banner.css("a").map { |a| a["href"] }).to include(new_distributor_registration_path, how_it_works_path(aba: "vende", grupo: "distribuidor"))
+      expect(banner.css("a").map { |a| a["href"] }).to include(new_distributor_registration_path, how_it_works_path(aba: "vende", grupo: "armarinho"))
 
       Rails.configuration.x.distributors.signup_enabled = false
       get root_path
       banner = Nokogiri::HTML(response.body).at_css("[aria-roledescription='carrossel'] [aria-label='4 de 4']")
-      expect(banner.css("a").map { |a| a["href"] }).to eq([ how_it_works_path(aba: "vende", grupo: "distribuidor") ])
+      expect(banner.css("a").map { |a| a["href"] }).to eq([ how_it_works_path(aba: "vende", grupo: "armarinho") ])
     ensure
       Rails.configuration.x.distributors.signup_enabled = true
     end

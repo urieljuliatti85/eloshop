@@ -321,7 +321,7 @@ RSpec.describe "Admin sellers", type: :request do
 
     get admin_sellers_path(kind: "distributor")
     expect(response.body).to include(distributor.name)
-    expect(response.body).to include("Distribuidor de insumos")
+    expect(response.body).to include("Armarinho")
     expect(response.body).not_to include(seller.name)
 
     get admin_sellers_path(kind: "atelier")
@@ -374,7 +374,7 @@ RSpec.describe "Admin sellers", type: :request do
   end
 
   # ADR 007: a ficha do distribuidor não mostra vitrine nem SuperFrete, chama
-  # o vendedor pelo tipo e manda o link do painel do distribuidor.
+  # o vendedor pelo tipo e manda o link do painel do armarinho.
   describe "a distributor's page" do
     let(:distributor) do
       Seller.create!(name: "Fios Admin #{SecureRandom.hex(3)}", owner_full_name: "Dona dos Fios", cpf: generate_valid_cpf,
@@ -387,12 +387,12 @@ RSpec.describe "Admin sellers", type: :request do
       get admin_seller_path(distributor)
 
       page = Nokogiri::HTML(response.body)
-      expect(page.at_css(".admin-section-label").text).to eq("Distribuidor de insumos")
+      expect(page.at_css(".admin-section-label").text).to eq("Armarinho")
       expect(response.body).to include("12.ABC.345/01DE-35", "Emite nota fiscal: sim", "Termos Comerciais do Distribuidor", distributor_root_url)
       expect(response.body).to include("Vitrine de insumos:", "Vitrine do pré-cadastro", "Liberar na vitrine", "Esconder da vitrine",
-        "Liberar faz o distribuidor aparecer na vitrine de insumos")
+        "Liberar faz o armarinho aparecer na vitrine de insumos")
       expect(response.body).not_to include("SuperFrete", seller_atelier_url)
-      expect(page.at_css("input[type=submit][value='Aprovar distribuidor']")).to be_present
+      expect(page.at_css("input[type=submit][value='Aprovar armarinho']")).to be_present
     end
 
     it "approves the distributor with a notice that names the kind" do
@@ -402,7 +402,7 @@ RSpec.describe "Admin sellers", type: :request do
       patch approve_admin_seller_path(distributor), params: { kyc_level_6_confirmed: "1" }
 
       expect(distributor.reload).to be_approved
-      expect(flash[:notice]).to eq("Distribuidor aprovado.")
+      expect(flash[:notice]).to eq("Armarinho aprovado.")
     end
 
     # Decisão de 2026-11-07 (opção A): esconder vale para o distribuidor, sem
@@ -412,12 +412,12 @@ RSpec.describe "Admin sellers", type: :request do
 
       patch hide_admin_seller_path(distributor)
       expect(distributor.reload).to be_hidden
-      expect(flash[:notice]).to eq("Distribuidor escondido: a loja e os insumos dele ficam fora do ar.")
+      expect(flash[:notice]).to eq("Armarinho escondido: a loja e os insumos dele ficam fora do ar.")
       expect(distributor).not_to be_suspended
 
       patch unhide_admin_seller_path(distributor)
       expect(distributor.reload).not_to be_hidden
-      expect(flash[:notice]).to eq("Distribuidor visível de novo: a loja e os insumos dele voltam ao ar.")
+      expect(flash[:notice]).to eq("Armarinho visível de novo: a loja e os insumos dele voltam ao ar.")
     end
 
     # Decisão de 2026-11-07: como o ateliê, o distribuidor pendente pode ser
@@ -429,11 +429,11 @@ RSpec.describe "Admin sellers", type: :request do
       expect(distributor.reload).to be_showcased
       expect(distributor).to be_supply_listed
       expect(distributor).not_to be_publicly_listed
-      expect(flash[:notice]).to start_with("Distribuidor liberado na vitrine de insumos.")
+      expect(flash[:notice]).to start_with("Armarinho liberado na vitrine de insumos.")
 
       patch unshowcase_admin_seller_path(distributor)
       expect(distributor.reload).not_to be_showcased
-      expect(flash[:notice]).to eq("Distribuidor retirado da vitrine de insumos.")
+      expect(flash[:notice]).to eq("Armarinho retirado da vitrine de insumos.")
     end
   end
 end

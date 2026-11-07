@@ -8,10 +8,10 @@ class DistributorRegistrationTest < ApplicationSystemTestCase
     Seller.create!(name: "Fios da Serra", owner_full_name: "Ana", cpf: "52998224725")
     visit new_distributor_registration_path
 
-    fill_in "Nome da distribuidora *", with: "Fios da Serra"
-    assert_text "Já existe um ateliê ou uma distribuidora com esse nome"
+    fill_in "Nome do armarinho *", with: "Fios da Serra"
+    assert_text "Já existe um ateliê ou um armarinho com esse nome"
     click_button 'Usar "Fios da Serra 2"'
-    assert_text "Nome disponível. Endereço: /distribuidores/fios-da-serra-2"
+    assert_text "Nome disponível. Endereço: /armarinhos/fios-da-serra-2"
   end
 
   test "formats and checks the CPF while typing" do

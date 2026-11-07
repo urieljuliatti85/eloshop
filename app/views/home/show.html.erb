@@ -130,7 +130,7 @@
         </div>
 
         <div class="relative flex max-w-2xl flex-col items-start gap-6 px-8 py-16 md:px-16 md:py-20">
-          <span class="rounded-full bg-white/20 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white">Para o Distribuidor</span>
+          <span class="rounded-full bg-white/20 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white">Para o Armarinho</span>
 
           <h2 class="text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl">
             Venda insumos para quem faz à mão
@@ -142,10 +142,10 @@
 
           <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
             <% if DistributorRegistrationsController.signup_enabled? %>
-              <%= link_to "Cadastre sua distribuidora", new_distributor_registration_path, class: "rounded-full bg-white px-8 py-4 text-sm font-semibold text-[#3d1107] shadow-sm transition hover:bg-brand-50" %>
-              <%= link_to "Veja como funciona", how_it_works_path(aba: "vende", grupo: "distribuidor"), class: "text-sm font-semibold text-white underline underline-offset-4 hover:text-white/80" %>
+              <%= link_to "Cadastre seu armarinho", new_distributor_registration_path, class: "rounded-full bg-white px-8 py-4 text-sm font-semibold text-[#3d1107] shadow-sm transition hover:bg-brand-50" %>
+              <%= link_to "Veja como funciona", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "text-sm font-semibold text-white underline underline-offset-4 hover:text-white/80" %>
             <% else %>
-              <%= link_to "Veja como funciona", how_it_works_path(aba: "vende", grupo: "distribuidor"), class: "rounded-full bg-white px-8 py-4 text-sm font-semibold text-[#3d1107] shadow-sm transition hover:bg-brand-50" %>
+              <%= link_to "Veja como funciona", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "rounded-full bg-white px-8 py-4 text-sm font-semibold text-[#3d1107] shadow-sm transition hover:bg-brand-50" %>
             <% end %>
           </div>
         </div>

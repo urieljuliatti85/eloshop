@@ -1,5 +1,5 @@
 <% content_for :title, "Insumos para artesanato | EloShop" %>
-<% content_for :meta_description, "Insumos para quem faz à mão: fios, tecidos, argila, ferragens e embalagens, direto de distribuidores." %>
+<% content_for :meta_description, "Insumos para quem faz à mão: fios, tecidos, argila, ferragens e embalagens, direto de armarinhos." %>
 <%# Fora do Google até o SEO da vitrine de insumos (Fase 26, PR C2). %>
 <% content_for :head do %>
   <meta name="robots" content="noindex">
@@ -9,7 +9,7 @@
   <header class="max-w-3xl">
     <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Para quem faz à mão</p>
     <h1 class="mt-2 text-3xl font-bold text-ink">Insumos</h1>
-    <p class="mt-3 text-ink-muted">Material de produção direto de distribuidores, com preço por quantidade. As compras de insumos abrem em breve.</p>
+    <p class="mt-3 text-ink-muted">Material de produção direto de armarinhos, com preço por quantidade. As compras de insumos abrem em breve.</p>
   </header>
 
   <%# Navegação por material e técnica (decisão de 2026-11-07, ADR 007). Só
@@ -46,7 +46,7 @@
   <% end %>
 
   <p class="mt-12 text-sm text-ink-muted">
-    <%= link_to "Conheça os distribuidores", distributors_path, class: "font-semibold text-brand-600 underline hover:text-brand-700" %>
-    · Vende insumos? <%= link_to "Veja como funciona", how_it_works_path(aba: "vende", grupo: "distribuidor"), class: "font-semibold text-brand-600 underline hover:text-brand-700" %>.
+    <%= link_to "Conheça os armarinhos", distributors_path, class: "font-semibold text-brand-600 underline hover:text-brand-700" %>
+    · Vende insumos? <%= link_to "Veja como funciona", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "font-semibold text-brand-600 underline hover:text-brand-700" %>.
   </p>
 </div>

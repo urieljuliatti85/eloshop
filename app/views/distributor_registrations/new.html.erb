@@ -1,4 +1,4 @@
-<% content_for :title, "Venda insumos para artesãos: cadastro de distribuidor | EloShop" %>
+<% content_for :title, "Venda insumos para artesãos: cadastro de armarinho | EloShop" %>
 <%# Cadastro em teste: ainda não é anunciado nem deve aparecer no Google. %>
 <% content_for :head do %>
   <meta name="robots" content="noindex">
@@ -6,17 +6,17 @@
 
 <div id="cadastro" class="mx-auto w-full max-w-xl scroll-mt-24 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
   <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">EloShop Atacado</p>
-  <h1 class="mt-2 text-3xl font-bold text-ink">Cadastre sua distribuidora</h1>
+  <h1 class="mt-2 text-3xl font-bold text-ink">Cadastre seu armarinho</h1>
   <p class="mt-3 text-ink-muted">Para quem vende insumos para artesãos: fios, tecidos, argila, ferragens, embalagens. O cadastro fica pendente até a validação da plataforma, e a aprovação depende de uma conta Mercado Pago de vendedor conectada no painel.</p>
 
   <div class="mt-6 rounded-xl border border-brand-100 bg-brand-50/50 p-4 text-sm text-stone-700">
     <p class="font-semibold text-ink">Antes de começar</p>
     <ul class="mt-2 list-disc space-y-1 pl-5">
-      <li>Esta conta é só de distribuidor. Se você também tem um ateliê na EloShop, ele continua com a conta dele, e esta precisa de outro e-mail.</li>
+      <li>Esta conta é só de armarinho. Se você também tem um ateliê na EloShop, ele continua com a conta dele, e esta precisa de outro e-mail.</li>
       <li>Tenha em mãos uma <strong>conta de vendedor do Mercado Pago</strong>, com a identidade já verificada. É nela que você recebe suas vendas.</li>
       <li>A comissão da EloShop é de <strong><%= fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS) %> nos 3 primeiros meses de vendas</strong> e <%= fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS) %> depois disso, sobre o valor dos produtos, sem o frete. Não há mensalidade, no momento.</li>
-      <li>O cadastro dos insumos chega numa próxima etapa. Até lá, nada do seu cadastro aparece na loja.</li>
-      <li>Quer entender antes de se cadastrar? Veja <%= link_to "como funciona para distribuidores", how_it_works_path(aba: "vende", grupo: "distribuidor"), class: "font-semibold text-brand-700 underline" %>.</li>
+      <li>Depois do cadastro, você cadastra os insumos no painel. A loja e os insumos publicados aparecem na vitrine de insumos quando a EloShop liberar a sua vitrine ou aprovar o armarinho; as compras de insumos abrem numa próxima etapa.</li>
+      <li>Quer entender antes de se cadastrar? Veja <%= link_to "como funciona para armarinhos", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "font-semibold text-brand-700 underline" %>.</li>
     </ul>
   </div>
 
@@ -49,15 +49,15 @@
         o slug é único entre os dois tipos, então a consulta é a mesma, e o
         texto e o prefixo do endereço vêm dos values. %>
     <div data-controller="atelier-name" data-atelier-name-url-value="<%= seller_registration_name_availability_path %>"
-         data-atelier-name-prefix-value="/distribuidores"
-         data-atelier-name-invalid-message-value="Use letras ou números no nome da distribuidora."
-         data-atelier-name-taken-message-value="Já existe um ateliê ou uma distribuidora com esse nome (ou com o mesmo endereço).">
-      <%= form.label :name, "Nome da distribuidora *", for: "seller_name" %><%= form.text_field :name, name: "seller[name]", id: "seller_name", value: @seller.name, required: true, autocomplete: "organization", maxlength: 120, data: { atelier_name_target: "input", action: "input->atelier-name#check" }, aria: { describedby: described_by.call("seller_name_error", name_errors, "seller_name_status"), invalid: (name_errors.any? || nil) }, class: field_class.call(name_errors) %>
+         data-atelier-name-prefix-value="/armarinhos"
+         data-atelier-name-invalid-message-value="Use letras ou números no nome do armarinho."
+         data-atelier-name-taken-message-value="Já existe um ateliê ou um armarinho com esse nome (ou com o mesmo endereço).">
+      <%= form.label :name, "Nome do armarinho *", for: "seller_name" %><%= form.text_field :name, name: "seller[name]", id: "seller_name", value: @seller.name, required: true, autocomplete: "organization", maxlength: 120, data: { atelier_name_target: "input", action: "input->atelier-name#check" }, aria: { describedby: described_by.call("seller_name_error", name_errors, "seller_name_status"), invalid: (name_errors.any? || nil) }, class: field_class.call(name_errors) %>
       <%= field_error.call("seller_name_error", name_errors) %>
       <p id="seller_name_status" role="status" aria-live="polite" data-atelier-name-target="status" class="mt-2 text-sm"></p>
       <%# Endereço público decidido no ADR 007 (2026-11-07); a página entra
           na Fase 26, mas o slug já é reservado aqui e não muda depois. %>
-      <p class="mt-2 text-xs text-ink-muted">O nome gera o endereço da sua loja na EloShop: "Aviamentos do Sul", por exemplo, vira https://eloshop.shop/distribuidores/aviamentos-do-sul. A loja vai ao ar junto com a vitrine de insumos. Se você mudar o nome depois, o endereço não muda, para não quebrar links nem o que os buscadores, como o Google, já guardaram.</p>
+      <p class="mt-2 text-xs text-ink-muted">O nome gera o endereço da sua loja na EloShop: "Aviamentos do Sul", por exemplo, vira https://eloshop.shop/armarinhos/aviamentos-do-sul. A loja vai ao ar quando a EloShop liberar a sua vitrine ou aprovar o armarinho. Se você mudar o nome depois, o endereço não muda, para não quebrar links nem o que os buscadores, como o Google, já guardaram.</p>
     </div>
     <div><%= form.label :owner_full_name, "Nome completo do responsável *", for: "seller_owner_full_name" %><%= form.text_field :owner_full_name, name: "seller[owner_full_name]", id: "seller_owner_full_name", value: @seller.owner_full_name, required: true, aria: { describedby: described_by.call("seller_owner_full_name_error", owner_errors), invalid: (owner_errors.any? || nil) }, class: field_class.call(owner_errors) %><%= field_error.call("seller_owner_full_name_error", owner_errors) %></div>
     <div data-controller="cpf-input">
@@ -100,6 +100,6 @@
   <% end %>
 
   <p class="mt-8 text-sm text-ink-muted">
-    Já tem cadastro de distribuidor? <%= link_to "Entrar", distributor_login_path, class: "font-medium text-brand-600 hover:underline" %>.
+    Já tem cadastro de armarinho? <%= link_to "Entrar", distributor_login_path, class: "font-medium text-brand-600 hover:underline" %>.
   </p>
 </div>

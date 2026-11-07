@@ -14,7 +14,7 @@ module DistributorPortal
 
     def update
       if current_seller.update(profile_params)
-        redirect_to distributor_profile_path, notice: "Dados da distribuidora atualizados."
+        redirect_to distributor_profile_path, notice: "Dados do armarinho atualizados."
       else
         render :edit, status: :unprocessable_entity
       end

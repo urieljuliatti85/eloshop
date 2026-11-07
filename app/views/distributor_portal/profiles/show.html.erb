@@ -1,11 +1,11 @@
-<% content_for :title, "Dados da distribuidora | #{current_seller.name}" %>
+<% content_for :title, "Dados do armarinho | #{current_seller.name}" %>
 <% seller = current_seller %>
 
 <div class="space-y-8">
   <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <h1 class="text-3xl font-black tracking-tight">Dados da distribuidora</h1>
-      <p class="mt-2 text-sm text-stone-500">Como a sua distribuidora aparece na EloShop e como você recebe pelas vendas.</p>
+      <h1 class="text-3xl font-black tracking-tight">Dados do armarinho</h1>
+      <p class="mt-2 text-sm text-stone-500">Como o seu armarinho aparece na EloShop e como você recebe pelas vendas.</p>
     </div>
     <%= link_to "Editar dados", edit_distributor_profile_path, class: "seller-button seller-button--primary w-fit" %>
   </header>
@@ -46,7 +46,7 @@
       <%# Reservado no cadastro (ADR 007); a loja vai ao ar com a vitrine de insumos. %>
       <div class="sm:col-span-2">
         <dt class="text-sm text-stone-500">Endereço da loja</dt>
-        <dd class="mt-1"><span class="break-all font-mono text-sm text-stone-900"><%= request.base_url %>/distribuidores/<%= seller.slug %></span>
+        <dd class="mt-1"><span class="break-all font-mono text-sm text-stone-900"><%= request.base_url %>/armarinhos/<%= seller.slug %></span>
           <span class="block text-sm text-stone-500"><% if seller.supply_listed? %>No ar: <%= link_to "ver a sua loja", distributor_store_path(seller.slug), class: "font-semibold text-brand-600 underline" %>.<% else %>Fica pública quando a EloShop liberar a sua vitrine.<% end %></span></dd>
       </div>
       <div class="sm:col-span-2">

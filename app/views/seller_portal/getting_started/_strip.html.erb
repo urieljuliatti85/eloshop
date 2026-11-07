@@ -14,7 +14,7 @@
    slugs = SellerPortal::GettingStartedController::STEP_SLUGS
    step_path = local_assigns.fetch(:step_path) { ->(slug) { panel_path(:getting_started, etapa: slug) } } %>
 <nav aria-label="Etapas">
-  <ol aria-label="<%= current_seller.distributor? ? "Etapas para preparar a distribuidora" : "Etapas para preparar o ateliê" %>" class="relative grid <%= { 4 => 'grid-cols-4', 5 => 'grid-cols-5' }.fetch(steps.size, 'grid-cols-6') %> border border-brand-100 bg-white sm:flex sm:snap-x sm:overflow-x-auto sm:[scrollbar-width:thin]">
+  <ol aria-label="<%= current_seller.distributor? ? "Etapas para preparar o armarinho" : "Etapas para preparar o ateliê" %>" class="relative grid <%= { 4 => 'grid-cols-4', 5 => 'grid-cols-5' }.fetch(steps.size, 'grid-cols-6') %> border border-brand-100 bg-white sm:flex sm:snap-x sm:overflow-x-auto sm:[scrollbar-width:thin]">
     <% steps.each_with_index do |(step, done), index| %>
       <% current = step == current_step %>
       <li class="border-l border-brand-100 first:border-l-0 sm:min-w-[9.5rem] sm:flex-1 sm:snap-start">

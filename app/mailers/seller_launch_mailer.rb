@@ -8,7 +8,7 @@ class SellerLaunchMailer < ApplicationMailer
 
     # O distribuidor (ADR 007) não tem página pública nem peças: o aviso dele
     # leva ao painel em /atacado/painel.
-    subject = seller.distributor? ? "Seu cadastro de distribuidor foi aprovado na EloShop, #{seller.name}!" : "Seu ateliê foi aprovado na EloShop, #{seller.name}!"
+    subject = seller.distributor? ? "Seu armarinho foi aprovado na EloShop, #{seller.name}!" : "Seu ateliê foi aprovado na EloShop, #{seller.name}!"
     mail(to: recipient, subject: subject)
   end
 

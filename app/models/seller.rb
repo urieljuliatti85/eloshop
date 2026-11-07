@@ -90,7 +90,7 @@ class Seller < ApplicationRecord
   scope :publicly_listed, -> { atelier.merge(in_store) }
 
   # Distribuidores que aparecem na vitrine de insumos (/insumos e
-  # /distribuidores, Fase 26), pela mesma regra do ateliê: aprovado, ou
+  # /armarinhos, Fase 26), pela mesma regra do ateliê: aprovado, ou
   # pendente liberado pelo admin na vitrine do pré-cadastro (decisão do
   # Uriel, 2026-11-07), nunca escondido ou suspenso.
   scope :supply_listed, -> { distributor.merge(in_store) }
@@ -132,7 +132,7 @@ class Seller < ApplicationRecord
   # de cada tipo (ver `suspend!`).
   validates :cpf_hash, uniqueness: {
     scope: :kind,
-    message: ->(seller, _data) { seller.distributor? ? "já está cadastrado para outro distribuidor" : "já está cadastrado para outro ateliê" }
+    message: ->(seller, _data) { seller.distributor? ? "já está cadastrado para outro armarinho" : "já está cadastrado para outro ateliê" }
   }, allow_nil: true
   validate :kind_unchanged, on: :update
 

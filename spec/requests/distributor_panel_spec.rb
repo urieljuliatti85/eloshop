@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-# Painel do distribuidor reaproveitando o do ateliê (ADR 007; revisão de
+# Painel do armarinho reaproveitando o do ateliê (ADR 007; revisão de
 # arquitetura de 2026-11-07, opção B): as telas compartilhadas moram em
 # /atacado/painel por subclasse, com o layout e a porta do distribuidor; o
 # /painel continua só de ateliê. Cada tela recusa o tipo errado e o escopo

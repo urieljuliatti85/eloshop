@@ -110,6 +110,6 @@ class ProductPriceTier < ApplicationRecord
   def only_for_a_distributor_product
     return if product.nil? || product.supply?
 
-    errors.add(:product, "só insumo de distribuidor tem faixas de preço")
+    errors.add(:product, "só insumo de armarinho tem faixas de preço")
   end
 end

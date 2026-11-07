@@ -25,11 +25,11 @@ module SellerRegistrationsHelper
   # própria porta de login.
   def registration_error_hint(record, error)
     distributor = @seller&.distributor?
-    login_link = distributor ? [ "Entrar no painel do distribuidor", distributor_login_path ] : [ "Entrar no painel do ateliê", seller_login_path ]
+    login_link = distributor ? [ "Entrar no painel do armarinho", distributor_login_path ] : [ "Entrar no painel do ateliê", seller_login_path ]
 
     case [ record.class.name, error.attribute, error.type ]
     in [ "Seller", :cpf_hash, :taken ] if distributor
-      [ "Cada CPF pode ter um único cadastro de distribuidor na EloShop. Se este cadastro já é seu, entre no painel com a conta que você criou.", login_link ]
+      [ "Cada CPF pode ter um único cadastro de armarinho na EloShop. Se este cadastro já é seu, entre no painel com a conta que você criou.", login_link ]
     in [ "Seller", :cpf_hash, :taken ]
       [ "Cada CPF pode ter um único ateliê na EloShop. Se este ateliê já é seu, entre no painel com a conta que você criou.", login_link ]
     in [ "Seller", :cnpj, _ ]
@@ -43,7 +43,7 @@ module SellerRegistrationsHelper
     in [ "Seller", :slug, :taken ]
       [ "Já existe um ateliê com esse nome, e o endereço da página sairia igual. Escolha outro nome." ]
     in [ "User", :email_address, :taken | "já está em uso" ] if distributor
-      [ "Já existe uma conta com este e-mail. Se ela é do seu cadastro de distribuidor, entre no painel; se é de um ateliê, use outro e-mail, porque cada conta tem um tipo só.", login_link ]
+      [ "Já existe uma conta com este e-mail. Se ela é do seu armarinho, entre no painel; se é de um ateliê, use outro e-mail, porque cada conta tem um tipo só.", login_link ]
     in [ "User", :email_address, :taken | "já está em uso" ]
       [ "Já existe uma conta com este e-mail. Se ela é sua, entre no painel; senão, use outro e-mail.", login_link ]
     in [ "User", :password_confirmation, :confirmation ]

@@ -22,14 +22,14 @@ class HomeCarouselTest < ApplicationSystemTestCase
     assert_current_path new_seller_registration_path
   end
 
-  # O quarto banner é o do distribuidor de insumos (ADR 007).
+  # O quarto banner é o do armarinho (ADR 007).
   test "the visitor reaches the distributor banner, which leads to its how-it-works group" do
     visit root_path
     assert_text "Venda insumos para quem faz à mão"
 
     3.times { click_button "Próximo banner" }
     assert_selector "[aria-label='Ir para o banner 4'][aria-selected='true']"
-    within("[aria-roledescription='carrossel'] [aria-label='4 de 4']") { click_link "Cadastre sua distribuidora" }
+    within("[aria-roledescription='carrossel'] [aria-label='4 de 4']") { click_link "Cadastre seu armarinho" }
 
     assert_current_path new_distributor_registration_path
   end

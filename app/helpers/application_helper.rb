@@ -73,8 +73,8 @@ module ApplicationHelper
         panel_label: "Administração", panel_path: admin_root_path,
         panel_controllers: "admin/dashboard", logout_path: session_path }
     when :distributor
-      { role_label: "Distribuidor", identity: Current.user.seller.name,
-        panel_label: "Painel do Distribuidor", panel_path: distributor_root_path,
+      { role_label: "Armarinho", identity: Current.user.seller.name,
+        panel_label: "Painel do Armarinho", panel_path: distributor_root_path,
         panel_controllers: "distributor_portal/dashboard", logout_path: distributor_logout_path }
     else
       { role_label: "Artesão", identity: Current.user.seller.name,

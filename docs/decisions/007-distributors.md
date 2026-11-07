@@ -260,9 +260,9 @@ peças:
 
 | | Ateliê | Distribuidor |
 |---|---|---|
-| Lista | `/artesaos` | `/distribuidores` |
-| Loja | `/artesaos/:slug` | `/distribuidores/:slug` |
-| Produto | `/artesaos/:slug/produtos/:produto` | `/distribuidores/:slug/insumos/:produto` |
+| Lista | `/artesaos` | `/armarinhos` |
+| Loja | `/artesaos/:slug` | `/armarinhos/:slug` |
+| Produto | `/artesaos/:slug/produtos/:produto` | `/armarinhos/:slug/insumos/:produto` |
 | Vitrine geral | `/produtos` | `/insumos` |
 
 O slug sai do nome no cadastro e é único entre ateliês e distribuidores
@@ -271,6 +271,19 @@ endereço, e o slug não muda quando o nome muda, como no ateliê. As páginas
 entraram na Fase 26 (PR C1); antes disso o endereço ficava reservado e só era
 mostrado no cadastro e no painel. Insumo nunca é servido em `/artesaos/...`
 (guarda em `spec/requests/distributor_storefront_guard_spec.rb`).
+
+**Nome na tela: "Armarinho" (decisão do Uriel, 2026-11-08).** Para quem usa
+a EloShop, o distribuidor de insumos se chama "Armarinho" (menus, telas,
+e-mails, admin, "Como funciona"), e os endereços públicos passaram de
+`/distribuidores` para `/armarinhos`, com redirecionamento permanente dos
+antigos (as páginas ainda estavam com `noindex`, então a troca não custou
+posicionamento). `/atacado` (cadastro, login e painel) e `/insumos` não
+mudaram. No código o termo continua `distributor` (`Seller#kind`,
+`DistributorPortal`, rotas `distributor_*`), sem migração. Os Termos
+Comerciais do Distribuidor mantêm o nome e o texto até a revisão com o
+advogado, que decide se passam a dizer "armarinho". Trade-off aceito:
+"armarinho" lembra aviamentos (linhas, botões, fitas) e varejo; quem vende
+argila, madeira ou embalagens pode não se reconhecer no nome.
 
 **Esconder vale para o distribuidor (2026-11-07).** Como no ateliê, o admin
 tira a loja e os insumos do ar sem suspender a conta (por exemplo, durante a

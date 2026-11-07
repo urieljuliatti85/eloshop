@@ -19,9 +19,9 @@
         <li><%= link_to "Entrar no Ateliê", seller_login_path, class: "hover:text-brand-600" %></li>
         <%# Distribuidor de insumos (ADR 007): o login vale sempre; o cadastro
             só aparece com a chave ligada, para não levar a um 404. %>
-        <li><%= link_to "Entrar no Painel do Distribuidor", distributor_login_path, class: "hover:text-brand-600" %></li>
+        <li><%= link_to "Entrar no Painel do Armarinho", distributor_login_path, class: "hover:text-brand-600" %></li>
         <% if DistributorRegistrationsController.signup_enabled? %>
-          <li><%= link_to "Cadastre sua Distribuidora", new_distributor_registration_path, class: "hover:text-brand-600" %></li>
+          <li><%= link_to "Cadastre seu Armarinho", new_distributor_registration_path, class: "hover:text-brand-600" %></li>
         <% end %>
         <% if google_analytics_measurement_id && google_analytics_public_page %>
           <li><button type="button" class="hover:text-brand-600" data-action="google-analytics#openPreferences">Preferências de métricas</button></li>

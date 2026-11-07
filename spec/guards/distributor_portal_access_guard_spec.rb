@@ -8,7 +8,7 @@ require "rails_helper"
 # tipo no controller errado (ou herdar de uma base liberada) deixaria o
 # distribuidor criar dado de ateliê — produto, tema, frete — antes da fase
 # dele (revisão de arquitetura de 2026-11-07). As telas que os dois painéis
-# compartilham entram no painel do distribuidor por subclasse em
+# compartilham entram no painel do armarinho por subclasse em
 # `DistributorPortal`, não por aqui. Fica no RSpec para valer já no
 # pre-commit.
 RSpec.describe "Guarda do painel do ateliê contra o distribuidor" do
@@ -28,7 +28,7 @@ RSpec.describe "Guarda do painel do ateliê contra o distribuidor" do
     expect(accepting).to eq(ACCEPTS_DISTRIBUTOR.sort),
       "Controllers de /painel que aceitam distribuidor: #{accepting.inspect}. " \
       "Se for de propósito, revise e acrescente a ACCEPTS_DISTRIBUTOR; senão, " \
-      "a tela compartilhada entra pelo painel do distribuidor (DistributorPortal)."
+      "a tela compartilhada entra pelo painel do armarinho (DistributorPortal)."
   end
 
   it "keeps the atelier panel base closed to distributors" do

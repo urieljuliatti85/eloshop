@@ -1,5 +1,5 @@
 # Vitrine de insumos (ADR 007, Fase 26, PR C): /insumos e a página de cada
-# insumo, em /distribuidores/:slug/insumos/:produto. Só `Product.supply_visible`
+# insumo, em /armarinhos/:slug/insumos/:produto. Só `Product.supply_visible`
 # — nunca peça de ateliê, que mora em /produtos — e a navegação é por material
 # e técnica (decisão de 2026-11-07). A compra chega na Fase 27: até lá a página
 # mostra "Vendas de insumos em breve" no lugar do botão.

@@ -77,21 +77,21 @@ class HowItWorksTest < ApplicationSystemTestCase
     visit how_it_works_path(aba: "vende")
     assert_text "Venda suas peças como o seu próprio negócio"
 
-    click_button "Distribuidor de insumos"
+    click_button "Armarinho"
 
     assert_text "Venda insumos para quem faz à mão"
     assert_no_text "Venda suas peças como o seu próprio negócio"
     assert_selector "[role='tab'][data-tab-name='vende'][aria-selected='true']"
     assert_includes page.current_url, "aba=vende"
-    assert_includes page.current_url, "grupo=distribuidor"
+    assert_includes page.current_url, "grupo=armarinho"
   end
 
   test "on mobile, the distributor steps are a carousel too" do
     page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride",
       width: MOBILE_WIDTH, height: 844, deviceScaleFactor: 2, mobile: true)
-    visit how_it_works_path(aba: "vende", grupo: "distribuidor")
+    visit how_it_works_path(aba: "vende", grupo: "armarinho")
 
-    within("[data-tabs-target='panel'][data-tab-name='distribuidor']") do
+    within("[data-tabs-target='panel'][data-tab-name='armarinho']") do
       assert_selector "[aria-label='Ir para o passo 1'][aria-selected='true']"
       click_button "Próximo passo"
       assert_selector "[aria-label='Ir para o passo 2'][aria-selected='true']"

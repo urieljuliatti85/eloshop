@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
-    <title><%= content_for(:title) || "Painel do distribuidor | EloShop" %></title>
+    <title><%= content_for(:title) || "Painel do armarinho | EloShop" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="robots" content="noindex">
     <%= csrf_meta_tags %>
@@ -31,7 +31,7 @@
             data-controller="mobile-menu"
             data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
       <div class="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <%= link_to distributor_root_path, class: "flex min-h-11 shrink-0 items-center gap-3", aria: { label: "Início do painel do distribuidor" } do %>
+        <%= link_to distributor_root_path, class: "flex min-h-11 shrink-0 items-center gap-3", aria: { label: "Início do painel do armarinho" } do %>
           <%= image_tag "logo-header.png", alt: "EloShop", class: "h-7 w-auto", width: 84, height: 28 %>
           <span class="hidden border-l border-brand-200 pl-3 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-brand-600 sm:block">Atacado</span>
         <% end %>

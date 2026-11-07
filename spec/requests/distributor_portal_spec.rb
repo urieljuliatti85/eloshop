@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-# Fase 25, PR 2 (ADR 007): cadastro, porta de login e painel do distribuidor.
+# Fase 25, PR 2 (ADR 007): cadastro, porta de login e painel do armarinho.
 # Cada porta só aceita o próprio tipo, com a mesma mensagem genérica das
 # outras; um painel não serve o outro tipo; e o cadastro fica atrás da chave
 # `config.x.distributors.signup_enabled`, desligada em produção até o advogado
@@ -50,7 +50,7 @@ RSpec.describe "Distributor portal", type: :request do
       expect(response).to redirect_to(distributor_root_url)
       follow_redirect!
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include(user.seller.name, "Painel do distribuidor")
+      expect(response.body).to include(user.seller.name, "Painel do armarinho")
     end
 
     it "refuses an atelier and an admin at the distributor door with the generic message" do
@@ -206,7 +206,7 @@ RSpec.describe "Distributor portal", type: :request do
       links = menu.css("a").map { |link| [ link.text.squish, link["href"] ] }
       expect(links).to include(
         [ "Entrar no Ateliê", seller_login_path ], [ "Cadastre seu Ateliê", new_seller_registration_path ],
-        [ "Entrar no Painel do Distribuidor", distributor_login_path ], [ "Cadastre sua Distribuidora", new_distributor_registration_path ]
+        [ "Entrar no Painel do Armarinho", distributor_login_path ], [ "Cadastre seu Armarinho", new_distributor_registration_path ]
       )
     end
 
@@ -221,7 +221,7 @@ RSpec.describe "Distributor portal", type: :request do
     it "points the atelier login page to the distributor door" do
       get seller_login_path
 
-      expect(response.body).to include("Entre pelo Painel do Distribuidor", distributor_login_path)
+      expect(response.body).to include("Entre pelo Painel do Armarinho", distributor_login_path)
     end
 
     it "hides the signup link, but not the login, while the signup is switched off" do
@@ -241,7 +241,7 @@ RSpec.describe "Distributor portal", type: :request do
 
       get root_path
 
-      expect(response.body).to include("Painel do Distribuidor", distributor_root_path, distributor_logout_path)
+      expect(response.body).to include("Painel do Armarinho", distributor_root_path, distributor_logout_path)
       expect(response.body).not_to include("Painel do Artesão")
     end
   end
@@ -298,7 +298,7 @@ RSpec.describe "Distributor portal", type: :request do
         seller: { name: "Outra Distribuidora", cpf: cpf }, user: { email_address: "outra@example.com" }
       )
       expect(response).to have_http_status(:unprocessable_entity)
-      expect(response.body).to include("Cada CPF pode ter um único cadastro de distribuidor", distributor_login_path)
+      expect(response.body).to include("Cada CPF pode ter um único cadastro de armarinho", distributor_login_path)
     end
 
     # Achado do QA (2026-11-07): dois cadastros com o mesmo CPF ao mesmo
@@ -323,7 +323,7 @@ RSpec.describe "Distributor portal", type: :request do
       post distributor_registration_path, params: valid_params.deep_merge(seller: { cpf: cpf })
 
       expect(response).to have_http_status(:unprocessable_entity)
-      expect(response.body).to include("Cada CPF pode ter um único cadastro de distribuidor")
+      expect(response.body).to include("Cada CPF pode ter um único cadastro de armarinho")
       expect(response.body).not_to include("já está em uso")
       expect(Seller.where(name: "Aviamentos do Sul")).to be_empty
     end
@@ -349,11 +349,11 @@ RSpec.describe "Distributor portal", type: :request do
     # ADR 007 (2026-11-07): a loja do distribuidor fica em /distribuidores/:slug.
     it "tells the distributor which store address the name reserves" do
       get new_distributor_registration_path
-      expect(response.body).to include("https://eloshop.shop/distribuidores/aviamentos-do-sul", "o endereço não muda")
+      expect(response.body).to include("https://eloshop.shop/armarinhos/aviamentos-do-sul", "o endereço não muda")
 
       post distributor_registration_path, params: valid_params
       follow_redirect!
-      expect(response.body).to include("/distribuidores/aviamentos-do-sul")
+      expect(response.body).to include("/armarinhos/aviamentos-do-sul")
     end
 
     it "links the distributor terms from the form" do
