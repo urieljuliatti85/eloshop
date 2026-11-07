@@ -16,6 +16,7 @@
       <li>Tenha em mãos uma <strong>conta de vendedor do Mercado Pago</strong>, com a identidade já verificada. É nela que você recebe suas vendas.</li>
       <li>A comissão da EloShop é de <strong><%= fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS) %> nos 3 primeiros meses de vendas</strong> e <%= fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS) %> depois disso, sobre o valor dos produtos, sem o frete. Não há mensalidade, no momento.</li>
       <li>O cadastro dos insumos chega numa próxima etapa. Até lá, nada do seu cadastro aparece na loja.</li>
+      <li>Quer entender antes de se cadastrar? Veja <%= link_to "como funciona para distribuidores", how_it_works_path(aba: "vende", grupo: "distribuidor"), class: "font-semibold text-brand-700 underline" %>.</li>
     </ul>
   </div>
 

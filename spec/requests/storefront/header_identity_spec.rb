@@ -41,11 +41,13 @@ RSpec.describe "Header identity", type: :request do
 
   # Casar contra o nome aqui seria frágil: o catálogo da home pode conter uma
   # artesã chamada Maria sem que nada esteja errado. O marcador é o menu de
-  # conta em si, que só existe no ramo autenticado.
+  # conta em si, que só existe no ramo autenticado. Os menus "Venda na EloShop"
+  # do visitante (topo e barra do celular) usam o mesmo controller e ficam fora.
   it "shows nothing about identity to a visitor" do
     get root_path
 
-    expect(response.body).not_to include("account-menu")
+    account_menus = Nokogiri::HTML(response.body).css("[data-controller='account-menu']").reject { |menu| menu.at_css("#sell-menu, #sell-sheet") }
+    expect(account_menus).to be_empty
     expect(response.body).not_to include(customer.email)
     # O convite ao comprador diz o que ele quer fazer, e não "Entrar" — que
     # no topo se confundia com o cadastro de artesão ao lado.

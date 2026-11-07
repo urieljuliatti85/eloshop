@@ -70,4 +70,34 @@ class HowItWorksTest < ApplicationSystemTestCase
     assert_no_button "Próxima vantagem"
     assert_no_button "Próximo passo"
   end
+
+  # Abas aninhadas: o grupo de "Quem vende" troca sem mexer na aba de fora, e
+  # a URL guarda os dois parâmetros.
+  test "switching the seller group shows the distributor steps and keeps the outer tab" do
+    visit how_it_works_path(aba: "vende")
+    assert_text "Venda suas peças como o seu próprio negócio"
+
+    click_button "Distribuidor de insumos"
+
+    assert_text "Venda insumos para quem faz à mão"
+    assert_no_text "Venda suas peças como o seu próprio negócio"
+    assert_selector "[role='tab'][data-tab-name='vende'][aria-selected='true']"
+    assert_includes page.current_url, "aba=vende"
+    assert_includes page.current_url, "grupo=distribuidor"
+  end
+
+  test "on mobile, the distributor steps are a carousel too" do
+    page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride",
+      width: MOBILE_WIDTH, height: 844, deviceScaleFactor: 2, mobile: true)
+    visit how_it_works_path(aba: "vende", grupo: "distribuidor")
+
+    within("[data-tabs-target='panel'][data-tab-name='distribuidor']") do
+      assert_selector "[aria-label='Ir para o passo 1'][aria-selected='true']"
+      click_button "Próximo passo"
+      assert_selector "[aria-label='Ir para o passo 2'][aria-selected='true']"
+      find("[aria-label='Ir para o passo 5']").click
+      assert_selector "[aria-label='Ir para o passo 5'][aria-selected='true']"
+    end
+    assert_equal 0, page.evaluate_script("document.documentElement.scrollWidth - document.documentElement.clientWidth")
+  end
 end

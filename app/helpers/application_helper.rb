@@ -48,6 +48,15 @@ module ApplicationHelper
     Array(controllers).include?(controller_path)
   end
 
+  # Páginas das portas de quem vende (login e cadastro do ateliê e do
+  # distribuidor): marcam o menu "Venda na EloShop", no topo e na barra
+  # inferior do celular.
+  SELL_DOOR_CONTROLLERS = %w[seller_portal/sessions seller_registrations distributor_portal/sessions distributor_registrations].freeze
+
+  def sell_doors_active?
+    storefront_nav_active?(SELL_DOOR_CONTROLLERS)
+  end
+
   # Identidade da sessão de `User` para o menu público: rótulo do papel, quem
   # está logado, o destino do seu painel e por onde sair. O topo e o painel do
   # hambúrguer mostram o mesmo bloco, então a regra mora aqui em vez de ser
