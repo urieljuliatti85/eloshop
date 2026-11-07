@@ -7,7 +7,7 @@
     <ul class="mt-8 space-y-3">
       <% @notifications.each do |notification| %>
         <li>
-          <%= button_to mark_as_read_seller_notification_path(notification), method: :patch,
+          <%= button_to panel_path(:mark_as_read_notification, notification), method: :patch,
                 class: "w-full rounded-2xl border px-5 py-4 text-left transition #{notification.read? ? 'border-brand-100 bg-white' : 'border-brand-300 bg-brand-50'}" do %>
             <div class="flex items-start justify-between gap-4">
               <div>

@@ -274,6 +274,34 @@ PR C), que mostra só `supply_listed`. Isso também responde à dúvida de
 `approve!` gravar `showcased_at` no distribuidor: a loja segue a regra do
 ateliê.
 
+## Painel do distribuidor reaproveitando o do ateliê (2026-11-07)
+
+Revisão de arquitetura antes de montar o painel; decisão do Uriel pela opção
+recomendada:
+
+* **As telas compartilhadas** (Primeiros passos, endereço de origem, guias do
+  Mercado Pago e da chave PIX, avisos) **entram no painel do distribuidor por
+  subclasse em `DistributorPortal`**, montadas em `/atacado/painel` com o
+  layout dele. O `/painel` continua só de ateliê; a conexão do Mercado Pago é
+  a única exceção, porque o redirect URI registrado no provedor é um só.
+* **Caminhos por tipo num lugar só:** `PanelPaths#panel_path(:tela)` monta
+  `seller_*` ou `distributor_*` conforme o vendedor. As telas compartilhadas e
+  os redirecionamentos delas usam o helper; um link fixo em `seller_*_path`
+  levava o distribuidor a `/painel`, que o devolvia ao painel dele, e a
+  jornada quebrava em silêncio. Rota que o painel do distribuidor não tem
+  falha alto (NoMethodError).
+* **Etapas de entrada por tipo, no model:** `Seller#getting_started_steps` do
+  distribuidor é endereço → Mercado Pago → chave PIX → aprovação; "primeiro
+  insumo" entra com o PR B da Fase 26 e "SuperFrete" com a Fase 28. O admin
+  mostra o distribuidor aprovado como "aguardando o cadastro de insumos".
+* **Guarda:** `spec/guards/distributor_portal_access_guard_spec.rb` lista os
+  controllers de `/painel` que aceitam distribuidor (hoje só a conexão do
+  Mercado Pago) e falha se a lista crescer sem revisão.
+* **Celular:** as abas de baixo do painel do ateliê
+  (`layouts/_seller_mobile_tabs`) já recebem a lista de abas e são
+  reaproveitadas inteiras; o tour guiado fica fora do painel do distribuidor
+  até ele ter as próprias telas.
+
 ## Decisões pendentes
 
 1. **Declaração de emissão de nota fiscal** — obrigatória ou opcional; aguarda

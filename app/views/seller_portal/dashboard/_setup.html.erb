@@ -23,7 +23,7 @@
   </div>
 
   <%= render "seller_portal/getting_started/strip", steps: steps, current_step: current, caption: false,
-        step_path: ->(slug) { seller_root_path(etapa: slug) } %>
+        step_path: ->(slug) { panel_path(:root, etapa: slug) } %>
 
   <div class="border-l-4 <%= done ? 'border-emerald-600' : 'border-brand-600' %> bg-brand-50/40 px-4 py-5 sm:px-6">
     <p class="text-xs font-bold uppercase tracking-wide <%= done ? 'text-emerald-700' : 'text-brand-700' %>"><%= done ? "Feito" : "Agora" %> · etapa <%= number %> de <%= steps.size %></p>
@@ -35,7 +35,7 @@
     <% if not_accepted %>
       <p class="mt-4 max-w-[68ch] text-base leading-7 text-stone-700">Conta de teste ou não confirmada como real não pode ser aprovada. Conecte a sua Conta Vendedor real.</p>
       <div class="mt-6 border-t border-brand-100 pt-5">
-        <%= link_to "Ver como corrigir", seller_mercado_pago_guide_path, data: { turbo_frame: "_top" }, class: "seller-button seller-button--primary justify-center" %>
+        <%= link_to "Ver como corrigir", panel_path(:mercado_pago_guide), data: { turbo_frame: "_top" }, class: "seller-button seller-button--primary justify-center" %>
       </div>
     <% else %>
       <% if current == :mercado_pago && !done && @mercado_pago_oauth_configured && @mercado_pago_oauth_sandbox %>
@@ -46,7 +46,7 @@
 
     <% if done && next_pending %>
       <p class="mt-6 border-t border-brand-100 pt-5">
-        <%= link_to "Próxima etapa: #{short_titles[next_pending]}", seller_root_path(etapa: slugs[next_pending]), class: "seller-button seller-button--primary" %>
+        <%= link_to "Próxima etapa: #{short_titles[next_pending]}", panel_path(:root, etapa: slugs[next_pending]), class: "seller-button seller-button--primary" %>
       </p>
     <% end %>
   </div>

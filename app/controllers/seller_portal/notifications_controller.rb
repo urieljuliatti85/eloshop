@@ -8,7 +8,7 @@ module SellerPortal
       notification = current_seller.notifications.find(params[:id])
       notification.mark_as_read!
 
-      redirect_to (notification.url.presence || seller_notifications_path)
+      redirect_to (notification.url.presence || panel_path(:notifications))
     end
   end
 end

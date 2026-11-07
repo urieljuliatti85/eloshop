@@ -7,12 +7,12 @@ module SellerPortal
     # `Seller` (um cadastro legado inválido não pode impedir a confirmação).
     def create
       current_seller.update_column(:pix_key_confirmed_at, Time.current) if current_seller.pix_key_confirmed_at.nil?
-      redirect_back fallback_location: seller_getting_started_path, notice: "Anotado: sua chave PIX está cadastrada."
+      redirect_back fallback_location: panel_path(:getting_started), notice: "Anotado: sua chave PIX está cadastrada."
     end
 
     def destroy
       current_seller.update_column(:pix_key_confirmed_at, nil)
-      redirect_back fallback_location: seller_getting_started_path, notice: "Aviso da chave PIX reativado."
+      redirect_back fallback_location: panel_path(:getting_started), notice: "Aviso da chave PIX reativado."
     end
   end
 end

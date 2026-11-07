@@ -3,7 +3,7 @@ module Authentication
 
   included do
     before_action :require_authentication
-    helper_method :authenticated?, :seller_panel_path_for
+    helper_method :authenticated?
   end
 
   class_methods do
@@ -51,12 +51,6 @@ module Authentication
       end
     end
 
-    # O painel de cada tipo de vendedor (ADR 007): o ateliê em /painel, o
-    # distribuidor em /atacado/painel. Destino de avisos e redirecionamentos
-    # que servem aos dois tipos.
-    def seller_panel_path_for(seller)
-      seller.distributor? ? distributor_root_path : seller_root_path
-    end
 
     def start_new_session_for(user)
       user.sessions.create!(user_agent: request.user_agent, ip_address: request.remote_ip).tap do |session|

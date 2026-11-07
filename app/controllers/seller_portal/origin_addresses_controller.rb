@@ -11,7 +11,7 @@ module SellerPortal
       current_seller.assign_attributes(params.expect(seller: [ *Seller::ORIGIN_ADDRESS_FIELDS, :origin_complement ]))
 
       if current_seller.origin_address_complete? && current_seller.save
-        redirect_to seller_root_path, status: :see_other
+        redirect_to panel_path(:root), status: :see_other
       else
         # `valid?` lista os campos que faltam. Tudo em branco passa na
         # validação do `Seller` (o endereço é opcional para o cadastro), mas
