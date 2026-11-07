@@ -64,6 +64,9 @@ pt-BR:
         owner_full_name: "Nome completo do responsável"
         cpf: "CPF"
         cpf_hash: "CPF"
+        kind: "Tipo de vendedor"
+        cnpj: "CNPJ"
+        issues_invoices: "Emite nota fiscal"
         footer_text: "Mensagem do rodapé"
         logo: "Logo"
         cover_image: "Capa"
@@ -111,6 +114,7 @@ pt-BR:
       coupon:
         code: "Código"
         discount_type: "Tipo de desconto"
+        seller_kind: "Vale para"
         percentage: "Percentual"
         amount_cents: "Valor do desconto"
         minimum_subtotal_cents: "Subtotal mínimo"

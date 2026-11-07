@@ -336,6 +336,167 @@ class SellerTest < ActiveSupport::TestCase
     assert_includes duplicate.errors[:cpf_hash], "já está cadastrado para outro ateliê"
   end
 
+  test "a new seller is an atelier unless told otherwise" do
+    seller = Seller.create!(name: "Ateliê Novo", owner_full_name: "Ana Lua", cpf: "11144477735")
+
+    assert_predicate seller, :atelier?
+    assert_predicate sellers(:approved), :atelier?
+  end
+
+  test "rejects an unknown kind" do
+    seller = Seller.new(name: "Loja", owner_full_name: "Ana Lua", cpf: "11144477735", kind: "wholesaler")
+
+    assert_not seller.valid?
+    assert_predicate seller.errors[:kind], :any?
+  end
+
+  test "the kind cannot change after the seller is created" do
+    seller = sellers(:approved)
+
+    seller.kind = "distributor"
+
+    assert_not seller.valid?
+    assert_includes seller.errors[:kind], "não pode ser alterado depois do cadastro"
+    assert_predicate seller.reload, :atelier?
+  end
+
+  test "the same CPF can own one atelier and one distributor, but not two of the same kind" do
+    Seller.create!(name: "Ateliê da Lua", owner_full_name: "Ana Lua", cpf: "111.444.777-35")
+
+    distributor = Seller.new(name: "Fios da Lua", owner_full_name: "Ana Lua", cpf: "111.444.777-35", kind: "distributor")
+    assert distributor.save
+
+    second = Seller.new(name: "Mais Fios", owner_full_name: "Ana Lua", cpf: "111.444.777-35", kind: "distributor")
+    assert_not second.valid?
+    assert_includes second.errors[:cpf_hash], "já está cadastrado para outro distribuidor"
+  end
+
+  test "the database refuses a second seller of the same kind with the same CPF" do
+    first = Seller.create!(name: "Fios da Lua", owner_full_name: "Ana Lua", cpf: "11144477735", kind: "distributor")
+    duplicate = Seller.new(name: "Mais Fios", owner_full_name: "Ana Lua", cpf: "11144477735", kind: "distributor")
+    duplicate.valid?
+
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      Seller.insert!(duplicate.attributes.except("id", "created_at", "updated_at").merge("slug" => "mais-fios", "cpf_hash" => first.cpf_hash))
+    end
+  end
+
+  test "suspending a seller also suspends the other kind owned by the same CPF" do
+    atelier = Seller.create!(name: "Ateliê da Lua", owner_full_name: "Ana Lua", cpf: "11144477735", status: :approved, approved_at: 1.day.ago)
+    distributor = Seller.create!(name: "Fios da Lua", owner_full_name: "Ana Lua", cpf: "11144477735", kind: "distributor", status: :approved, approved_at: 1.day.ago)
+    unrelated = Seller.create!(name: "Outra Pessoa", owner_full_name: "Bia Sol", cpf: "52998224725", kind: "distributor", status: :approved, approved_at: 1.day.ago)
+
+    suspended = distributor.suspend!
+
+    assert_equal [ distributor, atelier ], suspended
+    assert_predicate atelier.reload, :suspended?
+    assert_nil atelier.approved_at
+    assert_predicate unrelated.reload, :approved?
+  end
+
+  test "suspending works even when the seller or its other-kind pair is incomplete" do
+    atelier = Seller.create!(name: "Ateliê da Lua", owner_full_name: "Ana Lua", cpf: "11144477735", status: :approved, approved_at: 1.day.ago)
+    distributor = Seller.create!(name: "Fios da Lua", owner_full_name: "Ana Lua", cpf: "11144477735", kind: "distributor")
+    atelier.update_columns(origin_street: "Rua sem o resto do endereço")
+    distributor.update_columns(origin_street: "Rua sem o resto do endereço")
+    assert_not atelier.valid?
+    assert_not distributor.valid?
+
+    atelier.suspend!
+
+    assert_predicate atelier.reload, :suspended?
+    assert_predicate distributor.reload, :suspended?
+  end
+
+  test "suspending a seller without a CPF suspends only that seller" do
+    seller = sellers(:approved)
+
+    assert_equal [ seller ], seller.suspend!
+    assert_predicate sellers(:other).reload, :approved?
+  end
+
+  test "suspending does not touch an owner's seller that is already suspended" do
+    atelier = Seller.create!(name: "Ateliê da Lua", owner_full_name: "Ana Lua", cpf: "11144477735")
+    distributor = Seller.create!(name: "Fios da Lua", owner_full_name: "Ana Lua", cpf: "11144477735", kind: "distributor")
+    atelier.suspend!
+
+    assert_equal [ distributor ], distributor.reload.suspend!
+  end
+
+  test "a distributor is never publicly listed in the artisan storefront, even approved" do
+    distributor = Seller.create!(name: "Fios da Lua", owner_full_name: "Ana Lua", cpf: "11144477735", kind: "distributor",
+      status: :approved, approved_at: 1.day.ago, showcased_at: 1.day.ago)
+
+    assert_not_predicate distributor, :publicly_listed?
+    assert_not_includes Seller.publicly_listed, distributor
+    assert_includes Seller.publicly_listed, sellers(:approved)
+  end
+
+  test "a distributor's product is not publicly visible nor purchasable in the artisan storefront" do
+    distributor = Seller.create!(name: "Fios da Lua", owner_full_name: "Ana Lua", cpf: "11144477735", kind: "distributor",
+      status: :approved, approved_at: 1.day.ago, showcased_at: 1.day.ago)
+    product = products(:one).dup
+    product.assign_attributes(seller: distributor, slug: "fio-de-algodao", sku: "FIO-001", name: "Fio de algodão")
+    product.save!(validate: false)
+
+    assert_not_includes Product.publicly_visible, product
+    assert_not_predicate product, :available_for_purchase?
+  end
+
+  test "an atelier and a distributor pay the same commission, resolved by the existing rule" do
+    distributor = Seller.create!(name: "Fios da Lua", owner_full_name: "Ana Lua", cpf: "11144477735", kind: "distributor",
+      status: :approved, approved_at: 1.year.ago)
+
+    assert_equal SellerOrder::PLATFORM_FEE_RATE_BPS, distributor.platform_fee_rate_bps
+
+    distributor.update!(approved_at: 1.day.ago)
+    assert_equal SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS, distributor.platform_fee_rate_bps
+  end
+
+  test "the CNPJ is optional, normalized, and validated including the alphanumeric format" do
+    seller = Seller.new(name: "Fios", owner_full_name: "Ana Lua", cpf: "11144477735", kind: "distributor")
+    assert seller.valid?
+
+    seller.cnpj = "11.222.333/0001-81"
+    assert seller.valid?
+    assert_equal "11222333000181", seller.cnpj
+
+    seller.cnpj = "12.abc.345/01de-35"
+    assert seller.valid?
+    assert_equal "12ABC34501DE35", seller.cnpj
+
+    seller.cnpj = "11.222.333/0001-82"
+    assert_not seller.valid?
+    assert_includes seller.errors[:cnpj], "é inválido"
+  end
+
+  test "terms acceptance is checked against the version of the seller's own kind" do
+    distributor = Seller.create!(name: "Fios da Lua", owner_full_name: "Ana Lua", cpf: "11144477735", kind: "distributor")
+    user = User.create!(email_address: "fios-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: distributor)
+    request = Struct.new(:remote_ip, :user_agent).new("127.0.0.1", "test")
+
+    assert_not distributor.terms_accepted?
+    acceptance = SellerTermsAcceptance.record!(user: user, seller: distributor, request: request)
+
+    assert_equal SellerTerms::DISTRIBUTOR_VERSION, acceptance.terms_version
+    assert_equal SellerTerms::DISTRIBUTOR_TEXT, acceptance.terms_text
+    assert distributor.terms_accepted?
+    assert SellerTermsAcceptance.current_for?(user)
+    assert_includes Seller.accepted_current_terms_ids.map(&:seller_id), distributor.id
+  end
+
+  test "an atelier that accepted only the distributor terms has not accepted its own" do
+    seller = Seller.create!(name: "Ateliê da Lua", owner_full_name: "Ana Lua", cpf: "11144477735")
+    user = User.create!(email_address: "atelie-#{SecureRandom.hex(4)}@example.com", password: "password123", role: :seller, seller: seller)
+    SellerTermsAcceptance.create!(
+      user: user, seller: seller, terms_version: SellerTerms::DISTRIBUTOR_VERSION, terms_text: SellerTerms::DISTRIBUTOR_TEXT,
+      terms_digest: Digest::SHA256.hexdigest(SellerTerms::DISTRIBUTOR_TEXT), accepted_at: Time.current, ip_address: "127.0.0.1"
+    )
+
+    assert_not seller.terms_accepted?
+    assert_not SellerTermsAcceptance.current_for?(user)
+  end
+
   test "masks the CPF for display, showing only the last two digits" do
     seller = Seller.create!(name: "Ateliê", owner_full_name: "Ana Lua", cpf: "111.444.777-35")
 

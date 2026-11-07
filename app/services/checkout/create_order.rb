@@ -70,7 +70,7 @@ module Checkout
       Order.transaction do
         cart_items = lock_and_revalidate_cart_items!
         subtotal = subtotal_cents(cart_items)
-        coupon = lock_and_revalidate_coupon!(subtotal)
+        coupon = lock_and_revalidate_coupon!(subtotal, cart_items.first.product.seller)
         discount = coupon ? coupon.discount_cents_for(subtotal) : 0
 
         order = Order.create!(
@@ -145,13 +145,13 @@ module Checkout
     # Trava o cupom (SELECT ... FOR UPDATE) e revalida contra o subtotal
     # final, para que dois checkouts simultâneos não ultrapassem o
     # max_uses de um cupom com uso limitado — ver CLAUDE.md §47.
-    def lock_and_revalidate_coupon!(subtotal_cents)
+    def lock_and_revalidate_coupon!(subtotal_cents, seller)
       return nil if @cart.coupon.blank?
 
       coupon = @cart.coupon
       coupon.reload(lock: true)
 
-      raise Failed, "O cupom #{coupon.code} não é mais válido." unless coupon.valid_for?(subtotal_cents)
+      raise Failed, "O cupom #{coupon.code} não é mais válido." unless coupon.valid_for?(subtotal_cents, seller: seller)
 
       coupon
     end

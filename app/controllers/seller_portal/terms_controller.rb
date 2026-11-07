@@ -5,9 +5,16 @@ module SellerPortal
     before_action :resume_session, only: :show
     before_action :require_seller!, only: :accept
 
+    # O texto mostrado é o mesmo que `SellerTermsAcceptance.record!` grava no
+    # aceite: o do tipo de quem está logado (ADR 007). Sem login, os do
+    # ateliê, que é quem chega aqui pelo cadastro. Antes, o distribuidor via o
+    # texto do ateliê e o aceite gravava o do distribuidor (achado do QA,
+    # 2026-11-07).
     def show
-      @terms_version = SellerTerms.version
-      @terms_text = SellerTerms.text
+      kind = Current.user&.seller&.kind || "atelier"
+      @terms_kind = kind
+      @terms_version = SellerTerms.version(kind)
+      @terms_text = SellerTerms.text(kind)
     end
 
     def accept

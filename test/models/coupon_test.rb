@@ -61,32 +61,58 @@ class CouponTest < ActiveSupport::TestCase
 
   test "valid_for? is false when inactive" do
     coupon = build_coupon(active: false)
-    assert_not coupon.valid_for?(10_000)
+    assert_not coupon.valid_for?(10_000, seller: nil)
   end
 
   test "valid_for? is false when expired" do
     coupon = build_coupon(expires_at: 1.day.ago)
-    assert_not coupon.valid_for?(10_000)
+    assert_not coupon.valid_for?(10_000, seller: nil)
   end
 
   test "valid_for? is false before starts_at" do
     coupon = build_coupon(starts_at: 1.day.from_now)
-    assert_not coupon.valid_for?(10_000)
+    assert_not coupon.valid_for?(10_000, seller: nil)
   end
 
   test "valid_for? is false when uses are exhausted" do
     coupon = build_coupon(max_uses: 1, uses_count: 1)
-    assert_not coupon.valid_for?(10_000)
+    assert_not coupon.valid_for?(10_000, seller: nil)
   end
 
   test "valid_for? is false when subtotal is below the minimum" do
     coupon = build_coupon(minimum_subtotal_cents: 20_000)
-    assert_not coupon.valid_for?(10_000)
+    assert_not coupon.valid_for?(10_000, seller: nil)
   end
 
   test "valid_for? is true when every condition is met" do
     coupon = build_coupon(minimum_subtotal_cents: 5_000, max_uses: 5, uses_count: 2, starts_at: 1.day.ago, expires_at: 1.day.from_now)
-    assert coupon.valid_for?(10_000)
+    assert coupon.valid_for?(10_000, seller: nil)
+  end
+
+  test "a coupon is for ateliers unless told otherwise" do
+    assert_predicate build_coupon, :for_atelier?
+  end
+
+  test "an atelier coupon does not apply to a distributor's cart" do
+    coupon = build_coupon
+    distributor = Seller.new(kind: "distributor")
+
+    assert_not coupon.valid_for?(10_000, seller: distributor)
+    assert coupon.valid_for?(10_000, seller: sellers(:approved))
+  end
+
+  test "a distributor coupon applies only to a distributor's cart" do
+    coupon = build_coupon(seller_kind: "distributor")
+
+    assert coupon.valid_for?(10_000, seller: Seller.new(kind: "distributor"))
+    assert_not coupon.valid_for?(10_000, seller: sellers(:approved))
+  end
+
+  test "rejects an unknown seller kind" do
+    coupon = build_coupon(seller_kind: "anyone")
+
+    assert_not coupon.valid?
+    assert_predicate coupon.errors[:seller_kind], :any?
   end
 
   test "discount_cents_for computes a percentage discount" do

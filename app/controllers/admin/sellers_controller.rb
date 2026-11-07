@@ -9,6 +9,7 @@ module Admin
 
       sellers = Seller.includes(:users, :seller_terms_acceptances).order(created_at: :desc, id: :desc)
       sellers = sellers.where(status: params[:status]) if params[:status].present? && %w[pending approved suspended].include?(params[:status])
+      sellers = sellers.where(kind: params[:kind]) if Seller.kinds.key?(params[:kind].to_s)
 
       case params[:terms].presence
       when "accepted"
@@ -35,14 +36,17 @@ module Admin
     end
 
     def suspend
-      @seller.suspend!
-      Notification.create!(
-        recipient: @seller,
-        kind: :seller_suspended,
-        title: "Conta suspensa",
-        body: "Sua conta foi suspensa pela EloShop e a conexão com o Mercado Pago foi desfeita.",
-        url: seller_root_path
-      )
+      # O mesmo CPF no outro tipo (ateliê/distribuidor) é suspenso junto e
+      # recebe o mesmo aviso (ADR 007).
+      @seller.suspend!.each do |seller|
+        Notification.create!(
+          recipient: seller,
+          kind: :seller_suspended,
+          title: "Conta suspensa",
+          body: "Sua conta foi suspensa pela EloShop e a conexão com o Mercado Pago foi desfeita.",
+          url: seller_root_path
+        )
+      end
       redirect_to admin_seller_path(@seller), notice: "Artesão suspenso e conta Mercado Pago desconectada."
     end
 

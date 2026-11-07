@@ -11,9 +11,15 @@ class Cart < ApplicationRecord
   end
 
   def discount_cents
-    return 0 unless coupon&.valid_for?(subtotal_cents)
+    return 0 unless coupon&.valid_for?(subtotal_cents, seller: seller)
 
     coupon.discount_cents_for(subtotal_cents)
+  end
+
+  # O carrinho tem um vendedor só (`CartItem#same_seller_as_cart`); nil quando
+  # vazio.
+  def seller
+    cart_items.includes(product: :seller).first&.product&.seller
   end
 
   # O pedido só é enviado quando a peça mais demorada fica pronta: é o maior
