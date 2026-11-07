@@ -28,7 +28,7 @@ class ProductPriceTierTest < ActiveSupport::TestCase
 
     tier = piece.price_tiers.build(min_quantity: 10, discount_bps: 1_000)
     assert_not tier.valid?
-    assert_includes tier.errors[:product], "só insumo de distribuidor tem faixas de preço"
+    assert_includes tier.errors[:product], "só insumo de armarinho tem faixas de preço"
   end
 
   test "the database refuses an unknown unit, a minimum of zero and invalid tiers" do

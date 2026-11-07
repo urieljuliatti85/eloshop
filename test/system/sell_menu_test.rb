@@ -11,15 +11,15 @@ class SellMenuTest < ApplicationSystemTestCase
     within("#sell-menu") do
       assert_link "Entrar no Ateliê"
       assert_link "Cadastre seu Ateliê"
-      assert_link "Entrar no Painel do Distribuidor"
-      assert_link "Cadastre sua Distribuidora"
+      assert_link "Entrar no Painel do Armarinho"
+      assert_link "Cadastre seu Armarinho"
     end
 
     page.driver.browser.action.send_keys(:escape).perform
     assert_no_selector "#sell-menu", visible: true
 
     click_button "Venda na EloShop"
-    within("#sell-menu") { click_link "Entrar no Painel do Distribuidor" }
+    within("#sell-menu") { click_link "Entrar no Painel do Armarinho" }
     assert_current_path distributor_login_path
     assert_no_selector "#sell-menu", visible: true
   end
@@ -47,7 +47,7 @@ class SellMenuTest < ApplicationSystemTestCase
     visit root_path
 
     within("nav.storefront-tabs") { click_button "Venda na EloShop" }
-    within("#sell-sheet") { assert_link "Entrar no Painel do Distribuidor" }
+    within("#sell-sheet") { assert_link "Entrar no Painel do Armarinho" }
     assert_equal 0, page.evaluate_script("document.documentElement.scrollWidth - document.documentElement.clientWidth")
 
     page.driver.browser.action.send_keys(:escape).perform

@@ -99,26 +99,32 @@ class HowItWorksControllerTest < ActionDispatch::IntegrationTest
   end
 
   # "Quem vende" em dois grupos (ADR 007): o ateliê abre por padrão, o
-  # distribuidor de insumos por `?grupo=distribuidor`.
+  # armarinho por `?grupo=armarinho`.
   test "seller tab splits into the atelier and distributor groups, atelier first" do
     get how_it_works_path(aba: "vende")
 
     assert_select "[role='tab'][data-tab-name='atelie'][aria-selected='true']"
     assert_select "[data-tabs-target='panel'][data-tab-name='atelie']:not([hidden])"
-    assert_select "[data-tabs-target='panel'][data-tab-name='distribuidor'][hidden]"
+    assert_select "[data-tabs-target='panel'][data-tab-name='armarinho'][hidden]"
 
     get how_it_works_path(aba: "vende", grupo: "qualquer")
     assert_select "[data-tabs-target='panel'][data-tab-name='atelie']:not([hidden])"
   end
 
-  test "distributor group opens from the URL and lists its own steps and doors" do
+  test "the old distribuidor group in the URL still opens the armarinho group" do
     get how_it_works_path(aba: "vende", grupo: "distribuidor")
 
-    assert_select "[data-tabs-target='panel'][data-tab-name='distribuidor']:not([hidden])"
-    assert_select "[role='tab'][data-tab-name='distribuidor'][aria-selected='true']"
-    titles = css_select("[data-tab-name='distribuidor'] ol > li h3").map { |title| title.text.squish.sub(/\APasso \d+: /, "") }
+    assert_select "[data-tabs-target='panel'][data-tab-name='armarinho']:not([hidden])"
+  end
+
+  test "distributor group opens from the URL and lists its own steps and doors" do
+    get how_it_works_path(aba: "vende", grupo: "armarinho")
+
+    assert_select "[data-tabs-target='panel'][data-tab-name='armarinho']:not([hidden])"
+    assert_select "[role='tab'][data-tab-name='armarinho'][aria-selected='true']"
+    titles = css_select("[data-tab-name='armarinho'] ol > li h3").map { |title| title.text.squish.sub(/\APasso \d+: /, "") }
     assert_equal [
-      "Crie sua conta de distribuidor",
+      "Crie a conta do seu armarinho",
       "Conecte sua Conta Vendedor do Mercado Pago",
       "Cadastre uma chave PIX no Mercado Pago",
       "Aguarde a aprovação da EloShop",
@@ -126,25 +132,25 @@ class HowItWorksControllerTest < ActionDispatch::IntegrationTest
       "Receba os pedidos e envie",
       "Receba o pagamento"
     ], titles
-    assert_select "[data-tab-name='distribuidor'] ol[start='6']"
+    assert_select "[data-tab-name='armarinho'] ol[start='6']"
 
     # Mesmo molde do ateliê: vantagens e passos viram carrossel no celular.
-    carousels = css_select("[data-tab-name='distribuidor'] [data-controller='carousel']")
+    carousels = css_select("[data-tab-name='armarinho'] [data-controller='carousel']")
     assert_equal [ 4, 5 ], carousels.map { |carousel| carousel.css("[data-carousel-target='slide']").size }
-    assert_select "[data-tab-name='distribuidor'] a[href='#{new_distributor_registration_path}']"
-    assert_select "[data-tab-name='distribuidor'] a[href='#{distributor_login_path}']"
-    assert_select "[data-tab-name='distribuidor'] a[href='#{new_seller_registration_path}']", 0
+    assert_select "[data-tab-name='armarinho'] a[href='#{new_distributor_registration_path}']"
+    assert_select "[data-tab-name='armarinho'] a[href='#{distributor_login_path}']"
+    assert_select "[data-tab-name='armarinho'] a[href='#{new_seller_registration_path}']", 0
   end
 
   # Com o cadastro desligado (produção, até o advogado revisar os termos), a
   # página não leva a um 404: diz que abre em breve e mantém o login.
   test "distributor group says signup opens soon while the signup is switched off" do
     Rails.configuration.x.distributors.signup_enabled = false
-    get how_it_works_path(aba: "vende", grupo: "distribuidor")
+    get how_it_works_path(aba: "vende", grupo: "armarinho")
 
-    assert_select "[data-tab-name='distribuidor'] a[href='#{new_distributor_registration_path}']", 0
-    assert_includes response.body, "O cadastro de distribuidores abre em breve."
-    assert_select "[data-tab-name='distribuidor'] a[href='#{distributor_login_path}']"
+    assert_select "[data-tab-name='armarinho'] a[href='#{new_distributor_registration_path}']", 0
+    assert_includes response.body, "O cadastro de armarinhos abre em breve."
+    assert_select "[data-tab-name='armarinho'] a[href='#{distributor_login_path}']"
   ensure
     Rails.configuration.x.distributors.signup_enabled = true
   end

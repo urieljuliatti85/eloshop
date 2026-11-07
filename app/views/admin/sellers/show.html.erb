@@ -1,8 +1,8 @@
 <div class="space-y-6">
   <header class="flex flex-wrap items-start justify-between gap-4">
     <div>
-      <%= link_to "← Voltar para artesãos e distribuidores", admin_sellers_path, class: "admin-link mb-3 inline-block text-sm" %>
-      <p class="admin-section-label"><%= @seller.distributor? ? "Distribuidor de insumos" : "Ateliê" %></p>
+      <%= link_to "← Voltar para artesãos e armarinhos", admin_sellers_path, class: "admin-link mb-3 inline-block text-sm" %>
+      <p class="admin-section-label"><%= @seller.distributor? ? "Armarinho" : "Ateliê" %></p>
       <h1><%= @seller.name %></h1>
       <p class="mt-2 text-sm text-slate-500"><%= @seller.users.first&.email_address %></p>
     </div>
@@ -94,7 +94,7 @@
       <% else %>
         <p class="mt-2 font-semibold text-emerald-700">Nenhuma denúncia pendente</p>
       <% end %>
-      <%= link_to "Ver denúncias deste #{@seller.distributor? ? "distribuidor" : "ateliê"}", admin_seller_reports_path(seller_id: @seller.id), class: "admin-link mt-2 inline-block text-sm" %>
+      <%= link_to "Ver denúncias deste #{@seller.distributor? ? "armarinho" : "ateliê"}", admin_seller_reports_path(seller_id: @seller.id), class: "admin-link mt-2 inline-block text-sm" %>
     </section>
 
     <section class="admin-card p-6">
@@ -136,14 +136,14 @@
       <h2>Vitrine do pré-cadastro</h2>
       <% if @seller.showcased? %>
         <% if @seller.distributor? %>
-          <p class="mt-2 text-sm text-slate-500">Liberado em <%= l(@seller.showcased_at, format: :short) %>. O distribuidor aparece na vitrine de insumos com os insumos publicados, quando ela estiver no ar, mas só recebe pedidos depois de aprovado abaixo.</p>
+          <p class="mt-2 text-sm text-slate-500">Liberado em <%= l(@seller.showcased_at, format: :short) %>. O armarinho aparece na vitrine de insumos com os insumos publicados, mas só recebe pedidos depois de aprovado abaixo.</p>
         <% else %>
           <p class="mt-2 text-sm text-slate-500">Liberado em <%= l(@seller.showcased_at, format: :short) %>. O ateliê aparece na loja com os produtos publicados, mas só recebe pedidos depois de aprovado abaixo.</p>
         <% end %>
         <%= button_to "Retirar da vitrine", unshowcase_admin_seller_path(@seller), method: :patch, class: "admin-button admin-button--secondary mt-5" %>
       <% else %>
         <% if @seller.distributor? %>
-          <p class="mt-2 text-sm text-slate-500">Revise o nome e os insumos. Liberar faz o distribuidor aparecer na vitrine de insumos sem o Mercado Pago, quando ela estiver no ar; a venda continua exigindo a aprovação abaixo.</p>
+          <p class="mt-2 text-sm text-slate-500">Revise o nome e os insumos. Liberar faz o armarinho aparecer na vitrine de insumos sem o Mercado Pago; a venda continua exigindo a aprovação abaixo.</p>
         <% else %>
           <p class="mt-2 text-sm text-slate-500">Revise o nome, a vitrine e os produtos. Liberar faz o ateliê aparecer na loja sem o Mercado Pago; a venda continua exigindo a aprovação abaixo.</p>
         <% end %>

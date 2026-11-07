@@ -96,7 +96,7 @@ RSpec.describe "Seller atelier", type: :request do
 
     # O formulário mostra "Complemento (opcional)", mas o campo não estava nos
     # parâmetros aceitos e era descartado em silêncio ao salvar (achado de
-    # 2026-11-07, na revisão do painel do distribuidor).
+    # 2026-11-07, na revisão do painel do armarinho).
     it "saves the address complement typed in the form" do
       sign_in_as(user)
 

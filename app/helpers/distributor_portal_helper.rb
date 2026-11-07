@@ -15,7 +15,7 @@ module DistributorPortalHelper
       ] ],
       [ "Configuração", [
         [ "Primeiros passos", distributor_getting_started_path ],
-        [ "Dados da distribuidora", distributor_profile_path ],
+        [ "Dados do armarinho", distributor_profile_path ],
         [ "Conta Vendedor no Mercado Pago", distributor_mercado_pago_guide_path ],
         [ "Cadastro da Chave Pix", distributor_pix_key_guide_path ],
         [ "Termos comerciais", distributor_terms_path ]

@@ -10,7 +10,7 @@ class SellerLaunchMailerTest < ActionMailer::TestCase
 
     mail = SellerLaunchMailer.approved(distributor, "fios@example.com")
 
-    assert_match "cadastro de distribuidor foi aprovado", mail.subject
+    assert_match "Seu armarinho foi aprovado", mail.subject
     [ mail.text_part.body.to_s, mail.html_part.body.to_s ].each do |body|
       assert_includes body, "/atacado/painel"
       assert_not_includes body, "/artesaos/"

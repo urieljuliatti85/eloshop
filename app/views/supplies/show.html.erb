@@ -48,7 +48,7 @@
         <dd class="text-ink-muted">Até 30 kg por pedido, em um volume</dd>
         <%# Declaração pública e opcional de nota fiscal (ADR 007). %>
         <dt class="font-semibold text-ink">Nota fiscal</dt>
-        <dd class="text-ink-muted"><%= { true => "o distribuidor emite", false => "o distribuidor não emite" }.fetch(seller.issues_invoices, "não informado pelo distribuidor") %></dd>
+        <dd class="text-ink-muted"><%= { true => "o armarinho emite", false => "o armarinho não emite" }.fetch(seller.issues_invoices, "não informado pelo armarinho") %></dd>
         <% if product.materials.any? %>
           <dt class="font-semibold text-ink">Material</dt>
           <dd class="text-ink-muted"><%= product.materials.map(&:name).to_sentence %></dd>
@@ -61,7 +61,7 @@
 
       <%# A compra de insumos é a Fase 27: até lá, aviso no lugar do botão. %>
       <div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-950" role="status">
-        <strong>Vendas de insumos em breve.</strong> Você já pode conhecer os insumos e os distribuidores; a compra abre numa próxima etapa.
+        <strong>Vendas de insumos em breve.</strong> Você já pode conhecer os insumos e os armarinhos; a compra abre numa próxima etapa.
       </div>
 
       <% if product.description.present? %>

@@ -203,7 +203,7 @@ class Product < ApplicationRecord
     # Cada tipo na própria vitrine (ADR 007): o ateliê na de peças, o
     # distribuidor na de insumos; a regra é a mesma (aprovado ou liberado).
     if supply?
-      blockers << "A distribuidora precisa estar aprovada ou liberada na vitrine antes da publicação." unless seller.supply_listed?
+      blockers << "O armarinho precisa estar aprovado ou liberado na vitrine antes da publicação." unless seller.supply_listed?
     else
       blockers << "O ateliê precisa estar aprovado ou liberado na vitrine antes da publicação." unless seller&.publicly_listed?
     end
@@ -462,9 +462,9 @@ class Product < ApplicationRecord
   def supply_fields_only_for_distributor
     return if supply?
 
-    errors.add(:sale_unit, "só existe para insumo de distribuidor") if sale_unit.present?
-    errors.add(:sale_unit_detail, "só existe para insumo de distribuidor") if sale_unit_detail.present?
-    errors.add(:min_order_quantity, "só pode ser maior que 1 em insumo de distribuidor") if min_order_quantity.to_i > 1
+    errors.add(:sale_unit, "só existe para insumo de armarinho") if sale_unit.present?
+    errors.add(:sale_unit_detail, "só existe para insumo de armarinho") if sale_unit_detail.present?
+    errors.add(:min_order_quantity, "só pode ser maior que 1 em insumo de armarinho") if min_order_quantity.to_i > 1
   end
 
   # As faixas só fazem sentido acima do mínimo (abaixo dele a faixa valeria

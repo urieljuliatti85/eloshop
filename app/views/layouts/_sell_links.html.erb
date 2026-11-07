@@ -7,9 +7,9 @@
 <p class="<%= sell_group %>">Ateliê</p>
 <%= link_to "Entrar no Ateliê", seller_login_path, class: sell_link %>
 <%= link_to "Cadastre seu Ateliê", new_seller_registration_path, class: sell_link %>
-<p class="<%= sell_group %> border-t border-gray-100">Distribuidor de insumos</p>
-<%= link_to "Entrar no Painel do Distribuidor", distributor_login_path, class: sell_link %>
+<p class="<%= sell_group %> border-t border-gray-100">Armarinho</p>
+<%= link_to "Entrar no Painel do Armarinho", distributor_login_path, class: sell_link %>
 <% if DistributorRegistrationsController.signup_enabled? %>
-  <%= link_to "Cadastre sua Distribuidora", new_distributor_registration_path, class: sell_link %>
+  <%= link_to "Cadastre seu Armarinho", new_distributor_registration_path, class: sell_link %>
 <% end %>
 <%= link_to "Como funciona para vender", how_it_works_path(aba: "vende"), class: "#{sell_link} mt-1 border-t border-gray-100 text-ink-muted" %>

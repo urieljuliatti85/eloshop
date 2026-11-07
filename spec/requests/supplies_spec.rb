@@ -68,7 +68,7 @@ RSpec.describe "Supply storefront", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("R$ 25,00", "R$ 22,50", "R$ 20,50", "5 pacotes", "Pacote com 100 g",
-      "Até 30 kg por pedido", "o distribuidor emite", "Vendas de insumos em breve", 'name="robots" content="noindex"')
+      "Até 30 kg por pedido", "o armarinho emite", "Vendas de insumos em breve", 'name="robots" content="noindex"')
     expect(response.body).not_to include("feito à mão", cart_items_path)
   end
 

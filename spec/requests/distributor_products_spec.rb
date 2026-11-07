@@ -139,7 +139,7 @@ RSpec.describe "Distributor products", type: :request do
       supply = distributor.products.last
 
       patch publish_distributor_product_path(supply)
-      expect(flash[:alert]).to include("A distribuidora precisa estar aprovada ou liberada na vitrine")
+      expect(flash[:alert]).to include("O armarinho precisa estar aprovado ou liberado na vitrine")
       expect(supply.reload).to be_draft
 
       distributor.showcase!

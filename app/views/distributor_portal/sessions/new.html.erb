@@ -1,10 +1,10 @@
-<% content_for :title, "Entrar no painel do distribuidor | EloShop" %>
+<% content_for :title, "Entrar no painel do armarinho | EloShop" %>
 <% content_for :head do %>
   <meta name="robots" content="noindex">
 <% end %>
 <div class="mx-auto w-full max-w-md">
   <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">EloShop Atacado</p>
-  <h1 class="mb-8 mt-2 text-2xl font-bold text-ink">Entrar no painel do distribuidor</h1>
+  <h1 class="mb-8 mt-2 text-2xl font-bold text-ink">Entrar no painel do armarinho</h1>
 
   <%= form_with url: distributor_login_path, class: "flex flex-col gap-4" do |form| %>
     <div>
@@ -29,7 +29,7 @@
   <p class="mt-8 text-sm text-ink-muted">
     É artesão? <%= link_to "Entre pelo painel do ateliê", seller_login_path, class: "font-medium text-brand-600 hover:underline" %>.
     <% if DistributorRegistrationsController.signup_enabled? %>
-      Ainda não tem cadastro de distribuidor? <%= link_to "Cadastre-se", new_distributor_registration_path, class: "font-medium text-brand-600 hover:underline" %>.
+      Ainda não tem cadastro de armarinho? <%= link_to "Cadastre-se", new_distributor_registration_path, class: "font-medium text-brand-600 hover:underline" %>.
     <% end %>
   </p>
 </div>

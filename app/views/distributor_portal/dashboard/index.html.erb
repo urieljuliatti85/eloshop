@@ -1,10 +1,10 @@
-<% content_for :title, "Visão geral | Painel do distribuidor | EloShop" %>
+<% content_for :title, "Visão geral | Painel do armarinho | EloShop" %>
 <% seller = current_seller
    setup_pending = !@getting_started_steps.values.all? %>
 
 <div class="space-y-8">
   <header>
-    <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Painel do distribuidor</p>
+    <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Painel do armarinho</p>
     <h1 class="mt-1 text-3xl font-black tracking-tight text-stone-950"><%= seller.name %></h1>
     <p class="mt-2 max-w-2xl text-sm text-stone-600">Cadastro, conta de recebimento, aprovação e os seus insumos. Os artesãos veem a sua loja na vitrine de insumos; as compras de insumos abrem em breve.</p>
   </header>
@@ -70,9 +70,9 @@
     <section class="seller-card-lg" aria-labelledby="loja-titulo">
       <h2 id="loja-titulo" class="text-lg font-bold text-stone-950">Sua loja</h2>
       <%# Reservado no cadastro (ADR 007); a página é pública desde a Fase 26, PR C1. %>
-      <p class="mt-2 break-all font-mono text-sm text-stone-900"><%= request.base_url %>/distribuidores/<%= seller.slug %></p>
+      <p class="mt-2 break-all font-mono text-sm text-stone-900"><%= request.base_url %>/armarinhos/<%= seller.slug %></p>
       <p class="mt-1 text-sm text-stone-600"><% if seller.supply_listed? %>No ar: <%= link_to "ver a sua loja", distributor_store_path(seller.slug), class: "font-semibold text-brand-600 underline" %>.<% else %>Fica pública quando a EloShop liberar a sua vitrine.<% end %></p>
-      <%= link_to "Ver dados da distribuidora", distributor_profile_path, class: "mt-4 inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
+      <%= link_to "Ver dados do armarinho", distributor_profile_path, class: "mt-4 inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
     </section>
   </div>
 </div>

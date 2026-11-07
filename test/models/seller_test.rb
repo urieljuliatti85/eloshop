@@ -368,7 +368,7 @@ class SellerTest < ActiveSupport::TestCase
 
     second = Seller.new(name: "Mais Fios", owner_full_name: "Ana Lua", cpf: "111.444.777-35", kind: "distributor")
     assert_not second.valid?
-    assert_includes second.errors[:cpf_hash], "já está cadastrado para outro distribuidor"
+    assert_includes second.errors[:cpf_hash], "já está cadastrado para outro armarinho"
   end
 
   test "the database refuses a second seller of the same kind with the same CPF" do

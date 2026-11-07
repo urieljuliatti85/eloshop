@@ -52,16 +52,16 @@ module Admin
 
     # Esconder vale para os dois tipos (decisão do Uriel, 2026-11-07): tira
     # da loja sem suspender a conta. Para o distribuidor, a loja
-    # /distribuidores/:slug e os insumos em /insumos, quando existirem (Fase 26).
+    # /armarinhos/:slug e os insumos em /insumos (Fase 26).
     def hide
       @seller.hide!
-      notice = @seller.distributor? ? "Distribuidor escondido: a loja e os insumos dele ficam fora do ar." : "Ateliê escondido da vitrine pública."
+      notice = @seller.distributor? ? "Armarinho escondido: a loja e os insumos dele ficam fora do ar." : "Ateliê escondido da vitrine pública."
       redirect_to admin_seller_path(@seller), notice: notice
     end
 
     def unhide
       @seller.unhide!
-      notice = @seller.distributor? ? "Distribuidor visível de novo: a loja e os insumos dele voltam ao ar." : "Ateliê visível na vitrine pública novamente."
+      notice = @seller.distributor? ? "Armarinho visível de novo: a loja e os insumos dele voltam ao ar." : "Ateliê visível na vitrine pública novamente."
       redirect_to admin_seller_path(@seller), notice: notice
     end
 
@@ -70,7 +70,7 @@ module Admin
     # aprovado. O ateliê na vitrine de peças, o distribuidor na de insumos. Esconder (`hide`) continua sendo a pausa de quem já aparece.
     def showcase
       @seller.showcase!
-      notice = @seller.distributor? ? "Distribuidor liberado na vitrine de insumos. Ele aparece quando a vitrine estiver no ar, mas só vende depois de aprovado." : "Ateliê liberado na vitrine. Ele aparece na loja, mas só vende depois de aprovado."
+      notice = @seller.distributor? ? "Armarinho liberado na vitrine de insumos. Ele já aparece, mas só vende depois de aprovado." : "Ateliê liberado na vitrine. Ele aparece na loja, mas só vende depois de aprovado."
       redirect_to admin_seller_path(@seller), notice: notice
     rescue Seller::VerificationRequired => e
       redirect_to admin_seller_path(@seller), alert: e.message
@@ -78,7 +78,7 @@ module Admin
 
     def unshowcase
       @seller.unshowcase!
-      redirect_to admin_seller_path(@seller), notice: @seller.distributor? ? "Distribuidor retirado da vitrine de insumos." : "Ateliê retirado da vitrine."
+      redirect_to admin_seller_path(@seller), notice: @seller.distributor? ? "Armarinho retirado da vitrine de insumos." : "Ateliê retirado da vitrine."
     rescue Seller::VerificationRequired => e
       redirect_to admin_seller_path(@seller), alert: e.message
     end

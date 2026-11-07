@@ -1409,7 +1409,7 @@ Fases 22 e 23; pré-requisitos de negócio da Parte 4.
 
 ## FASE 26 — Catálogo de insumos
 
-Status: `[~]` — antecipada em 2026-11-07, em PRs: A (domínio: unidade de venda com descrição, quantidade mínima com bloqueio pela fonte única, faixas de desconto em %, #338), B (cadastro de insumos em `/atacado/painel/insumos`, com unidade, mínimo, faixas em %, material e técnica, fotos e publicação sem categoria quando a distribuidora está aprovada ou liberada na vitrine, #345), C1 (páginas públicas `/insumos` com filtro por material e técnica, `/distribuidores/:slug` e `/distribuidores/:slug/insumos/:produto`, com a tabela de faixas, o mínimo, o limite de 30 kg e "Vendas de insumos em breve" no lugar do carrinho; `Product.supply_visible`; ainda com `noindex`) e C2 (SEO, JSON-LD com `priceSpecification`, sitemap e API, retirando o `noindex`). Decisões do Uriel em 2026-11-07: faixa como desconto em %, unidade em lista fixa com descrição opcional, navegação por material e técnica (ADR 007).
+Status: `[~]` — antecipada em 2026-11-07, em PRs: A (domínio: unidade de venda com descrição, quantidade mínima com bloqueio pela fonte única, faixas de desconto em %, #338), B (cadastro de insumos em `/atacado/painel/insumos`, com unidade, mínimo, faixas em %, material e técnica, fotos e publicação sem categoria quando a distribuidora está aprovada ou liberada na vitrine, #345), C1 (páginas públicas `/insumos` com filtro por material e técnica, `/armarinhos/:slug` e `/armarinhos/:slug/insumos/:produto`, com a tabela de faixas, o mínimo, o limite de 30 kg e "Vendas de insumos em breve" no lugar do carrinho; `Product.supply_visible`; ainda com `noindex`) e C2 (SEO, JSON-LD com `priceSpecification`, sitemap e API, retirando o `noindex`). Decisões do Uriel em 2026-11-07: faixa como desconto em %, unidade em lista fixa com descrição opcional, navegação por material e técnica (ADR 007).
 
 ### Objetivo
 
@@ -1426,8 +1426,8 @@ Representar o insumo como produto comercial: unidade de venda, quantidade mínim
 * Nenhum texto padrão afirma "feito à mão" para insumo (`SeoHelper#product_meta_description`, e-mails e jobs com a versão do distribuidor)
 * Unidade e faixas na API (contrato regenerado pelo rswag) e no JSON-LD (`priceSpecification`)
 * Vitrine `/insumos`, fora de `/produtos`, da busca e do SEO das peças artesanais
-* Endereços públicos (decisão de 2026-11-07, ADR 007): lista `/distribuidores`, loja `/distribuidores/:slug` e produto `/distribuidores/:slug/insumos/:produto`, no formato do ateliê e fora de `/artesaos`
-* Esconder e liberar na vitrine valem para o distribuidor (decisões de 2026-11-07): a vitrine de insumos e a loja `/distribuidores/:slug` mostram só `Seller.supply_listed` (aprovado, ou pendente liberado pelo admin, nunca escondido ou suspenso), a mesma regra do ateliê em lista própria
+* Endereços públicos (decisão de 2026-11-07, ADR 007): lista `/armarinhos`, loja `/armarinhos/:slug` e produto `/armarinhos/:slug/insumos/:produto` (eram `/distribuidores`, renomeados em 2026-11-08 com o nome "Armarinho" na tela, com redirecionamento permanente), no formato do ateliê e fora de `/artesaos`
+* Esconder e liberar na vitrine valem para o distribuidor (decisões de 2026-11-07): a vitrine de insumos e a loja `/armarinhos/:slug` mostram só `Seller.supply_listed` (aprovado, ou pendente liberado pelo admin, nunca escondido ou suspenso), a mesma regra do ateliê em lista própria
 * Ponte com `Material` e `Technique` ("insumos para crochê")
 * SEO e dados estruturados da vitrine de insumos
 

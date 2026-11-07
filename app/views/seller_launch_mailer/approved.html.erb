@@ -1,7 +1,7 @@
 <p>Olá, <%= @seller.name %>!</p>
 
 <% if @seller.distributor? %>
-  <p>Seu cadastro de distribuidor foi aprovado na EloShop.</p>
+  <p>Seu armarinho foi aprovado na EloShop.</p>
   <p>O cadastro dos insumos chega numa próxima etapa, e avisaremos quando ele estiver disponível no seu painel.</p>
   <p><a href="<%= distributor_root_url %>">Ver o meu painel</a></p>
 <% else %>

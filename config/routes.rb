@@ -128,15 +128,19 @@ Rails.application.routes.draw do
   # `config.x.distributors.signup_enabled`; login e painel, não, para quem já
   # existe continuar entrando. A conexão do Mercado Pago passa pelas rotas de
   # /painel, porque o redirect URI registrado no provedor é um só.
-  # Lista pública dos distribuidores de insumos (ADR 007). A loja de cada um
-  # (/distribuidores/:slug) e a vitrine /insumos chegam no PR C da Fase 26.
-  get "distribuidores", to: "distributors#index", as: :distributors
-  # Vitrine de insumos (Fase 26, PR C): a lista geral, a loja de cada
-  # distribuidor e a página do insumo, no formato do ateliê e fora de
-  # /artesaos e /produtos (ADR 007, endereços de 2026-11-07).
+  # Vitrine de insumos (ADR 007, Fase 26): a lista dos armarinhos, a loja de
+  # cada um e a página do insumo, no formato do ateliê e fora de /artesaos e
+  # /produtos. Na tela o distribuidor de insumos se chama "Armarinho"
+  # (decisão de 2026-11-08); no código continua `distributor`.
+  get "armarinhos", to: "distributors#index", as: :distributors
   get "insumos", to: "supplies#index", as: :supplies
-  get "distribuidores/:slug", to: "distributors#show", as: :distributor_store
-  get "distribuidores/:seller_slug/insumos/:slug", to: "supplies#show", as: :supply
+  get "armarinhos/:slug", to: "distributors#show", as: :distributor_store
+  get "armarinhos/:seller_slug/insumos/:slug", to: "supplies#show", as: :supply
+  # Endereços anteriores ao nome "Armarinho", com redirecionamento permanente
+  # para não quebrar link já compartilhado.
+  get "distribuidores", to: redirect("/armarinhos")
+  get "distribuidores/:slug", to: redirect("/armarinhos/%{slug}")
+  get "distribuidores/:seller_slug/insumos/:slug", to: redirect("/armarinhos/%{seller_slug}/insumos/%{slug}")
   get "atacado/cadastro", to: "distributor_registrations#new", as: :new_distributor_registration
   post "atacado/cadastro", to: "distributor_registrations#create", as: :distributor_registration
   get "atacado/termos-comerciais", to: "seller_portal/terms#show", as: :distributor_terms, defaults: { kind: "distributor" }
@@ -150,7 +154,7 @@ Rails.application.routes.draw do
     # Telas que o painel do ateliê já tem, reaproveitadas por subclasse em
     # DistributorPortal (revisão de arquitetura de 2026-11-07, opção B). Os
     # nomes espelham os de /painel, para `panel_path` achar a tela de cada
-    # tipo; "Dados da distribuidora" é `profile` (o `atelier` do ateliê).
+    # tipo; "Dados do armarinho" é `profile` (o `atelier` do ateliê).
     scope "painel" do
       get "primeiros-passos(/:etapa)", to: "getting_started#show", as: :getting_started,
         constraints: { etapa: /endereco|mercado-pago|chave-pix|primeira-peca|aprovacao/ }

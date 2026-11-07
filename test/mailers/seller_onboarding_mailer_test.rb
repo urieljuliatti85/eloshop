@@ -17,8 +17,8 @@ class SellerOnboardingMailerTest < ActionMailer::TestCase
 
     mail = SellerOnboardingMailer.awaiting_approval(distributor)
 
-    assert_includes mail.text_part.body.to_s, "(distribuidor de insumos)"
-    assert_includes mail.text_part.body.to_s, "Abrir o distribuidor no admin"
+    assert_includes mail.text_part.body.to_s, "(armarinho)"
+    assert_includes mail.text_part.body.to_s, "Abrir o armarinho no admin"
     assert_not_includes mail.html_part.body.to_s, "ateliê"
   end
 end
