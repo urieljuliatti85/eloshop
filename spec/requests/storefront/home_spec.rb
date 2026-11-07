@@ -32,13 +32,29 @@ RSpec.describe "Storefront home", type: :request do
       expect(response.body).to include("/produtos?q={search_term_string}")
     end
 
+    # ADR 007: o quarto banner convida o distribuidor de insumos; o cadastro
+    # só aparece com a chave ligada, senão o banner leva a "Como funciona".
+    it "invites distributors in the fourth banner, following the signup switch" do
+      get root_path
+      banner = Nokogiri::HTML(response.body).at_css("[aria-roledescription='carrossel'] [aria-label='4 de 4']")
+      expect(banner.text).to include("Venda insumos para quem faz à mão")
+      expect(banner.css("a").map { |a| a["href"] }).to include(new_distributor_registration_path, how_it_works_path(aba: "vende", grupo: "distribuidor"))
+
+      Rails.configuration.x.distributors.signup_enabled = false
+      get root_path
+      banner = Nokogiri::HTML(response.body).at_css("[aria-roledescription='carrossel'] [aria-label='4 de 4']")
+      expect(banner.css("a").map { |a| a["href"] }).to eq([ how_it_works_path(aba: "vende", grupo: "distribuidor") ])
+    ensure
+      Rails.configuration.x.distributors.signup_enabled = true
+    end
+
     it "opens the carousel with the EloShop Instagram banner, opening in a new tab" do
       get root_path
 
       doc = Nokogiri::HTML(response.body)
       slides = doc.css("[data-carousel-target='slide']")
-      expect(slides.map { |slide| slide["aria-label"] }).to eq([ "1 de 3", "2 de 3", "3 de 3" ])
-      expect(doc.css("[data-carousel-target='dot']").size).to eq(3)
+      expect(slides.map { |slide| slide["aria-label"] }).to eq([ "1 de 4", "2 de 4", "3 de 4", "4 de 4" ])
+      expect(doc.css("[data-carousel-target='dot']").size).to eq(4)
 
       banner = slides.first
       expect(banner.text.squish).to include(

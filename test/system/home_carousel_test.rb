@@ -22,11 +22,23 @@ class HomeCarouselTest < ApplicationSystemTestCase
     assert_current_path new_seller_registration_path
   end
 
+  # O quarto banner é o do distribuidor de insumos (ADR 007).
+  test "the visitor reaches the distributor banner, which leads to its how-it-works group" do
+    visit root_path
+    assert_text "Venda insumos para quem faz à mão"
+
+    3.times { click_button "Próximo banner" }
+    assert_selector "[aria-label='Ir para o banner 4'][aria-selected='true']"
+    within("[aria-roledescription='carrossel'] [aria-label='4 de 4']") { click_link "Cadastre sua distribuidora" }
+
+    assert_current_path new_distributor_registration_path
+  end
+
   test "the carousel opens with the EloShop Instagram banner" do
     visit root_path
 
     assert_selector "[aria-label='Ir para o banner 1'][aria-selected='true']"
-    within("[aria-roledescription='carrossel'] [aria-label='1 de 3']") do
+    within("[aria-roledescription='carrossel'] [aria-label='1 de 4']") do
       assert_link "Seguir @eloshop__ no Instagram (abre em nova aba)", href: "https://www.instagram.com/eloshop__"
     end
   end
