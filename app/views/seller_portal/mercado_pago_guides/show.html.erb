@@ -68,7 +68,7 @@
         <% if state == :ready %>
           <p class="inline-flex items-center rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-800">✓ Conta conectada</p>
         <% elsif state == :not_accepted %>
-          <p class="text-sm leading-6 text-amber-800">Conta conectada, mas não aceita. Desconecte-a em <%= link_to "Dados do Ateliê", seller_atelier_path, class: "font-semibold underline" %> e conecte a conta real.</p>
+          <p class="text-sm leading-6 text-amber-800">Conta conectada, mas não aceita. Desconecte-a em <%= link_to "Dados do Ateliê", panel_path(:atelier), class: "font-semibold underline" %> e conecte a conta real.</p>
         <% elsif @mercado_pago_oauth_configured %>
           <%= link_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, class: "seller-button seller-button--primary", data: { turbo: false } %>
         <% else %>

@@ -680,6 +680,25 @@ class SellerTest < ActiveSupport::TestCase
     assert_not_includes Seller.supply_listed, distributor
   end
 
+
+  # Revisão de arquitetura de 2026-11-07: a etapa impossível ("primeira
+  # peça", SuperFrete) deixava a lista do distribuidor aberta para sempre.
+  test "a distributor's getting started steps leave out the first piece and SuperFrete" do
+    distributor = Seller.create!(name: "Fios Etapas", owner_full_name: "Dona dos Fios", cpf: "52998224725", kind: "distributor")
+    assert Shipping::Providers.enabled?, "o cenário precisa da cotação ligada, em que o ateliê tem a etapa da SuperFrete"
+
+    assert_equal %i[address mercado_pago pix_key approval], distributor.getting_started_steps.keys
+    assert_equal %i[address mercado_pago pix_key superfrete product approval], sellers(:pending).getting_started_steps.keys
+  end
+
+  test "an approved distributor waits for the supply catalog, not for a product" do
+    distributor = Seller.create!(name: "Fios Etapa Admin", owner_full_name: "Dona dos Fios", cpf: "52998224725", kind: "distributor")
+    distributor.connect_mercado_pago!(mercado_pago_credentials)
+    distributor.approve!(kyc_level_6_confirmed: true)
+
+    assert_equal :awaiting_supply_catalog, distributor.onboarding_stage
+  end
+
   private
 
   # A aprovação exige a SuperFrete conectada onde a cotação está ligada (como

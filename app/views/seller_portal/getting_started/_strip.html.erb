@@ -12,7 +12,7 @@
     atual já tem título logo abaixo. %>
 <% short_titles = SellerPortal::GettingStartedController::STEP_SHORT_TITLES
    slugs = SellerPortal::GettingStartedController::STEP_SLUGS
-   step_path = local_assigns.fetch(:step_path) { ->(slug) { seller_getting_started_path(etapa: slug) } } %>
+   step_path = local_assigns.fetch(:step_path) { ->(slug) { panel_path(:getting_started, etapa: slug) } } %>
 <nav aria-label="Etapas">
   <ol aria-label="Etapas para preparar o ateliê" class="relative grid <%= steps.size > 5 ? 'grid-cols-6' : 'grid-cols-5' %> border border-brand-100 bg-white sm:flex sm:snap-x sm:overflow-x-auto sm:[scrollbar-width:thin]">
     <% steps.each_with_index do |(step, done), index| %>

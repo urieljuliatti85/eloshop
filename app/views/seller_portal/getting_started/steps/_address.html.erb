@@ -5,7 +5,7 @@
     dentro do Turbo Frame do bloco; na página Primeiros passos, o link leva
     à edição do ateliê. %>
 <% if local_assigns[:inline] %>
-  <%= form_with model: current_seller, url: seller_origin_address_path, method: :patch, class: "mt-6 space-y-4 border-t border-brand-100 pt-5" do |form| %>
+  <%= form_with model: current_seller, url: panel_path(:origin_address), method: :patch, class: "mt-6 space-y-4 border-t border-brand-100 pt-5" do |form| %>
     <% if current_seller.errors.any? %>
       <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
         <ul class="list-inside list-disc">
@@ -20,6 +20,6 @@
   <% end %>
 <% else %>
 <div class="mt-6 flex flex-col gap-3 border-t border-brand-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
-  <%= link_to(done ? "Revisar endereço" : "Cadastrar endereço", edit_seller_atelier_path, class: (done ? "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" : "seller-button seller-button--primary justify-center")) %>
+  <%= link_to(done ? "Revisar endereço" : "Cadastrar endereço", panel_path(:edit_atelier), class: (done ? "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" : "seller-button seller-button--primary justify-center")) %>
 </div>
 <% end %>

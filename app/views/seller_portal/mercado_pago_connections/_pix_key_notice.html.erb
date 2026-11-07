@@ -11,7 +11,7 @@
       <div>
         <p class="text-xs font-bold uppercase tracking-[0.16em] text-red-700">Atenção: sem isso o PIX não funciona</p>
         <% if guide_link %>
-          <%= link_to seller_pix_key_guide_path, class: "mt-2 inline-flex min-h-11 items-center rounded-full bg-red-700 px-5 text-sm font-bold text-white hover:bg-red-800" do %>
+          <%= link_to panel_path(:pix_key_guide), class: "mt-2 inline-flex min-h-11 items-center rounded-full bg-red-700 px-5 text-sm font-bold text-white hover:bg-red-800" do %>
             Ver o passo a passo com imagens →
           <% end %>
         <% end %>
@@ -21,7 +21,7 @@
       </div>
     </div>
     <div class="shrink-0">
-      <%= button_to "Já cadastrei minha chave PIX", seller_pix_key_confirmation_path, method: :post, class: "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-red-700 px-6 py-3 text-sm font-bold text-white hover:bg-red-800" %>
+      <%= button_to "Já cadastrei minha chave PIX", panel_path(:pix_key_confirmation), method: :post, class: "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-red-700 px-6 py-3 text-sm font-bold text-white hover:bg-red-800" %>
     </div>
   </aside>
 <% end %>

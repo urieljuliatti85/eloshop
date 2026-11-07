@@ -17,7 +17,7 @@
     <nav class="mt-4 flex flex-wrap gap-2" aria-label="Passos do cadastro da chave Pix">
       <% @steps.each_index do |index| %>
         <% number = index + 1 %>
-        <%= link_to "Passo #{number}", seller_pix_key_guide_path(passo: number),
+        <%= link_to "Passo #{number}", panel_path(:pix_key_guide, passo: number),
               class: "inline-flex min-h-11 items-center rounded-full px-4 text-sm font-bold #{number == @step ? 'bg-red-700 text-white' : 'border border-red-300 bg-white text-red-700 hover:bg-red-100'}",
               aria: (number == @step ? { current: "step" } : {}) %>
       <% end %>
@@ -32,12 +32,12 @@
         <p class="mt-2 text-sm leading-6 text-red-900 sm:text-base"><%= step[:text] %></p>
         <div class="mt-5 flex flex-wrap gap-3">
           <% if @step > 1 %>
-            <%= link_to "← Passo anterior", seller_pix_key_guide_path(passo: @step - 1), class: "inline-flex min-h-11 items-center rounded-full border-2 border-red-700 px-5 text-sm font-bold text-red-800 hover:bg-red-100" %>
+            <%= link_to "← Passo anterior", panel_path(:pix_key_guide, passo: @step - 1), class: "inline-flex min-h-11 items-center rounded-full border-2 border-red-700 px-5 text-sm font-bold text-red-800 hover:bg-red-100" %>
           <% end %>
           <% if @step < @steps.size %>
-            <%= link_to "Próximo passo →", seller_pix_key_guide_path(passo: @step + 1), class: "inline-flex min-h-11 items-center rounded-full bg-red-700 px-5 text-sm font-bold text-white hover:bg-red-800" %>
+            <%= link_to "Próximo passo →", panel_path(:pix_key_guide, passo: @step + 1), class: "inline-flex min-h-11 items-center rounded-full bg-red-700 px-5 text-sm font-bold text-white hover:bg-red-800" %>
           <% elsif !current_seller.pix_key_confirmed_at? %>
-            <%= button_to "Já cadastrei minha chave PIX", seller_pix_key_confirmation_path, method: :post, class: "inline-flex min-h-11 cursor-pointer items-center rounded-full bg-red-700 px-5 text-sm font-bold text-white hover:bg-red-800" %>
+            <%= button_to "Já cadastrei minha chave PIX", panel_path(:pix_key_confirmation), method: :post, class: "inline-flex min-h-11 cursor-pointer items-center rounded-full bg-red-700 px-5 text-sm font-bold text-white hover:bg-red-800" %>
           <% end %>
         </div>
       </div>
@@ -48,7 +48,7 @@
     <section class="rounded-2xl border-2 border-red-300 bg-red-50 px-6 py-5" aria-labelledby="pix-confirmed-title">
       <h2 id="pix-confirmed-title" class="text-lg font-bold text-red-950">Você declarou que a chave PIX está cadastrada</h2>
       <p class="mt-1 text-sm leading-6 text-red-900">A EloShop não consegue conferir a chave no Mercado Pago. Se ela foi removida, reative o aviso.</p>
-      <%= button_to "Reativar o aviso", seller_pix_key_confirmation_path, method: :delete, class: "mt-4 inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border-2 border-red-700 px-6 py-3 text-sm font-bold text-red-800 hover:bg-red-100" %>
+      <%= button_to "Reativar o aviso", panel_path(:pix_key_confirmation), method: :delete, class: "mt-4 inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border-2 border-red-700 px-6 py-3 text-sm font-bold text-red-800 hover:bg-red-100" %>
     </section>
   <% else %>
     <%= render "seller_portal/mercado_pago_connections/pix_key_notice", guide_link: false %>

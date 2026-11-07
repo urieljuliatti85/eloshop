@@ -13,10 +13,10 @@
 
 <div class="mt-6 flex flex-col gap-3 border-t border-brand-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
   <% if done %>
-    <%= link_to "Ver conexão", seller_atelier_path, data: { turbo_frame: "_top" }, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
+    <%= link_to "Ver conexão", panel_path(:atelier), data: { turbo_frame: "_top" }, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
   <% elsif @mercado_pago_oauth_configured %>
     <%= link_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, class: "seller-button seller-button--primary justify-center", data: { turbo: false } %>
-    <%= link_to "Ainda não tenho conta: ver passo a passo", seller_mercado_pago_guide_path, data: { turbo_frame: "_top" }, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
+    <%= link_to "Ainda não tenho conta: ver passo a passo", panel_path(:mercado_pago_guide), data: { turbo_frame: "_top" }, class: "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
   <% else %>
     <p class="w-full max-w-[68ch] rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">A conexão aguarda a configuração do Mercado Pago pela plataforma.</p>
   <% end %>

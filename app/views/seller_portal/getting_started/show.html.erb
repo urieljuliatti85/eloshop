@@ -30,7 +30,7 @@
       <%= render "seller_portal/getting_started/steps/#{@current_step}", done: @steps[@current_step] %>
       <% if @steps[@current_step] && @next_pending_step %>
         <p class="mt-6 border-t border-brand-100 pt-5">
-          <%= link_to "Próxima etapa: #{short_titles[@next_pending_step]}", seller_getting_started_path(etapa: slugs[@next_pending_step]), class: "seller-button seller-button--primary" %>
+          <%= link_to "Próxima etapa: #{short_titles[@next_pending_step]}", panel_path(:getting_started, etapa: slugs[@next_pending_step]), class: "seller-button seller-button--primary" %>
         </p>
       <% end %>
     </section>
@@ -39,7 +39,7 @@
       <span class="seller-badge bg-emerald-100 text-emerald-800">Ateliê pronto</span>
       <h2 id="etapa-title" class="mt-4 text-2xl font-bold text-stone-950">Todas as etapas estão feitas</h2>
       <p class="mx-auto mt-2 max-w-md text-base leading-7 text-stone-700">Seus produtos podem ser publicados e vendidos. O dia a dia do ateliê fica na visão geral.</p>
-      <%= link_to "Ir para a visão geral", seller_root_path, class: "seller-button seller-button--primary mt-5" %>
+      <%= link_to "Ir para a visão geral", panel_path(:root), class: "seller-button seller-button--primary mt-5" %>
     </section>
   <% end %>
 </div>
