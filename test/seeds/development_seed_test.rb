@@ -22,4 +22,10 @@ class DevelopmentSeedTest < ActiveSupport::TestCase
   test "does not load the production category seed" do
     assert_no_match(/^\s*(load|require)\b.*categories/, File.read(SEED))
   end
+
+  test "the production category seed does not load local armarinhos" do
+    production_seed = Rails.root.join("db/seeds/categories.rb").read
+
+    assert_no_match(/armarinhos\.rb/, production_seed)
+  end
 end

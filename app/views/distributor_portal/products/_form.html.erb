@@ -28,10 +28,15 @@
         para crochê", "algodão"), no lugar da categoria de peça. %>
     <div class="grid gap-5 sm:grid-cols-2">
       <fieldset>
-        <legend class="<%= label_class %>">Material</legend>
-        <div class="mt-2 grid gap-1">
+        <legend class="<%= label_class %>">Categoria de insumo / material</legend>
+        <p class="mt-1 text-xs leading-5 text-stone-500">Escolha uma ou mais categorias. O ícone ajuda artesãos a encontrar seus insumos na vitrine.</p>
+        <div class="mt-2 grid gap-2 sm:grid-cols-2">
           <%= form.collection_check_boxes :material_ids, Material.order(:name), :id, :name do |box| %>
-            <label class="flex min-h-11 items-center gap-2 text-sm text-stone-800"><%= box.check_box(class: "size-4 rounded border-stone-300 text-brand-500") %> <%= box.text %></label>
+            <label class="flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border border-brand-100 bg-white px-3 py-2 text-sm text-stone-800 transition hover:border-brand-300 hover:bg-brand-50/40">
+              <%= box.check_box(class: "size-4 shrink-0 rounded border-stone-300 text-brand-500") %>
+              <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50"><%= render "materials/category_icon", material: box.object, classes: "size-8" %></span>
+              <span class="font-semibold"><%= box.text %></span>
+            </label>
           <% end %>
         </div>
       </fieldset>
@@ -39,7 +44,11 @@
         <legend class="<%= label_class %>">Para qual técnica</legend>
         <div class="mt-2 grid gap-1">
           <%= form.collection_check_boxes :technique_ids, Technique.order(:name), :id, :name do |box| %>
-            <label class="flex min-h-11 items-center gap-2 text-sm text-stone-800"><%= box.check_box(class: "size-4 rounded border-stone-300 text-brand-500") %> <%= box.text %></label>
+            <label class="flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border border-brand-100 bg-white px-3 py-2 text-sm text-stone-800 transition hover:border-brand-300 hover:bg-brand-50/40">
+              <%= box.check_box(class: "size-4 shrink-0 rounded border-stone-300 text-brand-500") %>
+              <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50"><%= render "materials/category_icon", category: box.object, classes: "size-8" %></span>
+              <span class="font-semibold"><%= box.text %></span>
+            </label>
           <% end %>
         </div>
       </fieldset>

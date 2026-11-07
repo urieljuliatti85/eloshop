@@ -94,6 +94,8 @@ module SeoHelper
   # valor com "</script>" (ex.: nome ou descrição do produto) escape da
   # tag <script> e quebre o HTML ao redor.
   def product_structured_data(product)
+    return supply_structured_data(product) if product.supply?
+
     data = {
       "@context" => "https://schema.org/",
       "@type" => "Product",
@@ -123,6 +125,69 @@ module SeoHelper
     end
 
     json_escape(data.compact.to_json).html_safe
+  end
+
+  # Insumo: o preço anunciado começa no preço por unidade; as faixas ficam
+  # explícitas em priceSpecification com quantidade mínima de cada desconto.
+  def supply_structured_data(product)
+    unit_price = product.price_cents / 100.0
+    specifications = [ {
+      "@type" => "UnitPriceSpecification",
+      "price" => unit_price,
+      "priceCurrency" => product.currency,
+      "referenceQuantity" => { "@type" => "QuantitativeValue", "value" => product.min_order_quantity, "unitText" => product.sale_unit_name }
+    } ]
+    specifications.concat(product.price_tiers.ordered.map do |tier|
+      {
+        "@type" => "UnitPriceSpecification",
+        "price" => tier.apply_to(product.price_cents) / 100.0,
+        "priceCurrency" => product.currency,
+        "referenceQuantity" => { "@type" => "QuantitativeValue", "value" => tier.min_quantity, "unitText" => product.sale_unit_name }
+      }
+    end)
+    data = {
+      "@context" => "https://schema.org/", "@type" => "Product",
+      "name" => product.name, "description" => product.description.to_s.presence,
+      "sku" => product.sku, "brand" => { "@type" => "Brand", "name" => product.seller.name },
+      "offers" => {
+        "@type" => "Offer", "url" => supply_url(product.seller.slug, product.slug),
+        "priceCurrency" => product.currency, "price" => unit_price,
+        # A Fase 27 ainda não existe: publicar a página do insumo não significa
+        # que ele possa ser comprado, mesmo depois da abertura da plataforma.
+        "availability" => "https://schema.org/OutOfStock",
+        "priceSpecification" => specifications
+      }
+    }
+    data["image"] = rails_blob_url(product.main_image) if product.main_image.attached?
+    json_escape(data.compact.to_json).html_safe
+  end
+
+  def supply_breadcrumb_structured_data(product)
+    breadcrumb_structured_data([ [ "Insumos", supplies_url ], [ product.seller.name, distributor_store_url(product.seller.slug) ], [ product.name, supply_url(product.seller.slug, product.slug) ] ])
+  end
+
+  def distributor_breadcrumb_structured_data(distributor)
+    breadcrumb_structured_data([ [ "Armarinhos", distributors_url ], [ distributor.name, distributor_store_url(distributor.slug) ] ])
+  end
+
+  def supply_item_list_structured_data(products)
+    data = {
+      "@context" => "https://schema.org/", "@type" => "ItemList",
+      "itemListElement" => products.each_with_index.map do |product, index|
+        { "@type" => "ListItem", "position" => index + 1, "url" => supply_url(product.seller.slug, product.slug) }
+      end
+    }
+    json_escape(data.to_json).html_safe
+  end
+
+  def distributor_item_list_structured_data(distributors)
+    data = {
+      "@context" => "https://schema.org/", "@type" => "ItemList",
+      "itemListElement" => distributors.each_with_index.map do |distributor, index|
+        { "@type" => "ListItem", "position" => index + 1, "url" => distributor_store_url(distributor.slug) }
+      end
+    }
+    json_escape(data.to_json).html_safe
   end
 
   # JSON-LD do rastro de navegação (schema.org/BreadcrumbList) do produto,

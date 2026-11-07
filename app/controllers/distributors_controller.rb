@@ -6,7 +6,10 @@ class DistributorsController < StorefrontController
   allow_unauthenticated_customer_access
 
   def index
+    supplies = Product.supply_visible.preload(:seller, :price_tiers, :materials).order(:name)
+    @supplies_by_distributor = supplies.group_by(&:seller_id)
     @distributors = Seller.supply_listed.order(:name)
+    @materials = Material.where(id: ProductMaterial.joins(:product).merge(Product.supply_visible).select(:material_id)).order(:name)
   end
 
   # A loja do distribuidor (/armarinhos/:slug): só quem está na vitrine de

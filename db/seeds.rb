@@ -481,3 +481,7 @@ catalog.each do |item|
   # anterior impedia a cura da galeria.
   attach_seed_image(product, :images, "#{product.slug}-detalhe.png", bottom, top)
 end
+
+# Armarinhos e insumos de demonstração: arquivo separado e protegido também,
+# para nunca se misturar ao seed estritamente aditivo de produção.
+load Rails.root.join("db/seeds/armarinhos.rb").to_s

@@ -30,6 +30,36 @@ xml.urlset "xmlns" => "http://www.sitemaps.org/schemas/sitemap/0.9" do
     xml.changefreq "yearly"
   end
 
+  if @supplies.any?
+    xml.url do
+      xml.loc supplies_url
+      xml.lastmod @supply_lastmod.iso8601
+      xml.changefreq "daily"
+    end
+
+    xml.url do
+      xml.loc distributors_url
+      xml.lastmod @supply_lastmod.iso8601
+      xml.changefreq "weekly"
+    end
+
+    @distributors.each do |distributor|
+      xml.url do
+        xml.loc distributor_store_url(distributor.slug)
+        xml.lastmod @distributor_lastmod.fetch(distributor).iso8601
+        xml.changefreq "weekly"
+      end
+    end
+
+    @supplies.each do |product|
+      xml.url do
+        xml.loc supply_url(product.seller.slug, product.slug)
+        xml.lastmod product.updated_at.iso8601
+        xml.changefreq "weekly"
+      end
+    end
+  end
+
   @categories.each do |category|
     xml.url do
       xml.loc products_url(category: category.slug)
