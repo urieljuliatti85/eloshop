@@ -23,9 +23,9 @@
   <% nav_groups = distributor_nav_groups
      active_nav_path = distributor_active_nav_path
      setup_steps = current_seller.setup_steps
-     # "Ver a loja": a lista pública de distribuidores, até a loja
-     # /distribuidores/:slug existir (Fase 26, PR C).
-     store_path = distributors_path %>
+     # "Ver a loja": a loja do distribuidor quando ela está no ar (liberada
+     # ou aprovado); antes disso, a lista pública de distribuidores.
+     store_path = current_seller.supply_listed? ? distributor_store_path(current_seller.slug) : distributors_path %>
   <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased max-sm:[--seller-tabs-height:4rem]">
     <header class="topo-serrilhado sticky top-0 z-40"
             data-controller="mobile-menu"

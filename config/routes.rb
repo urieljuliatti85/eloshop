@@ -131,6 +131,12 @@ Rails.application.routes.draw do
   # Lista pública dos distribuidores de insumos (ADR 007). A loja de cada um
   # (/distribuidores/:slug) e a vitrine /insumos chegam no PR C da Fase 26.
   get "distribuidores", to: "distributors#index", as: :distributors
+  # Vitrine de insumos (Fase 26, PR C): a lista geral, a loja de cada
+  # distribuidor e a página do insumo, no formato do ateliê e fora de
+  # /artesaos e /produtos (ADR 007, endereços de 2026-11-07).
+  get "insumos", to: "supplies#index", as: :supplies
+  get "distribuidores/:slug", to: "distributors#show", as: :distributor_store
+  get "distribuidores/:seller_slug/insumos/:slug", to: "supplies#show", as: :supply
   get "atacado/cadastro", to: "distributor_registrations#new", as: :new_distributor_registration
   post "atacado/cadastro", to: "distributor_registrations#create", as: :distributor_registration
   get "atacado/termos-comerciais", to: "seller_portal/terms#show", as: :distributor_terms, defaults: { kind: "distributor" }

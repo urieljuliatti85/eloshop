@@ -402,6 +402,12 @@ class Product < ApplicationRecord
 
   scope :publicly_visible, -> { active.joins(:seller).merge(Seller.publicly_listed).in_visible_category }
 
+  # O par de `publicly_visible` na vitrine de insumos (ADR 007, Fase 26):
+  # publicado, de distribuidor aprovado ou liberado, nunca escondido ou
+  # suspenso (`Seller.supply_listed`). Sem filtro de categoria: insumo não tem
+  # categoria de peça. As duas vitrines nunca se misturam.
+  scope :supply_visible, -> { active.joins(:seller).merge(Seller.supply_listed) }
+
   # Categoria desabilitada tira do ar os produtos dela e da subárvore abaixo
   # (Category#visible?). Produto sem categoria nunca é escondido por isso:
   # `category_id` é opcional e ausência não é desabilitação.

@@ -8,4 +8,12 @@ class DistributorsController < StorefrontController
   def index
     @distributors = Seller.supply_listed.order(:name)
   end
+
+  # A loja do distribuidor (/distribuidores/:slug): só quem está na vitrine de
+  # insumos; pendente sem liberação, escondido, suspenso ou ateliê respondem
+  # 404 (um ateliê tem a página dele em /artesaos).
+  def show
+    @distributor = Seller.supply_listed.find_by!(slug: params[:slug])
+    @supplies = @distributor.products.active.preload(:seller, :price_tiers, main_image_attachment: :blob).order(:name)
+  end
 end
