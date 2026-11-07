@@ -1353,7 +1353,7 @@ Fase 20 (Etapa B — gateway Mercado Pago), Fase 23 (split de comissão).
 
 Novo tipo de vendedor: o **Distribuidor**, atacadista que vende **insumos** (fios, tecidos, argila, tintas, ferragens, embalagens) principalmente para artesãos. Ver `docs/decisions/007-distributors.md` para o contexto e as decisões.
 
-Decisões do negócio (2026-10-31): só insumos, nunca produto acabado para revenda; qualquer pessoa compra, com a conta de `Customer` existente; preço público, incluindo as faixas por quantidade; comissão de 15% sobre produtos após descontos, sem frete, com taxa de lançamento de 8% por 3 meses pela mesma regra do ateliê (na prática, contados da aprovação de cada distribuidor); meta de abertura da vertical em dezembro de 2026; CNPJ opcional; o distribuidor é sempre um usuário novo (um ateliê não vira distribuidor), tem painel dedicado e passa pela mesma análise do admin que o ateliê; pedido mínimo só por quantidade mínima por produto, sem valor mínimo por pedido. Pendente: obrigatoriedade da declaração de emissão de nota fiscal (consulta jurídica).
+Decisões do negócio (2026-10-31): só insumos, nunca produto acabado para revenda; qualquer pessoa compra, com a conta de `Customer` existente; preço público, incluindo as faixas por quantidade; comissão de 15% sobre produtos após descontos, sem frete, com taxa de lançamento de 8% por 3 meses pela mesma regra do ateliê (na prática, contados da aprovação de cada distribuidor); meta de abertura da vertical em dezembro de 2026; CNPJ opcional; o distribuidor é sempre um usuário novo (um ateliê não vira distribuidor), tem painel dedicado e passa pela mesma análise do admin que o ateliê; pedido mínimo só por quantidade mínima por produto, sem valor mínimo por pedido. Decisões da revisão de arquitetura (2026-11-07, aprovadas pelo Uriel no mesmo dia): um volume por pedido até 30 kg, exibido na PDP e no carrinho; CPF único por tipo de vendedor, com a suspensão valendo para os dois tipos; sem cotação, vale o frete fixo do distribuidor e nunca a tabela interna; faixa de preço pelo total do produto somando variantes, sobre o preço da variante, com unidade em múltiplo inteiro; cupom da plataforma só para ateliê. Pendentes: obrigatoriedade da declaração de emissão de nota fiscal e aplicação do arrependimento de 7 dias à compra de insumo (consulta jurídica); se o mesmo CPF pode ter segunda conta no Mercado Pago (confirmar com o provedor). Ver "Decisões da revisão de arquitetura" e "Decisões pendentes" no ADR 007.
 
 **Esta parte só começa depois do acompanhamento dos primeiros ateliês (após a abertura das vendas) e com a SuperFrete funcionando de forma estável em produção.** Nenhuma fase abaixo deve ser iniciada antes disso.
 
@@ -1375,16 +1375,26 @@ Permitir que um distribuidor se cadastre, seja aprovado e opere um painel dedica
 * Painel dedicado ao distribuidor (recomendação: namespace `DistributorPortal` em `/atacado/painel`), com porta de login própria (ex.: `/atacado/entrar`) que só aceita distribuidor, com a mesma mensagem genérica de erro das outras portas
 * `SellerPortal` passa a recusar distribuidores; o painel do distribuidor recusa ateliês; ambos escopados por `Current.user.seller`, nunca pela URL
 * Menu público (`ApplicationHelper#user_session_identity`) aponta o distribuidor logado para o painel dele
+* Papel perguntado em um lugar só: as cerca de sete checagens de `seller?` (inclusive `Authentication#default_authenticated_url`) passam a considerar o tipo; o cadastro reaproveita o `rate_limit` e o Turnstile do cadastro do ateliê
+* Vitrine fail-closed **antes da primeira aprovação**: `Product.publicly_visible` e `Seller.publicly_listed` passam a significar "ateliê" e a vitrine de insumos ganha escopo próprio, para nenhuma das cerca de 20 superfícies públicas (`/produtos`, home, busca, sitemap, API, `/artesaos`, `AnnounceSalesOpeningJob`) mostrar distribuidor por omissão
+* Termos versionados por tipo (`SellerTerms` por `kind`), inclusive em `SellerTermsAcceptance.current_for?` e nos contadores de "em risco" do admin
+* CPF único por `(cpf_hash, kind)` em vez de global; suspender um `Seller` suspende o outro do mesmo CPF
+* Cupom com escopo por tipo de vendedor, padrão "só ateliê"
 
 ### Modelos envolvidos
 
-* `Seller` (`kind`, CNPJ opcional, declaração de nota fiscal)
+* `Seller` (`kind`, CNPJ opcional, declaração de nota fiscal; índice `(cpf_hash, kind)`)
+* `SellerTermsAcceptance` (versão por tipo)
+* `Coupon` (escopo por tipo de vendedor)
 
 ### Testes
 
 * Model: tipo obrigatório, restrito aos valores válidos e imutável; taxa correta por tipo
 * Request: cada porta de login recusa o outro tipo (e o admin) sem revelar o papel
 * Autorização: distribuidor não entra em `/painel`, ateliê não entra no painel do distribuidor, e nenhum dos dois acessa dados de outro vendedor alterando a URL
+* Guarda ou request spec por superfície: produto e vendedor distribuidores não aparecem em nenhuma superfície pública do catálogo artesanal
+* Model: mesmo CPF aceito em tipos diferentes e recusado no mesmo tipo; suspensão propagada entre os dois
+* Service: cupom "só ateliê" recusado em carrinho de distribuidor
 
 ### Critérios de aceite
 
@@ -1409,7 +1419,12 @@ Representar o insumo como produto comercial: unidade de venda, quantidade mínim
 
 * Unidade de venda do produto (pacote, metro, kg, rolo, caixa)
 * Quantidade mínima de compra por produto (padrão 1, sem mínimo); sem valor mínimo por pedido, que só entra se os distribuidores pedirem
-* Faixas de preço por quantidade, públicas e exibidas na página do produto
+* Faixas de preço por quantidade, públicas e exibidas na página do produto: modeladas só pela quantidade mínima (índice único em `(product_id, min_quantity)`, sem limite superior), definidas no produto e aplicadas sobre o preço da variante
+* Unidade de venda em múltiplo inteiro ("pacote de 50 cm", "saco de 1 kg"): quantidade, estoque e centavos continuam inteiros
+* Quantidade mínima em `Product#purchase_blocker` (e na variante): mínimo maior que o estoque torna o insumo indisponível
+* Limite de 30 kg por pedido exibido na PDP
+* Nenhum texto padrão afirma "feito à mão" para insumo (`SeoHelper#product_meta_description`, e-mails e jobs com a versão do distribuidor)
+* Unidade e faixas na API (contrato regenerado pelo rswag) e no JSON-LD (`priceSpecification`)
 * Vitrine `/insumos`, fora de `/produtos`, da busca e do SEO das peças artesanais
 * Ponte com `Material` e `Technique` ("insumos para crochê")
 * SEO e dados estruturados da vitrine de insumos
@@ -1417,6 +1432,7 @@ Representar o insumo como produto comercial: unidade de venda, quantidade mínim
 ### Testes
 
 * Model: faixas sem sobreposição, em centavos, e mínimo coerente com as faixas
+* Model: mínimo maior que o estoque bloqueia a compra pela fonte única
 * Model: disponibilidade continua com fonte única em `Product#available_for_purchase?`
 * Request: insumo não aparece em `/produtos` nem peça artesanal em `/insumos`
 
@@ -1440,14 +1456,16 @@ Comprar insumo pelo fluxo de checkout existente, com mínimo e faixa validados n
 
 ### Funcionalidades
 
-* Carrinho mostra a faixa aplicada e o quanto falta para a próxima
-* Checkout revalida mínimo e faixa dentro da transação de `Checkout::CreateOrder`
+* Faixa resolvida em `CartItem#unit_price_cents` pelo total do produto no carrinho, somando as variantes
+* Carrinho mostra a faixa aplicada, o quanto falta para a próxima e o limite de 30 kg por pedido
+* Checkout revalida mínimo e faixa dentro da transação de `Checkout::CreateOrder` (a revalidação sob trava hoje só confere disponibilidade e estoque)
 * Snapshot da faixa e da unidade de venda no `OrderItem`
 * Mantida a regra de um vendedor por checkout (split 1:1)
 
 ### Testes
 
 * Service: quantidade abaixo do mínimo é recusada; mudança de faixa entre carrinho e checkout usa o preço recalculado
+* Service: variantes do mesmo produto somam para a faixa
 * Service: compra simultânea do último lote não vende acima do estoque
 * Request: valores enviados pelo navegador são ignorados
 
@@ -1458,7 +1476,7 @@ Comprar insumo pelo fluxo de checkout existente, com mínimo e faixa validados n
 
 ### Dependências de outras fases
 
-Fase 26.
+Fase 26. A compra de insumo não abre antes de existir a regra de frete do distribuidor (Fase 28): sem ela, o frete cai na tabela interna, que não representa carga pesada — as duas fases sobem juntas, ou a 28 antes (ADR 007, "Frete sem cotação").
 
 ## FASE 28 — Frete de insumos e informação fiscal
 
@@ -1470,13 +1488,14 @@ Cotar frete de volumes pesados e deixar claro ao comprador o que esperar em nota
 
 ### Funcionalidades
 
-* Cotação pela SuperFrete obrigatória para distribuidor (a tabela interna não representa volume pesado)
+* Cotação pela SuperFrete para distribuidor; sem cotação (chave desligada ou disjuntor aberto) vale o frete fixo que ele definiu no produto, e sem frete definido o insumo não é vendido — a tabela interna nunca se aplica a distribuidor
+* Um volume por pedido, até 30 kg; vários volumes só com demanda medida (quantos carrinhos esbarram no limite)
 * Exibição da declaração de emissão de nota fiscal na loja, no produto e no resumo do pedido
 * Dados do comprador necessários à nota (definição depende do que a SuperFrete e o fluxo fiscal exigirem)
 
 ### Critérios de aceite
 
-* [ ] Frete cotado para pedidos acima do peso da tabela interna
+* [ ] Frete do distribuidor nunca sai da tabela interna, nem com o provedor fora
 * [ ] Comprador sabe antes de pagar se o distribuidor emite nota fiscal
 
 ### Dependências de outras fases

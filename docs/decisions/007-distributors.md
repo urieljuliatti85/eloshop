@@ -5,8 +5,12 @@
 Proposed — desenho registrado em 2026-10-31, **sem implementação**. As decisões
 de escopo estão tomadas; a implementação só começa depois do acompanhamento dos
 primeiros ateliês e com a SuperFrete funcionando de forma estável em produção
-(ver "Dependências"); a meta de abertura da vertical é dezembro de 2026. Resta
-pendente a declaração de nota fiscal (consulta jurídica).
+(ver "Dependências"); a meta de abertura da vertical é dezembro de 2026. A
+revisão de arquitetura de 2026-11-07 conferiu o desenho contra o código e as
+decisões que ela levantou foram tomadas no mesmo dia (ver "Decisões da revisão
+de arquitetura"). Restam pendentes duas perguntas jurídicas (nota fiscal e
+arrependimento) e uma confirmação com o Mercado Pago — ver "Decisões
+pendentes".
 
 ## Contexto
 
@@ -54,7 +58,9 @@ painel recusa ateliês.
 
 **Aprovação — mesma análise do ateliê.** Conexão `live_mode` com o Mercado Pago
 e confirmação explícita do KYC pelo admin antes de `Seller#approve!`;
-desconectar volta para `pending` e despublica o catálogo.
+desconectar volta para `pending` e para de vender, mas continua na vitrine
+(aprovar marca a vitrine — mesmo comportamento do ateliê; não reintroduzir a
+despublicação em `disconnect_mercado_pago!`).
 
 **Comprador — qualquer pessoa, com a conta de `Customer` que já existe.** O
 artesão compra insumo como qualquer cliente; não há área restrita nem preço
@@ -101,11 +107,112 @@ distribuidores pedirem.
 do Mercado Pago é 1:1 (ADR 004); compra de insumo costuma vir de um fornecedor
 só, então a limitação não pesa aqui.
 
+## Decisões da revisão de arquitetura (2026-11-07)
+
+A revisão conferiu este desenho contra o código e achou premissas de "loja de
+peças artesanais" que o desenho acima não tratava. As decisões abaixo seguem a
+recomendação técnica da revisão e foram aprovadas pelo Uriel em 2026-11-07.
+
+**Peso e volumes — um volume por pedido, até 30 kg.** `Shipping::Calculator`
+recusa pedido acima de 30 kg (`MAX_WEIGHT_GRAMS`) antes de cotar, inclusive a
+retirada, e cotação, etiqueta e `Shipment` (`has_one` no `SellerOrder`) assumem
+um único volume. A vertical abre com esse limite, **exibido na PDP e no
+carrinho** ("até 30 kg por pedido"), e mede quantos carrinhos esbarram nele.
+Vários volumes por pedido (cotação por pacote, etiqueta e rastreio por volume)
+só entram com essa demanda medida, porque mexem no fluxo de etiqueta.
+
+**CPF — único por tipo de vendedor.** Hoje `cpf_hash` é único entre todos os
+`Seller` (índice parcial no banco), o que impediria a artesã de abrir uma
+distribuidora com o próprio CPF. O índice passa a ser `(cpf_hash, kind)`,
+preservando o antifraude dentro de cada tipo. **A suspensão vale para os dois
+tipos:** suspender um `Seller` suspende o outro do mesmo CPF, para que a
+separação não vire caminho de recadastro. A conta do Mercado Pago continua
+única por `Seller` (`mercado_pago_user_id`); se o mesmo CPF pode ter uma
+segunda conta no provedor depende do Mercado Pago (ver "Decisões pendentes").
+
+**Frete sem cotação — vale o frete fixo do distribuidor, nunca a tabela
+interna.** Com a cotação desligada ou o disjuntor aberto, o checkout do
+distribuidor usa o frete fixo que ele definiu no produto. Sem frete definido, o
+insumo não é vendido: a tabela interna (R$ 15 + R$ 5/kg) não representa carga
+pesada e o prejuízo seria do vendedor. A compra de insumo (Fase 27) não abre
+antes dessa regra (Fase 28): as duas sobem juntas, ou a 28 antes.
+
+**Faixas de preço.**
+
+* A faixa é resolvida pelo **total do produto** no carrinho, somando as
+  variantes (5 cores do mesmo fio contam juntas), não por linha.
+* A faixa é definida no produto e aplicada sobre o preço da variante.
+* A unidade de venda é um **múltiplo inteiro** ("pacote de 50 cm", "saco de 1
+  kg"): quantidade, estoque e centavos continuam inteiros no sistema inteiro.
+* A faixa é modelada só pela quantidade mínima, com índice único em
+  `(product_id, min_quantity)` e sem limite superior, o que torna a
+  sobreposição impossível por construção.
+* A faixa é resolvida dentro de `CartItem#unit_price_cents`, que o checkout já
+  usa sob trava; o servidor continua sendo a única fonte do preço.
+
+**Cupom da plataforma — só para ateliê.** Hoje o cupom não tem escopo de
+vendedor e o desconto sai do repasse de quem vende (`seller_amount_cents =
+total - comissão`, e a comissão incide sobre `subtotal - desconto`). Num
+pedido de insumo, que é maior e tem margem mais apertada, um cupom pensado para
+peça artesanal tiraria do distribuidor um valor que ele não aceitou. O cupom
+ganha escopo por tipo de vendedor, com padrão "só ateliê", falhando fechado
+como a vitrine. Que o desconto sai do repasse do ateliê já é a regra hoje e
+passa a estar escrito em `docs/checkout.md`; levá-la ao texto dos
+`SellerTerms` do ateliê fica para a revisão com o advogado, que também decide
+a redação da contagem da taxa de lançamento (ver `CLAUDE.md`).
+
+### Requisitos técnicos da mesma revisão
+
+Não são decisões de negócio, mas mudam o plano das fases:
+
+* **Vitrine fail-closed (Fase 25, antes da primeira aprovação).**
+  `Product.publicly_visible` e `Seller.publicly_listed` alimentam cerca de 20
+  superfícies públicas (`/produtos`, home, busca, sitemap, API, `/artesaos`,
+  `AnnounceSalesOpeningJob`). Sem filtro, o primeiro distribuidor aprovado
+  aparece em todas. Esses escopos passam a significar "ateliê", a vitrine de
+  insumos ganha um escopo próprio, e um teste de guarda (como o
+  `spec/guards/sales_opening_guard_spec.rb`) ou request specs por superfície
+  impedem regressão.
+* **Termos versionados por tipo (Fase 25).** `SellerTerms::VERSION` é único:
+  o aceite dos termos do distribuidor falharia em
+  `SellerTermsAcceptance.current_for?` e nos contadores de "em risco" do
+  admin.
+* **Papel em um lugar só (Fase 25).** As checagens de `seller?` estão em cerca
+  de sete pontos (`Authentication#default_authenticated_url`,
+  `SellerPortal::BaseController`, `SellerPortal::SessionsController`,
+  `SellerPortal::TermsController`, `_header.html.erb`, `OrderMessage`). Cada
+  uma passa a perguntar o tipo; o cadastro do distribuidor reaproveita o
+  `rate_limit` e o Turnstile do cadastro do ateliê.
+* **Quantidade mínima na fonte única (Fases 26 e 27).** Com mínimo maior que
+  o estoque, o produto continuaria "disponível" sem poder ser comprado. O
+  mínimo entra em `Product#purchase_blocker` (e na variante), e na
+  revalidação sob trava de `Checkout::CreateOrder`.
+* **Nenhuma afirmação de "feito à mão" para insumo (Fase 26).** A meta
+  description padrão (`SeoHelper#product_meta_description`) diz "peça
+  artesanal feita à mão" quando o produto não tem descrição — falso para insumo
+  e vetado pelo §33. O texto padrão passa a depender do tipo de vendedor, e os
+  e-mails e jobs que falam em "ateliê"/"artesão" (como o aviso de abertura das
+  vendas) ganham a versão do distribuidor.
+* **Unidade e faixas nos dados públicos (Fase 26).** A API (`price_cents` =
+  `starting_price_cents`) e o JSON-LD `Product` publicam um preço só. Passam a
+  levar a unidade de venda e as faixas (`priceSpecification` com quantidade de
+  referência no JSON-LD; contrato da API regenerado pelo rswag).
+
 ## Decisões pendentes
 
 1. **Declaração de emissão de nota fiscal** — obrigatória ou opcional; aguarda
    consulta jurídica, junto com a revisão do texto dos termos comerciais do
    distribuidor.
+2. **Arrependimento de 7 dias na compra de insumo** — a desistência pelo site
+   (`ReturnRequest::WITHDRAWAL_WINDOW_DAYS`) vale para todo pedido, mas o
+   artesão que compra insumo para produzir pode não ser consumidor para o CDC,
+   e a devolução de até 30 kg custa muito mais frete que a de uma peça. Vai ao
+   advogado na mesma consulta da nota fiscal. **Até a resposta, a regra é a
+   mesma do ateliê.**
+3. **Segunda conta do Mercado Pago para o mesmo CPF** — confirmar com o
+   provedor se a mesma pessoa pode ter uma conta para o ateliê e outra para a
+   distribuidora (ou se precisa de CNPJ). Não muda a decisão de CPF por tipo;
+   muda o que o cadastro do distribuidor orienta.
 
 ## Consequências
 
@@ -117,7 +224,10 @@ só, então a limitação não pesa aqui.
   insumo é `standard` com estoque (sob encomenda e peça única não se aplicam).
 * O carrinho e o checkout passam a validar mínimo e faixa no servidor.
 * Frete de insumo depende de cotação externa real — por isso a dependência da
-  SuperFrete estável.
+  SuperFrete estável. Sem cotação, vale o frete fixo do distribuidor; a tabela
+  interna nunca se aplica a ele.
+* `sellers.cpf_hash` passa a ser único por `(cpf_hash, kind)`, e o cupom ganha
+  escopo por tipo de vendedor.
 
 ## Dependências
 
