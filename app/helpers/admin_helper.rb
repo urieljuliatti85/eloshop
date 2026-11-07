@@ -69,7 +69,9 @@ module AdminHelper
       { key: :observability, label: "Observabilidade", path: admin_observability_path, icon: :observability, controllers: %w[observability] },
       { key: :financials, label: "Financials", path: admin_financials_path, icon: :financials, controllers: %w[financials] },
       { key: :products, label: "Produtos", path: admin_products_path, icon: :products, controllers: %w[products product_variants personalization_options product_images] },
-      { key: :sellers, label: "Artesãos", path: admin_sellers_path, icon: :customers, controllers: %w[sellers] },
+      # A lista reúne os dois tipos de vendedor (ADR 007); o rodapé do celular
+      # usa `short_label`, porque o nome inteiro não cabe ao lado das outras abas.
+      { key: :sellers, label: "Artesãos e Distribuidores", short_label: "Vendedores", path: admin_sellers_path, icon: :customers, controllers: %w[sellers] },
       { key: :orders, label: "Pedidos", path: admin_orders_path, icon: :orders, controllers: %w[orders] },
       { key: :return_requests, label: "Solicitações", path: admin_return_requests_path, icon: :orders, controllers: %w[return_requests] },
       { key: :customers, label: "Clientes", path: admin_customers_path, icon: :customers, controllers: %w[customers] },
