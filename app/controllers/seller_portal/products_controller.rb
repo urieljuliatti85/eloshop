@@ -26,9 +26,9 @@ module SellerPortal
       @product = current_seller.products.new(product_params)
       if @product.save
         if attach_images
-          redirect_to seller_product_path(@product), notice: "Produto criado com sucesso."
+          redirect_to panel_path(:product, @product), notice: "Produto criado com sucesso."
         else
-          redirect_to seller_product_path(@product), alert: images_error_message
+          redirect_to panel_path(:product, @product), alert: images_error_message
         end
       else
         render :new, status: :unprocessable_entity
@@ -41,9 +41,9 @@ module SellerPortal
     def update
       if @product.update(product_params)
         if attach_images
-          redirect_to seller_product_path(@product), notice: "Produto atualizado com sucesso."
+          redirect_to panel_path(:product, @product), notice: "Produto atualizado com sucesso."
         else
-          redirect_to seller_product_path(@product), alert: images_error_message
+          redirect_to panel_path(:product, @product), alert: images_error_message
         end
       else
         render :edit, status: :unprocessable_entity
@@ -52,23 +52,23 @@ module SellerPortal
 
     def publish
       @product.publish!
-      redirect_to seller_product_path(@product), notice: "Produto publicado."
+      redirect_to panel_path(:product, @product), notice: "Produto publicado."
     rescue Product::InvalidStatusTransition => e
-      redirect_to seller_product_path(@product), alert: e.message
+      redirect_to panel_path(:product, @product), alert: e.message
     end
 
     def unpublish
       @product.unpublish!
-      redirect_to seller_product_path(@product), notice: "Produto despublicado."
+      redirect_to panel_path(:product, @product), notice: "Produto despublicado."
     rescue Product::InvalidStatusTransition => e
-      redirect_to seller_product_path(@product), alert: e.message
+      redirect_to panel_path(:product, @product), alert: e.message
     end
 
     def discontinue
       @product.discontinue!
-      redirect_to seller_product_path(@product), notice: "Produto descontinuado."
+      redirect_to panel_path(:product, @product), notice: "Produto descontinuado."
     rescue Product::InvalidStatusTransition => e
-      redirect_to seller_product_path(@product), alert: e.message
+      redirect_to panel_path(:product, @product), alert: e.message
     end
 
     def bulk_discontinue
@@ -82,7 +82,7 @@ module SellerPortal
         next
       end
 
-      redirect_to seller_products_path, notice: bulk_discontinue_notice(discontinued_count, products.size)
+      redirect_to panel_path(:products), notice: bulk_discontinue_notice(discontinued_count, products.size)
     end
 
     def bulk_unpublish
@@ -96,7 +96,7 @@ module SellerPortal
         next
       end
 
-      redirect_to seller_products_path, notice: bulk_unpublish_notice(unpublished_count, products.size)
+      redirect_to panel_path(:products), notice: bulk_unpublish_notice(unpublished_count, products.size)
     end
 
     private

@@ -39,7 +39,6 @@ module AdminHelper
     awaiting_mercado_pago: "Falta conectar o Mercado Pago",
     account_not_accepted: "Conta Mercado Pago não aceita",
     awaiting_approval: "Aguardando sua aprovação",
-    awaiting_supply_catalog: "Aprovado, aguardando o cadastro de insumos",
     awaiting_first_product: "Aprovado, sem produto",
     awaiting_first_sale: "Aguardando a 1ª venda",
     selling: "Vendendo"
@@ -50,7 +49,6 @@ module AdminHelper
     awaiting_mercado_pago: "admin-badge--warning",
     account_not_accepted: "admin-badge--danger",
     awaiting_approval: "admin-badge--info",
-    awaiting_supply_catalog: "admin-badge--neutral",
     awaiting_first_product: "admin-badge--warning",
     awaiting_first_sale: "admin-badge--neutral",
     selling: "admin-badge--success"

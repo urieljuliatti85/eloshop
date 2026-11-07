@@ -184,6 +184,13 @@ antes dessa regra (Fase 28): as duas sobem juntas, ou a 28 antes.
 * **Navegação de `/insumos` (decisão de 2026-11-07): material e técnica**, as
   tabelas que já existem; uma árvore de categorias de insumo só entra se os
   distribuidores pedirem.
+* **Cadastro no painel (Fase 26, PR B):** `DistributorPortal::ProductsController`
+  herda as ações do catálogo do ateliê (fotos otimizadas, publicar,
+  despublicar) e aceita só os campos do insumo; o desconto entra em % no
+  formulário. Insumo publica sem categoria de peça, quando a distribuidora
+  está aprovada ou liberada na vitrine (`Seller#supply_listed?`), e nunca
+  entra em `Product.publicly_visible`. "Primeiro insumo" é etapa dos
+  Primeiros passos do distribuidor.
 * **Mínimo e estoque:** o mínimo conta o produto inteiro, somando as variantes
   ativas, e mínimo maior que o estoque é `Product#purchase_blocker`
   `:below_minimum_stock`, na fonte única de disponibilidade.

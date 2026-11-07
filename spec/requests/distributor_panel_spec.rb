@@ -67,12 +67,12 @@ RSpec.describe "Distributor panel", type: :request do
   end
 
   describe "getting started" do
-    it "shows the distributor steps, without the first piece, SuperFrete or the atelier tour" do
+    it "shows the distributor steps, with the first supply and without SuperFrete or the atelier tour" do
       sign_in_distributor(user)
 
       get distributor_getting_started_path
 
-      expect(response.body).to include("0 de 4 etapas concluídas", "Endereço de origem", "Conta do Mercado Pago", "Chave PIX", "Aprovação e recebimento")
+      expect(response.body).to include("0 de 5 etapas concluídas", "Endereço de origem", "Conta do Mercado Pago", "Chave PIX", "Primeiro insumo", "Aprovação e recebimento")
       expect(response.body).not_to include("Primeira peça", "SuperFrete", "Fazer tour pelo painel", "Endereço do ateliê")
     end
 
@@ -85,7 +85,7 @@ RSpec.describe "Distributor panel", type: :request do
       expect(response).to redirect_to(distributor_root_path)
       expect(distributor.reload).to be_origin_address_complete
       follow_redirect!
-      expect(response.body).to include("1 de 4 etapas concluídas")
+      expect(response.body).to include("1 de 5 etapas concluídas")
     end
 
     it "keeps an incomplete address in the block with the error" do
@@ -193,7 +193,7 @@ RSpec.describe "Distributor panel", type: :request do
 
       get distributor_root_path
 
-      expect(tab_labels).to eq([ "Início", "Endereço", "Mercado Pago", "PIX", "Avisos" ])
+      expect(tab_labels).to eq([ "Início", "Endereço", "Mercado Pago", "PIX", "Insumo" ])
       expect(response.body).to include("(próxima etapa)")
     end
 
@@ -202,11 +202,12 @@ RSpec.describe "Distributor panel", type: :request do
         origin_city: "São Paulo", origin_state: "SP", pix_key_confirmed_at: Time.current, status: "approved", approved_at: Time.current,
         mercado_pago_user_id: "mp-painel", mercado_pago_access_token_ciphertext: "x", mercado_pago_refresh_token_ciphertext: "y",
         mercado_pago_connected_at: Time.current, mercado_pago_live_mode: true, mercado_pago_test_account: false)
+      distributor.products.create!(name: "Fio cru", price_cents: 2_500, stock_quantity: 10)
       sign_in_distributor(user)
 
       get distributor_root_path
 
-      expect(tab_labels).to eq([ "Início", "Avisos", "Dados", "Mercado Pago", "PIX" ])
+      expect(tab_labels).to eq([ "Início", "Insumos", "Novo insumo", "Avisos", "Dados" ])
       expect(response.body).not_to include("etapas concluídas")
     end
   end

@@ -101,7 +101,9 @@ class Product < ApplicationRecord
   has_many :price_tiers, -> { order(:min_quantity) }, class_name: "ProductPriceTier", dependent: :destroy, inverse_of: :product
   # O formulário do painel do distribuidor (Fase 26, PR B) edita as faixas
   # junto com o produto, numa transação só.
-  accepts_nested_attributes_for :price_tiers, allow_destroy: true
+  # Linha de faixa deixada em branco no formulário não vira faixa.
+  accepts_nested_attributes_for :price_tiers, allow_destroy: true,
+    reject_if: ->(attributes) { attributes.slice("min_quantity", "discount_percent", "discount_bps").values.all?(&:blank?) && attributes["id"].blank? }
   belongs_to :seller
   belongs_to :category, optional: true
 
@@ -198,7 +200,13 @@ class Product < ApplicationRecord
   # peso e medidas. Roda as validações, então substitui `errors`.
   def publication_blockers
     blockers = []
-    blockers << "O ateliê precisa estar aprovado ou liberado na vitrine antes da publicação." unless seller&.publicly_listed?
+    # Cada tipo na própria vitrine (ADR 007): o ateliê na de peças, o
+    # distribuidor na de insumos; a regra é a mesma (aprovado ou liberado).
+    if supply?
+      blockers << "A distribuidora precisa estar aprovada ou liberada na vitrine antes da publicação." unless seller.supply_listed?
+    else
+      blockers << "O ateliê precisa estar aprovado ou liberado na vitrine antes da publicação." unless seller&.publicly_listed?
+    end
     blockers << "Aceite os termos comerciais antes de publicar." unless seller&.terms_accepted?
 
     valid?(:publication)
@@ -211,7 +219,11 @@ class Product < ApplicationRecord
     errors.add(:base, "Defina o frete deste produto (valor e prazo) ou marque frete grátis antes de publicar.")
   end
 
+  # Insumo não tem categoria de peça: a vitrine de insumos navega por
+  # material e técnica (decisão de 2026-11-07, ADR 007).
   def category_for_publication
+    return if supply?
+
     errors.add(:base, "Escolha uma categoria antes de publicar: é como o cliente encontra o produto.") if category.blank?
   end
 

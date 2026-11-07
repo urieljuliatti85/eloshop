@@ -30,7 +30,22 @@ class ProductPriceTier < ApplicationRecord
 
   # Desconto como o comprador lê: 1_050 → "10,5%".
   def discount_percent
-    discount_bps / 100r
+    discount_bps / 100r if discount_bps
+  end
+
+  # O formulário do painel pede o desconto em %, como a pessoa pensa ("10" ou
+  # "10,5"), e grava em basis points. Texto que não é número vira nil, e a
+  # validação diz o que falta.
+  def discount_percent=(value)
+    text = value.to_s.strip.delete("%").tr(",", ".")
+    self.discount_bps = text.match?(/\A\d+(\.\d{1,2})?\z/) ? (BigDecimal(text) * 100).to_i : nil
+  end
+
+  # Valor do campo no formulário: 1_050 → "10,5", 1_000 → "10".
+  def discount_percent_input
+    return "" unless discount_bps
+
+    (discount_bps % 100).zero? ? (discount_bps / 100).to_s : format("%.2f", discount_bps / 100.0).sub(/0\z/, "").tr(".", ",")
   end
 
   # Preço de uma unidade com a faixa aplicada, em centavos inteiros. Arredonda

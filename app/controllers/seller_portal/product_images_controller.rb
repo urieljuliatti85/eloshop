@@ -4,7 +4,7 @@ module SellerPortal
 
     def destroy
       @product.images.attachments.find(params[:id]).purge
-      redirect_to seller_product_path(@product), notice: "Imagem removida."
+      redirect_to panel_path(:product, @product), notice: "Imagem removida."
     end
 
     private
