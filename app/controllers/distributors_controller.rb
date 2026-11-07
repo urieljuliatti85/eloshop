@@ -17,6 +17,6 @@ class DistributorsController < StorefrontController
   # 404 (um ateliê tem a página dele em /artesaos).
   def show
     @distributor = Seller.supply_listed.find_by!(slug: params[:slug])
-    @supplies = @distributor.products.active.preload(:seller, :price_tiers, main_image_attachment: :blob).order(:name)
+    @supplies = @distributor.products.active.preload(:seller, :price_tiers, :materials, main_image_attachment: :blob).order(:name)
   end
 end
