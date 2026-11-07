@@ -15,7 +15,7 @@ class SuppliesController < StorefrontController
     supplies = Product.supply_visible
     supplies = supplies.where(id: ProductMaterial.where(material: @material).select(:product_id)) if @material
     supplies = supplies.where(id: ProductTechnique.where(technique: @technique).select(:product_id)) if @technique
-    @supplies = supplies.preload(:seller, :price_tiers, main_image_attachment: :blob).order(:name)
+    @supplies = supplies.preload(:seller, :price_tiers, :materials, main_image_attachment: :blob).order(:name)
   end
 
   def show

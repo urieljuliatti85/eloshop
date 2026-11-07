@@ -19,10 +19,10 @@
     <%= link_to "Ver todos os insumos", supplies_path, class: "mt-4 inline-flex min-h-11 items-center font-semibold text-brand-700 underline underline-offset-4" %>
   </header>
 
-  <section class="relative isolate mt-10 overflow-hidden rounded-[2rem] border border-[#eee3d4] bg-[#faf5ec] p-6 sm:p-9 lg:p-10" aria-labelledby="armarinhos-mural-title">
+  <section class="relative isolate mt-8 overflow-hidden rounded-[2rem] border border-[#eee3d4] bg-[#faf5ec] p-5 sm:p-8 lg:mt-10 lg:p-10" aria-labelledby="armarinhos-mural-title">
     <div class="pointer-events-none absolute -right-20 -top-24 -z-10 size-72 rounded-full opacity-70 blur-3xl" style="background: #f5d7c9" aria-hidden="true"></div>
     <div class="pointer-events-none absolute -bottom-28 left-1/3 -z-10 size-72 rounded-full opacity-60 blur-3xl" style="background: #dcefe6" aria-hidden="true"></div>
-    <div class="relative grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:gap-12">
+    <div class="relative grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:gap-12">
       <div class="max-w-md">
         <p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Um mural de materiais</p>
         <h2 id="armarinhos-mural-title" class="mt-3 text-2xl font-extrabold leading-tight text-ink sm:text-3xl">Cores, texturas e ideias para criar</h2>
@@ -31,13 +31,15 @@
       </div>
       <div class="grid grid-cols-2 gap-3 sm:gap-4">
         <% mural_tiles.each_with_index do |tile, index| %>
-          <article class="<%= 'translate-y-3 sm:translate-y-5' if index.odd? %> rounded-2xl border border-white/80 p-4 shadow-[0_8px_24px_rgba(77,55,40,0.08)] sm:p-5" style="background: linear-gradient(145deg, <%= tile[:background] %>, #ffffff 88%)">
-            <div class="flex aspect-[1.55] items-center justify-center overflow-hidden rounded-xl" style="background: <%= tile[:background] %>" aria-hidden="true">
-              <span class="flex size-16 items-center justify-center rounded-2xl bg-white/75 shadow-sm sm:size-20"><%= render "materials/category_icon", icon_type: tile[:icon], classes: "size-12 sm:size-14" %></span>
+          <article class="<%= 'lg:translate-y-5' if index.odd? %> flex items-center gap-3 rounded-2xl border border-white/80 p-3 shadow-[0_8px_24px_rgba(77,55,40,0.08)] lg:block lg:p-5" style="background: linear-gradient(145deg, <%= tile[:background] %>, #ffffff 88%)">
+            <div class="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl lg:aspect-[1.55] lg:size-auto" style="background: <%= tile[:background] %>" aria-hidden="true">
+              <span class="flex size-11 items-center justify-center rounded-xl bg-white/75 shadow-sm lg:size-20 lg:rounded-2xl"><%= render "materials/category_icon", icon_type: tile[:icon], classes: "size-8 lg:size-14" %></span>
               <span class="sr-only"><%= tile[:title] %></span>
             </div>
-            <h3 class="mt-3 text-sm font-bold text-ink sm:text-base"><%= tile[:title] %></h3>
-            <p class="mt-0.5 text-xs text-ink-muted sm:text-sm"><%= tile[:subtitle] %></p>
+            <div class="min-w-0 lg:mt-3">
+              <h3 class="text-xs font-bold leading-4 text-ink sm:text-sm lg:text-base"><%= tile[:title] %></h3>
+              <p class="mt-0.5 text-[0.6875rem] leading-4 text-ink-muted sm:text-xs lg:text-sm"><%= tile[:subtitle] %></p>
+            </div>
           </article>
         <% end %>
       </div>
@@ -129,9 +131,9 @@
     </div>
     <% if DistributorRegistrationsController.signup_enabled? %>
       <%= link_to "Cadastrar meu armarinho", new_distributor_registration_path, class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-brand-600 px-6 font-bold text-white transition hover:bg-brand-700" %>
+      <%= link_to "Veja como funciona", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "text-sm font-semibold text-brand-700 underline" %>
     <% else %>
       <%= link_to "Como funciona", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-brand-600 px-6 font-bold text-white transition hover:bg-brand-700" %>
     <% end %>
-    <%= link_to "Veja como funciona", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "text-sm font-semibold text-brand-700 underline" %>
   </aside>
 </div>
