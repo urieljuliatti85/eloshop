@@ -25,7 +25,10 @@ module SellerPortal
     # `status` é decisão da plataforma. CPF em branco não apaga o já
     # cadastrado: `Seller#cpf=` só atribui quando o valor vem presente.
     def atelier_params
-      params.expect(seller: [ :name, :owner_full_name, :cpf, *Seller::ORIGIN_ADDRESS_FIELDS ])
+      # O complemento é opcional e fica fora de ORIGIN_ADDRESS_FIELDS (que
+      # define o endereço completo), mas o formulário o edita: sem ele aqui,
+      # era descartado ao salvar, como já é aceito em OriginAddressesController.
+      params.expect(seller: [ :name, :owner_full_name, :cpf, *Seller::ORIGIN_ADDRESS_FIELDS, :origin_complement ])
     end
   end
 end

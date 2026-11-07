@@ -94,6 +94,22 @@ RSpec.describe "Seller atelier", type: :request do
       expect(seller).to be_origin_address_complete
     end
 
+    # O formulário mostra "Complemento (opcional)", mas o campo não estava nos
+    # parâmetros aceitos e era descartado em silêncio ao salvar (achado de
+    # 2026-11-07, na revisão do painel do distribuidor).
+    it "saves the address complement typed in the form" do
+      sign_in_as(user)
+
+      patch seller_atelier_path, params: { seller: {
+        name: seller.name, origin_zip_code: "88010-000", origin_street: "Rua das Flores", origin_number: "10",
+        origin_complement: "Sala 3", origin_neighborhood: "Centro", origin_city: "Florianópolis", origin_state: "SC"
+      } }
+
+      expect(seller.reload.origin_complement).to eq("Sala 3")
+      follow_redirect!
+      expect(response.body).to include("Sala 3")
+    end
+
     # Meio endereço não despacha nada.
     it "rejects a partial origin address" do
       sign_in_as(user)
