@@ -32,20 +32,12 @@
     <div class="seller-card"><p class="text-sm text-ink-muted">Quantidade mínima</p><p class="mt-2 text-2xl font-bold"><%= product.min_order_quantity %></p><p class="mt-1 text-sm text-ink-muted"><%= product.min_order_quantity > 1 ? product.sale_unit_name(product.min_order_quantity) : "sem mínimo" %></p></div>
   </div>
 
-  <%# A mesma tabela que a página pública do insumo vai mostrar (PR C): o
+  <%# A mesma tabela que a página pública do insumo mostra: o
       preço de cada faixa já calculado (Product#unit_price_for). %>
   <section class="seller-card" aria-labelledby="faixas-titulo">
     <h2 id="faixas-titulo" class="text-xl font-bold">Desconto por quantidade</h2>
     <% if product.price_tiers.any? %>
-      <table class="mt-4 w-full text-sm">
-        <thead><tr class="text-left text-ink-muted"><th class="py-2 font-semibold">A partir de</th><th class="py-2 font-semibold">Desconto</th><th class="py-2 font-semibold">Preço por <%= product.sale_unit_name %></th></tr></thead>
-        <tbody class="divide-y divide-brand-100">
-          <tr><td class="py-2"><%= [ product.min_order_quantity, 1 ].max %> <%= product.sale_unit_name(product.min_order_quantity) %></td><td class="py-2">—</td><td class="py-2 font-semibold"><%= format_price(product.price_cents) %></td></tr>
-          <% product.price_tiers.each do |tier| %>
-            <tr><td class="py-2"><%= tier.min_quantity %> <%= product.sale_unit_name(tier.min_quantity) %></td><td class="py-2"><%= tier.discount_percent_input %>%</td><td class="py-2 font-semibold"><%= format_price(tier.apply_to(product.price_cents)) %></td></tr>
-          <% end %>
-        </tbody>
-      </table>
+      <div class="mt-4"><%= render "supplies/price_tiers", product: product %></div>
     <% else %>
       <p class="mt-3 text-sm text-ink-muted">Sem desconto por quantidade. Você pode criar faixas ao editar o insumo.</p>
     <% end %>

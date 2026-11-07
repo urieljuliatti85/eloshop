@@ -139,11 +139,11 @@ RSpec.describe "Distributor portal", type: :request do
       distributor_sign_in(user)
 
       get distributor_root_path
-      expect(response.body).to include("A EloShop vai liberar a sua vitrine", "Fica pública quando a EloShop liberar a sua vitrine")
+      expect(response.body).to include("A EloShop vai liberar a sua vitrine", "Fica pública quando a EloShop liberar a sua vitrine.")
 
       user.seller.showcase!
       get distributor_root_path
-      expect(response.body).to include("Sua vitrine já foi liberada.", "Liberada: vai ao ar junto com a vitrine de insumos.")
+      expect(response.body).to include("Sua vitrine já foi liberada.", "No ar:", distributor_store_path(user.seller.slug))
     end
 
     it "sends a distributor without the current terms to the distributor terms" do

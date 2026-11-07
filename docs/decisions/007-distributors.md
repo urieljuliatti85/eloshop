@@ -191,6 +191,15 @@ antes dessa regra (Fase 28): as duas sobem juntas, ou a 28 antes.
   está aprovada ou liberada na vitrine (`Seller#supply_listed?`), e nunca
   entra em `Product.publicly_visible`. "Primeiro insumo" é etapa dos
   Primeiros passos do distribuidor.
+* **Vitrine pública (Fase 26, PR C1):** `SuppliesController` (`/insumos`,
+  com filtro por material e técnica, e a página do insumo) e
+  `DistributorsController#show` partem de `Product.supply_visible` /
+  `Seller.supply_listed`, nunca de `publicly_visible`. A página do insumo
+  mostra preço por unidade, a tabela de faixas com o preço já calculado
+  (`supplies/_price_tiers`, a mesma do painel), o mínimo, o limite de 30 kg e
+  a declaração de nota fiscal; não tem formulário de carrinho ("Vendas de
+  insumos em breve") até a Fase 27. As páginas ficam com `noindex` até o PR
+  C2 (SEO, JSON-LD, sitemap e API).
 * **Mínimo e estoque:** o mínimo conta o produto inteiro, somando as variantes
   ativas, e mínimo maior que o estoque é `Product#purchase_blocker`
   `:below_minimum_stock`, na fonte única de disponibilidade.
@@ -259,8 +268,8 @@ peças:
 O slug sai do nome no cadastro e é único entre ateliês e distribuidores
 juntos (`Seller#slug`), então os dois prefixos nunca disputam o mesmo
 endereço, e o slug não muda quando o nome muda, como no ateliê. As páginas
-entram na Fase 26; até lá o endereço fica reservado e é mostrado no cadastro e
-no painel, sem página no ar. Insumo nunca é servido em `/artesaos/...`
+entraram na Fase 26 (PR C1); antes disso o endereço ficava reservado e só era
+mostrado no cadastro e no painel. Insumo nunca é servido em `/artesaos/...`
 (guarda em `spec/requests/distributor_storefront_guard_spec.rb`).
 
 **Esconder vale para o distribuidor (2026-11-07).** Como no ateliê, o admin

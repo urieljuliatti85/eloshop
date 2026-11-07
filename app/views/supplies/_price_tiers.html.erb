@@ -1,0 +1,16 @@
+<%# Tabela de desconto por quantidade do insumo (ADR 007): o preço de cada
+    faixa já calculado (ProductPriceTier#apply_to, centavos inteiros
+    arredondados para baixo). A mesma tabela na página pública e no painel
+    do distribuidor, para os dois mostrarem os mesmos números. %>
+<% if product.price_tiers.any? %>
+  <table class="w-full text-sm">
+    <caption class="sr-only">Preço por quantidade</caption>
+    <thead><tr class="text-left text-ink-muted"><th scope="col" class="py-2 font-semibold">A partir de</th><th scope="col" class="py-2 font-semibold">Desconto</th><th scope="col" class="py-2 font-semibold">Preço por <%= product.sale_unit_name %></th></tr></thead>
+    <tbody class="divide-y divide-brand-100">
+      <tr><td class="py-2"><%= [ product.min_order_quantity, 1 ].max %> <%= product.sale_unit_name(product.min_order_quantity) %></td><td class="py-2">—</td><td class="py-2 font-semibold"><%= format_price(product.price_cents) %></td></tr>
+      <% product.price_tiers.each do |tier| %>
+        <tr><td class="py-2"><%= tier.min_quantity %> <%= product.sale_unit_name(tier.min_quantity) %></td><td class="py-2"><%= tier.discount_percent_input %>%</td><td class="py-2 font-semibold"><%= format_price(tier.apply_to(product.price_cents)) %></td></tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

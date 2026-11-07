@@ -47,7 +47,7 @@
       <div class="sm:col-span-2">
         <dt class="text-sm text-stone-500">Endereço da loja</dt>
         <dd class="mt-1"><span class="break-all font-mono text-sm text-stone-900"><%= request.base_url %>/distribuidores/<%= seller.slug %></span>
-          <span class="block text-sm text-stone-500"><%= seller.supply_listed? ? "Liberada: vai ao ar junto com a vitrine de insumos." : "Fica pública quando a EloShop liberar a sua vitrine e a vitrine de insumos estiver no ar." %></span></dd>
+          <span class="block text-sm text-stone-500"><% if seller.supply_listed? %>No ar: <%= link_to "ver a sua loja", distributor_store_path(seller.slug), class: "font-semibold text-brand-600 underline" %>.<% else %>Fica pública quando a EloShop liberar a sua vitrine.<% end %></span></dd>
       </div>
       <div class="sm:col-span-2">
         <dt class="text-sm text-stone-500">Termos comerciais</dt>

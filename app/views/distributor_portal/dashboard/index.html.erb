@@ -6,7 +6,7 @@
   <header>
     <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Painel do distribuidor</p>
     <h1 class="mt-1 text-3xl font-black tracking-tight text-stone-950"><%= seller.name %></h1>
-    <p class="mt-2 max-w-2xl text-sm text-stone-600">Cadastro, conta de recebimento, aprovação e os seus insumos. A vitrine de insumos, onde os artesãos vão ver a sua loja, está em preparação.</p>
+    <p class="mt-2 max-w-2xl text-sm text-stone-600">Cadastro, conta de recebimento, aprovação e os seus insumos. Os artesãos veem a sua loja na vitrine de insumos; as compras de insumos abrem em breve.</p>
   </header>
 
   <%# Primeiros passos no topo enquanto falta alguma etapa: o mesmo bloco do
@@ -31,7 +31,7 @@
         <%# Vitrine do pré-cadastro, como no ateliê (Seller#showcase!). %>
         <p class="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
           <% if seller.showcased? %>
-            <strong>Sua vitrine já foi liberada.</strong> Quando a vitrine de insumos estiver no ar, os artesãos vão ver a sua loja e os seus insumos publicados, mesmo antes da aprovação. Para vender, falta terminar o processo.
+            <strong>Sua vitrine já foi liberada.</strong> Os artesãos já veem a sua loja e os seus insumos publicados na vitrine de insumos, mesmo antes da aprovação. Para vender, falta terminar o processo.
           <% else %>
             <strong>A EloShop vai liberar a sua vitrine</strong> depois de revisar o cadastro, para os artesãos verem a sua loja e os seus insumos antes da aprovação. Para vender, você precisa terminar o processo.
           <% end %>
@@ -59,7 +59,7 @@
       <h2 id="insumos-titulo" class="text-lg font-bold text-stone-950">Insumos</h2>
       <% products = seller.products %>
       <% if products.exists? %>
-        <p class="mt-2 text-stone-700"><%= pluralize(products.count, "insumo cadastrado", plural: "insumos cadastrados") %>, <%= pluralize(products.active.count, "publicado", plural: "publicados") %>. Eles aparecem na vitrine de insumos quando ela estiver no ar.</p>
+        <p class="mt-2 text-stone-700"><%= pluralize(products.count, "insumo cadastrado", plural: "insumos cadastrados") %>, <%= pluralize(products.active.count, "publicado", plural: "publicados") %>. Os publicados aparecem na vitrine de insumos quando a sua loja estiver no ar.</p>
         <%= link_to "Ver insumos", distributor_products_path, class: "mt-4 inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
       <% else %>
         <p class="mt-2 text-stone-700">Cadastre o que você vende: unidade de venda, quantidade mínima e desconto por quantidade. Fica como rascunho até você publicar.</p>
@@ -69,9 +69,9 @@
 
     <section class="seller-card-lg" aria-labelledby="loja-titulo">
       <h2 id="loja-titulo" class="text-lg font-bold text-stone-950">Sua loja</h2>
-      <%# Reservado no cadastro (ADR 007); a página entra na Fase 26, PR C. %>
+      <%# Reservado no cadastro (ADR 007); a página é pública desde a Fase 26, PR C1. %>
       <p class="mt-2 break-all font-mono text-sm text-stone-900"><%= request.base_url %>/distribuidores/<%= seller.slug %></p>
-      <p class="mt-1 text-sm text-stone-600"><%= seller.supply_listed? ? "Liberada: vai ao ar junto com a vitrine de insumos." : "Fica pública quando a EloShop liberar a sua vitrine e a vitrine de insumos estiver no ar." %></p>
+      <p class="mt-1 text-sm text-stone-600"><% if seller.supply_listed? %>No ar: <%= link_to "ver a sua loja", distributor_store_path(seller.slug), class: "font-semibold text-brand-600 underline" %>.<% else %>Fica pública quando a EloShop liberar a sua vitrine.<% end %></p>
       <%= link_to "Ver dados da distribuidora", distributor_profile_path, class: "mt-4 inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
     </section>
   </div>

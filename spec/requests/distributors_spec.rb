@@ -4,8 +4,8 @@ require "rails_helper"
 
 # Lista pública dos distribuidores de insumos (ADR 007), em /distribuidores,
 # com o link "Distribuidores" no menu principal. Mostra só
-# `Seller.supply_listed`, nunca ateliê, e fica fora do Google até as lojas e a
-# vitrine de insumos irem ao ar (Fase 26, PR C).
+# `Seller.supply_listed`, nunca ateliê, e fica fora do Google até o
+# SEO da vitrine de insumos (Fase 26, PR C2).
 RSpec.describe "Distributors", type: :request do
   def distributor(status: :pending, showcased: false, hidden: false, issues_invoices: nil)
     Seller.create!(name: "Fios #{SecureRandom.hex(3)}", owner_full_name: "Dona dos Fios", cpf: generate_valid_cpf,
