@@ -65,19 +65,20 @@ module Admin
       redirect_to admin_seller_path(@seller), notice: notice
     end
 
-    # Vitrine do pré-cadastro: o ateliê pendente aparece na loja depois da
+    # Vitrine do pré-cadastro: o vendedor pendente aparece na loja depois da
     # revisão do admin, sem o Mercado Pago, e só passa a vender quando for
-    # aprovado. Esconder (`hide`) continua sendo a pausa de quem já aparece.
+    # aprovado. O ateliê na vitrine de peças, o distribuidor na de insumos. Esconder (`hide`) continua sendo a pausa de quem já aparece.
     def showcase
       @seller.showcase!
-      redirect_to admin_seller_path(@seller), notice: "Ateliê liberado na vitrine. Ele aparece na loja, mas só vende depois de aprovado."
+      notice = @seller.distributor? ? "Distribuidor liberado na vitrine de insumos. Ele aparece quando a vitrine estiver no ar, mas só vende depois de aprovado." : "Ateliê liberado na vitrine. Ele aparece na loja, mas só vende depois de aprovado."
+      redirect_to admin_seller_path(@seller), notice: notice
     rescue Seller::VerificationRequired => e
       redirect_to admin_seller_path(@seller), alert: e.message
     end
 
     def unshowcase
       @seller.unshowcase!
-      redirect_to admin_seller_path(@seller), notice: "Ateliê retirado da vitrine."
+      redirect_to admin_seller_path(@seller), notice: @seller.distributor? ? "Distribuidor retirado da vitrine de insumos." : "Ateliê retirado da vitrine."
     rescue Seller::VerificationRequired => e
       redirect_to admin_seller_path(@seller), alert: e.message
     end

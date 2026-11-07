@@ -34,7 +34,7 @@ RSpec.describe "Seller showcase", type: :request do
       patch showcase_admin_seller_path(approved_seller)
 
       expect(response).to redirect_to(admin_seller_path(approved_seller))
-      expect(flash[:alert]).to include("Só um ateliê pendente")
+      expect(flash[:alert]).to include("Só um vendedor pendente")
     end
 
     it "does not let a seller showcase their own atelier" do

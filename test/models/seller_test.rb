@@ -656,13 +656,28 @@ class SellerTest < ActiveSupport::TestCase
   end
 
 
-  # ADR 007: o distribuidor nunca aparece na vitrine artesanal.
-  test "a distributor cannot be released to the artisan showcase" do
+  # Decisão de 2026-11-07: o distribuidor tem vitrine do pré-cadastro como o
+  # ateliê, mas na de insumos; as duas listas nunca se misturam.
+  test "a released or approved distributor is supply listed, never publicly listed" do
     distributor = Seller.create!(name: "Fios Vitrine", owner_full_name: "Dona dos Fios", cpf: "52998224725", kind: "distributor")
+    assert_not distributor.supply_listed?, "pendente sem liberação não aparece"
+    assert_not_includes Seller.supply_listed, distributor
 
-    error = assert_raises(Seller::VerificationRequired) { distributor.showcase! }
-    assert_equal "Distribuidor não aparece na vitrine de peças.", error.message
-    assert_nil distributor.reload.showcased_at
+    distributor.showcase!
+    assert distributor.supply_listed?
+    assert_includes Seller.supply_listed, distributor
+    assert_not distributor.publicly_listed?
+    assert_not_includes Seller.publicly_listed, distributor
+    assert_not_includes Seller.supply_listed, sellers(:approved), "ateliê nunca entra na vitrine de insumos"
+
+    distributor.hide!
+    assert_not distributor.supply_listed?
+    assert_not_includes Seller.supply_listed, distributor
+
+    distributor.unhide!
+    distributor.suspend!
+    assert_not distributor.reload.supply_listed?
+    assert_not_includes Seller.supply_listed, distributor
   end
 
   private

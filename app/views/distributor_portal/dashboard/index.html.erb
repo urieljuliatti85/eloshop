@@ -17,6 +17,16 @@
       <p class="mt-2 text-stone-700">Esta conta está suspensa pela EloShop. Fale com <a href="mailto:contato@eloshop.shop" class="font-semibold text-brand-700 underline">contato@eloshop.shop</a>.</p>
     <% else %>
       <p class="mt-2 text-stone-700">Em análise. A EloShop aprova depois que uma conta Mercado Pago de vendedor, de produção e com a identidade verificada, estiver conectada abaixo.</p>
+      <%# Vitrine do pré-cadastro, como no ateliê (Seller#showcase!): a EloShop
+          pode liberar a loja antes da aprovação, e vender continua exigindo
+          terminar o processo. %>
+      <p class="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
+        <% if seller.showcased? %>
+          <strong>Sua vitrine já foi liberada.</strong> Quando a vitrine de insumos estiver no ar, os artesãos vão ver a sua loja e os seus insumos publicados, mesmo antes da aprovação. Para vender, falta terminar o processo.
+        <% else %>
+          <strong>A EloShop vai liberar a sua vitrine</strong> depois de revisar o cadastro, para os artesãos verem a sua loja e os seus insumos antes da aprovação. Para vender, você precisa terminar o processo.
+        <% end %>
+      </p>
     <% end %>
   </section>
 
@@ -43,7 +53,8 @@
     <dl class="mt-3 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[max-content_1fr]">
       <%# Reservado no cadastro (ADR 007); a página entra na Fase 26. %>
       <dt class="font-semibold text-stone-900">Endereço da loja</dt>
-      <dd class="text-stone-700"><span class="break-all font-mono text-xs sm:text-sm"><%= request.base_url %>/distribuidores/<%= seller.slug %></span> <span class="text-ink-muted">(no ar junto com a vitrine de insumos)</span></dd>
+      <dd class="text-stone-700"><span class="break-all font-mono text-xs sm:text-sm"><%= request.base_url %>/distribuidores/<%= seller.slug %></span>
+        <span class="block text-ink-muted"><%= seller.supply_listed? ? "Liberada: vai ao ar junto com a vitrine de insumos." : "Fica pública quando a EloShop liberar a sua vitrine e a vitrine de insumos estiver no ar." %></span></dd>
       <dt class="font-semibold text-stone-900">Responsável</dt>
       <dd class="text-stone-700"><%= seller.owner_full_name %></dd>
       <dt class="font-semibold text-stone-900">CNPJ</dt>

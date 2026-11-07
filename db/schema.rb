@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_07_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_07_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -394,6 +394,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_120100) do
     t.index ["product_id"], name: "index_product_materials_on_product_id"
   end
 
+  create_table "product_price_tiers", force: :cascade do |t|
+    t.bigint "product_id", null: false
+    t.integer "min_quantity", null: false
+    t.integer "discount_bps", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "min_quantity"], name: "index_product_price_tiers_on_product_id_and_min_quantity", unique: true
+    t.check_constraint "discount_bps >= 1 AND discount_bps <= 5000", name: "product_price_tiers_discount_bps_check"
+    t.check_constraint "min_quantity >= 2 AND min_quantity <= 100000", name: "product_price_tiers_min_quantity_check"
+  end
+
   create_table "product_tags", force: :cascade do |t|
     t.bigint "product_id", null: false
     t.bigint "tag_id", null: false
@@ -458,6 +469,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_120100) do
     t.boolean "free_shipping", default: false, null: false
     t.integer "fixed_shipping_interstate_cents"
     t.integer "fixed_shipping_interstate_estimated_days"
+    t.string "sale_unit"
+    t.string "sale_unit_detail"
+    t.integer "min_order_quantity", default: 1, null: false
     t.index ["availability_type"], name: "index_products_on_availability_type"
     t.index ["category_id"], name: "index_products_on_category_id"
     t.index ["seller_id", "sku"], name: "index_products_on_seller_id_and_sku", unique: true
@@ -471,6 +485,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_120100) do
     t.check_constraint "fixed_shipping_interstate_cents IS NULL OR fixed_shipping_cents IS NOT NULL", name: "products_fixed_shipping_interstate_requires_base_check"
     t.check_constraint "fixed_shipping_interstate_cents IS NULL OR fixed_shipping_interstate_cents > 0", name: "products_fixed_shipping_interstate_cents_check"
     t.check_constraint "fixed_shipping_interstate_estimated_days IS NULL OR fixed_shipping_interstate_estimated_days > 0", name: "products_fixed_shipping_interstate_days_check"
+    t.check_constraint "min_order_quantity >= 1 AND min_order_quantity <= 100000", name: "products_min_order_quantity_check"
+    t.check_constraint "sale_unit IS NULL OR (sale_unit::text = ANY (ARRAY['unit'::character varying, 'pack'::character varying, 'meter'::character varying, 'kilogram'::character varying, 'roll'::character varying, 'box'::character varying]::text[]))", name: "products_sale_unit_check"
+    t.check_constraint "sale_unit_detail IS NULL OR char_length(sale_unit_detail::text) <= 60", name: "products_sale_unit_detail_length_check"
     t.check_constraint "stock_quantity >= 0", name: "products_stock_quantity_check"
   end
 
@@ -804,6 +821,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_120100) do
   add_foreign_key "personalization_options", "products"
   add_foreign_key "product_materials", "materials"
   add_foreign_key "product_materials", "products"
+  add_foreign_key "product_price_tiers", "products", on_delete: :cascade
   add_foreign_key "product_tags", "products"
   add_foreign_key "product_tags", "tags"
   add_foreign_key "product_techniques", "products"

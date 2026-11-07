@@ -54,6 +54,25 @@ class Product < ApplicationRecord
     made_to_order: "made_to_order"
   }, default: "standard", prefix: true
 
+  # Unidade de venda do insumo do distribuidor (ADR 007, Fase 26). A
+  # quantidade continua inteira: "2 pacotes", "3 rolos". O que vem em cada
+  # unidade ("pacote com 100 g", "rolo de 50 m") vai em `sale_unit_detail`.
+  # Nula na peça de ateliê, que se vende por peça.
+  enum :sale_unit, {
+    unit: "unit",
+    pack: "pack",
+    meter: "meter",
+    kilogram: "kilogram",
+    roll: "roll",
+    box: "box"
+  }, prefix: :sold_by, validate: { allow_nil: true }
+  SALE_UNIT_DETAIL_MAX_LENGTH = 60
+  # Teto técnico para quantidades do insumo (mínimo e faixas): muito acima de
+  # qualquer pedido e longe do limite da coluna inteira, que antes virava
+  # erro 500 em vez de mensagem (achado do QA, 2026-11-07). Também é
+  # constraint no banco.
+  MAX_ORDER_QUANTITY = 100_000
+
   has_one_attached :main_image
 
   # Tamanho do card do catálogo (400px) em 2x: a vitrine nunca serve o original
@@ -78,6 +97,11 @@ class Product < ApplicationRecord
   has_many :materials, through: :product_materials
   has_many :product_techniques, dependent: :destroy
   has_many :techniques, through: :product_techniques
+  # Faixas de desconto por quantidade, só do insumo (ProductPriceTier).
+  has_many :price_tiers, -> { order(:min_quantity) }, class_name: "ProductPriceTier", dependent: :destroy, inverse_of: :product
+  # O formulário do painel do distribuidor (Fase 26, PR B) edita as faixas
+  # junto com o produto, numa transação só.
+  accepts_nested_attributes_for :price_tiers, allow_destroy: true
   belongs_to :seller
   belongs_to :category, optional: true
 
@@ -108,6 +132,16 @@ class Product < ApplicationRecord
   validates :fixed_shipping_interstate_cents, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validates :fixed_shipping_interstate_estimated_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :fixed_shipping_interstate_requires_base, if: :fixed_shipping_interstate_started?
+
+  normalizes :sale_unit_detail, with: ->(detail) { detail.squish.presence }
+  validates :sale_unit_detail, length: { maximum: SALE_UNIT_DETAIL_MAX_LENGTH }
+  validates :min_order_quantity, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: MAX_ORDER_QUANTITY }
+  # Unidade, descrição, mínimo e faixas são do insumo do distribuidor: na peça
+  # do ateliê ficam nos padrões neutros (ADR 007). As duas checagens só rodam
+  # quando há algo de insumo em jogo, para não pôr consultas em todo `save` de
+  # produto (a baixa de estoque do checkout também salva o produto).
+  validate :supply_fields_only_for_distributor, if: :supply_fields_filled?
+  validate :price_tiers_coherent, if: -> { (price_tiers.target.any? || min_order_quantity_changed?) && supply? }
 
   # Peso e dimensões são exigidos para PUBLICAR, não para rascunhar: o
   # vendedor cadastra a peça enquanto ainda a está fazendo, mas não anuncia
@@ -216,6 +250,7 @@ class Product < ApplicationRecord
     return :unavailable unless active?
     return :unavailable if category && !category.visible?
     return :unavailable unless in_stock_for_sale?
+    return :below_minimum_stock if below_minimum_stock?
     return :seller_not_accepting_orders unless seller.approved?
 
     nil
@@ -223,6 +258,48 @@ class Product < ApplicationRecord
 
   def has_variants?
     product_variants.any?
+  end
+
+  # Nome da unidade para a quantidade dada: "1 pacote", "10 pacotes". Sem
+  # unidade definida, "unidade".
+  def sale_unit_name(count = 1)
+    I18n.t(sale_unit || "unit", scope: "products.sale_units", count: count)
+  end
+
+  # Insumo de distribuidor (ADR 007): o que tem unidade, mínimo e faixas.
+  def supply?
+    seller&.distributor? || false
+  end
+
+  # Quanto do produto existe para vender, somando as variantes ativas: a
+  # quantidade mínima e a faixa valem para o produto inteiro (5 cores do
+  # mesmo fio contam juntas). Sob encomenda não tem estoque físico.
+  def stock_for_minimum
+    return nil if availability_type_made_to_order?
+    return product_variants.select(&:active?).sum(&:stock_quantity) if has_variants?
+
+    stock_quantity
+  end
+
+  # Mínimo maior que o estoque: o insumo aparece, mas não dá para comprar a
+  # quantidade exigida. É indisponibilidade, decidida aqui, na fonte única.
+  def below_minimum_stock?
+    available = stock_for_minimum
+    min_order_quantity > 1 && !available.nil? && available < min_order_quantity
+  end
+
+  # A faixa que vale para a quantidade total do produto no pedido: a de maior
+  # mínimo já alcançado, ou nenhuma.
+  def price_tier_for(quantity)
+    price_tiers.select { |tier| tier.min_quantity <= quantity.to_i }.max_by(&:min_quantity)
+  end
+
+  # Preço de uma unidade (da variante, quando houver) com a faixa da
+  # quantidade total aplicada, em centavos inteiros. O carrinho e o checkout
+  # passam a usar isto na Fase 27.
+  def unit_price_for(quantity, unit_price_cents: price_cents)
+    tier = price_tier_for(quantity)
+    tier ? tier.apply_to(unit_price_cents) : unit_price_cents
   end
 
   # Sem variante e sem personalização obrigatória — pode ser adicionado ao
@@ -358,6 +435,36 @@ class Product < ApplicationRecord
     return true if availability_type_made_to_order?
 
     stock_quantity.positive?
+  end
+
+  def supply_fields_filled?
+    sale_unit.present? || sale_unit_detail.present? || min_order_quantity.to_i > 1
+  end
+
+  def supply_fields_only_for_distributor
+    return if supply?
+
+    errors.add(:sale_unit, "só existe para insumo de distribuidor") if sale_unit.present?
+    errors.add(:sale_unit_detail, "só existe para insumo de distribuidor") if sale_unit_detail.present?
+    errors.add(:min_order_quantity, "só pode ser maior que 1 em insumo de distribuidor") if min_order_quantity.to_i > 1
+  end
+
+  # As faixas só fazem sentido acima do mínimo (abaixo dele a faixa valeria
+  # sempre) e com desconto crescente: quem compra mais nunca paga mais por
+  # unidade. Conferido no produto porque envolve as faixas entre si.
+  def price_tiers_coherent
+    tiers = price_tiers.reject(&:marked_for_destruction?).sort_by { |tier| tier.min_quantity.to_i }
+    return if tiers.empty?
+
+    if tiers.size > ProductPriceTier::MAX_PER_PRODUCT
+      errors.add(:price_tiers, "podem ser no máximo #{ProductPriceTier::MAX_PER_PRODUCT}")
+    end
+    if tiers.first.min_quantity.to_i <= min_order_quantity.to_i
+      errors.add(:price_tiers, "precisam começar acima da quantidade mínima de compra")
+    end
+    unless tiers.each_cons(2).all? { |lower, higher| higher.discount_bps.to_i > lower.discount_bps.to_i }
+      errors.add(:price_tiers, "precisam ter desconto maior a cada faixa")
+    end
   end
 
   def fixed_shipping_interstate_requires_base
