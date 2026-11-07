@@ -18,6 +18,16 @@ class User < ApplicationRecord
   # deixaria o painel inacessível, sem caminho de volta pela interface.
   before_destroy :ensure_another_admin_remains, if: :admin?
 
+  # Qual porta a conta usa: `:admin`, `:atelier` ou `:distributor`. É o papel
+  # perguntado num lugar só (ADR 007): login, painéis, menu público e destino
+  # depois de entrar partem daqui, em vez de cada um combinar `seller?` com o
+  # tipo do vendedor por conta própria.
+  def portal
+    return :admin if admin?
+
+    seller&.distributor? ? :distributor : :atelier
+  end
+
   def last_admin?
     admin? && User.admin.where.not(id: id).none?
   end

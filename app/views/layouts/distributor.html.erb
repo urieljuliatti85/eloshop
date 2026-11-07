@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <title><%= content_for(:title) || "Painel do distribuidor | EloShop" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <%# Painel do distribuidor (ADR 007). Enxuto de propósito na Fase 25: só a
+      visão geral; catálogo, pedidos e frete chegam nas Fases 26 a 28, cada um
+      com o próprio item de menu. %>
+  <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased">
+    <header class="border-b border-brand-100 bg-white">
+      <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <%= link_to distributor_root_path, class: "flex min-h-11 items-center gap-2", aria: { label: "Início do painel do distribuidor" } do %>
+          <span class="text-lg font-bold text-stone-900">EloShop</span>
+          <span class="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">Atacado</span>
+        <% end %>
+        <div class="flex items-center gap-3">
+          <div class="text-right">
+            <p class="max-w-40 truncate text-sm font-bold text-stone-900 sm:max-w-60"><%= current_seller.name %></p>
+            <p class="text-xs font-semibold <%= { "approved" => "text-emerald-700", "pending" => "text-amber-700", "suspended" => "text-red-700" }.fetch(current_seller.status, "text-stone-600") %>"><%= t(current_seller.status, scope: "sellers.statuses") %></p>
+          </div>
+          <%= button_to "Sair", distributor_logout_path, method: :delete, class: "min-h-11 cursor-pointer rounded-full border border-brand-200 px-4 text-sm font-semibold text-stone-700 transition hover:border-brand-400 hover:text-brand-600" %>
+        </div>
+      </div>
+    </header>
+
+    <%= render "layouts/flash_message", message: flash[:notice], variant: :success %>
+    <%= render "layouts/flash_message", message: flash[:alert], variant: :error %>
+
+    <main class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+      <%= yield %>
+    </main>
+  </body>
+</html>

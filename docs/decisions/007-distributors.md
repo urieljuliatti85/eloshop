@@ -12,6 +12,22 @@ de arquitetura"). Restam pendentes duas perguntas jurídicas (nota fiscal e
 arrependimento) e uma confirmação com o Mercado Pago — ver "Decisões
 pendentes".
 
+**Fase 25 antecipada (2026-11-07, decisão do Uriel):** nenhum distribuidor
+vende antes das Fases 26 a 28, então a fundação entrou antes dos
+pré-requisitos. O PR #329 trouxe os dados e as proteções; o PR seguinte, o
+cadastro (`/atacado/cadastro`), a porta de login (`/atacado/entrar`) e o painel
+(`/atacado/painel`, `DistributorPortal`). O cadastro fica atrás de
+`config.x.distributors.signup_enabled`: ligado fora de produção, desligado em
+produção até o advogado revisar o rascunho dos termos do distribuidor
+(`DISTRIBUTOR_SIGNUP_ENABLED=true` liga). Login e painel não dependem da chave.
+O papel é perguntado num lugar só, `User#portal` (`:admin`, `:atelier`,
+`:distributor`). A conexão do Mercado Pago dos dois tipos passa por
+`SellerPortal::MercadoPagoConnectionsController`, porque o redirect URI
+registrado no provedor é um só; é o único controller de `/painel` que aceita
+distribuidor, e ele devolve cada um ao próprio painel. A SuperFrete do
+distribuidor fica para a Fase 28, e até lá a aprovação dele não a exige
+(`Seller#superfrete_required?` só vale para ateliê).
+
 ## Contexto
 
 A EloShop é um marketplace em que artesãos vendem as próprias peças ao

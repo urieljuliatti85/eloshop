@@ -633,6 +633,28 @@ class SellerTest < ActiveSupport::TestCase
     assert_nil seller.launch_fee_starts_at
   end
 
+  # Achado do QA (2026-11-07): com a cotação ligada, a SuperFrete era exigida
+  # também do distribuidor, que não tem como conectá-la antes da Fase 28 —
+  # e ficava sem aprovação possível. O ateliê continua exigindo.
+  test "a distributor is approvable without SuperFrete while the atelier still needs it" do
+    assert Shipping::Providers.enabled?, "o cenário precisa da cotação ligada"
+
+    distributor = Seller.create!(name: "Fios Aprovação", owner_full_name: "Dona dos Fios", cpf: "52998224725", kind: "distributor")
+    distributor.connect_mercado_pago!(mercado_pago_credentials)
+    assert_not distributor.superfrete_required?
+    assert_not_includes distributor.setup_steps.keys, :superfrete
+    distributor.approve!(kyc_level_6_confirmed: true)
+    assert distributor.reload.approved?
+
+    atelier = sellers(:pending)
+    atelier.connect_mercado_pago!(Marketplace::MercadoPagoOauth::Credentials.new(
+      user_id: "654321", access_token: "a", refresh_token: "r", expires_at: 180.days.from_now,
+      live_mode: true, test_account: false, public_key: "TEST-public-key"
+    ))
+    assert atelier.superfrete_required?
+    assert_raises(Seller::VerificationRequired) { atelier.approve!(kyc_level_6_confirmed: true) }
+  end
+
   private
 
   # A aprovação exige a SuperFrete conectada onde a cotação está ligada (como

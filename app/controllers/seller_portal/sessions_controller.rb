@@ -6,13 +6,14 @@ module SellerPortal
     def new
     end
 
-    # Mesma credencial de `SessionsController`, mas só aceita quem já é
-    # vendedor: esta porta é do ateliê, não do admin da plataforma. Um admin
-    # com senha correta recebe a mesma mensagem de e-mail/senha inválidos —
-    # não confirma que a conta existe nem qual é o papel dela.
+    # Mesma credencial de `SessionsController`, mas só aceita ateliê: esta
+    # porta não é do admin da plataforma nem do distribuidor (que entra por
+    # /atacado/entrar). Qualquer outro papel com senha correta recebe a mesma
+    # mensagem de e-mail/senha inválidos — não confirma que a conta existe nem
+    # qual é o papel dela.
     def create
       user = User.authenticate_by(params.permit(:email_address, :password))
-      if user&.seller?
+      if user&.portal == :atelier
         start_new_session_for user
         redirect_to after_authentication_url
       else

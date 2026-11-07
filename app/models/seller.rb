@@ -518,9 +518,13 @@ class Seller < ApplicationRecord
     superfrete_environment_current? && superfrete_revoked_at.nil?
   end
 
-  # A conexão só é exigida onde é possível fazê-la (chave da cotação ligada).
+  # A conexão só é exigida onde é possível fazê-la (chave da cotação ligada),
+  # e só do ateliê: o distribuidor ainda não tem como conectar a SuperFrete
+  # (o frete dele é a Fase 28, ADR 007), e exigi-la deixava o distribuidor
+  # sem aprovação possível (achado do QA, 2026-11-07). Nenhum distribuidor
+  # vende antes da Fase 28, então não exigir aqui não abre venda sem frete.
   def superfrete_required?
-    Shipping::Providers.enabled?
+    atelier? && Shipping::Providers.enabled?
   end
 
   # O token não expira: um 401 é a integração removida do lado da SuperFrete.

@@ -21,18 +21,31 @@ module SellerRegistrationsHelper
 
   private
 
+  # O distribuidor (ADR 007) usa as mesmas dicas, com o próprio nome e a
+  # própria porta de login.
   def registration_error_hint(record, error)
+    distributor = @seller&.distributor?
+    login_link = distributor ? [ "Entrar no painel do distribuidor", distributor_login_path ] : [ "Entrar no painel do ateliê", seller_login_path ]
+
     case [ record.class.name, error.attribute, error.type ]
+    in [ "Seller", :cpf_hash, :taken ] if distributor
+      [ "Cada CPF pode ter um único cadastro de distribuidor na EloShop. Se este cadastro já é seu, entre no painel com a conta que você criou.", login_link ]
     in [ "Seller", :cpf_hash, :taken ]
-      [ "Cada CPF pode ter um único ateliê na EloShop. Se este ateliê já é seu, entre no painel com a conta que você criou.", [ "Entrar no painel do ateliê", seller_login_path ] ]
+      [ "Cada CPF pode ter um único ateliê na EloShop. Se este ateliê já é seu, entre no painel com a conta que você criou.", login_link ]
+    in [ "Seller", :cnpj, _ ]
+      [ "O CNPJ tem 14 caracteres: 12 letras ou números e 2 dígitos no fim. Confira se algum foi digitado errado, ou deixe o campo em branco." ]
     in [ "Seller", :cpf, "deve ter 11 dígitos" ]
       [ "O CPF tem 11 números. Confira se faltou ou sobrou algum." ]
     in [ "Seller", :cpf, "é inválido" ]
       [ "Os números não formam um CPF válido. Confira se algum foi digitado errado." ]
+    in [ "Seller", :slug, :taken ] if distributor
+      [ "Já existe um vendedor com esse nome na EloShop. Escolha outro nome." ]
     in [ "Seller", :slug, :taken ]
       [ "Já existe um ateliê com esse nome, e o endereço da página sairia igual. Escolha outro nome." ]
+    in [ "User", :email_address, :taken | "já está em uso" ] if distributor
+      [ "Já existe uma conta com este e-mail. Se ela é do seu cadastro de distribuidor, entre no painel; se é de um ateliê, use outro e-mail, porque cada conta tem um tipo só.", login_link ]
     in [ "User", :email_address, :taken | "já está em uso" ]
-      [ "Já existe uma conta com este e-mail. Se ela é sua, entre no painel; senão, use outro e-mail.", [ "Entrar no painel do ateliê", seller_login_path ] ]
+      [ "Já existe uma conta com este e-mail. Se ela é sua, entre no painel; senão, use outro e-mail.", login_link ]
     in [ "User", :password_confirmation, :confirmation ]
       [ "Digite a mesma senha nos dois campos." ]
     in [ "User", :base, EmailAbuseProtection::TURNSTILE_ERROR ]

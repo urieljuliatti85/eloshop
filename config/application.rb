@@ -46,5 +46,10 @@ module Eloshop
     # Compra de etiqueta pela carteira do ateliê (ShippingLabels). Mesma
     # lógica: ligada fora de produção, decidida por variável em produção.
     config.x.shipping.labels_enabled = true
+    # Cadastro de distribuidor em /atacado/cadastro (ADR 007, Fase 25). Ligado
+    # fora de produção para testar no localhost; em produção fica desligado
+    # até o advogado revisar os termos do distribuidor (decisão do Uriel,
+    # 2026-11-07), e quem decide é a variável de ambiente.
+    config.x.distributors.signup_enabled = true
   end
 end

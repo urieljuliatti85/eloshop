@@ -58,14 +58,19 @@ module ApplicationHelper
   def user_session_identity
     return nil unless Current.user
 
-    if Current.user.admin?
+    case Current.user.portal
+    when :admin
       { role_label: "Administrador", identity: Current.user.email_address,
         panel_label: "Administração", panel_path: admin_root_path,
-        logout_path: session_path }
+        panel_controllers: "admin/dashboard", logout_path: session_path }
+    when :distributor
+      { role_label: "Distribuidor", identity: Current.user.seller.name,
+        panel_label: "Painel do Distribuidor", panel_path: distributor_root_path,
+        panel_controllers: "distributor_portal/dashboard", logout_path: distributor_logout_path }
     else
       { role_label: "Artesão", identity: Current.user.seller.name,
         panel_label: "Painel do Artesão", panel_path: seller_root_path,
-        logout_path: seller_logout_path }
+        panel_controllers: "seller_portal/dashboard", logout_path: seller_logout_path }
     end
   end
 

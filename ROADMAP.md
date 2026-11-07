@@ -1359,7 +1359,7 @@ Decisões do negócio (2026-10-31): só insumos, nunca produto acabado para reve
 
 ## FASE 25 — Fundação do distribuidor
 
-Status: `[~]` — **antecipada por decisão do Uriel em 2026-11-07**, antes dos pré-requisitos da Parte 4 (vendas abertas e SuperFrete estável), porque nenhum distribuidor vende antes das Fases 26 a 28. Entrega em dois PRs: o 1 (dados e proteções, sem tela de distribuidor: `Seller#kind`, CNPJ opcional e declaração de nota fiscal, CPF único por tipo com suspensão propagada, vitrine artesanal só com ateliê, termos por tipo com rascunho dos termos do distribuidor pendente do advogado, cupom por tipo, filtro por tipo no admin) e o 2 (cadastro, porta de login e painel do distribuidor, callbacks de OAuth para os dois tipos).
+Status: `[~]` — **antecipada por decisão do Uriel em 2026-11-07**, antes dos pré-requisitos da Parte 4 (vendas abertas e SuperFrete estável), porque nenhum distribuidor vende antes das Fases 26 a 28. Entrega em dois PRs: o 1, mergeado em 2026-11-07 (#329) (dados e proteções, sem tela de distribuidor: `Seller#kind`, CNPJ opcional e declaração de nota fiscal, CPF único por tipo com suspensão propagada, vitrine artesanal só com ateliê, termos por tipo com rascunho dos termos do distribuidor pendente do advogado, cupom por tipo, filtro por tipo no admin) e o 2 (cadastro, porta de login e painel do distribuidor, conexão do Mercado Pago para os dois tipos; o cadastro fica atrás de `config.x.distributors.signup_enabled`, desligado em produção até o advogado revisar os termos do distribuidor, e a SuperFrete do distribuidor fica para a Fase 28).
 
 ### Objetivo
 

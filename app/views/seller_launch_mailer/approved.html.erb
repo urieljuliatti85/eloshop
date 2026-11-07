@@ -1,14 +1,20 @@
 <p>Olá, <%= @seller.name %>!</p>
 
-<p>Seu ateliê foi aprovado na EloShop.</p>
-
-<% if @sales_open %>
-  <p>Suas peças publicadas já aparecem na loja e podem ser compradas.</p>
+<% if @seller.distributor? %>
+  <p>Seu cadastro de distribuidor foi aprovado na EloShop.</p>
+  <p>O cadastro dos insumos chega numa próxima etapa, e avisaremos quando ele estiver disponível no seu painel.</p>
+  <p><a href="<%= distributor_root_url %>">Ver o meu painel</a></p>
 <% else %>
-  <p><strong><%= @pre_launch_notice %></strong></p>
-  <p>Enquanto isso, sua página já está no ar: continue cadastrando peças e divulgue o endereço do seu ateliê.</p>
-<% end %>
+  <p>Seu ateliê foi aprovado na EloShop.</p>
 
-<p><a href="<%= seller_url(@seller.slug) %>">Ver a página do meu ateliê</a></p>
+  <% if @sales_open %>
+    <p>Suas peças publicadas já aparecem na loja e podem ser compradas.</p>
+  <% else %>
+    <p><strong><%= @pre_launch_notice %></strong></p>
+    <p>Enquanto isso, sua página já está no ar: continue cadastrando peças e divulgue o endereço do seu ateliê.</p>
+  <% end %>
+
+  <p><a href="<%= seller_url(@seller.slug) %>">Ver a página do meu ateliê</a></p>
+<% end %>
 
 <p>Qualquer dúvida, é só responder este e-mail.<br>Equipe EloShop</p>

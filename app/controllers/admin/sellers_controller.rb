@@ -44,7 +44,7 @@ module Admin
           kind: :seller_suspended,
           title: "Conta suspensa",
           body: "Sua conta foi suspensa pela EloShop e a conexão com o Mercado Pago foi desfeita.",
-          url: seller_root_path
+          url: seller_panel_path_for(seller)
         )
       end
       redirect_to admin_seller_path(@seller), notice: "Artesão suspenso e conta Mercado Pago desconectada."

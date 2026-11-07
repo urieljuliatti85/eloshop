@@ -101,4 +101,7 @@ Rails.application.configure do
   # Etiqueta comprada pela carteira do ateliê (ADR 005, "Etapa 2 e 3"):
   # desligada até a validação com saldo real.
   config.x.shipping.labels_enabled = ENV["SHIPPING_LABELS_ENABLED"] == "true"
+  # Cadastro de distribuidor (ADR 007): desligado até o advogado revisar o
+  # rascunho dos termos do distribuidor, para ninguém aceitar texto provisório.
+  config.x.distributors.signup_enabled = ENV["DISTRIBUTOR_SIGNUP_ENABLED"] == "true"
 end
