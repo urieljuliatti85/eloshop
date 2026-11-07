@@ -159,8 +159,9 @@
   .account-tabs-sheet[hidden] { @apply hidden; }
   @media (width < 64rem) { body.account-area { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); } }
 
-  /* Loja: abas com os destinos do menu principal no celular, abaixo de `md`
-     (o corte do hambúrguer). Reaproveitam `.account-tab`. O body com
+  /* Loja: abas com os destinos do menu principal no celular e no tablet,
+     abaixo de `lg` (o corte do hambúrguer, o mesmo das abas da área do
+     cliente logo acima). Reaproveitam `.account-tab`. O body com
      `storefront-tabs-area` reserva a altura delas. O aviso de consentimento
      de métricas sobe por uma regra no fim do arquivo, fora de camada. */
   .storefront-tabs { @apply fixed inset-x-0 bottom-0 z-40 border-t border-brand-100 bg-white shadow-[0_-8px_24px_rgba(120,40,10,0.08)] lg:hidden; padding-bottom: env(safe-area-inset-bottom); }
