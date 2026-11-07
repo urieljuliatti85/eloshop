@@ -24,9 +24,16 @@ class SellMenuTest < ApplicationSystemTestCase
     assert_no_selector "#sell-menu", visible: true
   end
 
-  # Antes do menu, o topo quebrava em duas linhas até 1024px.
-  test "the desktop menu fits on one line from 900px" do
-    [ 900, 1024, 1280 ].each do |width|
+  # O topo de pílulas começa em 1024px (abaixo dele, hambúrguer e abas de
+  # baixo) e precisa caber numa linha, sem rolagem lateral, também com
+  # Distribuidores no menu.
+  test "the desktop menu fits on one line from 1024px, and below it the mobile menu takes over" do
+    page.driver.browser.manage.window.resize_to(900, 800)
+    visit root_path
+    assert_selector "nav.storefront-tabs", visible: true
+    assert_equal 0, page.evaluate_script("document.documentElement.scrollWidth - document.documentElement.clientWidth"), "900px"
+
+    [ 1024, 1100, 1280, 1440 ].each do |width|
       page.driver.browser.manage.window.resize_to(width, 800)
       visit root_path
 

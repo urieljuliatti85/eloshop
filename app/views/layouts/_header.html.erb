@@ -5,12 +5,12 @@
 <header class="topo-serrilhado sticky top-0 z-10"
         data-controller="mobile-menu"
         data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
-  <div class="container mx-auto flex items-center justify-between gap-3 px-5 py-4 md:gap-6">
-    <%= link_to root_path, class: "flex items-center" do %>
+  <div class="container mx-auto flex items-center justify-between gap-3 px-5 py-4 xl:gap-6">
+    <%= link_to root_path, class: "flex shrink-0 items-center" do %>
       <%= image_tag "logo-header.png", alt: "EloShop", class: "h-9 w-auto", width: 108, height: 36 %>
     <% end %>
 
-    <nav class="hidden items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-medium text-ink md:flex">
+    <nav class="hidden items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-medium text-ink lg:flex">
       <%# Cada papel de `User` vê um destino só seu: o admin, a Administração;
           o vendedor, o painel do ateliê. O admin não é artesão, então nunca vê
           convite nem login de ateliê. Esconder o link da Administração não
@@ -22,6 +22,7 @@
          items = [ [ "Início", root_path, "home" ],
                    [ "Loja", products_path, "products" ],
                    [ "Ateliês", sellers_path, "sellers" ],
+                   [ "Distribuidores", distributors_path, "distributors" ],
                    [ "Como funciona", how_it_works_path, "how_it_works" ] ]
          if signed_in_user
            identity = user_session_identity
@@ -30,7 +31,7 @@
       <% items.each do |label, path, controllers| %>
         <% active = storefront_nav_active?(controllers) %>
         <%= link_to label, path,
-              class: "whitespace-nowrap rounded-full px-2.5 py-2 transition lg:px-3 xl:px-4 #{active ? 'bg-white text-brand-600 shadow-sm' : 'hover:bg-white hover:shadow-sm'}",
+              class: "whitespace-nowrap rounded-full px-2.5 py-2 transition xl:px-4 #{active ? 'bg-white text-brand-600 shadow-sm' : 'hover:bg-white hover:shadow-sm'}",
               aria: { current: ("page" if active) } %>
       <% end %>
       <%# Quem não tem sessão de `User` vê as portas de quem vende num item só,
@@ -46,7 +47,7 @@
         <div class="relative" data-controller="account-menu"
              data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
           <button type="button"
-                  class="flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-2 transition lg:px-3 xl:px-4 <%= sell_active ? 'bg-white text-brand-600 shadow-sm' : 'hover:bg-white hover:shadow-sm' %>"
+                  class="flex cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-2 transition xl:px-4 <%= sell_active ? 'bg-white text-brand-600 shadow-sm' : 'hover:bg-white hover:shadow-sm' %>"
                   aria-expanded="false" aria-haspopup="true" aria-controls="sell-menu"
                   data-account-menu-target="button"
                   data-action="account-menu#toggle">
@@ -61,18 +62,24 @@
           </div>
         </div>
       <% end %>
-      <%# Instagram é a última pílula e sai do site (nova aba). Até o `xl` só o
-          ícone, para as pílulas não quebrarem linha; o nome acessível diz o
-          destino e que abre outra aba. %>
+      <%# Instagram é a última pílula e sai do site (nova aba), só a partir do
+          `xl`: entre 1024 e 1280px, com Distribuidores no menu, ela fazia o topo
+          passar da tela. Abaixo do `lg` o ícone fica no bloco da direita, e o
+          rodapé sempre tem o link. O nome acessível diz o destino e que abre
+          outra aba. %>
       <%= link_to eloshop_instagram_url, target: "_blank", rel: "noopener",
-            class: "flex items-center gap-1.5 rounded-full px-3 py-2 transition hover:bg-white hover:text-brand-600 hover:shadow-sm xl:px-4",
+            class: "hidden items-center gap-1.5 rounded-full px-3 py-2 transition hover:bg-white hover:text-brand-600 hover:shadow-sm xl:flex xl:px-4",
             aria: { label: "Instagram da EloShop (abre em nova aba)" } do %>
         <%= instagram_icon("size-4") %>
         <span class="hidden xl:inline">Instagram</span>
       <% end %>
     </nav>
 
-    <%# Em telas estreitas os rótulos de conta saem do topo (a 390px "Criar
+    <%# O topo de pílulas começa no `lg` (1024px), não no `md`: com Ateliês,
+        Distribuidores, Como funciona e Venda na EloShop, no `md` ele passava
+        da tela (167px a 768px). Até 1024px valem o hambúrguer e as abas de
+        baixo (layouts/_storefront_mobile_tabs), que usam o mesmo corte.
+        Em telas estreitas os rótulos de conta saem do topo (a 390px "Criar
         conta" quebrava em duas linhas) e passam para o painel do hambúrguer;
         no topo ficam só o carrinho e o menu, com 44px de alvo de toque. %>
     <%# Mesma pílula do menu de navegação ao lado: borda, fundo cinza e cantos
@@ -81,7 +88,7 @@
     <%# Sem espaço entre os ícones no celular: com o cliente logado são cinco
         alvos de 44px (Instagram, sino, sacola, busca e menu), e a 390px eles
         só cabem ao lado do logo assim. %>
-    <div class="flex items-center text-sm md:gap-0.5 md:rounded-full md:border md:border-gray-200 md:bg-gray-50 md:px-2 md:py-1">
+    <div class="flex items-center text-sm lg:gap-0.5 lg:rounded-full lg:border lg:border-gray-200 lg:bg-gray-50 lg:px-2 lg:py-1">
       <%# Quem está logado aparece pelo primeiro nome, com a inicial no avatar
           — mesma identificação que o painel do artesão já usa. O nome abre um
           painel com os dados da conta e seus destinos.
@@ -96,7 +103,7 @@
           (o do vendedor é `seller_logout_path`, o do admin é `session_path`). %>
       <% if authenticated? && Current.user %>
         <% session_identity = user_session_identity %>
-        <div class="relative hidden md:block" data-controller="account-menu"
+        <div class="relative hidden lg:block" data-controller="account-menu"
              data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
           <button type="button"
                   class="flex cursor-pointer items-center gap-2 font-medium text-ink hover:text-brand-600"
@@ -132,7 +139,7 @@
       <% end %>
 
       <% if respond_to?(:customer_authenticated?) && customer_authenticated? && Current.customer %>
-        <div class="relative hidden md:block" data-controller="account-menu"
+        <div class="relative hidden lg:block" data-controller="account-menu"
              data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
           <button type="button"
                   class="flex cursor-pointer items-center gap-2 font-medium text-ink hover:text-brand-600"
@@ -173,13 +180,13 @@
             de artesão no menu ao lado, dois pares de "entrar/criar" no mesmo
             topo não diziam qual porta é de quem. O destino é o login, que já
             leva ao cadastro por link. %>
-        <%= link_to "Quero comprar", new_customer_session_path, class: "hidden rounded-full px-4 py-2 font-medium text-ink transition hover:bg-white hover:shadow-sm md:inline-block" %>
+        <%= link_to "Quero comprar", new_customer_session_path, class: "hidden whitespace-nowrap rounded-full px-4 py-2 font-medium text-ink transition hover:bg-white hover:shadow-sm lg:inline-block" %>
       <% end %>
 
       <%# Instagram no topo do celular, ao lado do sino (ou da sacola, para quem
           não está logado). No desktop ele é a última pílula do menu. %>
       <%= link_to eloshop_instagram_url, target: "_blank", rel: "noopener",
-            class: "flex h-11 w-11 items-center justify-center text-ink transition hover:text-brand-600 md:hidden",
+            class: "flex h-11 w-11 items-center justify-center text-ink transition hover:text-brand-600 lg:hidden",
             aria: { label: "Instagram da EloShop (abre em nova aba)" } do %>
         <%= instagram_icon("h-6 w-6") %>
       <% end %>
@@ -191,7 +198,7 @@
       <% if respond_to?(:customer_authenticated?) && customer_authenticated? && Current.customer %>
         <% recent_notifications = Current.customer.notifications.chronological.limit(5)
            unread_count = customer_unread_notifications_count %>
-        <div class="relative hidden md:block" data-controller="account-menu"
+        <div class="relative hidden lg:block" data-controller="account-menu"
              data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
           <button type="button"
                   class="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-ink transition hover:bg-white hover:shadow-sm"
@@ -239,7 +246,7 @@
         <%# No mobile o sino continua como link simples para a página cheia —
             um painel flutuante a mais competiria por espaço com o menu do
             hambúrguer. %>
-        <%= link_to notifications_path, class: "relative flex h-11 w-11 items-center justify-center text-ink transition hover:text-brand-600 md:hidden", aria: { label: "Notificações" } do %>
+        <%= link_to notifications_path, class: "relative flex h-11 w-11 items-center justify-center text-ink transition hover:text-brand-600 lg:hidden", aria: { label: "Notificações" } do %>
           <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
             <path d="M6 8a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 12 6 8Z" stroke-linejoin="round" />
             <path d="M9.5 16a2.5 2.5 0 0 0 5 0" stroke-linecap="round" />
@@ -252,15 +259,15 @@
         <% end %>
       <% end %>
 
-      <%= link_to cart_path, class: "relative flex h-11 min-w-11 items-center justify-center gap-1.5 font-medium text-ink transition hover:text-brand-600 md:h-auto md:min-w-0 md:rounded-full md:px-4 md:py-2 md:hover:bg-white md:hover:shadow-sm", aria: { label: "Carrinho" } do %>
-        <span class="hidden md:inline">Carrinho</span>
-        <svg class="h-6 w-6 md:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+      <%= link_to cart_path, class: "relative flex h-11 min-w-11 items-center justify-center gap-1.5 font-medium text-ink transition hover:text-brand-600 lg:h-auto lg:min-w-0 lg:rounded-full lg:px-4 lg:py-2 lg:hover:bg-white lg:hover:shadow-sm", aria: { label: "Carrinho" } do %>
+        <span class="hidden lg:inline">Carrinho</span>
+        <svg class="h-6 w-6 lg:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
           <path d="M6 7h12l-1 13H7L6 7Z" stroke-linejoin="round" />
           <path d="M9 7a3 3 0 0 1 6 0" stroke-linecap="round" />
         </svg>
         <% if Current.cart&.cart_items&.any? %>
           <%# Sobre o ícone o badge flutua no canto; ao lado do rótulo, fica em linha. %>
-          <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-xs font-semibold text-white md:static">
+          <span class="absolute right-0 top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-xs font-semibold text-white lg:static">
             <%= Current.cart.cart_items.sum(:quantity) %>
           </span>
         <% end %>
@@ -272,10 +279,10 @@
       <div class="relative flex items-center" data-controller="header-search"
            data-action="click@window->header-search#closeOnOutsideClick keydown.esc@window->header-search#closeOnEscape">
         <button type="button"
-                class="flex h-11 w-11 cursor-pointer items-center justify-center text-ink transition hover:text-brand-600 md:h-9 md:w-9 md:rounded-full md:hover:bg-white md:hover:shadow-sm"
+                class="flex h-11 w-11 cursor-pointer items-center justify-center text-ink transition hover:text-brand-600 lg:h-9 lg:w-9 lg:rounded-full lg:hover:bg-white lg:hover:shadow-sm"
                 aria-expanded="false" aria-label="Buscar produtos"
                 data-action="header-search#toggle">
-          <svg class="h-6 w-6 md:h-5 md:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <svg class="h-6 w-6 lg:h-5 lg:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
             <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" stroke-linecap="round" />
           </svg>
         </button>
@@ -292,7 +299,7 @@
       </div>
 
       <button type="button"
-              class="flex h-11 w-11 cursor-pointer items-center justify-center text-ink hover:text-brand-600 md:hidden"
+              class="flex h-11 w-11 cursor-pointer items-center justify-center text-ink hover:text-brand-600 lg:hidden"
               aria-expanded="false" aria-label="Abrir menu"
               data-mobile-menu-target="button"
               data-action="mobile-menu#toggle">
@@ -306,7 +313,7 @@
   <%# Sem JavaScript o painel não abre, mas o rodapé repete Início, Loja e
       Contato — nenhum destino fica inalcançável. (Contato saiu do menu do
       topo e vive só lá.) %>
-  <div class="border-t border-gray-100 bg-white md:hidden" data-mobile-menu-target="panel" hidden>
+  <div class="border-t border-gray-100 bg-white lg:hidden" data-mobile-menu-target="panel" hidden>
     <nav class="container mx-auto flex flex-col px-5">
       <%# Diferente do topo: aqui o destino do papel NÃO entra na lista, porque
           o bloco de identidade logo abaixo já o oferece como botão — no menu
@@ -317,6 +324,7 @@
          mobile_items = [ [ "Início", root_path, "home" ],
                           [ "Loja", products_path, "products" ],
                           [ "Ateliês", sellers_path, "sellers" ],
+                          [ "Distribuidores", distributors_path, "distributors" ],
                           [ "Como funciona", how_it_works_path, "how_it_works" ] ]
          unless mobile_user
            mobile_items << [ "Entrar no Ateliê", seller_login_path, "seller_portal/sessions" ]
