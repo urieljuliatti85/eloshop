@@ -52,6 +52,34 @@ RSpec.describe "Seller commercial terms", type: :request do
     expect(acceptance.ip_address).to be_present
   end
 
+  context "when the signed-in seller is a distributor" do
+    let(:distributor) { Seller.create!(name: "Fios Termos", owner_full_name: "Dona dos Fios", cpf: generate_valid_cpf, kind: "distributor") }
+    let(:distributor_user) { User.create!(email_address: "fios-termos@example.com", password: "password123", role: :seller, seller: distributor) }
+
+    it "shows the distributor terms and records exactly the text that was shown" do
+      sign_in_without_terms(distributor_user)
+
+      get seller_terms_path
+      expect(response.body).to include(SellerTerms::DISTRIBUTOR_VERSION)
+      expect(response.body).to include("DISTRIBUIDOR DE INSUMOS")
+      expect(response.body).not_to include(SellerTerms::VERSION)
+      expect(response.body).not_to include("O que mudou nesta versão")
+
+      post seller_terms_path, params: { terms_accepted: "1" }
+
+      acceptance = SellerTermsAcceptance.find_by!(user: distributor_user)
+      expect(acceptance.terms_version).to eq(SellerTerms::DISTRIBUTOR_VERSION)
+      expect(acceptance.terms_text).to eq(SellerTerms::DISTRIBUTOR_TEXT)
+    end
+  end
+
+  it "shows the atelier terms to a visitor who is not signed in" do
+    get seller_terms_path
+
+    expect(response.body).to include(SellerTerms::VERSION)
+    expect(response.body).not_to include(SellerTerms::DISTRIBUTOR_VERSION)
+  end
+
   private
 
   def sign_in_without_terms(user)

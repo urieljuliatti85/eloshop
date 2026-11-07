@@ -29,9 +29,10 @@ class SellersController < StorefrontController
   # dedicada evita que o link vire ambíguo entre "nunca existiu" e "foi
   # retirado pela plataforma". `hidden_at` é o mesmo raciocínio para uma
   # pausa reversível decidida pelo admin, sem ligação com moderação: mensagem
-  # própria, para não sugerir penalidade onde não há uma.
+  # própria, para não sugerir penalidade onde não há uma. Distribuidor não tem
+  # página em /artesaos: é 404 como uma URL inexistente (ADR 007).
   def show
-    @seller = Seller.find_by!(slug: params[:slug])
+    @seller = Seller.atelier.find_by!(slug: params[:slug])
     raise ActiveRecord::RecordNotFound if @seller.pending? && !@seller.showcased?
 
     if @seller.suspended?

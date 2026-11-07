@@ -302,6 +302,37 @@ RSpec.describe "Admin sellers", type: :request do
     expect(notification).to be_present
   end
 
+  it "suspends and notifies the owner's seller of the other kind together" do
+    sign_in_as(admin)
+    distributor = Seller.create!(name: "Fios do Mesmo Dono", owner_full_name: "Proprietário Teste", cpf: "10666670200", kind: "distributor")
+
+    patch suspend_admin_seller_path(seller)
+
+    expect(seller.reload).to be_suspended
+    expect(distributor.reload).to be_suspended
+    expect(seller.notifications.seller_suspended).to exist
+    expect(distributor.notifications.seller_suspended).to exist
+  end
+
+  it "filters the seller list by kind" do
+    seller
+    distributor = Seller.create!(name: "Fios Atacado Filtro", owner_full_name: "Dona dos Fios", cpf: generate_valid_cpf, kind: "distributor")
+    sign_in_as(admin)
+
+    get admin_sellers_path(kind: "distributor")
+    expect(response.body).to include(distributor.name)
+    expect(response.body).to include("Distribuidor de insumos")
+    expect(response.body).not_to include(seller.name)
+
+    get admin_sellers_path(kind: "atelier")
+    expect(response.body).to include(seller.name)
+    expect(response.body).not_to include(distributor.name)
+
+    get admin_sellers_path(kind: "anything")
+    expect(response.body).to include(seller.name)
+    expect(response.body).to include(distributor.name)
+  end
+
   it "lets platform admins unhide a seller" do
     sign_in_as(admin)
     seller.connect_mercado_pago!(mercado_pago_credentials)

@@ -2,7 +2,7 @@
   <header class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
     <div>
       <p class="admin-section-label">Marketplace</p>
-      <h1>Artesãos</h1>
+      <h1>Artesãos e Distribuidores</h1>
     </div>
     <p class="text-sm text-slate-500">Aprove ou suspenda vendedores antes que seus produtos sejam publicados.</p>
   </header>
@@ -34,7 +34,7 @@
     </div>
   </div>
 
-  <nav class="flex flex-wrap gap-2" aria-label="Filtrar artesãos por status e termos comerciais">
+  <nav class="flex flex-wrap gap-2" aria-label="Filtrar vendedores por status e termos comerciais">
     <% [
       ["Todos", nil, nil],
       ["Aprovados", "approved", nil],
@@ -44,7 +44,14 @@
       ["Termos pendentes", nil, "pending_terms"]
     ].each do |label, status, terms| %>
       <% active = params[:status].presence == status && params[:terms].presence == terms %>
-      <%= link_to label, admin_sellers_path(status: status, terms: terms), class: "admin-button #{active ? 'admin-button--primary' : 'admin-button--secondary'}", aria: { current: ("page" if active) } %>
+      <%= link_to label, admin_sellers_path(status: status, terms: terms, kind: params[:kind].presence), class: "admin-button #{active ? 'admin-button--primary' : 'admin-button--secondary'}", aria: { current: ("page" if active) } %>
+    <% end %>
+  </nav>
+
+  <nav class="flex flex-wrap gap-2" aria-label="Filtrar vendedores por tipo">
+    <% [ [ "Todos os tipos", nil ], [ "Ateliês", "atelier" ], [ "Distribuidores", "distributor" ] ].each do |label, kind| %>
+      <% active = params[:kind].presence == kind %>
+      <%= link_to label, admin_sellers_path(status: params[:status].presence, terms: params[:terms].presence, kind: kind), class: "admin-button #{active ? 'admin-button--primary' : 'admin-button--secondary'}", aria: { current: ("page" if active) } %>
     <% end %>
   </nav>
 
@@ -58,7 +65,10 @@
           <% terms_label = seller.terms_accepted? ? (acceptance&.terms_version.present? ? "Aceito v#{acceptance.terms_version}" : "Aceito") : "Pendente" %>
           <% terms_status = seller.terms_accepted? ? "active" : "pending" %>
           <tr>
-            <td class="font-semibold"><%= seller.name %></td>
+            <td class="font-semibold">
+              <%= seller.name %>
+              <% if seller.distributor? %><br><span class="text-xs font-normal text-slate-500">Distribuidor de insumos</span><% end %>
+            </td>
             <td>
               <% if seller.owner_full_name.present? %>
                 <%= seller.owner_full_name %><br>

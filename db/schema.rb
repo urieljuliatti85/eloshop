@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_05_141633) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_07_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -145,7 +145,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_05_141633) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "seller_kind", default: "atelier", null: false
     t.index ["code"], name: "index_coupons_on_code", unique: true
+    t.check_constraint "seller_kind::text = ANY (ARRAY['atelier'::character varying::text, 'distributor'::character varying::text])", name: "coupons_seller_kind_check"
   end
 
   create_table "customer_sessions", force: :cascade do |t|
@@ -654,10 +656,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_05_141633) do
     t.string "superfrete_oauth_state_digest"
     t.datetime "superfrete_oauth_state_issued_at"
     t.datetime "superfrete_revoked_at"
-    t.index ["cpf_hash"], name: "index_sellers_on_cpf_hash", unique: true, where: "(cpf_hash IS NOT NULL)"
+    t.string "kind", default: "atelier", null: false
+    t.string "cnpj"
+    t.boolean "issues_invoices"
+    t.index ["cpf_hash", "kind"], name: "index_sellers_on_cpf_hash_and_kind", unique: true, where: "(cpf_hash IS NOT NULL)"
     t.index ["mercado_pago_user_id"], name: "index_sellers_on_mercado_pago_user_id", unique: true, where: "(mercado_pago_user_id IS NOT NULL)"
     t.index ["slug"], name: "index_sellers_on_slug", unique: true
     t.index ["superfrete_oauth_state_digest"], name: "index_sellers_on_superfrete_oauth_state_digest", unique: true, where: "(superfrete_oauth_state_digest IS NOT NULL)"
+    t.check_constraint "kind::text = ANY (ARRAY['atelier'::character varying::text, 'distributor'::character varying::text])", name: "sellers_kind_check"
     t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'approved'::character varying::text, 'suspended'::character varying::text])", name: "sellers_status_check"
   end
 

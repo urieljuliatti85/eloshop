@@ -7,6 +7,7 @@
     abrir espaço no fim da página. %>
 <% tabs = admin_nav_items_for(AdminHelper::ADMIN_MOBILE_TAB_KEYS)
      .map { |item| item[:key] == :dashboard ? item.merge(label: "Início") : item }
+     .map { |item| item[:short_label] ? item.merge(label: item[:short_label]) : item }
    tabs << { label: "Notificações", path: admin_notifications_path, icon: :notifications, controllers: %w[notifications], count: unread_count } %>
 <nav class="admin-tabs" aria-label="Atalhos da administração">
   <ul class="admin-tabs-list">

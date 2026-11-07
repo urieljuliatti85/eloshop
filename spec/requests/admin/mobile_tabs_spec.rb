@@ -35,7 +35,7 @@ RSpec.describe "Admin mobile navigation", type: :request do
     get admin_root_path
 
     labels = tabs.css(".admin-tabs-list > li").map { |item| item.text.squish }
-    expect(labels).to eq([ "Início", "Pedidos", "Artesãos", "Produtos", "Notificações" ])
+    expect(labels).to eq([ "Início", "Pedidos", "Vendedores", "Produtos", "Notificações" ])
   end
 
   it "shows four other areas and a more button as top tabs" do

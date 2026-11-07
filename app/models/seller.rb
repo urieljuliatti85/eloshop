@@ -11,6 +11,15 @@ class Seller < ApplicationRecord
     suspended: "suspended"
   }, default: "pending"
 
+  # Ateliê vende as próprias peças; distribuidor vende insumos para artesãos
+  # (ADR 007). O tipo é fixo depois do cadastro: quem quiser vender os dois
+  # cria outro `User` e outro `Seller`. Regras que dependem do tipo perguntam
+  # aqui, nunca com `if distributor?` espalhado.
+  enum :kind, {
+    atelier: "atelier",
+    distributor: "distributor"
+  }, default: "atelier", validate: true
+
   ORIGIN_ADDRESS_FIELDS = %i[
     origin_zip_code origin_street origin_number origin_neighborhood origin_city origin_state
   ].freeze
@@ -61,7 +70,7 @@ class Seller < ApplicationRecord
   # aqui em uma query só, para filtrar/contar sem N+1). Usado pelo admin
   # (listagem e dashboard de artesãos).
   def self.accepted_current_terms_ids
-    SellerTermsAcceptance.where(terms_version: SellerTerms.version).select(:seller_id)
+    SellerTermsAcceptance.where(terms_version: SellerTerms.current_versions).select(:seller_id)
   end
 
   # Composto em Seller.publicly_listed, onde a visibilidade pública é decidida
@@ -74,8 +83,12 @@ class Seller < ApplicationRecord
   # Aparecer não é vender: a compra continua exigindo `approved?` (ver
   # Product#purchase_blocker). Suspenso nunca aparece, e `suspend!` também
   # limpa a vitrine.
+  #
+  # Só ateliê: a vitrine artesanal (catálogo, busca, home, sitemap, API,
+  # `/artesaos`, aviso de abertura das vendas) nunca mostra distribuidor por
+  # omissão. Insumo tem vitrine própria (ADR 007, "Vitrine fail-closed").
   scope :publicly_listed, -> {
-    visible.where(status: :approved).or(visible.where(status: :pending).where.not(showcased_at: nil))
+    atelier.merge(visible.where(status: :approved).or(visible.where(status: :pending).where.not(showcased_at: nil)))
   }
 
   # Nome livre para um novo ateliê? A unicidade é do slug, então "Ateliê da Ana"
@@ -106,7 +119,19 @@ class Seller < ApplicationRecord
   # etc.) até eles preencherem derrubaria o painel para quem já opera.
   # Preenchimento fica disponível em "Dados do Ateliê", mas não é obrigatório.
   validates :owner_full_name, presence: true, on: :create
-  validates :cpf_hash, uniqueness: { message: "já está cadastrado para outro ateliê" }, allow_nil: true
+  # Único por tipo, não entre todos os vendedores (ADR 007): a artesã que abre
+  # uma distribuidora usa o próprio CPF, e o antifraude continua valendo dentro
+  # de cada tipo (ver `suspend!`).
+  validates :cpf_hash, uniqueness: {
+    scope: :kind,
+    message: ->(seller, _data) { seller.distributor? ? "já está cadastrado para outro distribuidor" : "já está cadastrado para outro ateliê" }
+  }, allow_nil: true
+  validate :kind_unchanged, on: :update
+
+  # Opcional (ADR 007). Guardado normalizado; o formato alfanumérico de 2026
+  # também vale (ver `Cnpj`).
+  normalizes :cnpj, with: ->(cnpj) { Cnpj.normalize(cnpj).presence }
+  validate :cnpj_must_be_valid, if: -> { cnpj.present? }
 
   before_validation :assign_cpf, if: -> { @cpf.present? }
   validates :cpf, presence: true, on: :create
@@ -206,6 +231,7 @@ class Seller < ApplicationRecord
   end
 
   def publicly_listed?
+    return false unless atelier?
     return false if suspended? || hidden?
 
     approved? || showcased?
@@ -233,14 +259,43 @@ class Seller < ApplicationRecord
   # deixaria sem reembolso os compradores das vendas já feitas (decisão de
   # 2026-11-03). Saem quando o prazo de reembolso passa
   # (`purge_retained_mercado_pago_credentials!`).
+  #
+  # A suspensão vale para os dois tipos do mesmo CPF (ADR 007): o CPF é único
+  # por tipo, e sem isso o ateliê suspenso continuaria vendendo como
+  # distribuidor — ou o contrário. Vendedor sem CPF (cadastrado antes do campo)
+  # não tem par. Devolve todos os vendedores suspensos agora, para quem chamou
+  # avisar cada um.
   def suspend!
-    update!(
+    transaction do
+      suspend_self!
+      others = same_owner_sellers.where.not(status: :suspended).lock.to_a
+      others.each { |seller| seller.suspend_self! }
+      [ self, *others ]
+    end
+  end
+
+  # Os outros vendedores (do outro tipo) com o mesmo CPF.
+  def same_owner_sellers
+    return Seller.none if cpf_hash.blank?
+
+    Seller.where(cpf_hash: cpf_hash).where.not(id: id)
+  end
+
+  # Sem validação de propósito: suspender é moderação e não pode depender de o
+  # cadastro estar completo. Um endereço pela metade (ou o do par do outro
+  # tipo) barrava a suspensão inteira com 422 e deixava vendendo quem o admin
+  # queria parar (achado do QA, 2026-11-07). `save!` mantém callbacks e o
+  # registro do paper_trail.
+  def suspend_self!
+    assign_attributes(
       status: :suspended,
       approved_at: nil,
       showcased_at: nil,
       **mercado_pago_disconnection_attributes
     )
+    save!(validate: false)
   end
+  protected :suspend_self!
 
   # Diferente de suspend!, esconder não é moderação nem penalidade — é uma
   # pausa reversível que o admin decide (ex.: vendedor pediu para não
@@ -583,7 +638,7 @@ class Seller < ApplicationRecord
   end
 
   def terms_accepted?
-    SellerTermsAcceptance.exists?(seller: self, terms_version: SellerTerms.version)
+    SellerTermsAcceptance.exists?(seller: self, terms_version: SellerTerms.version(kind))
   end
 
   def latest_terms_acceptance
@@ -650,6 +705,14 @@ class Seller < ApplicationRecord
   end
 
   # Dígitos verificadores e sequência repetida: ver `Cpf.valid?`.
+  def kind_unchanged
+    errors.add(:kind, "não pode ser alterado depois do cadastro") if will_save_change_to_kind?
+  end
+
+  def cnpj_must_be_valid
+    errors.add(:cnpj, "é inválido") unless Cnpj.valid?(cnpj)
+  end
+
   def cpf_must_be_valid
     return errors.add(:cpf, "deve ter 11 dígitos") unless cpf.match?(/\A\d{11}\z/)
     errors.add(:cpf, "é inválido") unless Cpf.valid?(cpf)
