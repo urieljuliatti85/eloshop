@@ -372,4 +372,67 @@ RSpec.describe "Admin sellers", type: :request do
       public_key: "TEST-public-key"
     )
   end
+
+  # ADR 007: a ficha do distribuidor não mostra vitrine nem SuperFrete, chama
+  # o vendedor pelo tipo e manda o link do painel do distribuidor.
+  describe "a distributor's page" do
+    let(:distributor) do
+      Seller.create!(name: "Fios Admin #{SecureRandom.hex(3)}", owner_full_name: "Dona dos Fios", cpf: generate_valid_cpf,
+        kind: "distributor", cnpj: "12.ABC.345/01DE-35", issues_invoices: true)
+    end
+
+    it "shows the distributor without the artisan showcase and SuperFrete" do
+      sign_in_as(admin)
+
+      get admin_seller_path(distributor)
+
+      page = Nokogiri::HTML(response.body)
+      expect(page.at_css(".admin-section-label").text).to eq("Distribuidor de insumos")
+      expect(response.body).to include("12.ABC.345/01DE-35", "Emite nota fiscal: sim", "Termos Comerciais do Distribuidor", distributor_root_url)
+      expect(response.body).not_to include("Liberar na vitrine", "Esconder da vitrine", "Vitrine do pré-cadastro", "SuperFrete", seller_atelier_url)
+      expect(page.at_css("input[type=submit][value='Aprovar distribuidor']")).to be_present
+    end
+
+    it "approves the distributor with a notice that names the kind" do
+      sign_in_as(admin)
+      distributor.connect_mercado_pago!(mercado_pago_credentials)
+
+      patch approve_admin_seller_path(distributor), params: { kyc_level_6_confirmed: "1" }
+
+      expect(distributor.reload).to be_approved
+      expect(flash[:notice]).to eq("Distribuidor aprovado.")
+    end
+
+    # Decisão de 2026-11-07 (opção A): esconder vale para o distribuidor, sem
+    # suspender, com aviso do próprio tipo.
+    it "hides and shows a distributor again, with notices that name the kind" do
+      sign_in_as(admin)
+
+      patch hide_admin_seller_path(distributor)
+      expect(distributor.reload).to be_hidden
+      expect(flash[:notice]).to eq("Distribuidor escondido: a loja e os insumos dele ficam fora do ar.")
+      expect(distributor).not_to be_suspended
+
+      patch unhide_admin_seller_path(distributor)
+      expect(distributor.reload).not_to be_hidden
+      expect(flash[:notice]).to eq("Distribuidor visível de novo: a loja e os insumos dele voltam ao ar.")
+    end
+
+    it "refuses to take a distributor out of the artisan showcase" do
+      sign_in_as(admin)
+
+      patch unshowcase_admin_seller_path(distributor)
+
+      expect(flash[:alert]).to eq("Distribuidor não aparece na vitrine de peças.")
+    end
+
+    it "refuses to release a distributor to the artisan showcase" do
+      sign_in_as(admin)
+
+      patch showcase_admin_seller_path(distributor)
+
+      expect(flash[:alert]).to eq("Distribuidor não aparece na vitrine de peças.")
+      expect(distributor.reload.showcased_at).to be_nil
+    end
+  end
 end

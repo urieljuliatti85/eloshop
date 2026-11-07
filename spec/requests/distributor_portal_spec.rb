@@ -333,6 +333,16 @@ RSpec.describe "Distributor portal", type: :request do
       expect(Seller.distributor.count).to eq(0)
     end
 
+    # ADR 007 (2026-11-07): a loja do distribuidor fica em /distribuidores/:slug.
+    it "tells the distributor which store address the name reserves" do
+      get new_distributor_registration_path
+      expect(response.body).to include("https://eloshop.shop/distribuidores/aviamentos-do-sul", "o endereço não muda")
+
+      post distributor_registration_path, params: valid_params
+      follow_redirect!
+      expect(response.body).to include("/distribuidores/aviamentos-do-sul")
+    end
+
     it "links the distributor terms from the form" do
       get new_distributor_registration_path
 

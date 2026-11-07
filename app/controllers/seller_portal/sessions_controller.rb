@@ -12,7 +12,9 @@ module SellerPortal
     # mensagem de e-mail/senha inválidos — não confirma que a conta existe nem
     # qual é o papel dela.
     def create
-      user = User.authenticate_by(params.permit(:email_address, :password))
+      # Sempre texto: sem a senha no POST, `authenticate_by` levantava
+      # ArgumentError e a porta respondia 500 (achado do QA, 2026-11-07).
+      user = User.authenticate_by(email_address: params[:email_address].to_s, password: params[:password].to_s)
       if user&.portal == :atelier
         start_new_session_for user
         redirect_to after_authentication_url

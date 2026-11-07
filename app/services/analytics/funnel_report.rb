@@ -24,8 +24,10 @@ module Analytics
 
     # Quem clicou em "Conectar Mercado Pago", quem voltou com a conexão feita e
     # quem voltou com falha, no período. A taxa é de conclusões sobre cliques.
-    def seller_connection_snapshot
-      scope = FunnelEvent.within(period)
+    # Por tipo de vendedor (ADR 007): a entrada dos ateliês não se mistura com a
+    # dos distribuidores, que conectam pela mesma rota.
+    def seller_connection_snapshot(kind: "atelier")
+      scope = FunnelEvent.within(period).where(seller_id: Seller.where(kind: kind).select(:id))
       started_by = sellers_for(scope, "seller_mp_connect_started")
       completed_by = sellers_for(scope, "seller_mp_connect_completed")
       failed_by = sellers_for(scope, "seller_mp_connect_failed")

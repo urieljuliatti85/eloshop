@@ -30,7 +30,7 @@ module Admin
     def approve
       @seller.approve!(kyc_level_6_confirmed: params[:kyc_level_6_confirmed] == "1")
       NotifySellerOfApprovalJob.perform_later(@seller)
-      redirect_to admin_seller_path(@seller), notice: "Artesão aprovado."
+      redirect_to admin_seller_path(@seller), notice: "#{helpers.seller_kind_noun(@seller).capitalize} aprovado."
     rescue Seller::VerificationRequired => e
       redirect_to admin_seller_path(@seller), alert: e.message
     end
@@ -47,17 +47,22 @@ module Admin
           url: seller_panel_path_for(seller)
         )
       end
-      redirect_to admin_seller_path(@seller), notice: "Artesão suspenso e conta Mercado Pago desconectada."
+      redirect_to admin_seller_path(@seller), notice: "#{helpers.seller_kind_noun(@seller).capitalize} suspenso e conta Mercado Pago desconectada."
     end
 
+    # Esconder vale para os dois tipos (decisão do Uriel, 2026-11-07): tira
+    # da loja sem suspender a conta. Para o distribuidor, a loja
+    # /distribuidores/:slug e os insumos em /insumos, quando existirem (Fase 26).
     def hide
       @seller.hide!
-      redirect_to admin_seller_path(@seller), notice: "Ateliê escondido da vitrine pública."
+      notice = @seller.distributor? ? "Distribuidor escondido: a loja e os insumos dele ficam fora do ar." : "Ateliê escondido da vitrine pública."
+      redirect_to admin_seller_path(@seller), notice: notice
     end
 
     def unhide
       @seller.unhide!
-      redirect_to admin_seller_path(@seller), notice: "Ateliê visível na vitrine pública novamente."
+      notice = @seller.distributor? ? "Distribuidor visível de novo: a loja e os insumos dele voltam ao ar." : "Ateliê visível na vitrine pública novamente."
+      redirect_to admin_seller_path(@seller), notice: notice
     end
 
     # Vitrine do pré-cadastro: o ateliê pendente aparece na loja depois da

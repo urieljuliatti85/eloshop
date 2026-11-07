@@ -45,9 +45,19 @@
   <p class="mt-6 text-xs text-ink-muted">* campo obrigatório</p>
 
   <%= form_with url: distributor_registration_path, class: "mt-4 flex flex-col gap-5" do |form| %>
-    <div>
-      <%= form.label :name, "Nome da distribuidora *", for: "seller_name" %><%= form.text_field :name, name: "seller[name]", id: "seller_name", value: @seller.name, required: true, autocomplete: "organization", maxlength: 120, aria: { describedby: described_by.call("seller_name_error", name_errors), invalid: (name_errors.any? || nil) }, class: field_class.call(name_errors) %>
+    <%# Mesma checagem ao vivo do cadastro do ateliê (atelier_name_controller):
+        o slug é único entre os dois tipos, então a consulta é a mesma, e o
+        texto e o prefixo do endereço vêm dos values. %>
+    <div data-controller="atelier-name" data-atelier-name-url-value="<%= seller_registration_name_availability_path %>"
+         data-atelier-name-prefix-value="/distribuidores"
+         data-atelier-name-invalid-message-value="Use letras ou números no nome da distribuidora."
+         data-atelier-name-taken-message-value="Já existe um ateliê ou uma distribuidora com esse nome (ou com o mesmo endereço).">
+      <%= form.label :name, "Nome da distribuidora *", for: "seller_name" %><%= form.text_field :name, name: "seller[name]", id: "seller_name", value: @seller.name, required: true, autocomplete: "organization", maxlength: 120, data: { atelier_name_target: "input", action: "input->atelier-name#check" }, aria: { describedby: described_by.call("seller_name_error", name_errors, "seller_name_status"), invalid: (name_errors.any? || nil) }, class: field_class.call(name_errors) %>
       <%= field_error.call("seller_name_error", name_errors) %>
+      <p id="seller_name_status" role="status" aria-live="polite" data-atelier-name-target="status" class="mt-2 text-sm"></p>
+      <%# Endereço público decidido no ADR 007 (2026-11-07); a página entra
+          na Fase 26, mas o slug já é reservado aqui e não muda depois. %>
+      <p class="mt-2 text-xs text-ink-muted">O nome gera o endereço da sua loja na EloShop: "Aviamentos do Sul", por exemplo, vira https://eloshop.shop/distribuidores/aviamentos-do-sul. A loja vai ao ar junto com a vitrine de insumos. Se você mudar o nome depois, o endereço não muda, para não quebrar links nem o que os buscadores, como o Google, já guardaram.</p>
     </div>
     <div><%= form.label :owner_full_name, "Nome completo do responsável *", for: "seller_owner_full_name" %><%= form.text_field :owner_full_name, name: "seller[owner_full_name]", id: "seller_owner_full_name", value: @seller.owner_full_name, required: true, aria: { describedby: described_by.call("seller_owner_full_name_error", owner_errors), invalid: (owner_errors.any? || nil) }, class: field_class.call(owner_errors) %><%= field_error.call("seller_owner_full_name_error", owner_errors) %></div>
     <div data-controller="cpf-input">
@@ -55,8 +65,11 @@
       <p id="seller_cpf_check" class="mt-1 text-sm text-red-700" aria-live="polite" data-cpf-input-target="message" hidden></p>
       <%= field_error.call("seller_cpf_error", cpf_errors) %>
     </div>
-    <div>
-      <%= form.label :cnpj, "CNPJ", for: "seller_cnpj" %><%= form.text_field :cnpj, name: "seller[cnpj]", id: "seller_cnpj", value: (@seller.cnpj.present? ? Cnpj.format(@seller.cnpj) : nil), autocomplete: "off", maxlength: 18, placeholder: "00.000.000/0000-00", aria: { describedby: described_by.call("seller_cnpj_error", cnpj_errors, "seller_cnpj_hint"), invalid: (cnpj_errors.any? || nil) }, class: field_class.call(cnpj_errors) %>
+    <%# Formata e valida na digitação (cnpj_input_controller.js), inclusive o
+        CNPJ alfanumérico; o servidor normaliza e valida de novo (Cnpj). %>
+    <div data-controller="cnpj-input">
+      <%= form.label :cnpj, "CNPJ", for: "seller_cnpj" %><%= form.text_field :cnpj, name: "seller[cnpj]", id: "seller_cnpj", value: (@seller.cnpj.present? ? Cnpj.format(@seller.cnpj) : nil), autocomplete: "off", autocapitalize: "characters", spellcheck: false, maxlength: 18, placeholder: "00.000.000/0000-00", data: { cnpj_input_target: "input", action: "input->cnpj-input#format blur->cnpj-input#validate" }, aria: { describedby: described_by.call("seller_cnpj_error", cnpj_errors, "seller_cnpj_hint", "seller_cnpj_check"), invalid: (cnpj_errors.any? || nil) }, class: field_class.call(cnpj_errors) %>
+      <p id="seller_cnpj_check" class="mt-1 text-sm text-red-700" aria-live="polite" data-cnpj-input-target="message" hidden></p>
       <p id="seller_cnpj_hint" class="mt-1 text-xs text-ink-muted">Opcional. Aceita também o CNPJ com letras, emitido desde julho de 2026.</p>
       <%= field_error.call("seller_cnpj_error", cnpj_errors) %>
     </div>
