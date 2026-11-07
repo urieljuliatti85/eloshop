@@ -57,15 +57,16 @@ RSpec.describe "Seller commercial terms", type: :request do
     let(:distributor_user) { User.create!(email_address: "fios-termos@example.com", password: "password123", role: :seller, seller: distributor) }
 
     it "shows the distributor terms and records exactly the text that was shown" do
-      sign_in_without_terms(distributor_user)
+      # Desde o PR 2 da Fase 25 o distribuidor só entra pela porta dele.
+      post distributor_login_path, params: { email_address: distributor_user.email_address, password: "password123" }
 
-      get seller_terms_path
+      get distributor_terms_path
       expect(response.body).to include(SellerTerms::DISTRIBUTOR_VERSION)
       expect(response.body).to include("DISTRIBUIDOR DE INSUMOS")
       expect(response.body).not_to include(SellerTerms::VERSION)
       expect(response.body).not_to include("O que mudou nesta versão")
 
-      post seller_terms_path, params: { terms_accepted: "1" }
+      post distributor_terms_path, params: { terms_accepted: "1" }
 
       acceptance = SellerTermsAcceptance.find_by!(user: distributor_user)
       expect(acceptance.terms_version).to eq(SellerTerms::DISTRIBUTOR_VERSION)

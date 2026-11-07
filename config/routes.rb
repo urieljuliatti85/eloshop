@@ -123,6 +123,22 @@ Rails.application.routes.draw do
   get "seja-um-artesao/nome", to: "seller_registrations#name_availability", as: :seller_registration_name_availability
   post "seja-um-artesao", to: "seller_registrations#create", as: :seller_registration
 
+  # Distribuidor de insumos (ADR 007, Fase 25): cadastro, porta de login e
+  # painel próprios sob /atacado. O cadastro fica atrás de
+  # `config.x.distributors.signup_enabled`; login e painel, não, para quem já
+  # existe continuar entrando. A conexão do Mercado Pago passa pelas rotas de
+  # /painel, porque o redirect URI registrado no provedor é um só.
+  get "atacado/cadastro", to: "distributor_registrations#new", as: :new_distributor_registration
+  post "atacado/cadastro", to: "distributor_registrations#create", as: :distributor_registration
+  get "atacado/termos-comerciais", to: "seller_portal/terms#show", as: :distributor_terms, defaults: { kind: "distributor" }
+  post "atacado/termos-comerciais", to: "seller_portal/terms#accept"
+  scope module: :distributor_portal, as: :distributor, path: "atacado" do
+    get "entrar", to: "sessions#new", as: :login
+    post "entrar", to: "sessions#create"
+    delete "sair", to: "sessions#destroy", as: :logout
+    get "painel", to: "dashboard#index", as: :root
+  end
+
   scope module: :seller_portal, as: :seller, path: "painel" do
     get "entrar", to: "sessions#new", as: :login
     post "entrar", to: "sessions#create"

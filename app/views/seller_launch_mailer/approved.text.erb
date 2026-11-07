@@ -1,5 +1,12 @@
 Olá, <%= @seller.name %>!
 
+<% if @seller.distributor? -%>
+Seu cadastro de distribuidor foi aprovado na EloShop.
+
+O cadastro dos insumos chega numa próxima etapa, e avisaremos quando ele estiver disponível no seu painel.
+
+Ver o meu painel: <%= distributor_root_url %>
+<% else -%>
 Seu ateliê foi aprovado na EloShop.
 
 <% if @sales_open -%>
@@ -11,6 +18,7 @@ Enquanto isso, sua página já está no ar: continue cadastrando peças e divulg
 <% end -%>
 
 Ver a página do meu ateliê: <%= seller_url(@seller.slug) %>
+<% end -%>
 
 Qualquer dúvida, é só responder este e-mail.
 Equipe EloShop

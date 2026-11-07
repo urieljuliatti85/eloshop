@@ -4,6 +4,12 @@ module SellerPortal
   class MercadoPagoConnectionsController < BaseController
     OAUTH_STATE_TTL = 10.minutes
 
+    # Ateliê e distribuidor conectam por aqui: o redirect URI registrado no
+    # Mercado Pago é um só (`MERCADO_PAGO_MARKETPLACE_REDIRECT_URI`, em
+    # /painel). Nenhuma ação renderiza o layout do ateliê — todas redirecionam,
+    # e de volta para o painel de quem conectou (ADR 007).
+    self.seller_portals = %i[atelier distributor]
+
     def create
       state = SecureRandom.urlsafe_base64(32)
       code_verifier = SecureRandom.urlsafe_base64(64)
@@ -18,14 +24,14 @@ module SellerPortal
       redirect_to authorization_url, allow_other_host: true
     rescue Marketplace::MercadoPagoOauth::ConfigurationError => e
       session.delete(:mercado_pago_oauth)
-      redirect_to seller_atelier_path, alert: e.message
+      redirect_to connection_return_path, alert: e.message
     end
 
     def callback
       code_verifier = valid_state_and_code_verifier(params[:state])
       unless code_verifier && params[:code].present?
         track_connection_failure
-        redirect_to seller_atelier_path, alert: "Não foi possível validar o retorno do Mercado Pago. Tente novamente."
+        redirect_to connection_return_path, alert: "Não foi possível validar o retorno do Mercado Pago. Tente novamente."
         return
       end
 
@@ -40,22 +46,26 @@ module SellerPortal
         )
         SellerOnboardingMailer.awaiting_approval(current_seller).deliver_later
       end
-      redirect_to seller_atelier_path, notice: "Conta Mercado Pago conectada. A plataforma agora pode concluir a aprovação."
+      redirect_to connection_return_path, notice: "Conta Mercado Pago conectada. A plataforma agora pode concluir a aprovação."
     rescue Marketplace::MercadoPagoOauth::ConfigurationError,
       Marketplace::MercadoPagoOauth::RequestFailed => e
       track_connection_failure
-      redirect_to seller_atelier_path, alert: e.message
+      redirect_to connection_return_path, alert: e.message
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
       track_connection_failure
-      redirect_to seller_atelier_path, alert: "Esta conta Mercado Pago já está vinculada ou não pôde ser salva."
+      redirect_to connection_return_path, alert: "Esta conta Mercado Pago já está vinculada ou não pôde ser salva."
     end
 
     def destroy
       current_seller.disconnect_mercado_pago!
-      redirect_to seller_atelier_path, notice: "Conta Mercado Pago desconectada. A publicação foi suspensa até uma nova aprovação. O acesso fica guardado só para devolver o dinheiro de vendas já feitas, por até 180 dias."
+      redirect_to connection_return_path, notice: "Conta Mercado Pago desconectada. A publicação foi suspensa até uma nova aprovação. O acesso fica guardado só para devolver o dinheiro de vendas já feitas, por até 180 dias."
     end
 
     private
+
+    def connection_return_path
+      current_seller.distributor? ? distributor_root_path : seller_atelier_path
+    end
 
     def track_connection_failure
       Analytics::Funnel.track("seller_mp_connect_failed", seller: current_seller)

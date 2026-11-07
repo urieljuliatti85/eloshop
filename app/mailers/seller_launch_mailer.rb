@@ -6,7 +6,10 @@ class SellerLaunchMailer < ApplicationMailer
     @sales_open = PlatformSetting.sales_open?
     @pre_launch_notice = PlatformSetting.pre_launch_notice(ready: seller.setup_steps.values.all?)
 
-    mail(to: recipient, subject: "Seu ateliê foi aprovado na EloShop, #{seller.name}!")
+    # O distribuidor (ADR 007) não tem página pública nem peças: o aviso dele
+    # leva ao painel em /atacado/painel.
+    subject = seller.distributor? ? "Seu cadastro de distribuidor foi aprovado na EloShop, #{seller.name}!" : "Seu ateliê foi aprovado na EloShop, #{seller.name}!"
+    mail(to: recipient, subject: subject)
   end
 
   # Fim do pré-cadastro: as vendas abriram. Também pede que o artesão divulgue

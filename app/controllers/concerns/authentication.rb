@@ -3,7 +3,7 @@ module Authentication
 
   included do
     before_action :require_authentication
-    helper_method :authenticated?
+    helper_method :authenticated?, :seller_panel_path_for
   end
 
   class_methods do
@@ -44,10 +44,18 @@ module Authentication
     end
 
     def default_authenticated_url
-      return admin_root_url if Current.user.admin?
-      return seller_root_url if Current.user.seller?
+      case Current.user.portal
+      when :admin then admin_root_url
+      when :distributor then distributor_root_url
+      else seller_root_url
+      end
+    end
 
-      root_url
+    # O painel de cada tipo de vendedor (ADR 007): o ateliê em /painel, o
+    # distribuidor em /atacado/painel. Destino de avisos e redirecionamentos
+    # que servem aos dois tipos.
+    def seller_panel_path_for(seller)
+      seller.distributor? ? distributor_root_path : seller_root_path
     end
 
     def start_new_session_for(user)

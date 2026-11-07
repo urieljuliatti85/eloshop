@@ -6,7 +6,7 @@ class SellerRegistrationsController < ApplicationController
 
   allow_unauthenticated_access
   rate_limit to: 5, within: 15.minutes, only: :create,
-    with: -> { redirect_to new_seller_registration_path(anchor: "cadastro"), alert: RATE_LIMIT_MESSAGE }
+    with: -> { redirect_to registration_form_path(anchor: "cadastro"), alert: RATE_LIMIT_MESSAGE }
 
   # Sem isto, o token de formulário vencido caía na página 422 padrão do Rails
   # — em inglês e sem dizer o que fazer. Só reapresenta o formulário: nada é
@@ -20,12 +20,12 @@ class SellerRegistrationsController < ApplicationController
   end
 
   def new
-    @seller = Seller.new
+    @seller = Seller.new(kind: seller_kind)
     @user = User.new(role: :seller)
   end
 
   def create
-    @seller = Seller.new(seller_params)
+    @seller = Seller.new(seller_params.merge(kind: seller_kind))
     @user = User.new(user_params.merge(role: :seller, seller: @seller))
 
     # Valida tudo antes de decidir, e não `@seller.valid? && @user.valid?`: o
@@ -47,22 +47,43 @@ class SellerRegistrationsController < ApplicationController
         @user.save!
         SellerTermsAcceptance.record!(user: @user, seller: @seller, request: request)
       end
-      welcome_queued = account_email_budget_available?
+      welcome_queued = sends_welcome_email? && account_email_budget_available?
       SendWelcomeSellerJob.perform_later(@seller, @user.email_address) if welcome_queued
       start_new_session_for(@user)
       notice = "Cadastro recebido. A publicação será liberada após a aprovação da plataforma."
       notice += " #{SPAM_HINT}" if welcome_queued
-      redirect_to seller_root_path, notice: notice
+      redirect_to seller_panel_path_for(@seller), notice: notice
     else
       add_terms_error
       render_registration_errors
     end
   rescue ActiveRecord::RecordNotUnique
-    @user.errors.add(:email_address, "já está em uso")
+    # Corrida: outro cadastro gravou o mesmo CPF (no mesmo tipo) ou o mesmo
+    # e-mail entre a validação e o INSERT. Validar de novo agora encontra o
+    # registro concorrente e mostra o erro do campo certo; antes, CPF repetido
+    # aparecia como "e-mail já está em uso" (achado do QA, 2026-11-07).
+    @seller.valid?
+    @user.valid?
+    @user.errors.add(:email_address, "já está em uso") if @seller.errors.empty? && @user.errors.empty?
     render_registration_errors
   end
 
   private
+
+  # Pontos que o cadastro do distribuidor (`DistributorRegistrationsController`,
+  # ADR 007) troca; o resto — validação completa, Turnstile, rate limit, termos
+  # gravados na mesma transação e o log sem dados pessoais — é o mesmo.
+  def seller_kind
+    "atelier"
+  end
+
+  def registration_form_path(...)
+    new_seller_registration_path(...)
+  end
+
+  def sends_welcome_email?
+    true
+  end
 
   # O evento leva só atributo e tipo do erro (`cpf_hash: taken`), nunca o
   # valor digitado: CPF, e-mail e senha não vão para log nem Sentry (§43). É o
@@ -80,12 +101,12 @@ class SellerRegistrationsController < ApplicationController
   end
 
   def render_expired_form
-    @seller = Seller.new(seller_params)
+    @seller = Seller.new(seller_params.merge(kind: seller_kind))
     @user = User.new(user_params.except(:password, :password_confirmation).merge(role: :seller, seller: @seller))
     @user.errors.add(:base, EXPIRED_FORM_MESSAGE)
     render_registration_errors
   rescue ActionController::ParameterMissing
-    @seller = Seller.new
+    @seller = Seller.new(kind: seller_kind)
     @user = User.new(role: :seller)
     @user.errors.add(:base, EXPIRED_FORM_MESSAGE)
     render_registration_errors

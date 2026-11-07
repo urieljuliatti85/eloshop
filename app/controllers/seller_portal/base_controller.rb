@@ -8,6 +8,11 @@ module SellerPortal
 
     helper_method :current_seller
 
+    # Os tipos de vendedor que cada controller atende (ADR 007). O painel em
+    # /painel é do ateliê; só a conexão do Mercado Pago serve aos dois, porque
+    # o redirect URI registrado no provedor aponta para cá.
+    class_attribute :seller_portals, default: %i[atelier]
+
     private
 
     def current_seller
@@ -47,15 +52,19 @@ module SellerPortal
       redirect_to seller_login_path
     end
 
+    # Distribuidor logado em /painel vai para o painel dele, não para o login
+    # do ateliê: a sessão é válida, só a porta é outra.
     def require_seller!
-      redirect_to seller_login_path unless Current.user&.seller?
+      return redirect_to seller_login_path unless Current.user&.seller?
+
+      redirect_to seller_panel_path_for(current_seller) unless seller_portals.include?(Current.user.portal)
     end
 
     def require_current_terms!
       return if SellerTermsAcceptance.current_for?(Current.user)
 
       session[:return_to_after_terms] = request.fullpath
-      redirect_to seller_terms_path
+      redirect_to current_seller.distributor? ? distributor_terms_path : seller_terms_path
     end
   end
 end
