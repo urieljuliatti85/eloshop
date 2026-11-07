@@ -133,6 +133,19 @@ RSpec.describe "Distributor portal", type: :request do
       expect(response.body).not_to include(other.seller.name)
     end
 
+    # Vitrine do pré-cadastro, como no painel do ateliê (decisão de 2026-11-07).
+    it "tells a pending distributor whether its showcase was released" do
+      user = create_distributor
+      distributor_sign_in(user)
+
+      get distributor_root_path
+      expect(response.body).to include("A EloShop vai liberar a sua vitrine", "Fica pública quando a EloShop liberar a sua vitrine")
+
+      user.seller.showcase!
+      get distributor_root_path
+      expect(response.body).to include("Sua vitrine já foi liberada.", "Liberada: vai ao ar junto com a vitrine de insumos.")
+    end
+
     it "sends a distributor without the current terms to the distributor terms" do
       distributor_sign_in(create_distributor(accept_terms: false))
 

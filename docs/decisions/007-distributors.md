@@ -165,6 +165,28 @@ antes dessa regra (Fase 28): as duas sobem juntas, ou a 28 antes.
   sobreposição impossível por construção.
 * A faixa é resolvida dentro de `CartItem#unit_price_cents`, que o checkout já
   usa sob trava; o servidor continua sendo a única fonte do preço.
+* **Formato (decisão do Uriel, 2026-11-07): desconto em %** — "a partir de N
+  unidades, X% de desconto", em basis points (`ProductPriceTier#discount_bps`),
+  com **teto de 50%** (decisão de 2026-11-07, para o preço nunca chegar perto
+  de zero), porque as variantes podem ter preços diferentes e um preço
+  fixo por faixa não teria como valer para todas. O preço da unidade com a
+  faixa é `preço × (10.000 − desconto) / 10.000` em centavos inteiros,
+  arredondado para baixo (a sobra de menos de um centavo fica com o
+  comprador). As faixas começam acima da quantidade mínima, têm desconto
+  crescente e são no máximo cinco por produto; a própria faixa confere as
+  vizinhas e trava a linha do produto ao salvar, para duas faixas gravadas ao
+  mesmo tempo não passarem contraditórias. Quantidades (mínimo e faixas) vão
+  até 100.000, também como constraint no banco.
+* **Unidade (decisão de 2026-11-07): lista fixa e descrição** — unidade,
+  pacote, metro, quilo, rolo ou caixa (`Product#sale_unit`), mais um texto
+  curto e opcional do que vem nela (`sale_unit_detail`, até 60 caracteres:
+  "pacote com 100 g").
+* **Navegação de `/insumos` (decisão de 2026-11-07): material e técnica**, as
+  tabelas que já existem; uma árvore de categorias de insumo só entra se os
+  distribuidores pedirem.
+* **Mínimo e estoque:** o mínimo conta o produto inteiro, somando as variantes
+  ativas, e mínimo maior que o estoque é `Product#purchase_blocker`
+  `:below_minimum_stock`, na fonte única de disponibilidade.
 
 **Cupom da plataforma — só para ateliê.** Hoje o cupom não tem escopo de
 vendedor e o desconto sai do repasse de quem vende (`seller_amount_cents =
@@ -236,10 +258,21 @@ no painel, sem página no ar. Insumo nunca é servido em `/artesaos/...`
 
 **Esconder vale para o distribuidor (2026-11-07).** Como no ateliê, o admin
 tira a loja e os insumos do ar sem suspender a conta (por exemplo, durante a
-análise de uma denúncia). Até a Fase 26 a ação só grava `hidden_at`, e os
-botões ficam fora da ficha; com a loja no ar, eles voltam e a vitrine de
-insumos respeita a marca. "Liberar na vitrine" (`showcase!`) continua só do
-ateliê: é o pré-cadastro da vitrine de peças.
+análise de uma denúncia).
+
+**Vitrine do pré-cadastro também para o distribuidor (2026-11-07).** Como no
+ateliê, o admin pode liberar o distribuidor pendente na vitrine
+(`Seller#showcase!`), para os artesãos verem a loja e os insumos antes da
+aprovação, sem o Mercado Pago; vender continua exigindo a aprovação. A
+visibilidade é a mesma regra do ateliê, em lista própria:
+`Seller.supply_listed` (aprovado, ou pendente liberado, nunca escondido ou
+suspenso), par de `Seller.publicly_listed`, que continua só de ateliê. As duas
+listas nunca se misturam. Os botões de liberar e de esconder já estão na ficha
+do admin, e o painel do distribuidor diz se a vitrine foi liberada; as marcas
+passam a ter efeito público quando a vitrine de insumos for ao ar (Fase 26,
+PR C), que mostra só `supply_listed`. Isso também responde à dúvida de
+`approve!` gravar `showcased_at` no distribuidor: a loja segue a regra do
+ateliê.
 
 ## Decisões pendentes
 

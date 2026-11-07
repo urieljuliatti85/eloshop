@@ -182,6 +182,14 @@ pt-BR:
         fixed_shipping_interstate: "Valor do frete para outros estados"
         fixed_shipping_interstate_cents: "Valor do frete para outros estados"
         fixed_shipping_interstate_estimated_days: "Prazo do frete para outros estados"
+        sale_unit: "Unidade de venda"
+        sale_unit_detail: "O que vem em cada unidade"
+        min_order_quantity: "Quantidade mínima"
+        price_tiers: "Faixas de preço"
+      product_price_tier:
+        product: "Produto"
+        min_quantity: "A partir de"
+        discount_bps: "Desconto"
       product_variant:
         product: "Produto"
         sku: "SKU"
@@ -240,6 +248,27 @@ pt-BR:
       active: "Publicado"
       sold_out: "Esgotado"
       discontinued: "Descontinuado"
+    # Unidade de venda do insumo (ADR 007): singular e plural, para "1 pacote"
+    # e "10 pacotes".
+    sale_units:
+      unit:
+        one: "unidade"
+        other: "unidades"
+      pack:
+        one: "pacote"
+        other: "pacotes"
+      meter:
+        one: "metro"
+        other: "metros"
+      kilogram:
+        one: "quilo"
+        other: "quilos"
+      roll:
+        one: "rolo"
+        other: "rolos"
+      box:
+        one: "caixa"
+        other: "caixas"
   seller_orders:
     statuses:
       pending: "Pendente"

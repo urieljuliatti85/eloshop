@@ -87,9 +87,17 @@ class Seller < ApplicationRecord
   # Só ateliê: a vitrine artesanal (catálogo, busca, home, sitemap, API,
   # `/artesaos`, aviso de abertura das vendas) nunca mostra distribuidor por
   # omissão. Insumo tem vitrine própria (ADR 007, "Vitrine fail-closed").
-  scope :publicly_listed, -> {
-    atelier.merge(visible.where(status: :approved).or(visible.where(status: :pending).where.not(showcased_at: nil)))
-  }
+  scope :publicly_listed, -> { atelier.merge(in_store) }
+
+  # Distribuidores que aparecem na vitrine de insumos (/insumos e
+  # /distribuidores, Fase 26), pela mesma regra do ateliê: aprovado, ou
+  # pendente liberado pelo admin na vitrine do pré-cadastro (decisão do
+  # Uriel, 2026-11-07), nunca escondido ou suspenso.
+  scope :supply_listed, -> { distributor.merge(in_store) }
+
+  # A regra comum aos dois tipos; quem lista é `publicly_listed` (peças) ou
+  # `supply_listed` (insumos), que nunca se misturam.
+  scope :in_store, -> { visible.where(status: :approved).or(visible.where(status: :pending).where.not(showcased_at: nil)) }
 
   # Nome livre para um novo ateliê? A unicidade é do slug, então "Ateliê da Ana"
   # e "atelie da ana" colidem. Devolve a sugestão mais próxima quando não é.
@@ -211,21 +219,19 @@ class Seller < ApplicationRecord
     end
   end
 
-  # Libera o ateliê pendente para aparecer na loja sem o Mercado Pago, depois
-  # da revisão do admin. Aprovado já aparece (e esconder é `hide!`); suspenso
-  # precisa ser reaprovado.
+  # Libera o vendedor pendente para aparecer na loja sem o Mercado Pago,
+  # depois da revisão do admin. Aprovado já aparece (e esconder é `hide!`);
+  # suspenso precisa ser reaprovado. Vale para os dois tipos (decisão do
+  # Uriel, 2026-11-07): o ateliê na vitrine de peças, o distribuidor na de
+  # insumos (`supply_listed`), que nunca se misturam.
   def showcase!
-    # O distribuidor nunca aparece na vitrine artesanal (ADR 007); liberar
-    # não teria efeito e só confundiria a ficha do admin.
-    raise VerificationRequired, "Distribuidor não aparece na vitrine de peças." if distributor?
-    raise VerificationRequired, "Só um ateliê pendente pode ser liberado na vitrine." unless pending?
+    raise VerificationRequired, "Só um vendedor pendente pode ser liberado na vitrine." unless pending?
 
     update!(showcased_at: showcased_at || Time.current)
   end
 
   def unshowcase!
-    raise VerificationRequired, "Distribuidor não aparece na vitrine de peças." if distributor?
-    raise VerificationRequired, "Só um ateliê pendente pode ser retirado da vitrine." unless pending?
+    raise VerificationRequired, "Só um vendedor pendente pode ser retirado da vitrine." unless pending?
 
     update!(showcased_at: nil)
   end
@@ -235,7 +241,15 @@ class Seller < ApplicationRecord
   end
 
   def publicly_listed?
-    return false unless atelier?
+    atelier? && in_store?
+  end
+
+  # O distribuidor aparece na vitrine de insumos? Par de `supply_listed`.
+  def supply_listed?
+    distributor? && in_store?
+  end
+
+  def in_store?
     return false if suspended? || hidden?
 
     approved? || showcased?

@@ -1409,7 +1409,7 @@ Fases 22 e 23; pré-requisitos de negócio da Parte 4.
 
 ## FASE 26 — Catálogo de insumos
 
-Status: `[ ]`
+Status: `[~]` — antecipada em 2026-11-07, em três PRs: A (domínio: unidade de venda com descrição, quantidade mínima com bloqueio pela fonte única, faixas de desconto em %), B (painel do distribuidor para cadastrar insumos) e C (páginas públicas `/insumos` e `/distribuidores`, SEO, JSON-LD e API). Decisões do Uriel em 2026-11-07: faixa como desconto em %, unidade em lista fixa com descrição opcional, navegação por material e técnica (ADR 007).
 
 ### Objetivo
 
@@ -1427,7 +1427,7 @@ Representar o insumo como produto comercial: unidade de venda, quantidade mínim
 * Unidade e faixas na API (contrato regenerado pelo rswag) e no JSON-LD (`priceSpecification`)
 * Vitrine `/insumos`, fora de `/produtos`, da busca e do SEO das peças artesanais
 * Endereços públicos (decisão de 2026-11-07, ADR 007): lista `/distribuidores`, loja `/distribuidores/:slug` e produto `/distribuidores/:slug/insumos/:produto`, no formato do ateliê e fora de `/artesaos`
-* Esconder vale para o distribuidor (decisão de 2026-11-07): `Seller#hidden?` tira do ar a loja e os insumos dele sem suspender a conta, como no ateliê; os botões "Esconder/Mostrar" voltam à ficha do admin junto com a loja
+* Esconder e liberar na vitrine valem para o distribuidor (decisões de 2026-11-07): a vitrine de insumos e a loja `/distribuidores/:slug` mostram só `Seller.supply_listed` (aprovado, ou pendente liberado pelo admin, nunca escondido ou suspenso), a mesma regra do ateliê em lista própria
 * Ponte com `Material` e `Technique` ("insumos para crochê")
 * SEO e dados estruturados da vitrine de insumos
 

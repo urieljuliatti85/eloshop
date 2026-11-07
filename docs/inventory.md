@@ -12,6 +12,10 @@ Produto com estoque tradicional, controlado por uma quantidade numérica (`stock
 
 `Product.availability_type: "one_of_a_kind"`. Possui uma única unidade disponível (`stock_quantity` limitado a no máximo 1 por validação). Depois da venda, o produto vai para `sold_out` e **não pode voltar a `active`** — a transição é bloqueada no modelo (`Product::ONE_OF_A_KIND_STATUS_TRANSITIONS`), diferente de um produto `standard`, que pode ser reabastecido normalmente.
 
+### Quantidade mínima do insumo `(implementado — Fase 26, ADR 007)`
+
+O insumo do distribuidor pode exigir uma quantidade mínima de compra (`Product#min_order_quantity`, padrão 1; na peça de ateliê é sempre 1). O mínimo conta o produto inteiro, somando o estoque das variantes ativas (`Product#stock_for_minimum`). Mínimo maior que o estoque torna o insumo indisponível pela fonte única: `Product#purchase_blocker` devolve `:below_minimum_stock`, e `available_for_purchase?` fica falso. Sob encomenda não tem estoque físico, então o mínimo não bloqueia por estoque.
+
 ### Made to Order `(implementado — Fase 8)`
 
 `Product.availability_type: "made_to_order"`. Não depende de estoque físico — `available_for_purchase?` ignora `stock_quantity` para este tipo, e o checkout não debita estoque. Exige prazo de produção (`production_time_min_days`/`production_time_max_days`), apresentado ao cliente antes da compra e gravado como snapshot em `OrderItem#production_time_snapshot` no momento da compra (ver `docs/shipping.md` para a relação entre prazo de produção e prazo de transporte — continuam sendo coisas separadas).

@@ -381,7 +381,7 @@ RSpec.describe "Admin sellers", type: :request do
         kind: "distributor", cnpj: "12.ABC.345/01DE-35", issues_invoices: true)
     end
 
-    it "shows the distributor without the artisan showcase and SuperFrete" do
+    it "shows the distributor with its own showcase and without SuperFrete" do
       sign_in_as(admin)
 
       get admin_seller_path(distributor)
@@ -389,7 +389,9 @@ RSpec.describe "Admin sellers", type: :request do
       page = Nokogiri::HTML(response.body)
       expect(page.at_css(".admin-section-label").text).to eq("Distribuidor de insumos")
       expect(response.body).to include("12.ABC.345/01DE-35", "Emite nota fiscal: sim", "Termos Comerciais do Distribuidor", distributor_root_url)
-      expect(response.body).not_to include("Liberar na vitrine", "Esconder da vitrine", "Vitrine do pré-cadastro", "SuperFrete", seller_atelier_url)
+      expect(response.body).to include("Vitrine de insumos:", "Vitrine do pré-cadastro", "Liberar na vitrine", "Esconder da vitrine",
+        "Liberar faz o distribuidor aparecer na vitrine de insumos")
+      expect(response.body).not_to include("SuperFrete", seller_atelier_url)
       expect(page.at_css("input[type=submit][value='Aprovar distribuidor']")).to be_present
     end
 
@@ -418,21 +420,20 @@ RSpec.describe "Admin sellers", type: :request do
       expect(flash[:notice]).to eq("Distribuidor visível de novo: a loja e os insumos dele voltam ao ar.")
     end
 
-    it "refuses to take a distributor out of the artisan showcase" do
-      sign_in_as(admin)
-
-      patch unshowcase_admin_seller_path(distributor)
-
-      expect(flash[:alert]).to eq("Distribuidor não aparece na vitrine de peças.")
-    end
-
-    it "refuses to release a distributor to the artisan showcase" do
+    # Decisão de 2026-11-07: como o ateliê, o distribuidor pendente pode ser
+    # liberado na vitrine (a de insumos) antes da aprovação.
+    it "releases a pending distributor to the supply showcase and takes it back" do
       sign_in_as(admin)
 
       patch showcase_admin_seller_path(distributor)
+      expect(distributor.reload).to be_showcased
+      expect(distributor).to be_supply_listed
+      expect(distributor).not_to be_publicly_listed
+      expect(flash[:notice]).to start_with("Distribuidor liberado na vitrine de insumos.")
 
-      expect(flash[:alert]).to eq("Distribuidor não aparece na vitrine de peças.")
-      expect(distributor.reload.showcased_at).to be_nil
+      patch unshowcase_admin_seller_path(distributor)
+      expect(distributor.reload).not_to be_showcased
+      expect(flash[:notice]).to eq("Distribuidor retirado da vitrine de insumos.")
     end
   end
 end
