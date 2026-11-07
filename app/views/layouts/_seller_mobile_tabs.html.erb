@@ -1,4 +1,5 @@
-<%# Abas inferiores do painel no celular. O layout escolhe a lista: as
+<%# Abas inferiores do painel no celular, do ateliê e do distribuidor (cada
+    layout monta a própria lista). O layout do ateliê escolhe a lista: as
     etapas dos Primeiros passos enquanto o cadastro não está pronto
     (`seller_setup_tabs`), o trabalho do dia depois (`seller_work_tabs`). A
     aba da página atual fica destacada (traço no topo, como a faixa de
@@ -17,7 +18,9 @@
      new_product: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/>',
      products: '<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>',
      messages: '<path d="M20 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>',
-     superfrete: '<path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>'
+     superfrete: '<path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>',
+     notifications: '<path d="M6 8a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 12 6 8Z"/><path d="M9.5 16a2.5 2.5 0 0 0 5 0"/>',
+     profile: '<path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/>'
    } %>
 <nav aria-label="<%= label %>" data-mobile-tabs class="fixed inset-x-0 bottom-0 z-40 border-t border-brand-100 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(120,40,10,0.08)] sm:hidden">
   <ul class="grid h-16 <%= tabs.size > 5 ? 'grid-cols-6' : 'grid-cols-5' %>">

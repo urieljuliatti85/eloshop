@@ -11,7 +11,7 @@
   <span><%= label %></span>
   <%# Passos obrigatórios da conta: o selo carrega o significado em texto (não
       só a cor) para leitores de tela, e some do vermelho quando está resolvido. %>
-  <% if path == seller_mercado_pago_guide_path %>
+  <% if path == panel_path(:mercado_pago_guide) %>
     <% case current_seller.mercado_pago_account_state %>
     <% when :ready %>
       <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">✓ Conectado</span>
@@ -26,7 +26,7 @@
         Obrigatório
       </span>
     <% end %>
-  <% elsif path == seller_pix_key_guide_path %>
+  <% elsif path == panel_path(:pix_key_guide) %>
     <%# Sem a chave o PIX é recusado; a EloShop só sabe que ela existe quando o
         vendedor declara (`pix_key_confirmed_at`). %>
     <% if current_seller.pix_key_confirmed_at? %>

@@ -26,7 +26,7 @@
           logada NAQUELE navegador, e autorizar outra por engano zera a
           aprovação e despublica o catálogo (`connect_mercado_pago!`). %>
       <% if @mercado_pago_oauth_configured %>
-        <p class="mt-2 text-sm leading-6 text-amber-700">Ao reconectar, autorize <strong>a mesma conta</strong> (identificador <%= current_seller.mercado_pago_user_id %>). Autorizar outra conta zera a aprovação do ateliê e suspende a publicação dos produtos até uma nova aprovação da plataforma.</p>
+        <p class="mt-2 text-sm leading-6 text-amber-700">Ao reconectar, autorize <strong>a mesma conta</strong> (identificador <%= current_seller.mercado_pago_user_id %>). Autorizar outra conta zera a aprovação <%= current_seller.distributor? ? "da distribuidora" : "do ateliê" %> e suspende a publicação dos produtos até uma nova aprovação da plataforma.</p>
       <% end %>
     <% elsif @mercado_pago_oauth_configured %>
       <% if @mercado_pago_oauth_sandbox %><p class="mt-2 text-sm leading-6 text-amber-700"><strong>Ambiente de teste:</strong> conecte uma conta TESTUSER do tipo Vendedor. Esta conexão não permite aprovação nem vendas reais.</p><% else %><p class="mt-2 text-sm leading-6 text-stone-600">Conclua a identificação da sua conta no Mercado Pago e autorize a EloShop a processar suas vendas.</p><% end %>

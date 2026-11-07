@@ -26,7 +26,13 @@ class PanelPathsTest < ActiveSupport::TestCase
 
   test "a distributor gets the /atacado paths, and a screen its panel lacks fails loudly" do
     assert_equal "/atacado/painel", panel_path(:root, seller: @distributor)
-    assert_raises(NoMethodError) { panel_path(:getting_started, seller: @distributor) }
+    assert_equal "/atacado/painel/primeiros-passos/endereco", panel_path(:getting_started, etapa: "endereco", seller: @distributor)
+    assert_equal "/atacado/painel/dados", panel_path(:atelier, seller: @distributor), "Dados do ateliê viram Dados da distribuidora"
+    assert_equal "/atacado/painel/dados/edit", panel_path(:edit_atelier, seller: @distributor)
+    assert_equal "/atacado/painel/dados/cep/01310100", panel_path(:atelier_postal_code, cep: "01310100", seller: @distributor)
+    assert_equal "/atacado/painel/avisos/7/mark_as_read", panel_path(:mark_as_read_notification, 7, seller: @distributor)
+    # O catálogo do distribuidor chega no PR B da Fase 26: até lá, erro alto.
+    assert_raises(NoMethodError) { panel_path(:products, seller: @distributor) }
   end
 
   test "seller_panel_path_for is the root of each panel" do

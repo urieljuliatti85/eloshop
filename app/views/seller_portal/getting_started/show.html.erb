@@ -4,8 +4,8 @@
     etapa vem da URL; sem ela, a próxima pendente. As ações continuam nas
     telas de sempre (Dados do Ateliê, conexão do Mercado Pago, novo produto). %>
 <%
-  titles = SellerPortal::GettingStartedController::STEP_TITLES
-  short_titles = SellerPortal::GettingStartedController::STEP_SHORT_TITLES
+  titles = SellerPortal::GettingStartedController.step_titles_for(current_seller)
+  short_titles = SellerPortal::GettingStartedController.step_short_titles_for(current_seller)
   slugs = SellerPortal::GettingStartedController::STEP_SLUGS
 %>
 
@@ -15,7 +15,10 @@
       <h1 class="text-3xl font-black tracking-tight text-stone-950">Primeiros passos</h1>
       <p class="mt-1 text-sm text-stone-600"><%= @completed_steps_count %> de <%= @steps.size %> etapas concluídas</p>
     </div>
-    <button type="button" data-action="tour#start" class="seller-button seller-button--secondary">Fazer tour pelo painel</button>
+    <%# O tour guiado é do painel do ateliê; o do distribuidor ainda não tem um. %>
+    <% unless current_seller.distributor? %>
+      <button type="button" data-action="tour#start" class="seller-button seller-button--secondary">Fazer tour pelo painel</button>
+    <% end %>
   </header>
 
   <%= render "seller_portal/getting_started/strip", steps: @steps, current_step: @current_step %>
@@ -36,9 +39,15 @@
     </section>
   <% else %>
     <section class="seller-card-lg text-center" aria-labelledby="etapa-title">
-      <span class="seller-badge bg-emerald-100 text-emerald-800">Ateliê pronto</span>
-      <h2 id="etapa-title" class="mt-4 text-2xl font-bold text-stone-950">Todas as etapas estão feitas</h2>
-      <p class="mx-auto mt-2 max-w-md text-base leading-7 text-stone-700">Seus produtos podem ser publicados e vendidos. O dia a dia do ateliê fica na visão geral.</p>
+      <% if current_seller.distributor? %>
+        <span class="seller-badge bg-emerald-100 text-emerald-800">Distribuidora pronta</span>
+        <h2 id="etapa-title" class="mt-4 text-2xl font-bold text-stone-950">Todas as etapas estão feitas</h2>
+        <p class="mx-auto mt-2 max-w-md text-base leading-7 text-stone-700">Quando o cadastro de insumos chegar, ele aparece na visão geral.</p>
+      <% else %>
+        <span class="seller-badge bg-emerald-100 text-emerald-800">Ateliê pronto</span>
+        <h2 id="etapa-title" class="mt-4 text-2xl font-bold text-stone-950">Todas as etapas estão feitas</h2>
+        <p class="mx-auto mt-2 max-w-md text-base leading-7 text-stone-700">Seus produtos podem ser publicados e vendidos. O dia a dia do ateliê fica na visão geral.</p>
+      <% end %>
       <%= link_to "Ir para a visão geral", panel_path(:root), class: "seller-button seller-button--primary mt-5" %>
     </section>
   <% end %>

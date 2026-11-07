@@ -1,0 +1,65 @@
+<% content_for :title, "Editar dados | #{current_seller.name}" %>
+
+<div class="max-w-2xl space-y-8">
+  <header>
+    <h1 class="text-3xl font-black tracking-tight">Editar dados</h1>
+  </header>
+
+  <%= form_with model: current_seller, url: distributor_profile_path, method: :patch, class: "space-y-5 rounded-[2rem] border border-brand-100 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.03),0_16px_40px_rgba(120,40,10,0.05)] sm:p-8" do |form| %>
+    <% if current_seller.errors.any? %>
+      <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
+        <ul class="list-inside list-disc">
+          <% current_seller.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= form.label :name, "Nome da distribuidora", class: "seller-label" %>
+      <%= form.text_field :name, required: true, class: "seller-input min-h-11" %>
+      <p class="mt-1 text-xs text-stone-500">Mudar o nome não muda o endereço da sua loja.</p>
+    </div>
+
+    <fieldset class="border-t border-stone-200 pt-6">
+      <legend class="sr-only">Empresa e responsável</legend>
+      <p class="text-sm font-semibold text-stone-700">Empresa e responsável</p>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <div>
+          <%= form.label :owner_full_name, "Nome completo do responsável", class: "seller-label" %>
+          <%= form.text_field :owner_full_name, class: "seller-input min-h-11" %>
+        </div>
+        <%# Mesma máscara e validação do cadastro (cnpj_input_controller). %>
+        <div data-controller="cnpj-input">
+          <%= form.label :cnpj, "CNPJ", class: "seller-label" %>
+          <%= form.text_field :cnpj, value: (current_seller.cnpj.present? ? Cnpj.format(current_seller.cnpj) : nil), autocomplete: "off", autocapitalize: "characters", spellcheck: false, maxlength: 18, placeholder: "00.000.000/0000-00",
+                data: { cnpj_input_target: "input", action: "input->cnpj-input#format blur->cnpj-input#validate" }, aria: { describedby: "profile_cnpj_check" }, class: "seller-input min-h-11" %>
+          <p id="profile_cnpj_check" class="mt-1 text-sm text-red-700" aria-live="polite" data-cnpj-input-target="message" hidden></p>
+          <p class="mt-1 text-xs text-stone-500">Opcional. Aceita também o CNPJ com letras.</p>
+        </div>
+      </div>
+      <fieldset class="mt-4">
+        <legend class="seller-label">Você emite nota fiscal nas vendas?</legend>
+        <% current = current_seller.issues_invoices.nil? ? "" : current_seller.issues_invoices.to_s %>
+        <div class="mt-1 flex flex-wrap gap-x-6 gap-y-2">
+          <% [ [ "true", "Sim" ], [ "false", "Não" ], [ "", "Prefiro responder depois" ] ].each do |value, label| %>
+            <label class="flex min-h-11 items-center gap-2 text-sm text-stone-800"><%= radio_button_tag "seller[issues_invoices]", value, current == value, id: "seller_issues_invoices_#{value.presence || "blank"}" %> <%= label %></label>
+          <% end %>
+        </div>
+      </fieldset>
+    </fieldset>
+
+    <fieldset class="border-t border-stone-200 pt-6">
+      <legend class="sr-only">Endereço de origem</legend>
+      <p class="text-sm font-semibold text-stone-700">De onde você envia</p>
+      <p class="mt-1 mb-4 text-xs text-stone-500">Usado para calcular o frete das suas vendas. Não aparece na loja.</p>
+      <%= render "seller_portal/ateliers/origin_address_fields", form: form %>
+    </fieldset>
+
+    <div class="flex gap-3">
+      <%= form.submit "Salvar", class: "cursor-pointer rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700" %>
+      <%= link_to "Cancelar", distributor_profile_path, class: "rounded-full border border-brand-200 px-6 py-3 text-sm font-bold text-stone-700 transition hover:bg-brand-50" %>
+    </div>
+  <% end %>
+</div>

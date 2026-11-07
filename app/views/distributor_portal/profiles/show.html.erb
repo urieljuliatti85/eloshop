@@ -1,0 +1,62 @@
+<% content_for :title, "Dados da distribuidora | #{current_seller.name}" %>
+<% seller = current_seller %>
+
+<div class="space-y-8">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <h1 class="text-3xl font-black tracking-tight">Dados da distribuidora</h1>
+      <p class="mt-2 text-sm text-stone-500">Como a sua distribuidora aparece na EloShop e como você recebe pelas vendas.</p>
+    </div>
+    <%= link_to "Editar dados", edit_distributor_profile_path, class: "seller-button seller-button--primary w-fit" %>
+  </header>
+
+  <section class="seller-card-lg">
+    <dl class="grid gap-6 sm:grid-cols-2">
+      <div>
+        <dt class="text-sm text-stone-500">Nome</dt>
+        <dd class="mt-1 text-lg font-bold text-stone-950"><%= seller.name %></dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stone-500">Situação</dt>
+        <dd class="mt-2"><span class="seller-badge <%= { "pending" => "bg-amber-100 text-amber-800", "approved" => "bg-emerald-100 text-emerald-800", "suspended" => "bg-rose-100 text-rose-800" }.fetch(seller.status, "bg-stone-100 text-stone-700") %>"><%= t(seller.status, scope: "sellers.statuses") %></span></dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stone-500">Responsável</dt>
+        <dd class="mt-1 text-stone-900"><%= seller.owner_full_name.presence || "—" %></dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stone-500">CNPJ</dt>
+        <dd class="mt-1 text-stone-900"><%= seller.cnpj.present? ? Cnpj.format(seller.cnpj) : "Não informado" %></dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stone-500">Emite nota fiscal</dt>
+        <dd class="mt-1 text-stone-900"><%= { true => "Sim", false => "Não" }.fetch(seller.issues_invoices, "Não informado") %></dd>
+      </div>
+      <div>
+        <dt class="text-sm text-stone-500">De onde você envia</dt>
+        <dd class="mt-1 text-stone-900">
+          <% if seller.origin_address_complete? %>
+            <%= seller.origin_street %>, <%= seller.origin_number %><%= " — #{seller.origin_complement}" if seller.origin_complement.present? %><br>
+            <%= seller.origin_neighborhood %> — <%= seller.origin_city %>/<%= seller.origin_state %> · CEP <%= seller.origin_zip_code %>
+          <% else %>
+            <span class="text-stone-500">Ainda não informado. É usado no frete das suas vendas.</span>
+          <% end %>
+        </dd>
+      </div>
+      <%# Reservado no cadastro (ADR 007); a loja vai ao ar com a vitrine de insumos. %>
+      <div class="sm:col-span-2">
+        <dt class="text-sm text-stone-500">Endereço da loja</dt>
+        <dd class="mt-1"><span class="break-all font-mono text-sm text-stone-900"><%= request.base_url %>/distribuidores/<%= seller.slug %></span>
+          <span class="block text-sm text-stone-500"><%= seller.supply_listed? ? "Liberada: vai ao ar junto com a vitrine de insumos." : "Fica pública quando a EloShop liberar a sua vitrine e a vitrine de insumos estiver no ar." %></span></dd>
+      </div>
+      <div class="sm:col-span-2">
+        <dt class="text-sm text-stone-500">Termos comerciais</dt>
+        <dd class="mt-1"><%= link_to "Versão #{SellerTerms.version("distributor")}", distributor_terms_path, class: "font-medium text-brand-600 underline underline-offset-4 hover:text-brand-700" %></dd>
+      </div>
+    </dl>
+  </section>
+
+  <%# Mesmo cartão do ateliê: a conexão passa por /painel (redirect URI único)
+      e devolve o distribuidor ao painel dele. %>
+  <%= render "seller_portal/mercado_pago_connections/banner" %>
+</div>

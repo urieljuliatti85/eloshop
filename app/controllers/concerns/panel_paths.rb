@@ -22,7 +22,11 @@ module PanelPaths
   ACTION_PREFIXES = %w[mark_as_read_ new_ edit_].freeze
 
   # A mesma tela com outro nome no painel do distribuidor.
-  DISTRIBUTOR_ROUTE_NAMES = { "atelier" => "profile" }.freeze
+  DISTRIBUTOR_ROUTE_NAMES = {
+    "atelier" => "profile",
+    "atelier_postal_code" => "profile_postal_code",
+    "atelier_postal_codes" => "profile_postal_codes"
+  }.freeze
 
   included do
     helper_method :panel_path, :seller_panel_path_for
