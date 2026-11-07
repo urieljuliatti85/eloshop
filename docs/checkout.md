@@ -93,6 +93,8 @@ Desde a Fase 22, o carrinho aceita produtos de um único vendedor. A validação
 
 O `Order` principal agrega `SellerOrder`s para dividir frete/fulfillment, status, cancelamento e repasse por artesão. O primeiro lançamento cria exatamente um `SellerOrder`, no mesmo lock/transação que cria o pedido e baixa o estoque. Checkout multi-vendedor depende de acesso comercial ao split 1:N; não são usados múltiplos PIX nem repasse manual pela plataforma.
 
+**Quem paga o cupom: o vendedor.** O cupom é da plataforma e não tem escopo de vendedor, mas o desconto sai do repasse de quem vende: `seller_amount_cents = total_cents - platform_fee_cents`, e a comissão incide sobre `subtotal - desconto`. A plataforma só deixa de receber a comissão sobre o valor descontado: com cupom de 10% num pedido de R$ 300 e comissão de 15%, o desconto é de R$ 30, o vendedor recebe R$ 25,50 a menos e a plataforma, R$ 4,50 a menos. Essa regra está no código, mas não no texto dos `SellerTerms` do ateliê; levá-la aos termos fica para a revisão com o advogado. Com os distribuidores (ADR 007), o cupom ganha escopo por tipo de vendedor e vale, por padrão, só para ateliê.
+
 ## Concorrência
 
 O caso mais crítico do domínio de artesanato é a venda de peça única (estoque = 1) para dois clientes em checkout simultâneo. O checkout deve garantir, via transação e locking (ver `docs/inventory.md`), que apenas um dos dois consiga concluir a compra.
