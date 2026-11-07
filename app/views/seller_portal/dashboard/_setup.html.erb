@@ -7,8 +7,8 @@
     (`tours/_bubble`). As etapas e a aberta vêm de
     `BaseController#set_getting_started_block`. %>
 <% account_state = current_seller.mercado_pago_account_state
-   titles = SellerPortal::GettingStartedController::STEP_TITLES
-   short_titles = SellerPortal::GettingStartedController::STEP_SHORT_TITLES
+   titles = SellerPortal::GettingStartedController.step_titles_for(current_seller)
+   short_titles = SellerPortal::GettingStartedController.step_short_titles_for(current_seller)
    slugs = SellerPortal::GettingStartedController::STEP_SLUGS
    done = steps[current]
    number = steps.keys.index(current) + 1

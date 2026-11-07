@@ -1,68 +1,72 @@
 <% content_for :title, "Visão geral | Painel do distribuidor | EloShop" %>
-<% seller = current_seller %>
+<% seller = current_seller
+   setup_pending = !@getting_started_steps.values.all? %>
 
-<div class="space-y-6">
+<div class="space-y-8">
   <header>
     <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Painel do distribuidor</p>
-    <h1 class="mt-2 text-3xl font-bold text-ink"><%= seller.name %></h1>
-    <p class="mt-2 text-ink-muted">Cadastro, conta de recebimento e aprovação. O cadastro dos insumos chega numa próxima etapa; até lá, nada deste cadastro aparece na loja.</p>
+    <h1 class="mt-1 text-3xl font-black tracking-tight text-stone-950"><%= seller.name %></h1>
+    <p class="mt-2 max-w-2xl text-sm text-stone-600">Cadastro, conta de recebimento e aprovação. O cadastro dos insumos chega numa próxima etapa; até lá, nada deste cadastro aparece na loja.</p>
   </header>
 
-  <section class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm" aria-labelledby="aprovacao-titulo">
-    <h2 id="aprovacao-titulo" class="text-lg font-bold text-ink">Aprovação</h2>
-    <% case seller.status %>
-    <% when "approved" %>
-      <p class="mt-2 text-stone-700">Cadastro aprovado<%= " em #{l(seller.approved_at.to_date)}" if seller.approved_at %>.</p>
-    <% when "suspended" %>
-      <p class="mt-2 text-stone-700">Esta conta está suspensa pela EloShop. Fale com <a href="mailto:contato@eloshop.shop" class="font-semibold text-brand-700 underline">contato@eloshop.shop</a>.</p>
-    <% else %>
-      <p class="mt-2 text-stone-700">Em análise. A EloShop aprova depois que uma conta Mercado Pago de vendedor, de produção e com a identidade verificada, estiver conectada abaixo.</p>
-      <%# Vitrine do pré-cadastro, como no ateliê (Seller#showcase!): a EloShop
-          pode liberar a loja antes da aprovação, e vender continua exigindo
-          terminar o processo. %>
-      <p class="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
-        <% if seller.showcased? %>
-          <strong>Sua vitrine já foi liberada.</strong> Quando a vitrine de insumos estiver no ar, os artesãos vão ver a sua loja e os seus insumos publicados, mesmo antes da aprovação. Para vender, falta terminar o processo.
-        <% else %>
-          <strong>A EloShop vai liberar a sua vitrine</strong> depois de revisar o cadastro, para os artesãos verem a sua loja e os seus insumos antes da aprovação. Para vender, você precisa terminar o processo.
-        <% end %>
-      </p>
-    <% end %>
-  </section>
+  <%# Primeiros passos no topo enquanto falta alguma etapa: o mesmo bloco do
+      painel do ateliê (seller_portal/dashboard/_setup), com as etapas do
+      distribuidor (Seller#getting_started_steps). A faixa troca a etapa
+      dentro do Turbo Frame, o endereço é preenchido ali mesmo e a chave PIX é
+      confirmada sem sair da página. %>
+  <%= turbo_frame_tag "primeiros-passos", data: { turbo_action: "advance" }, class: (setup_pending ? "block scroll-mt-40 sm:scroll-mt-28" : "hidden") do %>
+    <%= render "seller_portal/dashboard/setup", steps: @getting_started_steps, current: @getting_started_current_step if setup_pending %>
+  <% end %>
 
-  <section class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm" aria-labelledby="mercado-pago-titulo">
-    <h2 id="mercado-pago-titulo" class="text-lg font-bold text-ink">Recebimentos pelo Mercado Pago</h2>
-    <% if seller.mercado_pago_connected? %>
-      <p class="mt-2 text-stone-700">Conta conectada<%= seller.mercado_pago_live_mode? ? "" : " (conta de teste)" %>. As vendas caem direto nela.</p>
-      <%= button_to "Desconectar", seller_mercado_pago_connection_path, method: :delete,
-            form: { data: { turbo_confirm: "Desconectar suspende a aprovação até uma nova análise. Continuar?" } },
-            class: "mt-4 min-h-11 cursor-pointer rounded-full border border-brand-200 px-5 text-sm font-semibold text-stone-700 hover:border-brand-400" %>
-    <% elsif seller.suspended? %>
-      <p class="mt-2 text-stone-700">Indisponível enquanto a conta estiver suspensa.</p>
-    <% elsif @mercado_pago_oauth_configured %>
-      <p class="mt-2 text-stone-700">Conecte a conta de vendedor do Mercado Pago em que você quer receber. A EloShop não vê seus documentos: a verificação é feita pelo próprio Mercado Pago.</p>
-      <%= link_to "Conectar Mercado Pago", seller_mercado_pago_connect_path,
-            class: "mt-4 inline-flex min-h-11 items-center rounded-full bg-brand-600 px-6 text-sm font-semibold text-white hover:bg-brand-700" %>
-    <% else %>
-      <p class="mt-2 text-stone-700">A conexão com o Mercado Pago não está configurada neste ambiente.</p>
-    <% end %>
-  </section>
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="seller-card-lg" aria-labelledby="aprovacao-titulo">
+      <h2 id="aprovacao-titulo" class="text-lg font-bold text-stone-950">Aprovação</h2>
+      <% case seller.status %>
+      <% when "approved" %>
+        <p class="mt-2 text-stone-700">Cadastro aprovado<%= " em #{l(seller.approved_at.to_date)}" if seller.approved_at %>.</p>
+      <% when "suspended" %>
+        <p class="mt-2 text-stone-700">Esta conta está suspensa pela EloShop. Fale com <a href="mailto:contato@eloshop.shop" class="font-semibold text-brand-700 underline">contato@eloshop.shop</a>.</p>
+      <% else %>
+        <p class="mt-2 text-stone-700">Em análise. A EloShop aprova depois que uma conta Mercado Pago de vendedor, de produção e com a identidade verificada, estiver conectada.</p>
+        <%# Vitrine do pré-cadastro, como no ateliê (Seller#showcase!). %>
+        <p class="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
+          <% if seller.showcased? %>
+            <strong>Sua vitrine já foi liberada.</strong> Quando a vitrine de insumos estiver no ar, os artesãos vão ver a sua loja e os seus insumos publicados, mesmo antes da aprovação. Para vender, falta terminar o processo.
+          <% else %>
+            <strong>A EloShop vai liberar a sua vitrine</strong> depois de revisar o cadastro, para os artesãos verem a sua loja e os seus insumos antes da aprovação. Para vender, você precisa terminar o processo.
+          <% end %>
+        </p>
+      <% end %>
+    </section>
 
-  <section class="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm" aria-labelledby="dados-titulo">
-    <h2 id="dados-titulo" class="text-lg font-bold text-ink">Dados do cadastro</h2>
-    <dl class="mt-3 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[max-content_1fr]">
-      <%# Reservado no cadastro (ADR 007); a página entra na Fase 26. %>
-      <dt class="font-semibold text-stone-900">Endereço da loja</dt>
-      <dd class="text-stone-700"><span class="break-all font-mono text-xs sm:text-sm"><%= request.base_url %>/distribuidores/<%= seller.slug %></span>
-        <span class="block text-ink-muted"><%= seller.supply_listed? ? "Liberada: vai ao ar junto com a vitrine de insumos." : "Fica pública quando a EloShop liberar a sua vitrine e a vitrine de insumos estiver no ar." %></span></dd>
-      <dt class="font-semibold text-stone-900">Responsável</dt>
-      <dd class="text-stone-700"><%= seller.owner_full_name %></dd>
-      <dt class="font-semibold text-stone-900">CNPJ</dt>
-      <dd class="text-stone-700"><%= seller.cnpj.present? ? Cnpj.format(seller.cnpj) : "Não informado" %></dd>
-      <dt class="font-semibold text-stone-900">Emite nota fiscal</dt>
-      <dd class="text-stone-700"><%= { true => "Sim", false => "Não" }.fetch(seller.issues_invoices, "Não informado") %></dd>
-      <dt class="font-semibold text-stone-900">Termos comerciais</dt>
-      <dd class="text-stone-700"><%= link_to "Versão #{SellerTerms.version("distributor")}", distributor_terms_path, class: "font-semibold text-brand-700 underline" %></dd>
-    </dl>
-  </section>
+    <section class="seller-card-lg" aria-labelledby="mercado-pago-titulo">
+      <h2 id="mercado-pago-titulo" class="text-lg font-bold text-stone-950">Recebimentos pelo Mercado Pago</h2>
+      <% if seller.mercado_pago_connected? %>
+        <p class="mt-2 text-stone-700">Conta conectada<%= seller.mercado_pago_live_mode? ? "" : " (conta de teste)" %>. As vendas caem direto nela.</p>
+        <%= link_to "Ver conexão", distributor_profile_path, class: "mt-4 inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
+      <% elsif seller.suspended? %>
+        <p class="mt-2 text-stone-700">Indisponível enquanto a conta estiver suspensa.</p>
+      <% elsif @mercado_pago_oauth_configured %>
+        <p class="mt-2 text-stone-700">Conecte a conta de vendedor do Mercado Pago em que você quer receber. A EloShop não vê seus documentos: a verificação é feita pelo próprio Mercado Pago.</p>
+        <%= link_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, data: { turbo: false },
+              class: "mt-4 seller-button seller-button--primary w-fit" %>
+      <% else %>
+        <p class="mt-2 text-stone-700">A conexão com o Mercado Pago não está configurada neste ambiente.</p>
+      <% end %>
+    </section>
+
+    <section class="seller-card-lg" aria-labelledby="insumos-titulo">
+      <h2 id="insumos-titulo" class="text-lg font-bold text-stone-950">Insumos</h2>
+      <p class="mt-2 text-stone-700">O cadastro dos insumos chega numa próxima etapa: unidade de venda, quantidade mínima e preço por faixa de quantidade, numa vitrine separada das peças artesanais.</p>
+      <span class="mt-4 inline-flex rounded-full bg-sand-100 px-3 py-1 text-xs font-semibold text-ink">Em breve</span>
+    </section>
+
+    <section class="seller-card-lg" aria-labelledby="loja-titulo">
+      <h2 id="loja-titulo" class="text-lg font-bold text-stone-950">Sua loja</h2>
+      <%# Reservado no cadastro (ADR 007); a página entra na Fase 26, PR C. %>
+      <p class="mt-2 break-all font-mono text-sm text-stone-900"><%= request.base_url %>/distribuidores/<%= seller.slug %></p>
+      <p class="mt-1 text-sm text-stone-600"><%= seller.supply_listed? ? "Liberada: vai ao ar junto com a vitrine de insumos." : "Fica pública quando a EloShop liberar a sua vitrine e a vitrine de insumos estiver no ar." %></p>
+      <%= link_to "Ver dados da distribuidora", distributor_profile_path, class: "mt-4 inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700" %>
+    </section>
+  </div>
 </div>

@@ -20,7 +20,7 @@
       <% end %>
     </p>
     <h1 class="mt-2 max-w-3xl text-3xl font-black tracking-tight sm:text-4xl">Ative seus recebimentos: crie sua Conta Vendedor no Mercado Pago</h1>
-    <p class="mt-4 max-w-2xl text-sm leading-6 text-white/75 sm:text-base">Na EloShop você monta seu ateliê, cadastra as peças e cuida dos pedidos. Mas quem recebe o dinheiro é o <strong>Mercado Pago</strong>. Quando um cliente paga, o valor vai direto para a sua conta lá, já descontada a comissão da EloShop. Sem essa conta conectada, seus produtos não podem ser publicados.</p>
+    <p class="mt-4 max-w-2xl text-sm leading-6 text-white/75 sm:text-base">Na EloShop você monta <%= current_seller.distributor? ? "sua distribuidora, cadastra os insumos" : "seu ateliê, cadastra as peças" %> e cuida dos pedidos. Mas quem recebe o dinheiro é o <strong>Mercado Pago</strong>. Quando um cliente paga, o valor vai direto para a sua conta lá, já descontada a comissão da EloShop. Sem essa conta conectada, seus produtos não podem ser publicados.</p>
   </header>
 
   <%# Com a conta conectada, é aqui que o vendedor reconecta ou desconecta
@@ -68,7 +68,7 @@
         <% if state == :ready %>
           <p class="inline-flex items-center rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-800">✓ Conta conectada</p>
         <% elsif state == :not_accepted %>
-          <p class="text-sm leading-6 text-amber-800">Conta conectada, mas não aceita. Desconecte-a em <%= link_to "Dados do Ateliê", panel_path(:atelier), class: "font-semibold underline" %> e conecte a conta real.</p>
+          <p class="text-sm leading-6 text-amber-800">Conta conectada, mas não aceita. Desconecte-a em <%= link_to (current_seller.distributor? ? "Dados da distribuidora" : "Dados do Ateliê"), panel_path(:atelier), class: "font-semibold underline" %> e conecte a conta real.</p>
         <% elsif @mercado_pago_oauth_configured %>
           <%= link_to "Conectar Mercado Pago", seller_mercado_pago_connect_path, class: "seller-button seller-button--primary", data: { turbo: false } %>
         <% else %>

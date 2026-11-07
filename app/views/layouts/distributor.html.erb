@@ -13,22 +13,74 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <%# Painel do distribuidor (ADR 007). Enxuto de propósito na Fase 25: só a
-      visão geral; catálogo, pedidos e frete chegam nas Fases 26 a 28, cada um
-      com o próprio item de menu. %>
-  <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased">
-    <header class="border-b border-brand-100 bg-white">
-      <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <%= link_to distributor_root_path, class: "flex min-h-11 items-center gap-2", aria: { label: "Início do painel do distribuidor" } do %>
-          <span class="text-lg font-bold text-stone-900">EloShop</span>
-          <span class="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">Atacado</span>
+  <%# Painel do distribuidor (ADR 007): o mesmo esqueleto do painel do ateliê
+      (layouts/seller), com o menu e a marca do distribuidor. Reaproveita o
+      sino de avisos (layouts/_panel_notifications_bell), o item de menu
+      (layouts/_seller_nav_link) e as abas do celular
+      (layouts/_seller_mobile_tabs). Sem tour guiado e sem busca: os passos do
+      tour e a busca do catálogo são do ateliê; voltam quando o painel tiver
+      as próprias telas (revisão de arquitetura de 2026-11-07). %>
+  <% nav_groups = distributor_nav_groups
+     active_nav_path = distributor_active_nav_path
+     setup_steps = current_seller.setup_steps
+     # "Ver a loja": a lista pública de distribuidores, até a loja
+     # /distribuidores/:slug existir (Fase 26, PR C).
+     store_path = distributors_path %>
+  <body class="min-h-screen bg-gradient-to-b from-brand-50 via-[#fdf1e7] to-[#fdf1e7] text-ink antialiased max-sm:[--seller-tabs-height:4rem]">
+    <header class="topo-serrilhado sticky top-0 z-40"
+            data-controller="mobile-menu"
+            data-action="keydown.esc@window->mobile-menu#closeOnEscape turbo:load@document->mobile-menu#closeOnNavigation">
+      <div class="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <%= link_to distributor_root_path, class: "flex min-h-11 shrink-0 items-center gap-3", aria: { label: "Início do painel do distribuidor" } do %>
+          <%= image_tag "logo-header.png", alt: "EloShop", class: "h-7 w-auto", width: 84, height: 28 %>
+          <span class="hidden border-l border-brand-200 pl-3 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-brand-600 sm:block">Atacado</span>
         <% end %>
-        <div class="flex items-center gap-3">
+
+        <div class="ml-auto flex shrink-0 items-center gap-2 sm:gap-5">
+          <%= link_to "Ver a loja", store_path, class: "inline-flex min-h-11 items-center whitespace-nowrap text-xs font-semibold text-stone-600 hover:text-brand-600" %>
+
+          <%= render "layouts/panel_notifications_bell" %>
+
+          <div class="hidden h-7 w-px bg-brand-100 sm:block"></div>
           <div class="text-right">
-            <p class="max-w-40 truncate text-sm font-bold text-stone-900 sm:max-w-60"><%= current_seller.name %></p>
+            <p class="max-w-24 truncate sm:max-w-36 text-sm font-bold text-stone-900"><%= current_seller.name %></p>
             <p class="text-xs font-semibold <%= { "approved" => "text-emerald-700", "pending" => "text-amber-700", "suspended" => "text-red-700" }.fetch(current_seller.status, "text-stone-600") %>"><%= t(current_seller.status, scope: "sellers.statuses") %></p>
           </div>
-          <%= button_to "Sair", distributor_logout_path, method: :delete, class: "min-h-11 cursor-pointer rounded-full border border-brand-200 px-4 text-sm font-semibold text-stone-700 transition hover:border-brand-400 hover:text-brand-600" %>
+          <span class="painel-roseta hidden size-10 place-items-center bg-brand-600 text-sm font-bold text-white sm:grid" aria-hidden="true"><%= current_seller.name.first.upcase %></span>
+          <%= button_to distributor_logout_path, method: :delete, class: "hidden size-11 cursor-pointer place-items-center rounded-full border border-brand-200 text-stone-600 transition hover:border-brand-400 hover:text-brand-600 sm:grid", aria: { label: "Sair" } do %>
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/></svg>
+          <% end %>
+
+          <button type="button"
+                  class="grid size-11 cursor-pointer place-items-center text-stone-900 hover:text-brand-600 lg:hidden"
+                  aria-expanded="false" aria-controls="distributor-nav-panel" aria-label="Abrir menu do painel"
+                  data-mobile-menu-target="button"
+                  data-action="mobile-menu#toggle">
+            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <path d="M4 7h16M4 17h16" />
+              <path d="M10 12h10" class="text-brand-600" stroke="currentColor" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <%# Celular e tablet: painel do hambúrguer, fechado ao carregar. %>
+      <div id="distributor-nav-panel" class="border-t border-brand-100 bg-white lg:hidden" data-mobile-menu-target="panel" hidden>
+        <nav class="mx-auto flex max-w-7xl flex-col px-4 sm:px-6" aria-label="Navegação do painel">
+          <%= link_to store_path, class: "flex min-h-11 items-center gap-2 border-b border-brand-100 py-1 text-base font-semibold text-stone-900" do %>
+            Ver a loja
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          <% end %>
+          <% nav_groups.each do |group, items| %>
+            <p class="pb-1 pt-4 text-xs font-semibold text-stone-500"><%= group %></p>
+            <% items.each do |label, path| %>
+              <%= render "layouts/seller_nav_link", label: label, path: path, mobile: true, active: path == active_nav_path %>
+            <% end %>
+          <% end %>
+        </nav>
+        <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 pb-5 pt-3 sm:px-6">
+          <p class="px-1 text-sm text-stone-500"><span class="font-semibold text-stone-900"><%= current_seller.name %></span> · <%= t(current_seller.status, scope: "sellers.statuses") %></p>
+          <%= button_to "Sair", distributor_logout_path, method: :delete, class: "w-full cursor-pointer rounded-full bg-stone-900 px-5 py-3 text-base font-semibold text-white" %>
         </div>
       </div>
     </header>
@@ -36,8 +88,25 @@
     <%= render "layouts/flash_message", message: flash[:notice], variant: :success %>
     <%= render "layouts/flash_message", message: flash[:alert], variant: :error %>
 
-    <main class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
-      <%= yield %>
-    </main>
+    <div class="mx-auto flex w-full max-w-7xl gap-8 px-4 pt-6 pb-[calc(1.5rem+var(--seller-tabs-height,0px))] sm:px-6 lg:px-8 lg:py-8">
+      <aside class="hidden w-60 shrink-0 lg:block">
+        <nav class="sticky top-24 flex flex-col gap-1.5 text-sm font-semibold" aria-label="Navegação do painel">
+          <% nav_groups.each_with_index do |(group, items), index| %>
+            <p class="px-4 pb-1 text-xs font-semibold text-stone-500 <%= index.zero? ? '' : 'pt-5' %>"><%= group %></p>
+            <% items.each do |label, path| %>
+              <%= render "layouts/seller_nav_link", label: label, path: path, mobile: false, active: path == active_nav_path %>
+            <% end %>
+          <% end %>
+        </nav>
+      </aside>
+
+      <main class="min-w-0 flex-1">
+        <div class="seller-content"><%= yield %></div>
+      </main>
+    </div>
+
+    <%= render "layouts/seller_mobile_tabs",
+          label: (setup_steps.values.include?(false) ? "Primeiros passos" : "Atalhos do painel"),
+          tabs: distributor_mobile_tabs(setup_steps) %>
   </body>
 </html>

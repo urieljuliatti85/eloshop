@@ -140,6 +140,25 @@ Rails.application.routes.draw do
     post "entrar", to: "sessions#create"
     delete "sair", to: "sessions#destroy", as: :logout
     get "painel", to: "dashboard#index", as: :root
+
+    # Telas que o painel do ateliê já tem, reaproveitadas por subclasse em
+    # DistributorPortal (revisão de arquitetura de 2026-11-07, opção B). Os
+    # nomes espelham os de /painel, para `panel_path` achar a tela de cada
+    # tipo; "Dados da distribuidora" é `profile` (o `atelier` do ateliê).
+    scope "painel" do
+      get "primeiros-passos(/:etapa)", to: "getting_started#show", as: :getting_started,
+        constraints: { etapa: /endereco|mercado-pago|chave-pix|aprovacao/ }
+      resource :origin_address, only: :update, controller: "origin_addresses", path: "primeiros-passos/endereco"
+      resource :pix_key_confirmation, only: %i[create destroy], path: "chave-pix"
+      get "cadastro-chave-pix", to: "pix_key_guides#show", as: :pix_key_guide
+      get "conta-vendedor-mercado-pago", to: "mercado_pago_guides#show", as: :mercado_pago_guide
+      resource :profile, only: %i[show edit update], controller: "profiles", path: "dados"
+      get "dados/cep/:cep", to: "postal_codes#show", as: :profile_postal_code, constraints: { cep: /\d{5}-?\d{3}/ }
+      get "dados/enderecos", to: "postal_codes#index", as: :profile_postal_codes
+      resources :notifications, only: %i[index], path: "avisos" do
+        member { patch :mark_as_read }
+      end
+    end
   end
 
   scope module: :seller_portal, as: :seller, path: "painel" do

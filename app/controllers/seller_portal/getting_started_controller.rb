@@ -30,6 +30,20 @@ module SellerPortal
       approval: "Aprovação e recebimento"
     }.freeze
 
+    # Os nomes que mudam no painel do distribuidor (ADR 007): o endereço não é
+    # "do ateliê". As telas pedem os títulos por aqui, nunca às constantes
+    # direto, para o mesmo pedaço de tela servir aos dois painéis.
+    DISTRIBUTOR_STEP_TITLES = { address: "Preencha o endereço de origem" }.freeze
+    DISTRIBUTOR_STEP_SHORT_TITLES = { address: "Endereço de origem" }.freeze
+
+    def self.step_titles_for(seller)
+      seller&.distributor? ? STEP_TITLES.merge(DISTRIBUTOR_STEP_TITLES) : STEP_TITLES
+    end
+
+    def self.step_short_titles_for(seller)
+      seller&.distributor? ? STEP_SHORT_TITLES.merge(DISTRIBUTOR_STEP_SHORT_TITLES) : STEP_SHORT_TITLES
+    end
+
     def show
       @steps = current_seller.getting_started_steps
       @completed_steps_count = @steps.count { |_step, completed| completed }

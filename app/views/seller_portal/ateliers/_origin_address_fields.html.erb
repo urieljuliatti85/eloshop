@@ -2,8 +2,8 @@
     edição do ateliê e na etapa 1 dos Primeiros passos do painel inicial. %>
 <div class="grid gap-4 sm:grid-cols-6"
      data-controller="postal-code"
-     data-postal-code-url-value="<%= seller_atelier_postal_code_path(cep: "00000000") %>"
-     data-postal-code-search-url-value="<%= seller_atelier_postal_codes_path %>">
+     data-postal-code-url-value="<%= panel_path(:atelier_postal_code, cep: "00000000") %>"
+     data-postal-code-search-url-value="<%= panel_path(:atelier_postal_codes) %>">
   <div class="sm:col-span-2">
     <%= form.label :origin_zip_code, "CEP", class: "seller-label" %>
     <%= form.text_field :origin_zip_code, inputmode: "numeric", placeholder: "00000-000", data: { postal_code_target: "zipCode", action: "input->postal-code#lookup" }, class: "seller-input min-h-11" %>

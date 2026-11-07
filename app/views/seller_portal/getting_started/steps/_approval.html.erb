@@ -1,4 +1,9 @@
-<p class="max-w-[68ch] text-base leading-7 text-stone-700 mt-4">Quando o ateliê está aprovado, seus produtos podem ser publicados e vendidos. Antes disso, a EloShop pode liberar o ateliê na vitrine: ele aparece na loja, mas só recebe pedidos depois da aprovação. O repasse é automático pelo Mercado Pago; você não precisa solicitar uma transferência manual à EloShop.</p>
+<% distributor = current_seller.distributor? %>
+<% if distributor %>
+  <p class="max-w-[68ch] text-base leading-7 text-stone-700 mt-4">Quando a distribuidora está aprovada, seus insumos podem ser publicados e vendidos, assim que a vitrine de insumos estiver no ar. Antes disso, a EloShop pode liberar a sua vitrine: a loja aparece para os artesãos, mas só recebe pedidos depois da aprovação. O repasse é automático pelo Mercado Pago; você não precisa solicitar uma transferência manual à EloShop.</p>
+<% else %>
+  <p class="max-w-[68ch] text-base leading-7 text-stone-700 mt-4">Quando o ateliê está aprovado, seus produtos podem ser publicados e vendidos. Antes disso, a EloShop pode liberar o ateliê na vitrine: ele aparece na loja, mas só recebe pedidos depois da aprovação. O repasse é automático pelo Mercado Pago; você não precisa solicitar uma transferência manual à EloShop.</p>
+<% end %>
 
 <h3 class="mt-6 font-bold text-stone-950">O caminho do dinheiro</h3>
 <ol class="max-w-[68ch] text-base leading-7 text-stone-700 mt-2 list-decimal pl-5">
@@ -8,8 +13,10 @@
   <li><strong class="text-stone-950">Saldo:</strong> o restante, incluindo o frete, segue para sua conta, descontadas as tarifas do Mercado Pago.</li>
 </ol>
 
-<p class="max-w-[68ch] text-base leading-7 text-stone-700 mt-4">O prazo de liberação e as tarifas são definidos pelo Mercado Pago. Nota fiscal e obrigações tributárias da venda são responsabilidade do artesão; cancelamentos e reembolsos são tratados pela plataforma.</p>
+<p class="max-w-[68ch] text-base leading-7 text-stone-700 mt-4">O prazo de liberação e as tarifas são definidos pelo Mercado Pago. Nota fiscal e obrigações tributárias da venda são responsabilidade <%= distributor ? "da distribuidora" : "do artesão" %>; cancelamentos e reembolsos são tratados pela plataforma.</p>
 
 <div class="mt-6 flex flex-col gap-3 border-t border-brand-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
-  <%= link_to(done ? "Acompanhar pedidos" : "Ver situação do ateliê", done ? seller_orders_path : panel_path(:atelier), data: { turbo_frame: "_top" }, class: (done ? "seller-button seller-button--primary justify-center" : "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700")) %>
+  <%# Pedidos do distribuidor chegam na Fase 27: até lá, aprovado volta à visão geral. %>
+  <%= link_to(done ? (distributor ? "Ir para a visão geral" : "Acompanhar pedidos") : (distributor ? "Ver situação da distribuidora" : "Ver situação do ateliê"),
+        done ? (distributor ? panel_path(:root) : seller_orders_path) : panel_path(:atelier), data: { turbo_frame: "_top" }, class: (done ? "seller-button seller-button--primary justify-center" : "inline-flex min-h-11 items-center text-sm font-bold text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-brand-700")) %>
 </div>
