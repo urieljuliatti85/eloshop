@@ -17,7 +17,8 @@
     </h1>
     <p class="mt-4 text-ink-muted">
       A EloShop é um marketplace: cada peça é vendida diretamente por um ateliê ou artesão
-      independente, não pela plataforma.
+      independente, não pela plataforma. Distribuidores de insumos também podem se cadastrar
+      para vender materiais a quem faz à mão.
     </p>
 
     <div role="tablist" class="mt-8 inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-medium">
@@ -123,7 +124,29 @@
     </div>
   </div>
 
+  <%# "Quem vende" em dois grupos, com o mesmo tabs_controller aninhado (o
+      Stimulus não mistura os alvos de controllers iguais aninhados) e o
+      próprio parâmetro na URL, `?grupo=`. %>
+  <% group_class = ->(name) { name == @seller_group ? "bg-white shadow-sm text-brand-600" : "text-ink-muted" } %>
   <div data-tabs-target="panel" data-tab-name="vende" <%= "hidden" unless @tab == "vende" %>>
-    <%= render "how_it_works/seller" %>
+    <div data-controller="tabs" data-tabs-param-value="grupo">
+      <div role="tablist" aria-label="Quem vende" class="mt-8 inline-flex flex-wrap items-center gap-1 rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-medium">
+        <button type="button" role="tab" data-tabs-target="tab" data-tab-name="atelie" data-action="tabs#select"
+                aria-selected="<%= @seller_group == "atelie" %>" class="rounded-full px-5 py-2 transition <%= group_class.call("atelie") %>">
+          Ateliê
+        </button>
+        <button type="button" role="tab" data-tabs-target="tab" data-tab-name="distribuidor" data-action="tabs#select"
+                aria-selected="<%= @seller_group == "distribuidor" %>" class="rounded-full px-5 py-2 transition <%= group_class.call("distribuidor") %>">
+          Distribuidor de insumos
+        </button>
+      </div>
+
+      <div data-tabs-target="panel" data-tab-name="atelie" <%= "hidden" unless @seller_group == "atelie" %>>
+        <%= render "how_it_works/seller" %>
+      </div>
+      <div data-tabs-target="panel" data-tab-name="distribuidor" <%= "hidden" unless @seller_group == "distribuidor" %>>
+        <%= render "how_it_works/distributor" %>
+      </div>
+    </div>
   </div>
 </div>

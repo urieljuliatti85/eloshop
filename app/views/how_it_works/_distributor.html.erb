@@ -1,0 +1,204 @@
+<%# Grupo "Distribuidor de insumos" da aba "Quem vende" (ADR 007), no mesmo
+    molde do grupo do ateliê (how_it_works/_seller): vantagens, o passo a
+    passo em selos numerados, o "Bom saber", o dia a dia depois da aprovação,
+    comissão e responsabilidades e o convite final.
+
+    Diz só o que já existe e marca o resto como próximo passo: hoje o
+    distribuidor cria a conta, conecta o Mercado Pago e é aprovado (Fase 25);
+    o catálogo de insumos, a vitrine /insumos, a compra e o frete chegam nas
+    Fases 26 a 28. O frete descrito é o decidido no ADR 007 (cotação da SuperFrete ou o
+    frete fixo do distribuidor, um volume de até 30 kg por pedido); o texto
+    não cita o provedor, como o do ateliê só cita quando a cotação está ligada.
+
+    O botão de cadastro segue a chave da rota
+    (`DistributorRegistrationsController.signup_enabled?`): desligada, a
+    página diz que o cadastro abre em breve em vez de levar a um 404. %>
+<% launch_fee = fee_rate_label(SellerOrder::LAUNCH_PLATFORM_FEE_RATE_BPS)
+   standard_fee = fee_rate_label(SellerOrder::PLATFORM_FEE_RATE_BPS)
+   signup_open = DistributorRegistrationsController.signup_enabled?
+   tag_classes = {
+     required: "bg-brand-100 text-brand-700",
+     free: "bg-emerald-100 text-emerald-800",
+     note: "bg-sand-100 text-ink"
+   }
+   start_steps = [
+     { title: "Crie sua conta de distribuidor", tag: [ "Grátis", :free ], color: "var(--color-brand-500)",
+       icon: '<path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/><path d="M3 21h18"/>',
+       body: "Nome da distribuidora, o responsável, CNPJ (opcional) e uma senha. É uma conta própria, separada da de um ateliê." },
+     { title: "Conecte sua Conta Vendedor do Mercado Pago", tag: [ "Obrigatório", :required ], color: "var(--color-brand-700)",
+       icon: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/>',
+       body: "É onde você recebe. Quem verifica sua identidade é o Mercado Pago, não a EloShop." },
+     { title: "Cadastre uma chave PIX no Mercado Pago", tag: [ "Obrigatório para PIX", :required ], color: "#8f1607",
+       icon: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8"/><path d="m16 7 2 2"/><path d="m14 9 2 2"/>',
+       body: "Pelo app do Mercado Pago, em poucos minutos. Sem ela, os pagamentos por PIX são recusados." },
+     { title: "Aguarde a aprovação da EloShop", tag: [ "Feito pela EloShop", :note ], color: "#5c1a0b",
+       icon: '<path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/>',
+       body: "A EloShop confirma que a conta do Mercado Pago é real e aprova o seu cadastro." },
+     { title: "Cadastre seus insumos", tag: [ "Em breve", :note ], color: "var(--color-ink)",
+       icon: '<path d="m21 8-9-5-9 5 9 5 9-5z"/><path d="m3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
+       body: "Unidade de venda, quantidade mínima e preço por faixa de quantidade, na vitrine de insumos." }
+   ]
+   after_steps = [
+     { title: "Receba os pedidos e envie",
+       body: "Quando as vendas de insumos abrirem, o pedido chega no painel com os itens e o endereço de entrega. O frete é cotado na hora pelos Correios ou sai pelo valor fixo que você definir, com até 30 kg por pedido, em um volume." },
+     { title: "Receba o pagamento",
+       body: "O valor cai direto na sua conta do Mercado Pago, já sem a comissão da EloShop. A tarifa do Mercado Pago na transação é sua, como em qualquer venda por ele." }
+   ]
+   step_card = "relative flex flex-col rounded-3xl border border-sand-200 p-6 shadow-[0_1px_2px_rgba(120,40,10,0.04)] sm:p-7" %>
+
+<section class="mt-10 overflow-hidden rounded-[2rem] border border-sand-200 bg-sand-50 px-6 py-9 sm:px-10 sm:py-12" aria-labelledby="distribuidor-title">
+  <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Para quem vende materiais</p>
+  <h2 id="distribuidor-title" class="mt-3 max-w-2xl font-craft text-4xl leading-[1.08] font-semibold text-ink sm:text-5xl">Venda insumos para quem faz à mão</h2>
+  <p class="mt-4 max-w-2xl text-lg leading-relaxed text-ink-muted">
+    Fios, tecidos, argila, ferragens, embalagens: atacadistas e distribuidoras vendem para os artesãos
+    numa vitrine de insumos própria, separada das peças artesanais. O pagamento cai direto na sua conta
+    do Mercado Pago, e a EloShop fica só com uma comissão quando você vende.
+  </p>
+  <p class="mt-4 max-w-2xl rounded-2xl border border-brand-100 bg-white px-5 py-4 text-sm leading-relaxed text-ink">
+    <strong>Em preparação:</strong> hoje já dá para criar a conta, conectar o Mercado Pago e ser aprovado.
+    O cadastro dos insumos e as vendas chegam nas próximas etapas, e avisamos quem já estiver cadastrado.
+  </p>
+
+  <%# Vantagens no mesmo fluxo de placas do ateliê (.processo). %>
+  <% benefits = [
+      [ "Sem mensalidade", "Você só paga quando vende. Não há mensalidade, no momento.",
+        '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M16 15h2"/>',
+        "bg-brand-600", "bg-brand-700" ],
+      [ "#{launch_fee} no começo", "Nos 3 primeiros meses de vendas; depois, #{standard_fee}. A mesma regra do ateliê.",
+        '<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/>',
+        "bg-brand-700", "bg-[#8f1607]" ],
+      [ "Pagamento direto", "Na sua conta do Mercado Pago, sem esperar repasse.",
+        '<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v5"/><path d="M18 9.5v5"/>',
+        "bg-[#5c1a0b]", "bg-[#3d1107]" ],
+      [ "Vitrine de insumos", "Só material de produção, para quem faz à mão: fora do catálogo de peças.",
+        '<path d="m21 8-9-5-9 5 9 5 9-5z"/><path d="m3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
+        "bg-ink", "bg-black" ]
+    ] %>
+  <div class="mt-10" data-controller="carousel" data-carousel-interval-value="0"
+       data-carousel-dot-active-class="w-6 bg-brand-600" data-carousel-dot-inactive-class="w-2.5 bg-sand-200">
+  <ul role="list" class="processo" data-carousel-target="track">
+    <% benefits.each do |term, detail, icon, color, shade| %>
+      <li class="processo__passo" data-carousel-target="slide">
+        <span class="processo__placa processo__placa--sombra <%= shade %>" aria-hidden="true"></span>
+        <span class="processo__placa processo__placa--frente <%= color %>" aria-hidden="true"></span>
+        <div class="processo__conteudo">
+          <svg viewBox="0 0 24 24" class="size-8 text-white" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><%= icon.html_safe %></svg>
+          <h3 class="mt-4 text-lg leading-snug font-bold text-white"><%= term %></h3>
+          <p class="mt-2 text-sm leading-relaxed text-white/90"><%= detail %></p>
+          <span class="processo__seta" aria-hidden="true"></span>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+  <%= render "how_it_works/carousel_controls", count: benefits.size, item: "vantagem", previous_label: "Vantagem anterior", next_label: "Próxima vantagem" %>
+  </div>
+
+  <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+    <% if signup_open %>
+      <%= link_to "Cadastrar minha distribuidora", new_distributor_registration_path,
+            class: "inline-flex min-h-12 items-center rounded-full bg-brand-600 px-7 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %>
+    <% else %>
+      <p class="text-sm font-semibold text-ink">O cadastro de distribuidores abre em breve.</p>
+    <% end %>
+    <%= link_to "Já tenho conta: entrar no painel do distribuidor", distributor_login_path,
+          class: "inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-sand-200 underline-offset-4 hover:text-brand-600" %>
+  </div>
+</section>
+
+<%# Passo a passo no mesmo fluxo do ateliê (.fluxo): colunas no desktop,
+    carrossel no celular, sem avanço automático. %>
+<section class="mt-14" aria-labelledby="distribuidor-comecar-title"
+         data-controller="carousel" data-carousel-interval-value="0"
+         data-carousel-dot-active-class="w-6 bg-brand-600" data-carousel-dot-inactive-class="w-2.5 bg-sand-200">
+  <h2 id="distribuidor-comecar-title" class="text-2xl font-bold text-ink">Do cadastro à vitrine de insumos</h2>
+  <p class="mt-2 max-w-2xl text-ink-muted">Na ordem em que você faz. O painel do distribuidor mostra a aprovação e a conexão com o Mercado Pago.</p>
+
+  <ol role="list" data-carousel-target="track"
+      class="fluxo__lista relative -mx-10 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-10 px-10 pb-2 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-5 lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0">
+    <% start_steps.each_with_index do |step, index| %>
+      <% label, kind = step[:tag] %>
+      <li data-carousel-target="slide" style="--passo: <%= step[:color] %>"
+          class="fluxo__cartao flex w-[82%] shrink-0 snap-start flex-col items-center rounded-3xl border border-sand-200 bg-white px-5 pt-6 pb-7 text-center sm:w-[46%] lg:w-auto lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
+        <span class="fluxo__selo" aria-hidden="true">
+          <svg viewBox="0 0 74 64" class="fluxo__desenho">
+            <polygon class="fluxo__selo-fundo" points="18.5,2 55.5,2 72,32 55.5,62 18.5,62 2,32" />
+            <polygon class="fluxo__costura fluxo__costura--clara" points="21.5,7.5 52.5,7.5 65.5,32 52.5,56.5 21.5,56.5 8.5,32" />
+          </svg>
+          <span class="fluxo__selo-numero"><%= format("%02d", index + 1) %></span>
+        </span>
+        <span class="fluxo__conector" aria-hidden="true"></span>
+        <span class="fluxo__icone" aria-hidden="true">
+          <svg viewBox="0 0 128 112" class="fluxo__desenho">
+            <polygon class="fluxo__icone-contorno" points="32,2 96,2 126,56 96,110 32,110 2,56" />
+            <polygon class="fluxo__costura" points="36.5,10 91.5,10 117,56 91.5,102 36.5,102 11,56" />
+          </svg>
+          <svg viewBox="0 0 24 24" class="relative size-10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><%= step[:icon].html_safe %></svg>
+        </span>
+        <h3 class="mt-5 text-base leading-snug font-bold text-ink"><span class="sr-only">Passo <%= index + 1 %>: </span><%= step[:title] %></h3>
+        <span class="mt-2 rounded-full px-2.5 py-1 text-xs font-semibold <%= tag_classes.fetch(kind) %>"><%= label %></span>
+        <p class="mt-3 text-sm leading-relaxed text-ink-muted"><%= step[:body] %></p>
+      </li>
+    <% end %>
+  </ol>
+
+  <%= render "how_it_works/carousel_controls", count: start_steps.size, item: "passo", previous_label: "Passo anterior", next_label: "Próximo passo" %>
+
+  <div class="mt-8 grid gap-3 rounded-3xl border border-sand-200 bg-sand-50 px-6 py-5 sm:grid-cols-2 sm:gap-6">
+    <p class="text-sm leading-relaxed text-ink">
+      <strong class="text-brand-700">Exigência obrigatória:</strong> a conta do Mercado Pago conectada precisa ter uma
+      <strong>chave PIX cadastrada</strong>. Sem ela, os pagamentos por PIX dos seus clientes são recusados. O cartão não depende disso.
+    </p>
+    <p class="text-sm leading-relaxed text-ink">
+      <strong>Bom saber:</strong> cada cadastro usa a própria conta do Mercado Pago. Quem também tem um ateliê na EloShop
+      precisa de uma conta diferente para a distribuidora. A EloShop não coleta nem guarda seus documentos.
+    </p>
+  </div>
+</section>
+
+<section class="mt-14" aria-labelledby="distribuidor-depois-title">
+  <h2 id="distribuidor-depois-title" class="text-2xl font-bold text-ink">Depois da aprovação</h2>
+  <p class="mt-2 max-w-2xl text-ink-muted">O dia a dia do distribuidor quando as vendas de insumos abrirem: vender, enviar e receber.</p>
+
+  <ol role="list" start="<%= start_steps.size + 1 %>" class="mt-6 grid gap-4 sm:grid-cols-2">
+    <% after_steps.each_with_index do |step, index| %>
+      <% number = start_steps.size + index + 1 %>
+      <li class="<%= step_card %> bg-sand-50">
+        <span class="font-craft text-5xl leading-none font-semibold text-brand-600" aria-hidden="true"><%= number %></span>
+        <h3 class="mt-5 text-lg leading-snug font-bold text-ink"><span class="sr-only">Passo <%= number %>: </span><%= step[:title] %></h3>
+        <p class="mt-2 leading-relaxed text-ink-muted"><%= step[:body] %></p>
+      </li>
+    <% end %>
+  </ol>
+</section>
+
+<section class="mt-14" aria-labelledby="distribuidor-comissao-title">
+  <h2 id="distribuidor-comissao-title" class="text-2xl font-bold text-ink">Comissão e responsabilidades</h2>
+
+  <dl class="mt-6 grid gap-4 sm:grid-cols-2">
+    <% [
+      [ "Quanto a EloShop cobra?", "A mesma regra do ateliê: #{launch_fee} nos 3 primeiros meses de vendas e #{standard_fee} depois disso, sobre o valor dos produtos, sem o frete. Não há mensalidade, no momento." ],
+      [ "Quem emite a nota fiscal?", "O distribuidor. Nota fiscal e impostos são responsabilidade de quem vende. No cadastro você pode dizer se emite nota fiscal; a resposta é opcional." ],
+      [ "Posso ter um ateliê e uma distribuidora?", "Pode, com duas contas: cada uma com o próprio e-mail e a própria conta do Mercado Pago. O mesmo CPF pode ter um cadastro de cada tipo." ],
+      [ "Os insumos aparecem junto com as peças artesanais?", "Não. Os insumos ficam numa vitrine própria, para quem compra peça artesanal não encontrar material de produção no lugar dela." ]
+    ].each do |question, answer| %>
+      <div class="rounded-3xl bg-mist-100 px-6 py-5">
+        <dt class="font-semibold text-ink"><%= question %></dt>
+        <dd class="mt-1 leading-relaxed text-ink-muted"><%= answer %></dd>
+      </div>
+    <% end %>
+  </dl>
+</section>
+
+<section class="mt-14 flex flex-col items-start gap-5 rounded-[2rem] bg-brand-600 px-6 py-9 text-white sm:flex-row sm:items-center sm:justify-between sm:px-10" aria-labelledby="distribuidor-cta-title">
+  <div>
+    <h2 id="distribuidor-cta-title" class="font-craft text-3xl leading-tight font-semibold">Pronto para vender insumos?</h2>
+    <p class="mt-2 text-white/85"><%= signup_open ? "O cadastro é grátis e o painel mostra cada etapa." : "O cadastro de distribuidores abre em breve." %></p>
+  </div>
+  <% if signup_open %>
+    <%= link_to "Cadastrar minha distribuidora", new_distributor_registration_path,
+          class: "inline-flex min-h-12 shrink-0 items-center rounded-full bg-white px-7 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50" %>
+  <% else %>
+    <%= link_to "Entrar no painel do distribuidor", distributor_login_path,
+          class: "inline-flex min-h-12 shrink-0 items-center rounded-full bg-white px-7 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50" %>
+  <% end %>
+</section>

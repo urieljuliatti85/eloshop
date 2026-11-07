@@ -176,6 +176,52 @@ RSpec.describe "Distributor portal", type: :request do
     end
   end
 
+  describe "public links to the distributor doors" do
+    it "offers the distributor login and signup in the footer and in the mobile menu" do
+      get root_path
+
+      footer = Nokogiri::HTML(response.body).at_css("footer").to_html
+      expect(footer).to include(distributor_login_path, new_distributor_registration_path)
+      mobile_menu = Nokogiri::HTML(response.body).at_css("[data-mobile-menu-target='panel']").to_html
+      expect(mobile_menu).to include(distributor_login_path, new_distributor_registration_path)
+    end
+
+    it "groups the atelier and distributor doors under \"Venda na EloShop\" in the desktop menu" do
+      get root_path
+
+      menu = Nokogiri::HTML(response.body).at_css("#sell-menu")
+      links = menu.css("a").map { |link| [ link.text.squish, link["href"] ] }
+      expect(links).to include(
+        [ "Entrar no Ateliê", seller_login_path ], [ "Cadastre seu Ateliê", new_seller_registration_path ],
+        [ "Entrar no Painel do Distribuidor", distributor_login_path ], [ "Cadastre sua Distribuidora", new_distributor_registration_path ]
+      )
+    end
+
+    it "does not show the sell menu to a signed-in seller, who gets the own panel instead" do
+      distributor_sign_in(create_distributor)
+
+      get root_path
+
+      expect(response.body).not_to include('id="sell-menu"')
+    end
+
+    it "points the atelier login page to the distributor door" do
+      get seller_login_path
+
+      expect(response.body).to include("Entre pelo Painel do Distribuidor", distributor_login_path)
+    end
+
+    it "hides the signup link, but not the login, while the signup is switched off" do
+      Rails.configuration.x.distributors.signup_enabled = false
+      get root_path
+
+      expect(response.body).to include(distributor_login_path)
+      expect(response.body).not_to include(new_distributor_registration_path)
+    ensure
+      Rails.configuration.x.distributors.signup_enabled = true
+    end
+  end
+
   describe "public menu" do
     it "points a signed-in distributor to the distributor panel" do
       distributor_sign_in(create_distributor)

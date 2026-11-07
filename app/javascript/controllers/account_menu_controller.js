@@ -1,7 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Menu de conta do cabeçalho: o nome de quem está logado abre um painel com
-// os dados e os destinos da conta.
+// os dados e os destinos da conta. O menu "Venda na EloShop" do visitante
+// (portas do ateliê e do distribuidor) usa o mesmo comportamento.
 //
 // Sem JavaScript o painel não abre, mas nada se perde — Pedidos, Favoritos e
 // Sair continuam no painel do hambúrguer, e o nome permanece visível no topo.

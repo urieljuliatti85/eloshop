@@ -1,0 +1,15 @@
+<%# Portas de quem vende (ADR 007): o ateliê e o distribuidor de insumos. Um
+    conteúdo só para o menu "Venda na EloShop" do topo e o da barra inferior
+    do celular. O cadastro do distribuidor só aparece com a chave ligada, para
+    não levar a um 404. %>
+<% sell_link = "flex min-h-11 items-center px-4 py-2 text-sm text-ink hover:bg-sand-50 hover:text-brand-600"
+   sell_group = "px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-ink-muted" %>
+<p class="<%= sell_group %>">Ateliê</p>
+<%= link_to "Entrar no Ateliê", seller_login_path, class: sell_link %>
+<%= link_to "Cadastre seu Ateliê", new_seller_registration_path, class: sell_link %>
+<p class="<%= sell_group %> border-t border-gray-100">Distribuidor de insumos</p>
+<%= link_to "Entrar no Painel do Distribuidor", distributor_login_path, class: sell_link %>
+<% if DistributorRegistrationsController.signup_enabled? %>
+  <%= link_to "Cadastre sua Distribuidora", new_distributor_registration_path, class: sell_link %>
+<% end %>
+<%= link_to "Como funciona para vender", how_it_works_path(aba: "vende"), class: "#{sell_link} mt-1 border-t border-gray-100 text-ink-muted" %>

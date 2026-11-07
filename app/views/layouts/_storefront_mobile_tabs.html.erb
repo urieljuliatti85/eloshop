@@ -1,8 +1,8 @@
 <%# Abas inferiores da loja no celular (abaixo de `md`, o mesmo corte em que o
     topo troca as pílulas pelo hambúrguer). Mesmo desenho das abas do painel
     do artesão e da área do cliente: ícone sobre rótulo e traço no topo da aba
-    da página atual. Os quatro destinos são os do menu principal, que o
-    hambúrguer continua oferecendo. Na área do cliente o layout não renderiza
+    da página atual. Os quatro primeiros destinos são os do menu principal, que o
+    hambúrguer continua oferecendo; o quinto é "Venda na EloShop". Na área do cliente o layout não renderiza
     esta barra, porque lá as abas da conta ocupam o mesmo lugar. O body ganha
     `storefront-tabs-area`, que reserva a altura da barra no fim da página
     (ver application.css). %>
@@ -16,8 +16,16 @@
      { label: "Como funciona", path: how_it_works_path, controllers: "how_it_works",
        icon: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17h.01"/>' }
    ] %>
+<%# Quinta aba: "Venda na EloShop", as portas do ateliê e do distribuidor
+    de insumos (ADR 007), o mesmo conteúdo do menu do topo
+    (layouts/_sell_links). Abre um painel sobre a barra com o comportamento do
+    menu de conta (Esc, toque fora, navegação do Turbo). Com sessão de `User`
+    (admin, ateliê ou distribuidor) a aba vira o atalho para o próprio painel,
+    como a pílula do topo. %>
+<% signed_in_user = authenticated? ? Current.user : nil
+   sell_icon = '<path d="M4 9.5 5.5 4h13L20 9.5"/><path d="M4 9.5h16v2a2.67 2.67 0 0 1-5.33 0 2.67 2.67 0 0 1-5.34 0A2.67 2.67 0 0 1 4 11.5z"/><path d="M5.5 14v6h13v-6"/><path d="M12 15.5v3"/><path d="M10.5 17h3"/>' %>
 <nav class="storefront-tabs" aria-label="Navegação da loja">
-  <ul class="grid h-16 grid-cols-4">
+  <ul class="grid h-16 grid-cols-5">
     <% tabs.each do |tab| %>
       <% active = storefront_nav_active?(tab[:controllers]) %>
       <li>
@@ -25,6 +33,34 @@
           <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><%= tab[:icon].html_safe %></svg>
           <span><%= tab[:label] %></span>
         <% end %>
+      </li>
+    <% end %>
+    <% if signed_in_user %>
+      <% identity = user_session_identity
+         active = storefront_nav_active?(identity[:panel_controllers]) %>
+      <li>
+        <%= link_to identity[:panel_path], class: "account-tab #{'account-tab--active' if active}", aria: { current: ("page" if active) } do %>
+          <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><%= sell_icon.html_safe %></svg>
+          <span class="text-center">Meu painel</span>
+        <% end %>
+      </li>
+    <% else %>
+      <% active = sell_doors_active? %>
+      <li data-controller="account-menu"
+          data-action="click@window->account-menu#closeOnOutsideClick keydown.esc@window->account-menu#closeOnEscape turbo:load@document->account-menu#closeOnNavigation">
+        <button type="button" class="account-tab w-full cursor-pointer <%= 'account-tab--active' if active %>"
+                aria-expanded="false" aria-haspopup="true" aria-controls="sell-sheet"
+                data-account-menu-target="button" data-action="account-menu#toggle">
+          <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><%= sell_icon.html_safe %></svg>
+          <span class="text-center">Venda na EloShop</span>
+        </button>
+        <%# Acima da barra, na largura da tela: a `nav` fixa é o bloco de
+            contenção do painel absoluto. %>
+        <div id="sell-sheet" class="absolute inset-x-0 bottom-full mx-3 mb-2 overflow-hidden rounded-2xl border border-gray-200 bg-white pb-1 shadow-lg"
+             data-account-menu-target="panel" hidden>
+          <p class="border-b border-gray-100 px-4 py-3 text-sm font-semibold text-ink">Venda na EloShop</p>
+          <%= render "layouts/sell_links" %>
+        </div>
       </li>
     <% end %>
   </ul>
