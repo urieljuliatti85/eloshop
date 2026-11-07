@@ -1,43 +1,137 @@
 <% content_for :title, "Armarinhos | EloShop" %>
-<% content_for :meta_description, "Armarinhos na EloShop: fios, linhas, aviamentos, tecidos e outros insumos para quem faz à mão." %>
-<%# Fora do Google até o SEO da vitrine de insumos (Fase 26, PR C2):
-    sitemap, dados estruturados e textos revistos antes de indexar. %>
-<% content_for :head do %>
-  <meta name="robots" content="noindex">
+<% content_for :meta_description, "Armarinhos na EloShop: fios, tecidos, aviamentos, argila e outros insumos para quem faz à mão." %>
+<% content_for :canonical_url, distributors_url %>
+<% content_for :structured_data do %>
+  <%= tag.script distributor_item_list_structured_data(@distributors), type: "application/ld+json" %>
 <% end %>
+<% mural_tiles = [
+  { title: "Fios & lãs", subtitle: "Cores para tecer", icon: "yarn", background: "#e3f6f1" },
+  { title: "Tecidos", subtitle: "Texturas para costurar", icon: "fabric", background: "#fff0f4" },
+  { title: "Fitas & rendas", subtitle: "Detalhes que encantam", icon: "ribbon", background: "#f2eaff" },
+  { title: "Aviamentos", subtitle: "Pequenos acabamentos", icon: "notions", background: "#fff4dc" }
+] %>
 
-<div class="container mx-auto max-w-5xl px-5 pb-16 pt-8">
-  <header class="max-w-3xl">
-    <p class="text-sm font-semibold uppercase tracking-wider text-brand-600">Para quem faz à mão</p>
-    <h1 class="mt-2 text-3xl font-bold text-ink">Armarinhos</h1>
-    <p class="mt-3 text-ink-muted">
-      Fornecedores de material para artesãos: fios, tecidos, argila, ferragens, embalagens.
-      Veja todos os insumos em <%= link_to "Insumos", supplies_path, class: "font-semibold text-brand-600 underline hover:text-brand-700" %>; as compras abrem em breve.
-    </p>
+<div class="mx-auto max-w-7xl px-5 pb-16 pt-10 sm:px-8 lg:pt-14">
+  <header class="max-w-4xl">
+    <p class="text-sm font-bold uppercase tracking-[0.16em] text-brand-600">Para quem faz à mão</p>
+    <h1 class="mt-3 text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">Armarinhos e insumos para criar</h1>
+    <p class="mt-4 max-w-3xl text-lg leading-8 text-ink-muted">Encontre fios, tecidos, aviamentos e materiais de produção direto de quem fornece para artesãos. As compras de insumos abrem em breve.</p>
+    <%= link_to "Ver todos os insumos", supplies_path, class: "mt-4 inline-flex min-h-11 items-center font-semibold text-brand-700 underline underline-offset-4" %>
   </header>
 
-  <% if @distributors.any? %>
-    <ul role="list" class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <% @distributors.each do |distributor| %>
-        <li class="flex flex-col rounded-3xl border border-sand-200 bg-white p-6 shadow-[0_1px_2px_rgba(120,40,10,0.04)]">
-          <h2 class="text-lg font-bold text-ink"><%= link_to distributor.name, distributor_store_path(distributor.slug), class: "hover:text-brand-600" %></h2>
-          <%# Declaração pública e opcional de nota fiscal (ADR 007). %>
-          <p class="mt-2 text-sm text-ink-muted">
-            Nota fiscal: <%= { true => "emite", false => "não emite" }.fetch(distributor.issues_invoices, "não informado") %>
-          </p>
-          <%= link_to "Ver a loja", distributor_store_path(distributor.slug), class: "mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-brand-600 underline hover:text-brand-700" %>
-        </li>
-      <% end %>
-    </ul>
-  <% else %>
-    <section class="mt-10 rounded-[2rem] border border-sand-200 bg-sand-50 px-6 py-9 sm:px-10" aria-labelledby="distribuidores-vazio">
-      <h2 id="distribuidores-vazio" class="text-xl font-bold text-ink">Os primeiros armarinhos chegam em breve</h2>
-      <p class="mt-2 max-w-2xl text-ink-muted">Estamos preparando a vitrine de insumos para os artesãos comprarem material de quem fornece.</p>
+  <section class="relative isolate mt-10 overflow-hidden rounded-[2rem] border border-[#eee3d4] bg-[#faf5ec] p-6 sm:p-9 lg:p-10" aria-labelledby="armarinhos-mural-title">
+    <div class="pointer-events-none absolute -right-20 -top-24 -z-10 size-72 rounded-full opacity-70 blur-3xl" style="background: #f5d7c9" aria-hidden="true"></div>
+    <div class="pointer-events-none absolute -bottom-28 left-1/3 -z-10 size-72 rounded-full opacity-60 blur-3xl" style="background: #dcefe6" aria-hidden="true"></div>
+    <div class="relative grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:gap-12">
+      <div class="max-w-md">
+        <p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Um mural de materiais</p>
+        <h2 id="armarinhos-mural-title" class="mt-3 text-2xl font-extrabold leading-tight text-ink sm:text-3xl">Cores, texturas e ideias para criar</h2>
+        <p class="mt-3 text-sm leading-6 text-ink-muted">Inspire-se com os materiais que movem cada projeto — do primeiro fio ao acabamento final.</p>
+        <%= link_to "Explorar insumos", supplies_path, class: "mt-5 inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-bold text-white transition hover:bg-brand-700" %>
+      </div>
+      <div class="grid grid-cols-2 gap-3 sm:gap-4">
+        <% mural_tiles.each_with_index do |tile, index| %>
+          <article class="<%= 'translate-y-3 sm:translate-y-5' if index.odd? %> rounded-2xl border border-white/80 p-4 shadow-[0_8px_24px_rgba(77,55,40,0.08)] sm:p-5" style="background: linear-gradient(145deg, <%= tile[:background] %>, #ffffff 88%)">
+            <div class="flex aspect-[1.55] items-center justify-center overflow-hidden rounded-xl" style="background: <%= tile[:background] %>" aria-hidden="true">
+              <span class="flex size-16 items-center justify-center rounded-2xl bg-white/75 shadow-sm sm:size-20"><%= render "materials/category_icon", icon_type: tile[:icon], classes: "size-12 sm:size-14" %></span>
+              <span class="sr-only"><%= tile[:title] %></span>
+            </div>
+            <h3 class="mt-3 text-sm font-bold text-ink sm:text-base"><%= tile[:title] %></h3>
+            <p class="mt-0.5 text-xs text-ink-muted sm:text-sm"><%= tile[:subtitle] %></p>
+          </article>
+        <% end %>
+      </div>
+    </div>
+  </section>
+
+  <% if @materials.any? %>
+    <section class="mt-12" aria-labelledby="supply-categories-heading">
+      <div class="mb-5 flex items-end justify-between gap-4">
+        <h2 id="supply-categories-heading" class="text-2xl font-bold text-ink">Categorias de insumos</h2>
+        <span class="hidden text-sm text-ink-muted sm:block">Escolha uma categoria para filtrar</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        <% @materials.each do |material| %>
+          <%= link_to supplies_path(material: material.slug), class: "group flex min-h-28 items-center gap-4 rounded-2xl border border-sand-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md" do %>
+            <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700" aria-hidden="true">
+              <%= render "materials/category_icon", material: material, classes: "size-9" %>
+            </span>
+            <span class="min-w-0">
+              <span class="block font-bold leading-snug text-ink group-hover:text-brand-700"><%= material.name %></span>
+              <span class="mt-1 block text-sm text-ink-muted">Ver insumos</span>
+            </span>
+          <% end %>
+        <% end %>
+      </div>
     </section>
   <% end %>
 
-  <p class="mt-10 text-sm text-ink-muted">
-    Vende insumos para artesãos?
-    <%= link_to "Veja como funciona para armarinhos", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "font-semibold text-brand-600 underline hover:text-brand-700" %>.
-  </p>
+  <section class="mt-14" aria-labelledby="distributors-heading">
+    <div class="flex flex-col gap-4 border-b border-sand-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <h2 id="distributors-heading" class="text-2xl font-bold text-ink">Armarinhos parceiros</h2>
+        <p class="mt-1 text-ink-muted">Conheça os fornecedores e compare os insumos disponíveis.</p>
+      </div>
+      <nav class="flex flex-wrap gap-2" aria-label="Filtrar por material">
+        <%= link_to "Todos (#{@distributors.size})", distributors_path, class: "rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white" %>
+        <% @materials.first(5).each do |material| %>
+          <%= link_to material.name, supplies_path(material: material.slug), class: "rounded-full bg-sand-100 px-4 py-2 text-sm font-semibold text-ink-muted transition hover:bg-brand-50 hover:text-brand-700" %>
+        <% end %>
+      </nav>
+    </div>
+
+    <% if @distributors.any? %>
+      <ul role="list" class="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <% @distributors.each_with_index do |distributor, index| %>
+          <% products = @supplies_by_distributor.fetch(distributor.id, []).first(2)
+             material_names = @supplies_by_distributor.fetch(distributor.id, []).flat_map(&:materials).map(&:name).uniq
+             palettes = [["#d9fbf3", "#0f9988"], ["#fff1c9", "#f59e0b"], ["#fce7f3", "#ec4899"], ["#ede9fe", "#8b5cf6"], ["#e0f2fe", "#2563eb"]]
+             background, accent = palettes[index % palettes.length] %>
+          <li class="flex min-h-full flex-col overflow-hidden rounded-3xl border border-sand-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-lg">
+            <div class="relative h-28" style="background: <%= background %>">
+              <span class="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-emerald-800"><%= distributor.approved? ? "✓ Armarinho verificado" : "✦ Em preparação" %></span>
+              <% if distributor.approved? %><span class="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-ink">Parceiro EloShop</span><% end %>
+              <span class="absolute -bottom-7 left-5 flex size-16 items-center justify-center rounded-2xl border-2 border-white text-2xl font-extrabold text-white shadow-md" style="background: <%= accent %>" aria-hidden="true"><%= distributor.name.first.upcase %></span>
+            </div>
+            <div class="flex flex-1 flex-col px-5 pb-5 pt-10">
+              <h3 class="text-xl font-bold text-ink"><%= link_to distributor.name, distributor_store_path(distributor.slug), class: "hover:text-brand-700" %></h3>
+              <p class="mt-2 min-h-12 text-sm leading-6 text-ink-muted"><%= material_names.any? ? "Insumos de #{material_names.to_sentence.downcase} para quem faz à mão." : "Insumos para artesãos direto de #{distributor.name}." %></p>
+              <p class="mt-2 text-xs font-medium text-ink-muted">Nota fiscal: <%= { true => "emite", false => "não emite" }.fetch(distributor.issues_invoices, "não informado") %></p>
+              <div class="my-4 border-t border-sand-100 pt-4">
+                <p class="mb-2 text-xs font-bold uppercase tracking-wider text-ink-muted">Insumos em estoque</p>
+                <% products.each do |product| %>
+                  <div class="mb-2 flex items-center justify-between gap-3 rounded-xl bg-sand-50 px-3 py-2 text-sm">
+                    <span class="truncate text-ink"><%= product.name %></span>
+                    <span class="shrink-0 font-bold text-brand-700"><%= format_price(product.price_cents) %></span>
+                  </div>
+                <% end %>
+              </div>
+              <%= link_to distributor_store_path(distributor.slug), class: "mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-ink px-5 text-sm font-bold text-white transition hover:bg-brand-700" do %>
+                Visitar armarinho <span aria-hidden="true">›</span>
+              <% end %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <section class="mt-7 rounded-3xl border border-sand-200 bg-sand-50 px-6 py-9 sm:px-10" aria-labelledby="distribuidores-vazio">
+        <h3 id="distribuidores-vazio" class="text-xl font-bold text-ink">Os primeiros armarinhos chegam em breve</h3>
+        <p class="mt-2 max-w-2xl text-ink-muted">Estamos preparando a vitrine de insumos para os artesãos comprarem materiais de quem fornece.</p>
+      </section>
+    <% end %>
+  </section>
+
+  <aside class="mt-16 flex flex-col justify-between gap-6 rounded-3xl border border-sand-200 bg-sand-50 p-7 sm:p-10 lg:flex-row lg:items-center">
+    <div class="max-w-3xl">
+      <p class="text-sm font-bold uppercase tracking-wider text-brand-600">Você vende matéria-prima?</p>
+      <h2 class="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">Venda insumos para artesãos na EloShop</h2>
+      <p class="mt-2 text-ink-muted">Abra sua vitrine e apresente fios, tecidos, ferragens e materiais para quem cria.</p>
+    </div>
+    <% if DistributorRegistrationsController.signup_enabled? %>
+      <%= link_to "Cadastrar meu armarinho", new_distributor_registration_path, class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-brand-600 px-6 font-bold text-white transition hover:bg-brand-700" %>
+    <% else %>
+      <%= link_to "Como funciona", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-brand-600 px-6 font-bold text-white transition hover:bg-brand-700" %>
+    <% end %>
+    <%= link_to "Veja como funciona", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "text-sm font-semibold text-brand-700 underline" %>
+  </aside>
 </div>

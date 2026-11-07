@@ -36,6 +36,18 @@ RSpec.describe "Distributor products", type: :request do
     } }
   end
 
+  it "shows material category icons in the new supply form and the product list" do
+    sign_in_distributor(user)
+    get new_distributor_product_path
+
+    expect(response.body).to include("Categoria de insumo / material", "Algodão", "Crochê", "<svg")
+
+    post distributor_products_path, params: supply_params
+    get distributor_products_path
+
+    expect(response.body).to include("Fio de algodão cru", "Algodão", "Crochê", "<svg")
+  end
+
   it "creates a supply with unit, minimum, tiers in percent and material/technique, ignoring blank tier rows" do
     sign_in_distributor(user)
 

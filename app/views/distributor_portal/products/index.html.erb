@@ -19,6 +19,10 @@
       <% @products.each do |product| %>
         <li>
           <%= link_to distributor_product_path(product), class: "seller-card flex items-center gap-4 transition hover:border-brand-300" do %>
+            <span class="flex shrink-0 gap-1">
+              <% if (material = product.materials.first) %><span class="flex size-11 items-center justify-center rounded-xl bg-brand-50" title="Material: <%= material.name %>"><%= render "materials/category_icon", material: material, classes: "size-8" %></span><% end %>
+              <% if (technique = product.techniques.first) %><span class="flex size-11 items-center justify-center rounded-xl bg-violet-50" title="Técnica: <%= technique.name %>"><%= render "materials/category_icon", category: technique, classes: "size-8" %></span><% end %>
+            </span>
             <%= render "seller_portal/products/thumbnail", product: product %>
             <span class="min-w-0 flex-1">
               <span class="block truncate font-bold text-stone-950"><%= product.name %></span>

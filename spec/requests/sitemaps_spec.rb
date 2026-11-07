@@ -28,6 +28,17 @@ RSpec.describe "Sitemap", type: :request do
       expect(response.body).to include(root_url)
       expect(response.body).to include(products_url)
     end
+
+    it "adds listed armarinhos and their public supplies to the sitemap" do
+      distributor = Seller.create!(name: "Armarinho sitemap", owner_full_name: "Pessoa Teste", cpf: generate_valid_cpf, kind: "distributor", status: :approved, approved_at: Time.current)
+      supply = Product.create!(seller: distributor, name: "Fio sitemap", sku: "SITE-SUP-1", price_cents: 2500, stock_quantity: 20, status: :active, sale_unit: :pack)
+      draft = Product.create!(seller: distributor, name: "Rascunho sitemap", sku: "SITE-SUP-2", price_cents: 2500, stock_quantity: 20, status: :draft, sale_unit: :pack)
+
+      get sitemap_path(format: :xml)
+
+      expect(response.body).to include(supplies_url, distributors_url, distributor_store_url(distributor.slug), supply_url(distributor.slug, supply.slug))
+      expect(response.body).not_to include(seller_url(distributor.slug), product_url(distributor, supply.slug), draft.slug)
+    end
   end
 
   describe "GET /sitemap.xml pages and lastmod" do

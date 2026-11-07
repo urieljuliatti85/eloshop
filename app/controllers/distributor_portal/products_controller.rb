@@ -13,7 +13,7 @@ module DistributorPortal
     skip_before_action :set_category_tree
 
     def index
-      @products = current_seller.products.preload(:price_tiers, main_image_attachment: :blob).order(created_at: :desc)
+      @products = current_seller.products.preload(:price_tiers, :materials, :techniques, main_image_attachment: :blob).order(created_at: :desc)
       @products = @products.matching_query(params[:q]) if params[:q].present?
     end
 

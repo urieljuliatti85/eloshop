@@ -1,8 +1,8 @@
 <% content_for :title, "Insumos para artesanato | EloShop" %>
 <% content_for :meta_description, "Insumos para quem faz à mão: fios, tecidos, argila, ferragens e embalagens, direto de armarinhos." %>
-<%# Fora do Google até o SEO da vitrine de insumos (Fase 26, PR C2). %>
-<% content_for :head do %>
-  <meta name="robots" content="noindex">
+<% content_for :canonical_url, supplies_url %>
+<% content_for :structured_data do %>
+  <%= tag.script supply_item_list_structured_data(@supplies), type: "application/ld+json" %>
 <% end %>
 
 <div class="container mx-auto max-w-6xl px-5 pb-16 pt-8">

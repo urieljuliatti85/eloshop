@@ -6,8 +6,10 @@
 <% content_for :title, "#{product.name} — #{seller.name} | Insumos | EloShop" %>
 <%# Texto próprio: o padrão das peças fala em "feito à mão", falso para insumo (ADR 007). %>
 <% content_for :meta_description, truncate("#{product.name}, por #{format_price(product.price_cents)} o #{unit}, de #{seller.name}. #{product.description.to_s.squish}", length: 155) %>
-<% content_for :head do %>
-  <meta name="robots" content="noindex">
+<% content_for :canonical_url, supply_url(seller.slug, product.slug) %>
+<% content_for :structured_data do %>
+  <%= tag.script product_structured_data(product), type: "application/ld+json" %>
+  <%= tag.script supply_breadcrumb_structured_data(product), type: "application/ld+json" %>
 <% end %>
 
 <div class="container mx-auto max-w-6xl px-5 pb-16 pt-8">

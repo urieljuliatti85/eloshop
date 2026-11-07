@@ -25,13 +25,24 @@ RSpec.describe "Distributors", type: :request do
     expect(response).to have_http_status(:ok)
     expect(response.body).to include(approved.name, released.name, "Nota fiscal: emite")
     expect(response.body).not_to include(unreleased.name, hidden.name, suspended.name, approved_seller.name)
-    expect(response.body).to include('name="robots" content="noindex"')
+    expect(response.body).not_to include('name="robots" content="noindex"')
   end
 
   it "says the first distributors are coming when there is none" do
     get distributors_path
 
     expect(response.body).to include("Os primeiros armarinhos chegam em breve", CGI.escapeHTML(how_it_works_path(aba: "vende", grupo: "armarinho")))
+  end
+
+  it "shows filterable material categories with illustrated icons and supply previews" do
+    seller = distributor(status: :approved)
+    material = Material.find_or_create_by!(name: "Linho")
+    product = seller.products.create!(name: "Fio de linho", price_cents: 3200, stock_quantity: 8, status: :active, sale_unit: :pack, materials: [ material ])
+
+    get distributors_path
+
+    expect(response.body).to include("Um mural de materiais", "Cores, texturas e ideias para criar", "Categorias de insumos", material.name, supplies_path(material: material.slug), product.name, "Parceiro EloShop", 'type="application/ld+json"')
+    expect(response.body).to include("<svg")
   end
 
   it "has a Distribuidores link in the main menu, on desktop and in the mobile menu" do

@@ -276,6 +276,10 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :products, only: :index
       resources :sellers, only: %i[index show], param: :slug
+      resources :supplies, only: :index
+      scope "armarinhos/:seller_slug" do
+        resources :supplies, only: :show, param: :slug
+      end
       resources :categories, only: :index
       scope "sellers/:seller_slug" do
         resources :products, only: :show, param: :slug

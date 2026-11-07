@@ -3,7 +3,7 @@
 require "rails_helper"
 
 # Vitrine de insumos (ADR 007, Fase 26, PR C): /insumos, a loja
-# /distribuidores/:slug e a página /distribuidores/:slug/insumos/:produto.
+# /armarinhos/:slug e a página /armarinhos/:slug/insumos/:produto.
 # Mostra só `Product.supply_visible`; a vitrine de peças e a de insumos nunca
 # se misturam, nos dois sentidos. Compra só na Fase 27.
 RSpec.describe "Supply storefront", type: :request do
@@ -33,7 +33,8 @@ RSpec.describe "Supply storefront", type: :request do
 
     get supplies_path
 
-    expect(response.body).to include(cotton_yarn.name, released.name, "R$ 25,00", "por pacote", 'name="robots" content="noindex"')
+    expect(response.body).to include(cotton_yarn.name, released.name, "R$ 25,00", "por pacote", 'type="application/ld+json"')
+    expect(response.body).not_to include('name="robots" content="noindex"')
     expect(response.body).not_to include(draft.name, hidden.name, unreleased.name, piece.name)
   end
 
@@ -68,7 +69,8 @@ RSpec.describe "Supply storefront", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("R$ 25,00", "R$ 22,50", "R$ 20,50", "5 pacotes", "Pacote com 100 g",
-      "Até 30 kg por pedido", "o armarinho emite", "Vendas de insumos em breve", 'name="robots" content="noindex"')
+      "Até 30 kg por pedido", "o armarinho emite", "Vendas de insumos em breve", 'type="application/ld+json"', "priceSpecification", "referenceQuantity")
+    expect(response.body).not_to include('name="robots" content="noindex"')
     expect(response.body).not_to include("feito à mão", cart_items_path)
   end
 

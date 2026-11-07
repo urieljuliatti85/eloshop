@@ -198,8 +198,15 @@ antes dessa regra (Fase 28): as duas sobem juntas, ou a 28 antes.
   mostra preço por unidade, a tabela de faixas com o preço já calculado
   (`supplies/_price_tiers`, a mesma do painel), o mínimo, o limite de 30 kg e
   a declaração de nota fiscal; não tem formulário de carrinho ("Vendas de
-  insumos em breve") até a Fase 27. As páginas ficam com `noindex` até o PR
-  C2 (SEO, JSON-LD, sitemap e API).
+  insumos em breve") até a Fase 27. O C2 implementou canonical e dados
+  estruturados, retirou o `noindex` e adicionou ao sitemap apenas armarinhos e
+  insumos visíveis com conteúdo publicado. A API v1 separa `/supplies` e a
+  página de detalhe por armarinho, publicando unidade, mínimo e preços por
+  faixa. `Material` e `Technique` têm um tipo persistido de ícone, inferido do
+  nome na criação (ex.: crochê → fios, bordado → costura, macramê → nós) e
+  preservado no banco. Ícones SVG reutilizáveis aparecem nas categorias em
+  `/armarinhos`, nas listas de material e técnica do formulário de insumo e ao
+  lado do produto na listagem do painel.
 * **Mínimo e estoque:** o mínimo conta o produto inteiro, somando as variantes
   ativas, e mínimo maior que o estoque é `Product#purchase_blocker`
   `:below_minimum_stock`, na fonte única de disponibilidade.

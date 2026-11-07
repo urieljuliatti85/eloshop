@@ -431,6 +431,280 @@ paths:
                     type: string
                 required:
                 - error
+  "/api/v1/supplies":
+    get:
+      summary: Lista insumos publicados
+      tags:
+      - Supplies
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+      responses:
+        '401':
+          description: token ausente, inválido ou revogado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+        '429':
+          description: cota de requisições do token esgotada
+          headers:
+            Retry-After:
+              schema:
+                type: string
+              description: Segundos até a cota ser renovada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+        '400':
+          description: parâmetro inválido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  parameter:
+                    type: string
+                required:
+                - error
+                - parameter
+        '200':
+          description: insumos encontrados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  supplies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        seller:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            slug:
+                              type: string
+                          required:
+                          - name
+                          - slug
+                        description:
+                          type: string
+                          nullable: true
+                        price_cents:
+                          type: integer
+                        currency:
+                          type: string
+                        sale_unit:
+                          type: string
+                          enum:
+                          - unit
+                          - pack
+                          - meter
+                          - kilogram
+                          - roll
+                          - box
+                        sale_unit_name:
+                          type: string
+                        sale_unit_detail:
+                          type: string
+                          nullable: true
+                        min_order_quantity:
+                          type: integer
+                        price_tiers:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              min_quantity:
+                                type: integer
+                              discount_bps:
+                                type: integer
+                              price_cents:
+                                type: integer
+                            required:
+                            - min_quantity
+                            - discount_bps
+                            - price_cents
+                        available_for_purchase:
+                          type: boolean
+                      required:
+                      - id
+                      - name
+                      - slug
+                      - seller
+                      - price_cents
+                      - currency
+                      - sale_unit
+                      - sale_unit_name
+                      - min_order_quantity
+                      - price_tiers
+                      - available_for_purchase
+                  page:
+                    type: integer
+                  total_pages:
+                    type: integer
+                  total_count:
+                    type: integer
+                required:
+                - supplies
+                - page
+                - total_pages
+                - total_count
+  "/api/v1/armarinhos/{seller_slug}/supplies/{slug}":
+    get:
+      summary: Exibe um insumo publicado
+      tags:
+      - Supplies
+      parameters:
+      - name: seller_slug
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '401':
+          description: token ausente, inválido ou revogado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+        '429':
+          description: cota de requisições do token esgotada
+          headers:
+            Retry-After:
+              schema:
+                type: string
+              description: Segundos até a cota ser renovada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+        '200':
+          description: insumo encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  slug:
+                    type: string
+                  seller:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      slug:
+                        type: string
+                    required:
+                    - name
+                    - slug
+                  description:
+                    type: string
+                    nullable: true
+                  price_cents:
+                    type: integer
+                  currency:
+                    type: string
+                  sale_unit:
+                    type: string
+                    enum:
+                    - unit
+                    - pack
+                    - meter
+                    - kilogram
+                    - roll
+                    - box
+                  sale_unit_name:
+                    type: string
+                  sale_unit_detail:
+                    type: string
+                    nullable: true
+                  min_order_quantity:
+                    type: integer
+                  price_tiers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        min_quantity:
+                          type: integer
+                        discount_bps:
+                          type: integer
+                        price_cents:
+                          type: integer
+                      required:
+                      - min_quantity
+                      - discount_bps
+                      - price_cents
+                  available_for_purchase:
+                    type: boolean
+                required:
+                - id
+                - name
+                - slug
+                - seller
+                - price_cents
+                - currency
+                - sale_unit
+                - sale_unit_name
+                - min_order_quantity
+                - price_tiers
+                - available_for_purchase
+        '404':
+          description: insumo não encontrado ou não disponível publicamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
 components:
   securitySchemes:
     bearer_auth:

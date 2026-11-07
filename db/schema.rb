@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_07_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_07_140100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -201,8 +201,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_130000) do
     t.string "slug", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "icon_type", default: "other", null: false
     t.index "lower((name)::text)", name: "index_materials_on_lower_name", unique: true
     t.index ["slug"], name: "index_materials_on_slug", unique: true
+    t.check_constraint "icon_type IN ('yarn', 'fabric', 'ribbon', 'notions', 'wood', 'clay', 'other')", name: "materials_icon_type_check"
   end
 
   create_table "mercado_pago_test_accounts", force: :cascade do |t|
@@ -752,8 +754,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_130000) do
     t.string "slug", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "icon_type", default: "other", null: false
     t.index "lower((name)::text)", name: "index_techniques_on_lower_name", unique: true
     t.index ["slug"], name: "index_techniques_on_slug", unique: true
+    t.check_constraint "icon_type IN ('yarn', 'fabric', 'ribbon', 'notions', 'wood', 'clay', 'needlework', 'knotting', 'paint', 'other')", name: "techniques_icon_type_check"
   end
 
   create_table "users", force: :cascade do |t|

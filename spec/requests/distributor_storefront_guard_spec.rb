@@ -60,11 +60,11 @@ RSpec.describe "Distributor storefront guard", type: :request do
     expect(response).to have_http_status(:not_found)
   end
 
-  it "keeps the distributor and its product out of the sitemap" do
+  it "lists distributor pages only in the supply sitemap, never in artisan entries" do
     get sitemap_path
 
-    expect(response.body).not_to include(supply.slug)
-    expect(response.body).not_to include(distributor.slug)
+    expect(response.body).to include(distributor_store_url(distributor.slug), supply_url(distributor.slug, supply.slug))
+    expect(response.body).not_to include(seller_url(distributor.slug), product_url(distributor, supply.slug))
   end
 
   it "keeps the distributor and its product out of the public API" do
@@ -79,6 +79,9 @@ RSpec.describe "Distributor storefront guard", type: :request do
 
     get api_v1_product_path(distributor.slug, supply.slug), headers: api_headers
     expect(response).to have_http_status(:not_found)
+
+    get api_v1_supplies_path, headers: api_headers
+    expect(response.parsed_body.fetch("supplies").map { |product| product["slug"] }).to include(supply.slug)
   end
 
   it "refuses the distributor's product in the cart, while an atelier's piece goes in" do
