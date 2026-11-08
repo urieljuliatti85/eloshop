@@ -35,9 +35,11 @@ class SitemapsController < StorefrontController
     # de token do Mercado Pago, o que não altera a página pública.
     @seller_lastmod = @sellers.index_with { |seller| latest_by_seller.fetch(seller.id) }
 
-    supplies = Product.supply_visible
+    # Armarinhos de exemplo (Seller#example?) são só vitrine para apresentação:
+    # ficam fora do sitemap, em linha com o noindex das próprias páginas.
+    supplies = Product.supply_visible.where.not(seller_id: Seller.where(slug: Seller::EXAMPLE_SLUGS).select(:id))
     @supplies = supplies.preload(:seller).order(:slug)
-    @distributors = Seller.supply_listed.where(id: supplies.select(:seller_id)).order(:slug)
+    @distributors = Seller.supply_listed.where.not(slug: Seller::EXAMPLE_SLUGS).where(id: supplies.select(:seller_id)).order(:slug)
     latest_supply_by_seller = supplies.group(:seller_id).maximum(:updated_at)
     @supply_lastmod = latest_supply_by_seller.values.max
     @distributor_lastmod = @distributors.index_with { |seller| latest_supply_by_seller.fetch(seller.id) }

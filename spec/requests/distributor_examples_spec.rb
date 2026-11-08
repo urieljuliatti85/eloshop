@@ -47,4 +47,10 @@ RSpec.describe "Distributor examples", type: :request do
 
     expect(response.body).to include('name="robots" content="noindex,nofollow"')
   end
+
+  it "keeps the example armarinhos and their supplies out of the sitemap" do
+    get sitemap_path
+
+    expect(response.body).not_to include(distributor_store_url("armarinho-fios-e-cores"), supply_url("armarinho-aviamentos-criativos", "botoes-de-madeira"))
+  end
 end
