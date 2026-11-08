@@ -1347,6 +1347,14 @@ Adicionar `payment_method` (string) e `installments` (integer, default 1) a `pay
 
 Fase 20 (Etapa B — gateway Mercado Pago), Fase 23 (split de comissão).
 
+### Ajustes mobile dos armarinhos (2026-11-08, PR #356)
+
+"Categorias de insumos" em `/armarinhos` vira carrossel no celular, com os mesmos controles de "Como funciona". Nas páginas de armarinho (lista, loja e insumo), a 4ª aba da barra inferior é "Armarinhos" no lugar de "Como funciona". Na loja e no insumo, um caminho flutuante aparece no celular, de borda a borda, logo abaixo do cabeçalho, depois que o breadcrumb sai da tela. Cobertura em `spec/requests/armarinhos_mobile_spec.rb` (7 casos). O comportamento de rolagem e da pílula é JavaScript, validado no navegador.
+
+### Âncora da prévia e pré-cadastro em Como funciona (2026-11-08, PR #357)
+
+O botão "Ver prévia" do banner de `/armarinhos` rola até a seção "Armarinhos parceiros" (`#armarinhos-parceiros`). Em `/como-funciona?aba=vende&grupo=armarinho`, com o cadastro fechado, o bloco ganha "Quero ser avisado", apontando para `/pre-cadastro/armarinhos`. A validação no navegador e o teste de `how_it_works_controller_test.rb` ainda não foram confirmados.
+
 ---
 
 # PARTE 4 — Distribuidores de insumos (ADR 007)
@@ -1766,4 +1774,4 @@ Nenhuma mudança de código; mapeamento do que já roda assíncrono vs. o que ro
 
 Última atualização:
 
-`2026-11-08` (armarinhos de exemplo em produção, PR #355; ajuste de pré-cadastro e prévia de exemplo; Fases 25 e 26 de distribuidores concluídas; vitrine `/armarinhos`, SEO, API e layout revisados; pré-cadastro público de distribuidores em implementação; Fase 27 segue junto do frete na Fase 28)
+`2026-11-08` (ajustes mobile dos armarinhos, PR #356; âncora da prévia e "Quero ser avisado" em Como funciona, PR #357; armarinhos de exemplo em produção, PR #355; ajuste de pré-cadastro e prévia de exemplo; Fases 25 e 26 de distribuidores concluídas; vitrine `/armarinhos`, SEO, API e layout revisados; pré-cadastro público de distribuidores em implementação; Fase 27 segue junto do frete na Fase 28)
