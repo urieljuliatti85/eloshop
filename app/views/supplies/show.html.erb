@@ -13,12 +13,20 @@
   <%= tag.script supply_breadcrumb_structured_data(product), type: "application/ld+json" %>
 <% end %>
 
-<div class="container mx-auto max-w-6xl px-5 pb-16 pt-8">
-  <nav class="text-sm text-ink-muted" aria-label="Caminho">
+<div class="container mx-auto max-w-6xl px-5 pb-16 pt-8" data-controller="floating-breadcrumb">
+  <nav class="text-sm text-ink-muted" aria-label="Caminho" data-floating-breadcrumb-target="anchor">
     <%= link_to "Insumos", supplies_path, class: "hover:text-brand-600" %> ›
     <%= link_to seller.name, distributor_store_path(seller.slug), class: "hover:text-brand-600" %> ›
     <span aria-current="page"><%= product.name %></span>
   </nav>
+  <%# No celular, a cadeia "Insumos › armarinho › produto" fica numa pílula fixa no topo. %>
+  <div class="fixed inset-x-0 top-[100px] z-40 lg:hidden" data-floating-breadcrumb-target="pill" hidden>
+    <nav class="flex items-center gap-1 overflow-x-auto whitespace-nowrap rounded-none border-0 border-b border-gray-200 bg-gray-50/95 px-4 py-2 text-sm font-medium text-ink shadow-md backdrop-blur" aria-label="Caminho flutuante">
+    <%= link_to "Insumos", supplies_path, class: "shrink-0 hover:text-brand-600" %> <span aria-hidden="true" class="text-ink-muted">›</span>
+    <%= link_to seller.name, distributor_store_path(seller.slug), class: "shrink-0 hover:text-brand-600" %> <span aria-hidden="true" class="text-ink-muted">›</span>
+    <span aria-current="page" class="truncate"><%= product.name %></span>
+  </nav>
+  </div>
 
   <div class="mt-6 grid gap-10 md:grid-cols-2">
     <%= render "products/gallery", product: product %>

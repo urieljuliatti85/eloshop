@@ -79,9 +79,13 @@
         <h2 id="supply-categories-heading" class="text-2xl font-bold text-ink">Categorias de insumos</h2>
         <span class="hidden text-sm text-ink-muted sm:block">Escolha uma categoria para filtrar</span>
       </div>
-      <div class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <%# No celular a lista vira um carrossel com scroll-snap (carousel_controller),
+          para não alongar a página; a partir de md volta a ser grade. %>
+      <div data-controller="carousel" data-carousel-interval-value="0">
+      <div class="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible xl:grid-cols-5"
+           data-carousel-target="track">
         <% @materials.each do |material| %>
-          <%= link_to supplies_path(material: material.slug), class: "group flex min-h-28 items-center gap-4 rounded-2xl border border-sand-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md" do %>
+          <%= link_to supplies_path(material: material.slug), data: { carousel_target: "slide" }, class: "group flex min-h-28 min-w-[15rem] shrink-0 snap-start items-center gap-4 rounded-2xl border border-sand-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 md:min-w-0 md:shrink hover:border-brand-200 hover:shadow-md" do %>
             <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700" aria-hidden="true">
               <%= render "materials/category_icon", material: material, classes: "size-9" %>
             </span>
@@ -91,6 +95,8 @@
             </span>
           <% end %>
         <% end %>
+      </div>
+      <%= render "how_it_works/carousel_controls", count: @materials.size, item: "categoria", previous_label: "Categoria anterior", next_label: "Próxima categoria" %>
       </div>
     </section>
   <% end %>
