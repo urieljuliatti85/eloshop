@@ -142,6 +142,7 @@
     </div>
     <% if DistributorRegistrationsController.signup_enabled? %>
       <%= link_to "Cadastrar meu armarinho", new_distributor_registration_path, class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-brand-600 px-6 font-bold text-white transition hover:bg-brand-700" %>
+      <%= link_to "Quero ser avisado", new_distributor_interest_path, class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full border border-brand-200 bg-white px-6 font-bold text-brand-700 transition hover:bg-brand-50" %>
       <%= link_to "Veja como funciona", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "text-sm font-semibold text-brand-700 underline" %>
     <% else %>
       <%= link_to "Quero ser avisado", new_distributor_interest_path, class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-brand-600 px-6 font-bold text-white transition hover:bg-brand-700" %>
