@@ -1448,6 +1448,10 @@ Representar o insumo como produto comercial: unidade de venda, quantidade mínim
 
 Fase 25.
 
+### Ajustes de pré-cadastro (2026-11-07)
+
+Botão "Quero ser avisado" no banner do Armarinho na home e no banner de `/como-funciona`, e banner de pré-cadastro movido para o topo de `/armarinhos`. A prévia `previa-eloshop` mostra o rótulo "Exemplo" no lugar do selo de verificado e não exibe "Nota fiscal". Em produção a prévia não tem insumo comprável nem usuário vinculado, coberto por `spec/requests/distributor_preview_spec.rb`. Os armarinhos de demonstração com insumos e preços ficam só no seed local (`db/seeds/armarinhos.rb`). Suíte completa passou em 2026-11-07. Os critérios de aceite desta fase seguem desmarcados.
+
 ## FASE 27 — Compra de insumos
 
 Status: `[ ]`
@@ -1503,6 +1507,16 @@ Cotar frete de volumes pesados e deixar claro ao comprador o que esperar em nota
 ### Dependências de outras fases
 
 Fase 27; SuperFrete estável em produção (ADR 005).
+
+### Pendências (registradas em 2026-11-07)
+
+* **TODO 1 — Etiqueta e rastreio dos insumos do distribuidor.** A Fase 28 cobre só cotação. Etapas 2 e 3 do ADR 005 ficam fora do escopo. Motivo: sem etiqueta o distribuidor não despacha o volume. Impacto: bloqueia o envio de insumos no lançamento. Prioridade: alta.
+* **TODO 2 — Quem paga a etiqueta do distribuidor.** A decisão de 2026-11-05 vale só para o ateliê. Motivo: o custo do frete afeta preço final e comissão. Impacto: precificação e termos comerciais. Prioridade: alta.
+* **TODO 3 — Bloqueio da tabela interna para distribuidor.** Garantir que `Shipping::Calculator` nunca aplica o fallback de R$ 15 + R$ 5/kg para `kind: distributor`. Verificado em 2026-11-07: o bloqueio ainda não existe no código (`quotes` e `fallback_quote` não checam o tipo do vendedor). Impacto: critério de aceite desta fase. Prioridade: alta, com teste de regressão obrigatório antes da abertura de insumos.
+* **TODO 4 — Conexão SuperFrete do distribuidor.** Definir se o distribuidor conecta por OAuth (hoje `Seller#superfrete_required?` vale só para ateliê) e confirmar que `/painel/superfrete/callback` aceita o painel do distribuidor. Impacto: cotação e tratamento do token cifrado. Prioridade: média.
+* **TODO 5 — Obrigatoriedade da declaração de nota fiscal.** Consulta jurídica e exibição na loja, no produto e no resumo do pedido. Impacto: critério "comprador sabe antes de pagar". Prioridade: alta, antes de abrir a vertical.
+* **TODO 6 — Dados do comprador para a nota.** Definir se o fluxo fiscal exige dados além de nome e CPF (já vindos de `Checkout::Recipient`). Prioridade: média.
+* **TODO 7 — Mais de um volume por pedido.** Só com demanda medida (decisão já registrada). Prioridade: baixa.
 
 ### Fora do escopo (só com demanda real)
 
@@ -1744,4 +1758,4 @@ Nenhuma mudança de código; mapeamento do que já roda assíncrono vs. o que ro
 
 Última atualização:
 
-`2026-11-07` (Fases 25 e 26 de distribuidores concluídas; vitrine `/armarinhos`, SEO, API e layout revisados; pré-cadastro público de distribuidores em implementação; Fase 27 segue junto do frete na Fase 28)
+`2026-11-07` (ajuste de pré-cadastro e prévia de exemplo; Fases 25 e 26 de distribuidores concluídas; vitrine `/armarinhos`, SEO, API e layout revisados; pré-cadastro público de distribuidores em implementação; Fase 27 segue junto do frete na Fase 28)

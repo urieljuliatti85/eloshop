@@ -29,11 +29,13 @@
       <div>
         <div class="flex flex-wrap gap-2">
           <span class="inline-flex min-h-8 items-center rounded-full bg-white/90 px-3 text-xs font-bold <%= distributor.approved? ? 'text-emerald-800' : 'text-amber-900' %>">
-            <%= distributor.approved? ? "✓ Armarinho verificado" : "✦ Em preparação" %>
+            <%= @distributor_preview ? "Exemplo" : (distributor.approved? ? "✓ Armarinho verificado" : "✦ Em preparação") %>
           </span>
+          <% unless @distributor_preview %>
           <span class="inline-flex min-h-8 items-center rounded-full bg-white/90 px-3 text-xs font-semibold text-ink-muted">
             Nota fiscal: <%= { true => "emite", false => "não emite" }.fetch(distributor.issues_invoices, "não informado") %>
           </span>
+          <% end %>
         </div>
         <p class="mt-6 text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Matéria-prima para quem faz à mão</p>
         <h1 id="distributor-store-title" class="mt-2 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl"><%= distributor.name %></h1>

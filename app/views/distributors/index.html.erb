@@ -19,6 +19,17 @@
     <%= link_to "Ver todos os insumos", supplies_path, class: "mt-4 inline-flex min-h-11 items-center font-semibold text-brand-700 underline underline-offset-4" %>
   </header>
 
+  <% if @preview_distributor %>
+    <aside class="mt-8 flex flex-col justify-between gap-5 rounded-3xl border border-brand-100 bg-brand-50/60 p-6 sm:flex-row sm:items-center sm:p-8" aria-labelledby="armarinho-preview-title">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">Pré-cadastro</p>
+        <h2 id="armarinho-preview-title" class="mt-2 text-xl font-bold text-ink sm:text-2xl">Estamos trabalhando no pré-cadastro de armarinhos. Veja a prévia.</h2>
+        <p class="mt-2 text-sm text-ink-muted">Conheça o formato da vitrine enquanto preparamos a abertura para novos distribuidores.</p>
+      </div>
+      <%= link_to "Ver prévia", distributor_store_path(@preview_distributor.slug), class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-ink px-6 font-bold text-white transition hover:bg-brand-700" %>
+    </aside>
+  <% end %>
+
   <section class="relative isolate mt-8 overflow-hidden rounded-[2rem] border border-[#eee3d4] bg-[#faf5ec] p-5 sm:p-8 lg:mt-10 lg:p-10" aria-labelledby="armarinhos-mural-title">
     <div class="pointer-events-none absolute -right-20 -top-24 -z-10 size-72 rounded-full opacity-70 blur-3xl" style="background: #f5d7c9" aria-hidden="true"></div>
     <div class="pointer-events-none absolute -bottom-28 left-1/3 -z-10 size-72 rounded-full opacity-60 blur-3xl" style="background: #dcefe6" aria-hidden="true"></div>
@@ -45,17 +56,6 @@
       </div>
     </div>
   </section>
-
-  <% if @preview_distributor %>
-    <aside class="mt-8 flex flex-col justify-between gap-5 rounded-3xl border border-brand-100 bg-brand-50/60 p-6 sm:flex-row sm:items-center sm:p-8" aria-labelledby="armarinho-preview-title">
-      <div>
-        <p class="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">Pré-cadastro</p>
-        <h2 id="armarinho-preview-title" class="mt-2 text-xl font-bold text-ink sm:text-2xl">Estamos trabalhando no pré-cadastro de armarinhos. Veja a prévia.</h2>
-        <p class="mt-2 text-sm text-ink-muted">Conheça o formato da vitrine enquanto preparamos a abertura para novos distribuidores.</p>
-      </div>
-      <%= link_to "Ver prévia", distributor_store_path(@preview_distributor.slug), class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-ink px-6 font-bold text-white transition hover:bg-brand-700" %>
-    </aside>
-  <% end %>
 
   <% if @materials.any? %>
     <section class="mt-12" aria-labelledby="supply-categories-heading">
