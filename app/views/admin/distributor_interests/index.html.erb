@@ -1,0 +1,37 @@
+<div class="space-y-6">
+  <header>
+    <p class="admin-section-label">Pré-cadastro</p>
+    <h1>Interesse de armarinhos</h1>
+    <p class="mt-2 text-sm text-slate-500"><%= pluralize(@awaiting_notice_count, "contato aguardando aviso", plural: "contatos aguardando aviso") %>.</p>
+  </header>
+
+  <section class="admin-card overflow-hidden">
+    <% if @interests.any? %>
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr><th>E-mail</th><th>WhatsApp</th><th>Recebido</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% @interests.each do |interest| %>
+              <tr>
+                <td><%= mail_to interest.email_address, interest.email_address, class: "admin-link" %></td>
+                <td><%= link_to interest.whatsapp_number, "https://wa.me/#{interest.whatsapp_url_number}", target: "_blank", rel: "noopener", class: "admin-link" %></td>
+                <td><%= l(interest.created_at, format: "%d/%m/%Y") %></td>
+                <td><%= interest.notified_at? ? "Avisado em #{l(interest.notified_at, format: "%d/%m/%Y")}" : "Aguardando aviso" %></td>
+                <td class="text-right">
+                  <% unless interest.notified_at? %>
+                    <%= button_to "Marcar como avisado", mark_notified_admin_distributor_interest_path(interest), method: :patch, class: "admin-link cursor-pointer" %>
+                  <% end %>
+                  <%= button_to "Remover", admin_distributor_interest_path(interest), method: :delete, form: { data: { turbo_confirm: "Remover este contato da lista?" } }, class: "mt-1 text-sm font-semibold text-red-700 underline" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="admin-empty-state m-5">Ainda não há contatos interessados.</p>
+    <% end %>
+  </section>
+</div>

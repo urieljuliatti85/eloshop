@@ -34,6 +34,10 @@ Rails.application.routes.draw do
 
     resources :customers, only: %i[index show]
 
+    resources :distributor_interests, path: "interesses-de-armarinhos", only: %i[index destroy] do
+      member { patch :mark_notified }
+    end
+
     # Gestão de quem administra a plataforma. Sem edição: trocar senha alheia
     # pelo painel é sequestro de conta — quem esquece usa a recuperação por
     # e-mail, que já existe.
