@@ -6,10 +6,9 @@ require "zlib"
 # e imagem), o vendedor "EloShop" e as contas abaixo. Idempotente: pode ser
 # executado de novo sem duplicar SKUs.
 #
-# Não faz nada em produção. O que a produção recebe a cada boot vive em
-# `db/seeds/categories.rb` (só categorias, estritamente aditivo), chamado
-# direto pelo `bin/docker-entrypoint`; as duas coisas não se misturam para que
-# produto, vendedor ou senha de exemplo nunca cheguem lá.
+# Não faz nada em produção. O que a produção recebe a cada boot vive nos
+# seeds separados de categorias e distribuidores: taxonomia e uma prévia
+# pendente sem conta, documentos ou produtos compráveis.
 return unless Rails.env.local?
 
 #
@@ -482,6 +481,5 @@ catalog.each do |item|
   attach_seed_image(product, :images, "#{product.slug}-detalhe.png", bottom, top)
 end
 
-# Armarinhos e insumos de demonstração: arquivo separado e protegido também,
-# para nunca se misturar ao seed estritamente aditivo de produção.
+# Armarinhos e insumos locais de demonstração: nunca carregados em produção.
 load Rails.root.join("db/seeds/armarinhos.rb").to_s

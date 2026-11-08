@@ -32,8 +32,9 @@ fi
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
   # db:prepare só executa db:seed na criação inicial do banco (e db/seeds.rb
-  # não faz nada em produção). Em produção o único seed é o de categorias,
-  # aditivo: reaplicá-lo em todo boot é seguro, pois só cria o que não existe.
+  # não faz nada em produção). Em produção são carregados os seeds aditivos
+  # de categorias e da prévia de armarinhos. Eles não criam contas nem produtos
+  # compráveis e só acrescentam registros que ainda não existem.
   # Em desenvolvimento roda o db:seed completo (catálogo de exemplo).
   #
   # Falha de seed NÃO derruba a aplicação. Com `set -e`, qualquer exceção
@@ -44,6 +45,7 @@ if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   # então o erro é registrado e o boot continua.
   if [ "${RAILS_ENV:-}" == "production" ]; then
     ./bin/rails runner 'load Rails.root.join("db/seeds/categories.rb").to_s' || echo "AVISO: seed de categorias falhou; seguindo com o boot. Categorias podem estar desatualizadas."
+    ./bin/rails runner 'load Rails.root.join("db/seeds/distributors.rb").to_s' || echo "AVISO: seed da prévia de armarinhos falhou; seguindo com o boot."
   else
     ./bin/rails db:seed || echo "AVISO: db:seed falhou; seguindo com o boot. Catálogo pode estar desatualizado."
   fi
