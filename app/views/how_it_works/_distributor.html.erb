@@ -99,6 +99,8 @@
             class: "inline-flex min-h-12 items-center rounded-full bg-brand-600 px-7 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %>
     <% else %>
       <p class="text-sm font-semibold text-ink">O cadastro de armarinhos abre em breve.</p>
+      <%= link_to "Quero ser avisado", new_distributor_interest_path,
+            class: "inline-flex min-h-12 items-center rounded-full bg-brand-600 px-7 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700" %>
     <% end %>
     <%= link_to "Já tenho conta: entrar no painel do armarinho", distributor_login_path,
           class: "inline-flex min-h-11 items-center text-sm font-semibold text-ink underline decoration-sand-200 underline-offset-4 hover:text-brand-600" %>
