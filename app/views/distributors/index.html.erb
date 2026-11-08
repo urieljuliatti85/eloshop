@@ -42,7 +42,7 @@
         <h2 id="armarinho-preview-title" class="mt-2 text-xl font-bold text-ink sm:text-2xl">Estamos trabalhando no pré-cadastro de armarinhos. Veja a prévia.</h2>
         <p class="mt-2 text-sm text-ink-muted">Conheça o formato da vitrine enquanto preparamos a abertura para novos distribuidores.</p>
       </div>
-      <%= link_to "Ver prévia", distributor_store_path(@preview_distributor.slug), class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-ink px-6 font-bold text-white transition hover:bg-brand-700" %>
+      <%= link_to "Ver prévia", "#armarinhos-parceiros", class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-ink px-6 font-bold text-white transition hover:bg-brand-700" %>
     </aside>
   <% end %>
 
@@ -101,7 +101,7 @@
     </section>
   <% end %>
 
-  <section class="mt-14" aria-labelledby="distributors-heading">
+  <section id="armarinhos-parceiros" class="mt-14 scroll-mt-24" aria-labelledby="distributors-heading">
     <div class="flex flex-col gap-4 border-b border-sand-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <h2 id="distributors-heading" class="text-2xl font-bold text-ink">Armarinhos parceiros</h2>
