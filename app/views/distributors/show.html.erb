@@ -2,7 +2,7 @@
 <% content_for :title, "#{distributor.name} | Armarinho | EloShop" %>
 <% content_for :meta_description, @distributor_preview ? "Prévia demonstrativa da vitrine de armarinhos da EloShop." : "Insumos de #{distributor.name} na EloShop, com preço por quantidade para artesãos." %>
 <% content_for :canonical_url, distributor_store_url(distributor.slug) %>
-<% if @distributor_preview %>
+<% if @distributor_preview || distributor.example? %>
   <% content_for :head do %><meta name="robots" content="noindex,nofollow"><% end %>
 <% end %>
 <% content_for :structured_data do %>
@@ -29,7 +29,7 @@
       <div>
         <div class="flex flex-wrap gap-2">
           <span class="inline-flex min-h-8 items-center rounded-full bg-white/90 px-3 text-xs font-bold <%= distributor.approved? ? 'text-emerald-800' : 'text-amber-900' %>">
-            <%= @distributor_preview ? "Exemplo" : (distributor.approved? ? "✓ Armarinho verificado" : "✦ Em preparação") %>
+            <%= (@distributor_preview || distributor.example?) ? "Exemplo" : (distributor.approved? ? "✓ Armarinho verificado" : "✦ Em preparação") %>
           </span>
           <% unless @distributor_preview %>
           <span class="inline-flex min-h-8 items-center rounded-full bg-white/90 px-3 text-xs font-semibold text-ink-muted">

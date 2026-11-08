@@ -1452,6 +1452,14 @@ Fase 25.
 
 Botão "Quero ser avisado" no banner do Armarinho na home e no banner de `/como-funciona`, e banner de pré-cadastro movido para o topo de `/armarinhos`. A prévia `previa-eloshop` mostra o rótulo "Exemplo" no lugar do selo de verificado e não exibe "Nota fiscal". Em produção a prévia não tem insumo comprável nem usuário vinculado, coberto por `spec/requests/distributor_preview_spec.rb`. Os armarinhos de demonstração com insumos e preços ficam só no seed local (`db/seeds/armarinhos.rb`). Suíte completa passou em 2026-11-07. Os critérios de aceite desta fase seguem desmarcados.
 
+### Exemplos de armarinho em produção (2026-11-08)
+
+Três armarinhos de exemplo (`Fios & Cores`, `Tecidos & Estampas`, `Aviamentos Criativos`), criados por `db/seeds/distributors.rb` só para apresentação da vitrine. Aparecem em `/armarinhos` com o selo "Exemplo" e "Parceiro EloShop", e a loja e a página do insumo mostram "Exemplo". Não têm CPF, responsável, usuário nem aceite de termos. O armarinho fica `pending` e liberado na vitrine, então os insumos aparecem e não são compráveis (`purchase_blocker` retorna `:seller_not_accepting_orders`). Os insumos de exemplo ficam `active` por `update_columns`, porque `publish!` exige termos aceitos. A loja e o insumo de exemplo têm `noindex` e ficam fora do sitemap (`Seller::EXAMPLE_SLUGS`). Erro no seed: em produção vai para o log; fora de produção é levantado.
+
+Validação: `spec/requests/distributor_examples_spec.rb` e `spec/requests/sitemaps_spec.rb` passaram localmente. Ainda não confirmados: `distributor_storefront_guard_spec.rb`, `supplies_spec.rb` e `distributors_spec.rb`, que checam que insumo de distribuidor não aparece em outras vitrines.
+
+Em aberto: "Nota fiscal" está como no seed local (Aviamentos Criativos "não emite"; os outros dois "emite"). O pedido original pedia "não emite" no card; a decisão final é do Uriel. PR #355.
+
 ## FASE 27 — Compra de insumos
 
 Status: `[ ]`
@@ -1758,4 +1766,4 @@ Nenhuma mudança de código; mapeamento do que já roda assíncrono vs. o que ro
 
 Última atualização:
 
-`2026-11-07` (ajuste de pré-cadastro e prévia de exemplo; Fases 25 e 26 de distribuidores concluídas; vitrine `/armarinhos`, SEO, API e layout revisados; pré-cadastro público de distribuidores em implementação; Fase 27 segue junto do frete na Fase 28)
+`2026-11-08` (armarinhos de exemplo em produção, PR #355; ajuste de pré-cadastro e prévia de exemplo; Fases 25 e 26 de distribuidores concluídas; vitrine `/armarinhos`, SEO, API e layout revisados; pré-cadastro público de distribuidores em implementação; Fase 27 segue junto do frete na Fase 28)
