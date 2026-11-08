@@ -17,10 +17,16 @@
   { title: "Aviamentos", icon: "notions", background: "#fff4dc" }
 ] %>
 
-<div class="container mx-auto max-w-6xl px-5 pb-16 pt-8">
-  <nav class="text-sm text-ink-muted" aria-label="Caminho">
+<div class="container mx-auto max-w-6xl px-5 pb-16 pt-8" data-controller="floating-breadcrumb">
+  <nav class="text-sm text-ink-muted" aria-label="Caminho" data-floating-breadcrumb-target="anchor">
     <%= link_to "Armarinhos", distributors_path, class: "hover:text-brand-600" %> › <span aria-current="page"><%= distributor.name %></span>
   </nav>
+  <%# No celular, o caminho vira uma pílula fixa no topo (mesmo visual do menu do desktop). %>
+  <div class="fixed inset-x-0 top-[100px] z-40 lg:hidden" data-floating-breadcrumb-target="pill" hidden>
+    <nav class="flex items-center gap-1 overflow-x-auto whitespace-nowrap rounded-none border-0 border-b border-gray-200 bg-gray-50/95 px-4 py-2 text-sm font-medium text-ink shadow-md backdrop-blur" aria-label="Caminho flutuante">
+    <%= link_to "Armarinhos", distributors_path, class: "shrink-0 hover:text-brand-600" %> <span aria-hidden="true" class="text-ink-muted">›</span> <span aria-current="page" class="truncate"><%= distributor.name %></span>
+  </nav>
+  </div>
 
   <header class="relative isolate mt-5 overflow-hidden rounded-[2rem] border border-[#eee3d4] bg-[#faf5ec] p-5 sm:p-8 lg:p-10" aria-labelledby="distributor-store-title">
     <div class="pointer-events-none absolute -right-20 -top-24 -z-10 size-72 rounded-full opacity-70 blur-3xl" style="background: #f5d7c9" aria-hidden="true"></div>

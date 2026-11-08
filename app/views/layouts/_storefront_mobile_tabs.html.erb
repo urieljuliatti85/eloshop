@@ -6,6 +6,10 @@
     esta barra, porque lá as abas da conta ocupam o mesmo lugar. O body ganha
     `storefront-tabs-area`, que reserva a altura da barra no fim da página
     (ver application.css). %>
+<%# Nas páginas de armarinho (lista, loja e insumo) a 4ª aba é "Armarinhos" no
+    lugar de "Como funciona" (pedido de 2026-11-08). Em /insumos e no resto do site
+    a barra não muda. %>
+<% armarinho_pages = %w[distributors supplies].include?(controller_name) && !(controller_name == "supplies" && action_name == "index") %>
 <% tabs = [
      { label: "Início", path: root_path, controllers: "home",
        icon: '<path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/>' },
@@ -13,8 +17,11 @@
        icon: '<path d="M5 8h14l-1 12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>' },
      { label: "Ateliês", path: sellers_path, controllers: "sellers",
        icon: '<path d="M4 9 5.5 4h13L20 9"/><path d="M4 9a2.67 2.67 0 0 0 5.33 0 2.67 2.67 0 0 0 5.34 0A2.67 2.67 0 0 0 20 9"/><path d="M5 11.5V20h14v-8.5"/><path d="M10 20v-5h4v5"/>' },
-     { label: "Como funciona", path: how_it_works_path, controllers: "how_it_works",
-       icon: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17h.01"/>' }
+     (armarinho_pages ?
+       { label: "Armarinhos", path: distributors_path, controllers: %w[distributors supplies],
+         icon: '<path d="M4 6h16v4H4z"/><path d="M4 10v9h16v-9"/><path d="M9 14h6"/>' } :
+       { label: "Como funciona", path: how_it_works_path, controllers: "how_it_works",
+         icon: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17h.01"/>' })
    ] %>
 <%# Quinta aba: "Venda na EloShop", as portas do ateliê e do distribuidor
     de insumos (ADR 007), o mesmo conteúdo do menu do topo
