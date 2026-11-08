@@ -43,7 +43,7 @@ RSpec.describe "Storefront home", type: :request do
       Rails.configuration.x.distributors.signup_enabled = false
       get root_path
       banner = Nokogiri::HTML(response.body).at_css("[aria-roledescription='carrossel'] [aria-label='4 de 4']")
-      expect(banner.css("a").map { |a| a["href"] }).to eq([ how_it_works_path(aba: "vende", grupo: "armarinho") ])
+      expect(banner.css("a").map { |a| a["href"] }).to eq([ how_it_works_path(aba: "vende", grupo: "armarinho"), new_distributor_interest_path ])
     ensure
       Rails.configuration.x.distributors.signup_enabled = true
     end
