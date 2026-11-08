@@ -5,6 +5,8 @@ class Seller < ApplicationRecord
 
   class VerificationRequired < StandardError; end
 
+  PREVIEW_DISTRIBUTOR_SLUG = "previa-eloshop"
+
   enum :status, {
     pending: "pending",
     approved: "approved",

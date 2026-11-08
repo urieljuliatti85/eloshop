@@ -1,10 +1,13 @@
 <% distributor = @distributor %>
 <% content_for :title, "#{distributor.name} | Armarinho | EloShop" %>
-<% content_for :meta_description, "Insumos de #{distributor.name} na EloShop, com preço por quantidade para artesãos." %>
+<% content_for :meta_description, @distributor_preview ? "Prévia demonstrativa da vitrine de armarinhos da EloShop." : "Insumos de #{distributor.name} na EloShop, com preço por quantidade para artesãos." %>
 <% content_for :canonical_url, distributor_store_url(distributor.slug) %>
+<% if @distributor_preview %>
+  <% content_for :head do %><meta name="robots" content="noindex,nofollow"><% end %>
+<% end %>
 <% content_for :structured_data do %>
   <%= tag.script distributor_breadcrumb_structured_data(distributor), type: "application/ld+json" %>
-  <%= tag.script supply_item_list_structured_data(@supplies), type: "application/ld+json" %>
+  <% if @supplies.any? %><%= tag.script supply_item_list_structured_data(@supplies), type: "application/ld+json" %><% end %>
 <% end %>
 <% store_materials = @supplies.flat_map(&:materials).uniq(&:id).first(4) %>
 <% fallback_tiles = [
@@ -35,7 +38,9 @@
         <p class="mt-6 text-xs font-bold uppercase tracking-[0.16em] text-brand-600">Matéria-prima para quem faz à mão</p>
         <h1 id="distributor-store-title" class="mt-2 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl"><%= distributor.name %></h1>
         <p class="mt-3 max-w-xl text-base leading-7 text-ink-muted">
-          <% if @supplies.any? %>
+          <% if @distributor_preview %>
+            Esta é uma prévia demonstrativa da vitrine. Estamos trabalhando no pré-cadastro de armarinhos.
+          <% elsif @supplies.any? %>
             Explore <%= @supplies.size %> <%= @supplies.size == 1 ? "insumo publicado" : "insumos publicados" %> por este armarinho. As compras de insumos abrem em breve.
           <% elsif distributor.approved? %>
             Este armarinho ainda não publicou insumos.
@@ -70,6 +75,16 @@
     </div>
   </header>
 
+  <% if @distributor_preview %>
+    <aside class="mt-8 flex flex-col justify-between gap-4 rounded-3xl border border-brand-100 bg-brand-50/60 p-6 sm:flex-row sm:items-center sm:p-8">
+      <div>
+        <h2 class="text-xl font-bold text-ink">Quer ser um distribuidor?</h2>
+        <p class="mt-2 text-sm text-ink-muted">Estamos em pré-cadastro. Se você já quer adiantar sua loja, informe-nos.</p>
+      </div>
+      <%= link_to "Quero ser avisado", new_distributor_interest_path, class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-brand-600 px-6 font-bold text-white hover:bg-brand-700" %>
+    </aside>
+  <% end %>
+
   <% if @supplies.any? %>
     <section id="insumos-do-armarinho" class="mt-12 scroll-mt-24" aria-labelledby="distributor-supplies-title">
       <div class="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-sand-200 pb-5">
@@ -87,8 +102,8 @@
     </section>
   <% else %>
     <section id="insumos-do-armarinho" class="mt-10 rounded-3xl border border-sand-200 bg-sand-50 px-6 py-8 sm:px-8" aria-labelledby="empty-distributor-supplies-title">
-      <h2 id="empty-distributor-supplies-title" class="text-xl font-bold text-ink">Este armarinho ainda não publicou insumos</h2>
-      <p class="mt-2 max-w-2xl text-ink-muted">Enquanto isso, você pode conhecer outros materiais publicados por armarinhos parceiros.</p>
+      <h2 id="empty-distributor-supplies-title" class="text-xl font-bold text-ink"><%= @distributor_preview ? "Prévia da vitrine" : "Este armarinho ainda não publicou insumos" %></h2>
+      <p class="mt-2 max-w-2xl text-ink-muted"><%= @distributor_preview ? "Os produtos demonstrativos ainda não foram cadastrados. Os ícones acima mostram como as categorias de materiais aparecerão." : "Enquanto isso, você pode conhecer outros materiais publicados por armarinhos parceiros." %></p>
       <%= link_to "Ver todos os insumos", supplies_path, class: "mt-4 inline-flex min-h-11 items-center font-semibold text-brand-700 underline underline-offset-4" %>
     </section>
   <% end %>

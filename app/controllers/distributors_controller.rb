@@ -8,8 +8,9 @@ class DistributorsController < StorefrontController
   def index
     supplies = Product.supply_visible.preload(:seller, :price_tiers, :materials).order(:name)
     @supplies_by_distributor = supplies.group_by(&:seller_id)
-    @distributors = Seller.supply_listed.order(:name)
-    @materials = Material.where(id: ProductMaterial.joins(:product).merge(Product.supply_visible).select(:material_id)).order(:name)
+    @preview_distributor = Seller.supply_listed.find_by(slug: Seller::PREVIEW_DISTRIBUTOR_SLUG)
+    @distributors = Seller.supply_listed.where.not(slug: Seller::PREVIEW_DISTRIBUTOR_SLUG).order(:name)
+    @materials = Material.order(:name)
   end
 
   # A loja do distribuidor (/armarinhos/:slug): só quem está na vitrine de
@@ -17,6 +18,7 @@ class DistributorsController < StorefrontController
   # 404 (um ateliê tem a página dele em /artesaos).
   def show
     @distributor = Seller.supply_listed.find_by!(slug: params[:slug])
+    @distributor_preview = @distributor.slug == Seller::PREVIEW_DISTRIBUTOR_SLUG
     @supplies = @distributor.products.active.preload(:seller, :price_tiers, :materials, main_image_attachment: :blob).order(:name)
   end
 end

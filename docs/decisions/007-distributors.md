@@ -129,6 +129,14 @@ A revisão conferiu este desenho contra o código e achou premissas de "loja de
 peças artesanais" que o desenho acima não tratava. As decisões abaixo seguem a
 recomendação técnica da revisão e foram aprovadas pelo Uriel em 2026-11-07.
 
+**Pré-cadastro público (2026-11-07):** enquanto o cadastro comercial continuar
+desligado em produção até a revisão jurídica, /armarinhos oferece uma vitrine
+de demonstração e um formulário de interesse com e-mail, WhatsApp e
+consentimento explícito. Os contatos ficam disponíveis no painel admin para
+aviso manual quando o cadastro abrir; a equipe recebe uma notificação por
+e-mail. O seed de produção cria a taxonomia de materiais/técnicas e uma
+distribuidora pendente, sem usuário, documentos ou produtos compráveis.
+
 **Peso e volumes — um volume por pedido, até 30 kg.** `Shipping::Calculator`
 recusa pedido acima de 30 kg (`MAX_WEIGHT_GRAMS`) antes de cotar, inclusive a
 retirada, e cotação, etiqueta e `Shipment` (`has_one` no `SellerOrder`) assumem

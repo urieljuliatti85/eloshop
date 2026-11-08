@@ -34,6 +34,10 @@ Rails.application.routes.draw do
 
     resources :customers, only: %i[index show]
 
+    resources :distributor_interests, path: "interesses-de-armarinhos", only: %i[index destroy] do
+      member { patch :mark_notified }
+    end
+
     # Gestão de quem administra a plataforma. Sem edição: trocar senha alheia
     # pelo painel é sequestro de conta — quem esquece usa a recuperação por
     # e-mail, que já existe.
@@ -294,6 +298,8 @@ Rails.application.routes.draw do
   resources :cart_items, only: %i[create update destroy]
 
   resource :contact, only: %i[new create]
+  get "pre-cadastro/armarinhos", to: "distributor_interests#new", as: :new_distributor_interest
+  post "pre-cadastro/armarinhos", to: "distributor_interests#create", as: :distributor_interest
 
   # Atribuição das fotos de catálogo. CC BY e CC BY-SA exigem crédito
   # visível para quem publica a imagem — ver db/seeds/images/credits.yml.

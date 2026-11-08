@@ -10,6 +10,14 @@
 
   <%= render "recent_signups", customers: @recent_customers, sellers: @recent_sellers %>
 
+  <section class="flex flex-col justify-between gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-5 sm:flex-row sm:items-center">
+    <div>
+      <p class="font-semibold text-orange-950">Pré-cadastro de armarinhos</p>
+      <p class="mt-1 text-sm text-orange-900"><%= pluralize(@distributor_interests_count, "contato aguardando aviso", plural: "contatos aguardando aviso") %>.</p>
+    </div>
+    <%= link_to "Ver contatos", admin_distributor_interests_path, class: "admin-button admin-button--secondary" %>
+  </section>
+
   <%# Pré-cadastro: uma ação só de ida (ver Admin::SalesOpeningsController). %>
   <% if (sales_opened_at = PlatformSetting.sales_opened_at) %>
     <p class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">

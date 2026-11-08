@@ -1,9 +1,8 @@
-# Seed de PRODUÇÃO: categorias do marketplace de artesanato. É o único seed que
-# a produção executa — `bin/docker-entrypoint` o carrega a cada boot, e
-# `db/seeds.rb` (desenvolvimento, incluindo armarinhos e insumos locais) não o
-# carrega nem roda em produção.
+# Seed de PRODUÇÃO: categorias do marketplace de artesanato. O
+# `bin/docker-entrypoint` o carrega a cada boot, junto do catálogo aditivo de
+# materiais, técnicas e prévia de armarinho em `db/seeds/distributors.rb`.
 #
-# O entrypoint roda `db:seed` a cada boot em produção, então este arquivo é
+# O entrypoint carrega este arquivo a cada boot em produção, então ele é
 # estritamente ADITIVO: só cria o que não existe e nunca altera, reativa,
 # move ou apaga uma categoria já presente (o admin pode renomear, desativar
 # ou reorganizar à vontade). Se um nome já existe sob o mesmo pai, ou o slug

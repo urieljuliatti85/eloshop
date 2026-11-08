@@ -1744,4 +1744,4 @@ Nenhuma mudança de código; mapeamento do que já roda assíncrono vs. o que ro
 
 Última atualização:
 
-`2026-11-07` (Fases 25 e 26 de distribuidores concluídas; vitrine `/armarinhos`, SEO, API e layout revisados; Fase 27 segue junto do frete na Fase 28)
+`2026-11-07` (Fases 25 e 26 de distribuidores concluídas; vitrine `/armarinhos`, SEO, API e layout revisados; pré-cadastro público de distribuidores em implementação; Fase 27 segue junto do frete na Fase 28)

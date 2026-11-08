@@ -7,8 +7,8 @@ class SuppliesController < StorefrontController
   allow_unauthenticated_customer_access
 
   def index
-    @materials = Material.where(id: ProductMaterial.joins(:product).merge(Product.supply_visible).select(:material_id)).order(:name)
-    @techniques = Technique.where(id: ProductTechnique.joins(:product).merge(Product.supply_visible).select(:technique_id)).order(:name)
+    @materials = Material.order(:name)
+    @techniques = Technique.order(:name)
     @material = @materials.find_by(slug: params[:material]) if params[:material].present?
     @technique = @techniques.find_by(slug: params[:tecnica]) if params[:tecnica].present?
 

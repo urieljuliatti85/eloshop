@@ -4,6 +4,7 @@ module Admin
     RECENT_SIGNUPS_LIMIT = 5
 
     def index
+      @distributor_interests_count = DistributorInterest.awaiting_notice.count
       # `id` desempata cadastros no mesmo instante (seed, importação), para a
       # ordem não variar entre visitas.
       @recent_customers = Customer.order(created_at: :desc, id: :desc).limit(RECENT_SIGNUPS_LIMIT)
