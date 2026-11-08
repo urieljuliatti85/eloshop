@@ -6,6 +6,10 @@ class Seller < ApplicationRecord
   class VerificationRequired < StandardError; end
 
   PREVIEW_DISTRIBUTOR_SLUG = "previa-eloshop"
+  # Armarinhos de exemplo para apresentação em produção (2026-11-08): só vitrine,
+  # nunca compra (status pending, sem CPF nem usuário). Mesmos slugs do seed
+  # local (db/seeds/armarinhos.rb).
+  EXAMPLE_SLUGS = %w[armarinho-fios-e-cores armarinho-tecidos-e-estampas armarinho-aviamentos-criativos].freeze
 
   enum :status, {
     pending: "pending",
@@ -247,6 +251,10 @@ class Seller < ApplicationRecord
   end
 
   # O distribuidor aparece na vitrine de insumos? Par de `supply_listed`.
+  def example?
+    distributor? && EXAMPLE_SLUGS.include?(slug)
+  end
+
   def supply_listed?
     distributor? && in_store?
   end

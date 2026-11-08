@@ -7,6 +7,7 @@
 <%# Texto próprio: o padrão das peças fala em "feito à mão", falso para insumo (ADR 007). %>
 <% content_for :meta_description, truncate("#{product.name}, por #{format_price(product.price_cents)} o #{unit}, de #{seller.name}. #{product.description.to_s.squish}", length: 155) %>
 <% content_for :canonical_url, supply_url(seller.slug, product.slug) %>
+<% if seller.example? %><% content_for :head do %><meta name="robots" content="noindex,nofollow"><% end %><% end %>
 <% content_for :structured_data do %>
   <%= tag.script product_structured_data(product), type: "application/ld+json" %>
   <%= tag.script supply_breadcrumb_structured_data(product), type: "application/ld+json" %>
@@ -24,6 +25,7 @@
 
     <div class="flex flex-col gap-6">
       <div>
+        <% if seller.example? %><span class="mb-2 inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">Exemplo</span><% end %>
         <h1 class="text-3xl font-bold text-ink"><%= product.name %></h1>
         <p class="mt-2 text-sm text-ink-muted">Vendido por <%= link_to seller.name, distributor_store_path(seller.slug), class: "font-semibold text-brand-600 hover:underline" %></p>
       </div>
