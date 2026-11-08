@@ -22,4 +22,18 @@ class ContactMailer < ApplicationMailer
   def confirmation(email:)
     mail(to: email, subject: "Recebemos sua mensagem — EloShop")
   end
+
+  def distributor_interest(email:, whatsapp:)
+    @email = email
+    @whatsapp = whatsapp
+    mail(
+      to: DESTINATION_EMAIL,
+      reply_to: email,
+      subject: "Interesse no pré-cadastro de armarinhos — EloShop"
+    )
+  end
+
+  def distributor_interest_confirmation(email:)
+    mail(to: email, subject: "Recebemos seu interesse — EloShop")
+  end
 end

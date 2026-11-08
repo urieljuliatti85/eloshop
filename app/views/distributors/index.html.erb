@@ -46,6 +46,17 @@
     </div>
   </section>
 
+  <% if @preview_distributor %>
+    <aside class="mt-8 flex flex-col justify-between gap-5 rounded-3xl border border-brand-100 bg-brand-50/60 p-6 sm:flex-row sm:items-center sm:p-8" aria-labelledby="armarinho-preview-title">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.14em] text-brand-700">Pré-cadastro</p>
+        <h2 id="armarinho-preview-title" class="mt-2 text-xl font-bold text-ink sm:text-2xl">Estamos trabalhando no pré-cadastro de armarinhos. Veja a prévia.</h2>
+        <p class="mt-2 text-sm text-ink-muted">Conheça o formato da vitrine enquanto preparamos a abertura para novos distribuidores.</p>
+      </div>
+      <%= link_to "Ver prévia", distributor_store_path(@preview_distributor.slug), class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-ink px-6 font-bold text-white transition hover:bg-brand-700" %>
+    </aside>
+  <% end %>
+
   <% if @materials.any? %>
     <section class="mt-12" aria-labelledby="supply-categories-heading">
       <div class="mb-5 flex items-end justify-between gap-4">
@@ -125,15 +136,16 @@
 
   <aside class="mt-16 flex flex-col justify-between gap-6 rounded-3xl border border-sand-200 bg-sand-50 p-7 sm:p-10 lg:flex-row lg:items-center">
     <div class="max-w-3xl">
-      <p class="text-sm font-bold uppercase tracking-wider text-brand-600">Você vende matéria-prima?</p>
-      <h2 class="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">Venda insumos para artesãos na EloShop</h2>
-      <p class="mt-2 text-ink-muted">Abra sua vitrine e apresente fios, tecidos, ferragens e materiais para quem cria.</p>
+      <p class="text-sm font-bold uppercase tracking-wider text-brand-600">Pré-cadastro de armarinhos</p>
+      <h2 class="mt-2 text-2xl font-extrabold text-ink sm:text-3xl">Quer ser um distribuidor?</h2>
+      <p class="mt-2 text-ink-muted">Estamos em pré-cadastro. Se você já quer adiantar sua loja, informe-nos.</p>
     </div>
     <% if DistributorRegistrationsController.signup_enabled? %>
       <%= link_to "Cadastrar meu armarinho", new_distributor_registration_path, class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-brand-600 px-6 font-bold text-white transition hover:bg-brand-700" %>
       <%= link_to "Veja como funciona", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "text-sm font-semibold text-brand-700 underline" %>
     <% else %>
-      <%= link_to "Como funciona", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-brand-600 px-6 font-bold text-white transition hover:bg-brand-700" %>
+      <%= link_to "Quero ser avisado", new_distributor_interest_path, class: "inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-brand-600 px-6 font-bold text-white transition hover:bg-brand-700" %>
+      <%= link_to "Veja como funciona", how_it_works_path(aba: "vende", grupo: "armarinho"), class: "text-sm font-semibold text-brand-700 underline" %>
     <% end %>
   </aside>
 </div>
