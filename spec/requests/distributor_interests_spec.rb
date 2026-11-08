@@ -21,6 +21,13 @@ RSpec.describe "Distributor preregistration", type: :request do
 
   before { with_turnstile(:ok) }
 
+  it "renders the public form at /pre-cadastro/armarinhos" do
+    get new_distributor_interest_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Quer ser um distribuidor?")
+  end
+
   it "creates an interest and queues the notification and confirmation" do
     expect do
       post distributor_interest_path, params: valid_params

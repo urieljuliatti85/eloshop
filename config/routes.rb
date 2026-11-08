@@ -298,7 +298,8 @@ Rails.application.routes.draw do
   resources :cart_items, only: %i[create update destroy]
 
   resource :contact, only: %i[new create]
-  resource :distributor_interest, path: "pre-cadastro/armarinhos", only: %i[new create]
+  get "pre-cadastro/armarinhos", to: "distributor_interests#new", as: :new_distributor_interest
+  post "pre-cadastro/armarinhos", to: "distributor_interests#create", as: :distributor_interest
 
   # Atribuição das fotos de catálogo. CC BY e CC BY-SA exigem crédito
   # visível para quem publica a imagem — ver db/seeds/images/credits.yml.
