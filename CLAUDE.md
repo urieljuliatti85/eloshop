@@ -1483,6 +1483,29 @@ no mesmo commit.
 
 Nunca sobrescreva alterações existentes sem verificar o contexto.
 
+### Fluxo de git (vale para qualquer agente: Claude Code, Cursor, Codex)
+
+Fluxo definido pelo Uriel, para feature, fix, docs e qualquer outra mudança:
+
+1. **Antes de editar**, atualize a `main` (`git fetch origin`) e crie uma branch nova a partir de `origin/main`. Nunca edite em cima da `main` (ela tem branch protection) nem de uma branch de outra tarefa.
+2. Nunca reaproveite uma branch cujo PR já foi mergeado ou fechado. Antes de qualquer push numa branch que já teve PR, rode `gh pr view <branch> --json state` **sozinho** e leia o resultado — nunca encadeie essa checagem com `git push` (`&&`, `;`), porque o push roda mesmo com `MERGED`. Isso já mandou trabalho para PR mergeado.
+3. Faça a tarefa. Editar, testar e rodar lint seguem sem perguntar.
+4. **Pergunte antes de cada `git commit`, cada `git push` e cada `gh pr create`** — três perguntas separadas, a cada vez. Um "sim" anterior não vale para o próximo.
+5. Não dê push a cada commit: junte os commits locais e só então pergunte pelo push. Cada merge na `main` dispara deploy.
+6. Depois do PR aberto, confira se o CI está verde.
+7. **Merge remoto (`gh pr merge` ou pelo GitHub) só com permissão explícita do Uriel, PR a PR.** CI verde não autoriza, nem um "sim" para push ou PR.
+8. Depois do merge, atualize a `main` local.
+
+Mensagem de commit e título de PR **em português**, no formato `tipo(área): descrição` — por exemplo `feat(armarinhos): ...`, `fix(painel): ...`, `docs(roadmap): ...`. Tipos usados: `feat`, `fix`, `refactor`, `test`, `docs`, `style`, `copy`, `chore`.
+
+Pegadinhas conhecidas:
+
+- `app/assets/builds/tailwind.css` é versionado e o build local (rodado também pelos testes) o deixa modificado. Se o diff for só o rebuild, não o inclua no commit e descarte com `git checkout -- app/assets/builds/tailwind.css` antes de trocar de branch ou dar pull.
+- O pre-commit roda RuboCop e RSpec sobre a **pasta de trabalho**, não sobre o que está staged. Ao dividir mudanças em commits, use `git stash push --keep-index --include-untracked` antes do commit e `git stash pop` depois.
+- O Minitest não está no pre-commit: rode `bin/rails test` antes de pedir o push.
+
+Ao passar uma tarefa inacabada de um agente para outro (por exemplo, do Claude Code para o Cursor), registre o estado em `tmp/handoff.md` (o `tmp/` não é versionado): branch, o que já foi feito, o que falta, o que não mexer e o que já foi autorizado. Quem assume lê esse arquivo antes de começar.
+
 ## 64. Processo obrigatório para cada tarefa
 
 Antes de implementar:

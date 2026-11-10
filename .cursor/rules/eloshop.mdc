@@ -1,0 +1,66 @@
+---
+description: Regras essenciais do EloShop para qualquer conversa no Cursor
+alwaysApply: true
+---
+
+# EloShop — regras essenciais
+
+As instruções completas estão em `CLAUDE.md` e prevalecem sobre este resumo. Antes de
+qualquer tarefa, leia a seção "Estado atual" no fim do `ROADMAP.md` e, no `CLAUDE.md`, a
+seção "Leitura de contexto" para saber quais arquivos de `docs/` abrir. Não edite este
+arquivo para mudar uma regra: mude o `CLAUDE.md` e, se for essencial, resuma aqui.
+
+Se existir `tmp/handoff.md`, leia antes de começar: é o estado de uma tarefa passada por
+outro agente (branch, o que falta, o que não mexer, o que já foi autorizado).
+
+## Fluxo de git (obrigatório — ver CLAUDE.md §63, "Fluxo de git")
+
+1. Antes de editar: `git fetch origin` e branch nova a partir de `origin/main`. Nunca
+   edite na `main` nem numa branch de outra tarefa ou de PR já mergeado.
+2. Pergunte ao Uriel antes de **cada** `git commit`, **cada** `git push` e **cada**
+   `gh pr create`. São três perguntas separadas; um "sim" anterior não vale para o próximo.
+3. Junte commits locais antes de pedir o push (cada merge na `main` vira deploy).
+4. Nunca faça merge (`gh pr merge` ou pelo GitHub) sem permissão explícita, PR a PR.
+5. Antes de push numa branch que já teve PR, rode `gh pr view <branch> --json state`
+   sozinho, sem `&&` com o push.
+6. Commits e títulos de PR em português: `tipo(área): descrição` (`feat`, `fix`,
+   `refactor`, `test`, `docs`, `style`, `copy`, `chore`).
+7. Não commite `app/assets/builds/tailwind.css` se a mudança for só o rebuild local.
+8. O roteiro do projeto é um artifact do Claude Code que o Cursor não alcança. Ao abrir
+   ou mergear um PR, avise o Uriel para atualizar o roteiro pelo Claude Code.
+
+## Testes e lint
+
+- Duas suítes, de propósito: regra de domínio ou serviço → Minitest (`test/`, rode
+  `bin/rails test`); endpoint e autorização → RSpec (`spec/`, `bundle exec rspec`).
+  Não crie testes RSpec de model nem Minitest de request.
+- O pre-commit roda só `bin/rubocop` e `bundle exec rspec`. Rode `bin/rails test` antes
+  de pedir o push. `bin/ci` roda tudo.
+- Não desligue, pule ou apague testes para fazer a suíte passar.
+
+## Regras do domínio que mais quebram
+
+- Dinheiro sempre em centavos inteiros (`*_cents`), nunca Float.
+- "Pode comprar?" só por `Product#available_for_purchase?`; nunca `product.stock > 0`.
+- Painel do vendedor: escopo sempre a partir de `current_seller`, nunca de
+  `Product.find(params[:id])` nem de `seller_id` vindo da URL.
+- Admin: autorização em `Admin::BaseController#require_admin!`; nunca espalhar
+  `current_user.admin?`.
+- Controllers públicos herdam de `StorefrontController`.
+- Só `Admin::SalesOpeningsController` abre as vendas; nada versionado pode escrever
+  `sales_opened_at` (há um guard spec que falha).
+- Um checkout = um vendedor (split 1:1 do Mercado Pago). Não contorne.
+- `preload`, não `includes`, quando houver `with_attached_*` ou `distinct`.
+- Não remova `skip_forgery_protection` do `PaymentWebhooksController`.
+- Não afrouxe a CSP: nada de script inline sem nonce, CDN externo ou curinga de
+  subdomínio.
+- Front-end: Hotwire + importmap + Tailwind, sem build de JS e sem novas dependências
+  npm.
+- Textos da interface em português do Brasil.
+
+## Escopo
+
+- Faça só o que foi pedido. Sem refatoração, feature ou gem extra não solicitada.
+- Regras comerciais (comissão, frete, cancelamento, prazos, cupons) são decisão do
+  Uriel: apresente opções e espere a resposta.
+- Não proponha bots ou assistentes de IA para o produto (decisão do Uriel, 2026-10-01).
