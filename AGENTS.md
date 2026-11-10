@@ -10,6 +10,9 @@ Leia `CLAUDE.md` antes de começar. Ele cobre:
 - arquitetura e as decisões não óbvias a partir da estrutura de arquivos
 - quais documentos de `docs/` ler para cada tipo de tarefa
 - as regras de domínio, segurança e processo (§1–§70)
+- o **fluxo de git** (§63, "Fluxo de git"): branch nova a partir de `origin/main` antes
+  de editar; perguntar antes de cada commit, push e PR; merge só com permissão explícita;
+  commits em português no formato `tipo(área): descrição`
 
 E, como manda o próprio `CLAUDE.md`, leia também a seção **"Estado atual"** no fim do
 [`ROADMAP.md`](ROADMAP.md) — é a fonte de verdade sobre a fase corrente e a próxima tarefa.
