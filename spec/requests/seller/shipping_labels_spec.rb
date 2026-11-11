@@ -133,6 +133,22 @@ RSpec.describe "Seller shipping labels", type: :request do
     expect(card.at_css("form[action='#{seller_order_shipping_label_path(order)}']")).to be_nil
   end
 
+  it "explains how to recharge when the purchase failed for lack of balance, and only then" do
+    order = paid_order_for(seller)
+    create_label(order, status: :failed, failure_message: "Sem saldo na carteira! Utilize o app para recarregar a carteira ou pagar a etiqueta com cartão de crédito.")
+
+    get seller_order_path(order)
+
+    failure = Nokogiri::HTML(response.body).at_css("[data-label-failure]")
+    expect(failure.text).to include("Sem saldo na carteira!")
+    expect(failure.at_css("[data-label-balance-hint]").text).to include("sempre com o saldo da carteira", "Gerar etiqueta de novo")
+
+    order.shipment.shipping_labels.sole.update_columns(failure_message: "Campo CPF/CNPJ do destinatário é obrigatório.")
+    get seller_order_path(order)
+
+    expect(Nokogiri::HTML(response.body).at_css("[data-label-balance-hint]")).to be_nil
+  end
+
   it "hides the card when labels are switched off" do
     order = paid_order_for(seller)
     Rails.configuration.x.shipping.labels_enabled = false

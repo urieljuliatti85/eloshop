@@ -46,7 +46,12 @@
     </div>
   <% else %>
     <% if label&.failure_message.present? %>
-      <p class="mt-1 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900" data-label-failure>A última tentativa não gerou etiqueta: <%= label.failure_message %></p>
+      <div class="mt-1 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900" data-label-failure>
+        <p>A última tentativa não gerou etiqueta: <%= label.failure_message %></p>
+        <% if label.failed_for_lack_of_balance? %>
+          <p class="mt-1 font-semibold" data-label-balance-hint>Pela EloShop, a etiqueta é paga sempre com o saldo da carteira. Recarregue a carteira no site ou no app da SuperFrete (por PIX) e clique em Gerar etiqueta de novo.</p>
+        <% end %>
+      </div>
     <% end %>
     <p class="mt-1 text-sm text-ink-muted">Compre a etiqueta por aqui, com o saldo da sua carteira na SuperFrete, sem digitar os dados do cliente.</p>
     <%= link_to "Gerar etiqueta", new_seller_order_shipping_label_path(order), class: "seller-button seller-button--primary mt-4" %>

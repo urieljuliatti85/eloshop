@@ -14,6 +14,14 @@ class ShippingLabelTest < ActiveSupport::TestCase
     assert label.reload.purchasing?
   end
 
+  test "recognizes a purchase refused for lack of wallet balance by SuperFrete's message" do
+    label = build_label(status: :failed, failure_message: "Sem saldo na carteira! Utilize o app para recarregar a carteira ou pagar a etiqueta com cartão de crédito.")
+    assert label.failed_for_lack_of_balance?
+
+    label.failure_message = "Campo CPF/CNPJ do destinatário é obrigatório."
+    assert_not label.failed_for_lack_of_balance?
+  end
+
   test "rejects transitions the state machine does not allow" do
     label = build_label(status: :purchased)
 

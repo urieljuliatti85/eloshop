@@ -59,6 +59,16 @@ class ShippingLabel < ApplicationRecord
     draft? || cart_created? || purchasing?
   end
 
+  # A compra foi recusada por falta de saldo na carteira. A SuperFrete não
+  # manda código de erro, só o texto ("Sem saldo na carteira! Utilize o app
+  # para recarregar a carteira ou pagar a etiqueta com cartão de crédito.",
+  # visto no sandbox em 2026-11-05 e 2026-11-11): o painel usa isto para
+  # explicar que, pela EloShop, a etiqueta sai sempre do saldo — o cartão de
+  # crédito da mensagem só existe no app dela.
+  def failed_for_lack_of_balance?
+    failed? && failure_message.to_s.match?(/sem saldo/i)
+  end
+
   # Muda o estado só se ele ainda for `from` (UPDATE condicionado): dois jobs
   # ou um job e um clique não avançam a mesma etiqueta duas vezes. Devolve
   # false quando outro processo chegou antes.
