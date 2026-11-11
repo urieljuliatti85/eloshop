@@ -69,6 +69,22 @@ module ShippingLabels
       assert_raises(Client::Ambiguous) { client.create_webhook(name: "EloShop", url: "https://x", events: []) }
     end
 
+    test "label limits keep only the two numbers, never the account's personal data" do
+      client = client_responding(200, { "id" => "u1", "email" => "atelie@example.com", "document" => "10555718760",
+        "limits" => { "shipments" => 2, "shipments_available" => 3 } })
+
+      limits = client.label_limits
+
+      assert_equal({ pending: 2, available: 3 }, limits.to_h)
+      assert_not limits.exhausted?
+      assert ShippingLabels::Client::Limits.new(pending: 5, available: 0).exhausted?
+    end
+
+    test "label limits are nil when the account does not report them" do
+      assert_nil client_responding(200, { "id" => "u1" }).label_limits
+      assert_nil client_responding(200, { "limits" => { "shipments_available" => "muitas" } }).label_limits
+    end
+
     test "deleting the webhook sends a DELETE" do
       sent = nil
       client = client_responding(204, nil) { |request| sent = request }

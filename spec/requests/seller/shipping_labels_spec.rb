@@ -22,6 +22,7 @@ RSpec.describe "Seller shipping labels", type: :request do
     connect_superfrete!(seller, email: user.email_address)
     sign_in_as(user)
     allow(ShippingLabels).to receive(:client_for).and_return(client)
+    allow(client).to receive(:label_limits).and_return(nil)
   end
 
   it "quotes the package and shows the price, the final box and the difference the atelier pays" do
@@ -34,6 +35,39 @@ RSpec.describe "Seller shipping labels", type: :request do
     expect(response.body).to include("PAC", "R$ 23,51", "10 × 16 × 24 cm", "a diferença de R$ 13,51 fica por sua conta")
     expect(client).to have_received(:quote).with(origin_zip_code: "01001000", destination_zip_code: "20040020",
       height_cm: 10, width_cm: 15, length_cm: 20, weight_grams: 500)
+  end
+
+  it "tells how many labels the SuperFrete account can still buy" do
+    order = paid_order_for(seller)
+    allow(client).to receive(:label_limits).and_return(ShippingLabels::Client::Limits.new(pending: 2, available: 3))
+
+    get new_seller_order_shipping_label_path(order)
+
+    expect(Nokogiri::HTML(response.body).at_css("[data-label-limit]").text.squish).to include("ainda pode comprar 3 etiquetas")
+  end
+
+  it "stops before quoting when the account reached its label limit" do
+    order = paid_order_for(seller)
+    allow(client).to receive(:label_limits).and_return(ShippingLabels::Client::Limits.new(pending: 5, available: 0))
+    allow(client).to receive(:quote)
+
+    get new_seller_order_shipping_label_path(order, height_cm: 10, width_cm: 15, length_cm: 20, weight_grams: 500)
+
+    blocker = Nokogiri::HTML(response.body).at_css("[data-label-blocker]")
+    expect(blocker.text).to include("chegou ao limite", "Poste ou cancele")
+    expect(client).not_to have_received(:quote)
+  end
+
+  it "quotes normally when the limit lookup fails" do
+    order = paid_order_for(seller)
+    allow(client).to receive(:label_limits).and_raise(ShippingLabels::Client::Ambiguous, "timeout")
+    allow(client).to receive(:quote).and_return([ pac ])
+
+    get new_seller_order_shipping_label_path(order, height_cm: 10, width_cm: 15, length_cm: 20, weight_grams: 500)
+
+    page = Nokogiri::HTML(response.body)
+    expect(page.at_css("[data-label-limit]")).to be_nil
+    expect(page.at_css("[data-label-option='1']")).to be_present
   end
 
   it "requests the label and leaves the purchase to the job" do

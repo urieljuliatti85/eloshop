@@ -49,6 +49,15 @@ module ShippingLabels
       end
     end
 
+    # Limite de etiquetas da conta (regra antifraude da SuperFrete para conta
+    # nova; cresce sozinho conforme a conta posta): `pending` são as pagas
+    # aguardando postagem, `available` quantas ainda podem ser pagas.
+    Limits = Data.define(:pending, :available) do
+      def exhausted?
+        available <= 0
+      end
+    end
+
     # Correios: PAC, SEDEX e Mini Envios, os mesmos da cotação do checkout.
     SERVICE_CODES = [ 1, 2, 17 ].freeze
     OPEN_TIMEOUT = 5
@@ -116,6 +125,19 @@ module ShippingLabels
     def cancel(provider_order_id, reason:)
       request(:post, "/api/v0/order/cancel", { order: { id: provider_order_id, description: reason } })
       true
+    end
+
+    # `GET /api/v0/user` traz também os dados pessoais da conta do ateliê: só
+    # os dois números do limite saem daqui. Sem eles na resposta, nil — a tela
+    # segue sem o aviso.
+    def label_limits
+      response = request(:get, "/api/v0/user")
+      limits = response["limits"] if response.is_a?(Hash)
+      return unless limits.is_a?(Hash)
+
+      Limits.new(pending: Integer(limits["shipments"] || 0), available: Integer(limits["shipments_available"]))
+    rescue ArgumentError, TypeError
+      nil
     end
 
     # Registra o webhook de rastreio na conta do ateliê, com o token OAuth dele

@@ -277,6 +277,32 @@ condicionado. A resposta crua da SuperFrete nunca é gravada:
 `ShippingLabels::Client` extrai só id, status, rastreio, preço, serviço e link.
 Timeouts: 8 s nas chamadas feitas durante a requisição do painel, 20 s no job.
 
+**Limite de etiquetas antes da compra** (2026-11-11): ao abrir a tela de gerar
+etiqueta, o sistema consulta a conta SuperFrete do ateliê (`GET /api/v0/user`,
+`ShippingLabels::Client#label_limits`, que só extrai os dois números — a
+resposta traz dados pessoais da conta) e mostra quantas etiquetas ele ainda
+pode comprar. Com o limite zerado, a tela para antes de cotar e explica que é
+preciso postar ou cancelar as pendentes. Se a consulta falhar, a tela segue
+sem o aviso e a SuperFrete continua recusando a compra se faltar espaço.
+
+**Quem paga a etiqueta é sempre a carteira SuperFrete do ateliê.** O sistema
+só envia o comando de compra em nome dele, autorizado pela conexão OAuth; a
+conta da plataforma não paga etiqueta de ninguém.
+
+**Pendente — tentar o pagamento de novo quando o pedido está pendente**
+(decisão do Uriel, 2026-11-11: só depois do teste em produção). Hoje, se a
+resposta do pagamento se perde (timeout), o sistema consulta o pedido e, se a
+SuperFrete o mostra pendente, **não** manda cobrar de novo: a etiqueta fica
+"confirmando" até o ateliê clicar em **Conferir de novo** ou **Cancelar**. A
+SuperFrete afirmou em 2026-11-11 que repetir o checkout de um pedido já pago
+responde `409` "Pedido já comprado." sem cobrar de novo; com isso, o sistema
+poderia repetir o comando sozinho quando a consulta disser "pendente". Antes de
+mudar, o teste em produção deve provar a afirmação — comprar uma etiqueta,
+repetir o checkout do mesmo pedido e conferir que a carteira do ateliê foi
+debitada uma vez só —, porque o erro aqui seria uma cobrança dupla na carteira
+do ateliê. O caso é raro (só com falha de rede no meio do pagamento) e hoje
+não custa dinheiro, só um clique.
+
 **Ligar em produção**: `SHIPPING_LABELS_ENABLED=true` na Railway, **depois** da
 compra real verificada (saldo no sandbox ou uma etiqueta de produção). O que
 ainda não foi exercitado contra a API: a resposta do checkout com saldo, o
@@ -333,7 +359,9 @@ diverge da API em vários pontos; vale o que está aqui.
   **elevar o limite antes**, para o artesão não travar no início — vale pedir
   isso para os ateliês da EloShop no lançamento. O valor muda (a mesma conta de
   sandbox mostrou 5 em 2026-11-05 e 10 em 2026-11-11): ler da API, nunca
-  fixar número. A tela de compra mostra o erro da SuperFrete como recebido.
+  fixar número. A tela de gerar etiqueta mostra o que resta e para antes de
+  cotar quando o limite está zerado (ver "Limite de etiquetas antes da
+  compra").
 * **Checkout repetido:** o checkout é atrelado aos ids enviados em `orders`;
   num pedido já pago responde `409` "Pedido já comprado." e **não cobra de
   novo** (SuperFrete, 2026-11-11). Depois de um timeout, a conduta que ela
