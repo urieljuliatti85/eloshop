@@ -226,9 +226,9 @@ cotação em produção):**
   novo; o cliente vê o total antes de pagar. Corrigir (recusar e pedir nova
   escolha) só se aparecer reclamação.
 
-**Etiqueta pelo painel** (2026-11-05, ver abaixo). **Ainda não feito**: rastreio
-por webhook (HMAC-SHA256 em `X-ME-Signature`). Decisões e desenho no ADR 005,
-"Etapa 2 e 3 — decisões e desenho (2026-11-05)".
+**Etiqueta pelo painel** (2026-11-05) e **rastreio por webhook** (2026-11-11),
+ver abaixo. Decisões e desenho no ADR 005, "Etapa 2 e 3 — decisões e desenho
+(2026-11-05)".
 
 ### Etiqueta pelo painel (2026-11-05)
 
@@ -281,8 +281,9 @@ Timeouts: 8 s nas chamadas feitas durante a requisição do painel, 20 s no job.
 compra real verificada (saldo no sandbox ou uma etiqueta de produção). O que
 ainda não foi exercitado contra a API: a resposta do checkout com saldo, o
 rastreio devolvido nela e o estorno do cancelamento. O código de rastreio é
-gravado na etiqueta e preenche o campo do envio manual; marcar como enviado
-continua com o ateliê até o webhook (PR 4).
+gravado na etiqueta e preenche o campo do envio manual; a postagem e a
+entrega passam a vir do rastreio (abaixo), e o ateliê continua podendo marcar
+à mão.
 
 ### Etiqueta e rastreio: o que o sandbox mostrou (2026-11-05)
 
@@ -321,13 +322,66 @@ diverge da API em vários pontos; vale o que está aqui.
   `secret_token` de 64 caracteres hexadecimais, **que não volta na listagem**
   (`GET /api/v0/webhook`); `DELETE /api/v0/webhook/{id}` responde `204`.
   Perdido o segredo, o webhook tem de ser recriado.
-* **Conta nova tem limite de etiquetas:** a conta de sandbox (nível 1) mostrava
-  `limits.shipments_available: 5` em `GET /api/v0/user`. Se valer também em
-  produção, o ateliê novo esbarra no limite: a tela de compra deve mostrar o
-  erro da SuperFrete como recebido.
-* **Recarga PIX do sandbox** falhou pela interface com erro genérico; a compra
-  com saldo, o código de rastreio e o estorno do cancelamento ficam por
+* **Conta nova tem limite de etiquetas:** `GET /api/v0/user` traz
+  `limits.shipments` (pagas aguardando postagem) e `limits.shipments_available`
+  (quantas ainda podem ser pagas). A SuperFrete confirmou em 2026-11-11 que o
+  limite vale também em produção e se libera postando ou cancelando
+  etiquetas; não disse como a conta sobe de nível. O valor muda (a mesma conta
+  de sandbox mostrou 5 em 2026-11-05 e 10 em 2026-11-11): ler da API, nunca
+  fixar número. A tela de compra mostra o erro da SuperFrete como recebido.
+* **Checkout repetido** num pedido já pago responde `409` "Pedido já
+  comprado." e não cobra de novo (SuperFrete, 2026-11-11); a confirmação é
+  pela consulta (`released` = pago). O `500` para id inexistente não é o
+  documentado (seria `404`), e continua tratado como incerto.
+* **Recarga PIX do sandbox** falhou pela interface com erro genérico (de novo
+  em 2026-11-11, com o PIX simulado; caso aberto no chat da SuperFrete); a
+  compra com saldo, o código de rastreio e o estorno do cancelamento ficam por
   verificar.
+
+### Rastreio por webhook (2026-11-11)
+
+Respostas da SuperFrete em 2026-11-11 e guia oficial
+(`developers.superfrete.com/guias/webhooks`):
+
+* o token **OAuth** de cada ateliê registra o webhook na conta dele
+  (`POST /api/v0/webhook`); não existe webhook único do app, então cada conta
+  tem o seu, com o seu `secret_token`;
+* `X-ME-Signature` é o HMAC-SHA256 do **corpo bruto** com o `secret_token`, em
+  **hexadecimal**, sem prefixo;
+* não há id de evento: a repetição se evita pelo par evento + id do pedido;
+* os eventos podem chegar fora de ordem ou pular etapas (`order.posted` nem é
+  enviado se o pacote já foi entregue), e **uma notificação que falhou pode não
+  ser reenviada** — a recomendação é consultar os pedidos em aberto.
+
+Como ficou:
+
+1. **Registro** (`ShippingLabels::Webhook`, em `RegisterSuperfreteWebhookJob`):
+   ao conectar a SuperFrete e depois da primeira etiqueta comprada, se ainda
+   não houver. Cria o novo antes de apagar o antigo e grava no `Seller` o id, o
+   segredo cifrado e uma chave aleatória (`superfrete_webhook_key`) que vai na
+   URL `/webhooks/superfrete/:key`. Desconectar apaga o webhook lá (se
+   conseguir) e limpa os três campos. Só com `SHIPPING_LABELS_ENABLED`.
+2. **Recebimento** (`SuperfreteWebhooksController`): acha o ateliê pela chave,
+   confere a assinatura em tempo constante (chave desconhecida e assinatura
+   errada respondem igual, `401`), grava `ShippingLabelEvent` só com os campos
+   usados (índice único em pedido + evento) e responde `200`; o processamento
+   é em job. Notificação de pedido que não é etiqueta do próprio ateliê é
+   ignorada.
+3. **Aplicação** (`ShippingLabels::Track`): `posted` marca o envio como
+   enviado com o rastreio da etiqueta; `delivered` marca enviado (se faltar) e
+   entregue — a entrega confirmada pela transportadora fecha o envio (decisão
+   do Uriel, 2026-11-11), e o aviso ao comprador diz que foi a transportadora;
+   `cancelled` cancela a etiqueta ainda não postada. Vale o status informado,
+   não a ordem de chegada; repetir não avisa de novo.
+4. **Postagem que o envio recusaria** (desistência aberta, reembolso integral
+   em andamento, pedido reembolsado): a etiqueta guarda a postagem/entrega, o
+   envio não muda, e a equipe e o ateliê recebem **um** aviso
+   (`ShippingLabelMailer#needs_attention`) — o pacote já está com a
+   transportadora; uma pessoa decide (decisão do Uriel, 2026-11-11).
+5. **Conferência periódica** (`ReconcileShippingLabelsJob`, de hora em hora):
+   consulta as etiquetas compradas e ainda não entregues, até 60 dias depois
+   da compra, e passa o resultado pelo mesmo `Track`. Cobre a notificação
+   perdida e quem ainda não tem webhook.
 
 ## Endereço de origem do ateliê
 
@@ -520,7 +574,6 @@ aceita letras, números e hífen e não pode repetir o de outro pedido — o ín
 para a resposta não confirmar que o código existe em pedido de outro ateliê
 (`Shipment::InvalidTrackingCode`).
 
-Essa atualização é deliberadamente manual: não cria etiqueta, não afirma que
-uma transportadora confirmou a entrega e não depende da integração bloqueada
-com o Melhor Envio. Quando a Etapa 3 do ADR 005 existir, os webhooks do
-provedor deverão convergir para as mesmas transições de `Shipment`.
+Essa atualização manual continua valendo para quem envia sem a etiqueta da
+EloShop. Para a etiqueta da SuperFrete, o rastreio por webhook (acima) usa as
+mesmas transições de `Shipment` e os mesmos avisos (`ShipmentNotifications`).

@@ -121,6 +121,17 @@ RSpec.describe "Seller shipping labels", type: :request do
     expect(page.at_css("input[name='tracking_code']")["value"]).to eq("AA123456789BR")
   end
 
+  it "explains a posting that could not move the order, without offering to cancel the label" do
+    order = paid_order_for(seller)
+    create_label(order, status: :purchased, purchased_at: 1.day.ago, posted_at: Time.current, tracking_code: "AA123456789BR")
+
+    get seller_order_path(order)
+
+    card = Nokogiri::HTML(response.body).at_css("[data-shipping-label-card]")
+    expect(card.at_css("[data-label-posted]").text).to include("informou a postagem")
+    expect(card.at_css("form[action='#{seller_order_shipping_label_path(order)}']")).to be_nil
+  end
+
   it "hides the card when labels are switched off" do
     order = paid_order_for(seller)
     Rails.configuration.x.shipping.labels_enabled = false

@@ -8,7 +8,8 @@ class NotifyCustomerOfDeliveryJob < ApplicationJob
 
   discard_on ActiveJob::DeserializationError
 
-  def perform(seller_order)
-    OrderMailer.delivery_confirmed_by_seller(seller_order).deliver_now
+  # `by_carrier`: confirmada pelo rastreio da transportadora (ShippingLabels::Track).
+  def perform(seller_order, by_carrier: false)
+    OrderMailer.delivery_confirmed_by_seller(seller_order, by_carrier: by_carrier).deliver_now
   end
 end

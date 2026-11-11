@@ -638,6 +638,26 @@ class Seller < ApplicationRecord
     decrypt_credential(superfrete_access_token_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_SUPERFRETE)
   end
 
+  # Webhook de rastreio (ShippingLabels::Webhook). O `secret_token` assina as
+  # notificações e só aparece na criação: fica cifrado como o token.
+  def superfrete_webhook_registered?
+    superfrete_webhook_key.present? && superfrete_webhook_secret_ciphertext.present?
+  end
+
+  def superfrete_webhook_secret
+    decrypt_credential(superfrete_webhook_secret_ciphertext, salt: CREDENTIAL_ENCRYPTION_SALT_SUPERFRETE_WEBHOOK)
+  end
+
+  # `update_columns`: dado da integração, sem validação do cadastro do ateliê
+  # (um ateliê com cadastro incompleto continua recebendo o rastreio).
+  def store_superfrete_webhook!(id:, key:, secret:)
+    update_columns(
+      superfrete_webhook_id: id,
+      superfrete_webhook_key: key,
+      superfrete_webhook_secret_ciphertext: encrypt_credential(secret, salt: CREDENTIAL_ENCRYPTION_SALT_SUPERFRETE_WEBHOOK)
+    )
+  end
+
   # CPF nunca é lido de volta em texto plano fora do cadastro (write-only na
   # prática): o dígito é guardado cifrado, e a checagem de duplicidade usa um
   # hash determinístico à parte, já que o ciphertext (IV aleatório) muda a
@@ -703,6 +723,7 @@ class Seller < ApplicationRecord
 
   CREDENTIAL_ENCRYPTION_SALT_MERCADO_PAGO = "seller-mercado-pago-oauth".freeze
   CREDENTIAL_ENCRYPTION_SALT_SUPERFRETE = "seller-superfrete-oauth".freeze
+  CREDENTIAL_ENCRYPTION_SALT_SUPERFRETE_WEBHOOK = "seller-superfrete-webhook".freeze
 
   SUPERFRETE_DISCONNECTED = {
     superfrete_access_token_ciphertext: nil,
@@ -710,7 +731,10 @@ class Seller < ApplicationRecord
     superfrete_account_email: nil,
     superfrete_connected_at: nil,
     superfrete_sandbox: false,
-    superfrete_revoked_at: nil
+    superfrete_revoked_at: nil,
+    superfrete_webhook_id: nil,
+    superfrete_webhook_key: nil,
+    superfrete_webhook_secret_ciphertext: nil
   }.freeze
   CREDENTIAL_ENCRYPTION_SALT_CPF = "seller-owner-cpf".freeze
 

@@ -62,6 +62,8 @@ Decidido na Fase 1 (`Product::MAIN_IMAGE_MAX_BYTES`/`MAIN_IMAGE_ALLOWED_CONTENT_
 
 Webhooks (ex.: de pagamento) devem ter sua autenticidade validada antes de qualquer processamento. Ver `docs/payments.md` para os requisitos completos de idempotência e segurança de webhooks.
 
+O webhook de rastreio da SuperFrete (`SuperfreteWebhooksController`) tem um segredo **por ateliê**: a chave aleatória na URL acha o ateliê, e a assinatura `X-ME-Signature` (HMAC-SHA256 do corpo bruto, hex) é conferida em tempo constante com o segredo dele, guardado cifrado. Chave desconhecida e assinatura errada respondem igual (`401`). Uma notificação só alcança etiquetas do próprio ateliê, e o corpo cru nunca é gravado. Ver `docs/shipping.md`, "Rastreio por webhook".
+
 ## Entrada do usuário
 
 Nunca confiar diretamente em dados enviados pelo cliente — isso inclui preço, total, disponibilidade e qualquer valor que o servidor seja capaz de recalcular (ver `docs/checkout.md`, princípio "nunca confiar no cliente").

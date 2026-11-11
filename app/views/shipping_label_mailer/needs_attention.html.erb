@@ -1,0 +1,27 @@
+<p><% if @for_team %>Equipe EloShop,<% else %>Olá, <%= @seller.name %>!<% end %></p>
+
+<p>
+  A SuperFrete informou que a etiqueta do pedido <strong>#<%= @order.id %></strong> foi <%= status_word %><% if @label.tracking_code.present? %> (rastreio <%= @label.tracking_code %>)<% end %>,
+  mas o pedido não pôde ser atualizado na EloShop:
+</p>
+
+<p><em><%= @reason %></em></p>
+
+<p>
+  O pacote já está com a transportadora.
+  <% if @for_team %>
+    Combine com o ateliê o que fazer (por exemplo, pedir a devolução do pacote ou seguir com a desistência).
+  <% else %>
+    A equipe da EloShop vai entrar em contato para combinar o que fazer.
+  <% end %>
+</p>
+
+<% if @for_team %>
+  <p>Ateliê: <%= @seller.name %> (id <%= @seller.id %>)</p>
+<% else %>
+  <p>
+    <a href="<%= seller_order_url(@order) %>" style="display: inline-block; background-color: #c2410c; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+      Ver o pedido
+    </a>
+  </p>
+<% end %>

@@ -20,10 +20,15 @@
       <strong><%= label.service_name %></strong> · <%= format_price(label.price_cents || label.quoted_price_cents) %>
       <% if label.tracking_code.present? %> · rastreio <strong><%= label.tracking_code %></strong><% end %>
     </p>
-    <p class="mt-1 text-sm text-ink-muted">Imprima, cole na caixa e poste. Depois, marque o pedido como enviado abaixo.</p>
+    <% if label.posted_at? %>
+      <p class="mt-1 text-sm text-ink" data-label-posted>A SuperFrete informou a postagem em <%= l(label.posted_at, format: :short) %>, mas o pedido não pôde ser marcado como enviado. A equipe da EloShop vai entrar em contato.</p>
+    <% else %>
+      <p class="mt-1 text-sm text-ink-muted">Imprima, cole na caixa e poste. Quando a postagem for registrada, o pedido é marcado como enviado sozinho; se preferir, marque abaixo.</p>
+    <% end %>
     <div class="mt-4 flex flex-wrap gap-3">
       <%= link_to "Imprimir etiqueta", print_seller_order_shipping_label_path(order), target: "_blank", rel: "noopener", class: "seller-button seller-button--primary" %>
-      <%= cancel_button %>
+      <%# Postada não se cancela mais na SuperFrete. %>
+      <%= cancel_button unless label.posted_at? %>
     </div>
   <% elsif label&.in_progress? %>
     <%# Conferir e cancelar em todo estado em andamento: se o job morreu no

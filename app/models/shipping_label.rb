@@ -30,6 +30,7 @@ class ShippingLabel < ApplicationRecord
   }.freeze
 
   belongs_to :shipment
+  has_many :events, class_name: "ShippingLabelEvent", dependent: :destroy
 
   enum :status, {
     draft: "draft",

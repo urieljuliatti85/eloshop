@@ -55,10 +55,12 @@ class OrderMailer < ApplicationMailer
     )
   end
 
-  # Avisa o cliente de que o vendedor confirmou a entrega pelo painel — este
-  # sim é o fechamento oficial, aviso inverso de delivery_reported_by_customer.
-  def delivery_confirmed_by_seller(seller_order)
+  # Avisa o cliente de que a entrega foi confirmada — este sim é o fechamento
+  # oficial, aviso inverso de delivery_reported_by_customer. Pelo ateliê no
+  # painel ou, com `by_carrier`, pelo rastreio da transportadora.
+  def delivery_confirmed_by_seller(seller_order, by_carrier: false)
     @seller_order = seller_order
+    @by_carrier = by_carrier
     @order = seller_order.order
     @seller = seller_order.seller
 
