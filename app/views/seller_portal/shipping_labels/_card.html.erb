@@ -9,7 +9,10 @@
         form: { data: { turbo_confirm: "Cancelar a etiqueta? Só dá para cancelar antes de postar. Se ela tiver sido paga, o valor volta para a sua carteira na SuperFrete." } } %>
 <% end %>
 <div class="mt-5 rounded-2xl border border-brand-100 bg-white p-4 sm:p-5" data-shipping-label-card>
-  <h3 class="text-lg font-bold">Etiqueta pela SuperFrete</h3>
+  <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+    <h3 class="text-lg font-bold">Etiqueta pela SuperFrete</h3>
+    <%= link_to "Como funciona", seller_shipping_settings_path(anchor: "etiqueta"), class: "text-sm font-semibold text-brand-700 underline underline-offset-4" %>
+  </div>
   <% if refunding %>
     <% if label&.active? %>
       <p class="mt-1 text-sm text-ink" data-label-refunding>O valor deste pedido foi ou está sendo devolvido ao comprador. Não poste a peça: cancele a etiqueta para o valor dela voltar à sua carteira na SuperFrete.</p>

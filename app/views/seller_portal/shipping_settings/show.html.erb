@@ -13,7 +13,7 @@
   <header>
     <h1 class="text-3xl font-black tracking-tight text-stone-950">Frete e entregas</h1>
     <p class="mt-2 max-w-[68ch] text-base leading-7 text-stone-600">
-      Você define o frete de cada peça. A conta da SuperFrete cota o frete pelos Correios para o CEP do cliente e, em breve, emite as etiquetas pagas pela carteira dela.
+      Você define o frete de cada peça. A conta da SuperFrete cota o frete pelos Correios para o CEP do cliente e<%= ", em breve," unless ShippingLabels.enabled? %> emite as etiquetas pagas pela carteira dela.
     </p>
   </header>
 
@@ -84,6 +84,45 @@
 
       <p class="mt-6 max-w-[68ch] rounded-xl bg-brand-50 px-4 py-3 text-sm leading-6 text-stone-800">
         <strong>Para desconectar:</strong> use o botão do cartão e remova também a integração no painel da SuperFrete, em Integrações. Só assim o acesso termina dos dois lados.
+      </p>
+    </section>
+  <% end %>
+
+  <%# Tutorial da etiqueta (ShippingLabels): só com a etiqueta ligada no
+      ambiente, para não explicar um botão que o ateliê ainda não tem. O
+      distribuidor não chega aqui: etiqueta de insumos é a Fase 28. Cada
+      passo descreve o comportamento do código (ShippingLabels::Guard,
+      Purchase, Track) e as decisões do Uriel de 2026-11-05 e 2026-11-11. %>
+  <% if ShippingLabels.enabled? %>
+    <% label_steps = [
+         [ "Antes de começar", "A SuperFrete precisa estar conectada com uma conta <strong>do mesmo e-mail do seu acesso à EloShop</strong>, e a carteira dela precisa ter saldo: a etiqueta é paga por ela. Você recarrega a carteira no site ou no app da SuperFrete, por PIX." ],
+         [ "Compre a etiqueta no pedido", "Abra o pedido pago e, no cartão <strong>Etiqueta pela SuperFrete</strong>, informe as medidas e o peso da caixa já embalada e escolha PAC, SEDEX ou Mini Envios. Confira o preço antes de comprar: se a etiqueta sair mais cara que o frete que o cliente pagou, <strong>a diferença fica por sua conta</strong>, e a tela mostra quanto." ],
+         [ "Imprima e poste", "Clique em <strong>Imprimir etiqueta</strong>, cole na caixa e leve a uma agência dos Correios." ],
+         [ "O rastreio é automático", "Quando os Correios registram a postagem, o pedido passa para <strong>enviado</strong> com o código de rastreio; quando entregam, para <strong>entregue</strong>. O cliente é avisado nas duas vezes, e você não precisa marcar nada. Pode levar até uma hora para aparecer." ],
+         [ "Cancelar, só antes de postar", "Comprou e não vai usar? Cancele no próprio pedido, antes de postar: o valor volta para a sua carteira na SuperFrete. Depois da postagem não dá mais para cancelar." ],
+         [ "Se o cliente desistir", "Com desistência aberta ou reembolso em andamento, a EloShop não deixa comprar a etiqueta. Se você já comprou, <strong>não poste</strong>: cancele a etiqueta. Se o pacote já foi postado, a equipe da EloShop entra em contato para combinar o que fazer." ]
+       ] %>
+    <section id="etiqueta" class="seller-card-lg scroll-mt-24" aria-labelledby="shipping-label-tutorial-title" data-shipping-label-tutorial>
+      <h2 id="shipping-label-tutorial-title" class="text-2xl font-bold text-stone-950">Como usar a etiqueta da SuperFrete</h2>
+      <p class="mt-2 max-w-[68ch] text-base leading-7 text-stone-700">
+        Você compra a etiqueta dos Correios aqui no painel, imprime e posta. O pedido acompanha a entrega sozinho. Se preferir, continua podendo comprar a etiqueta no site da SuperFrete e informar o rastreio à mão.
+      </p>
+
+      <ol class="mt-6 space-y-5">
+        <% label_steps.each_with_index do |(title, body), index| %>
+          <li class="flex gap-4">
+            <span class="grid size-8 shrink-0 place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-700" aria-hidden="true"><%= index + 1 %></span>
+            <div>
+              <h3 class="font-bold text-stone-950"><%= title %></h3>
+              <%# Texto fixo desta view, sem dado do usuário: o HTML é só o negrito. %>
+              <p class="mt-1 max-w-[62ch] text-sm leading-6 text-stone-700"><%= sanitize(body, tags: %w[strong]) %></p>
+            </div>
+          </li>
+        <% end %>
+      </ol>
+
+      <p class="mt-6 max-w-[68ch] rounded-xl bg-brand-50 px-4 py-3 text-sm leading-6 text-stone-800">
+        <strong>Limite de etiquetas:</strong> a SuperFrete limita quantas etiquetas pagas podem esperar postagem ao mesmo tempo, e conta nova começa com poucas. Se chegar ao limite, poste ou cancele as que estão paradas para liberar espaço.
       </p>
     </section>
   <% end %>

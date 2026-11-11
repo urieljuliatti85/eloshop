@@ -129,6 +129,7 @@ RSpec.describe "Seller shipping labels", type: :request do
 
     card = Nokogiri::HTML(response.body).at_css("[data-shipping-label-card]")
     expect(card.at_css("[data-label-posted]").text).to include("informou a postagem")
+    expect(card.at_css("a[href='#{seller_shipping_settings_path(anchor: "etiqueta")}']").text).to eq("Como funciona")
     expect(card.at_css("form[action='#{seller_order_shipping_label_path(order)}']")).to be_nil
   end
 
