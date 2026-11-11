@@ -324,30 +324,49 @@ diverge da API em vários pontos; vale o que está aqui.
   Perdido o segredo, o webhook tem de ser recriado.
 * **Conta nova tem limite de etiquetas:** `GET /api/v0/user` traz
   `limits.shipments` (pagas aguardando postagem) e `limits.shipments_available`
-  (quantas ainda podem ser pagas). A SuperFrete confirmou em 2026-11-11 que o
-  limite vale também em produção e se libera postando ou cancelando
-  etiquetas; não disse como a conta sobe de nível. O valor muda (a mesma conta
-  de sandbox mostrou 5 em 2026-11-05 e 10 em 2026-11-11): ler da API, nunca
+  (quantas ainda podem ser pagas). Segundo a SuperFrete (duas respostas em
+  2026-11-11), é uma regra antifraude de conta nova (5 no nível 1), vale
+  também em produção e se libera postando ou cancelando etiquetas. A conta
+  **sobe de nível sozinha** conforme emite etiquetas e tem postagens
+  confirmadas, e o limite cresce. Para parceiros homologados e ateliês que já
+  começam com volume, a equipe de suporte/parcerias da SuperFrete pode
+  **elevar o limite antes**, para o artesão não travar no início — vale pedir
+  isso para os ateliês da EloShop no lançamento. O valor muda (a mesma conta de
+  sandbox mostrou 5 em 2026-11-05 e 10 em 2026-11-11): ler da API, nunca
   fixar número. A tela de compra mostra o erro da SuperFrete como recebido.
-* **Checkout repetido** num pedido já pago responde `409` "Pedido já
-  comprado." e não cobra de novo (SuperFrete, 2026-11-11); a confirmação é
-  pela consulta (`released` = pago). O `500` para id inexistente não é o
-  documentado (seria `404`), e continua tratado como incerto.
-* **Recarga PIX do sandbox** falhou pela interface com erro genérico (de novo
-  em 2026-11-11, com o PIX simulado; caso aberto no chat da SuperFrete); a
-  compra com saldo, o código de rastreio e o estorno do cancelamento ficam por
-  verificar.
+* **Checkout repetido:** o checkout é atrelado aos ids enviados em `orders`;
+  num pedido já pago responde `409` "Pedido já comprado." e **não cobra de
+  novo** (SuperFrete, 2026-11-11). Depois de um timeout, a conduta que ela
+  recomenda é a que `ShippingLabels::Purchase` já segue: consultar
+  `GET /api/v0/order/info/{id}` antes de qualquer nova tentativa —
+  `released`/`generated` é pago (seguir o fluxo); pendente pode repetir o
+  checkout com segurança. A EloShop é mais conservadora: depois de um
+  resultado incerto só confere, não reenvia sozinha (o ateliê decide).
+* **Id inexistente responde `500` no sandbox** em vez de `404`/`422` — a
+  SuperFrete confirmou que é comportamento do sandbox. Em produção ela
+  recomenda validar a existência do pedido antes do checkout; a EloShop só
+  paga o id que acabou de criar e gravar, e continua tratando `500` como
+  incerto.
+* **Recarga PIX do sandbox não funciona:** a SuperFrete confirmou em
+  2026-11-11 um bug para inserir saldo no sandbox e orientou seguir o teste
+  **por produção**. A compra com saldo, o código de rastreio e o estorno do
+  cancelamento ficam para o teste em produção.
 
 ### Rastreio por webhook (2026-11-11)
 
 Respostas da SuperFrete em 2026-11-11 e guia oficial
 (`developers.superfrete.com/guias/webhooks`):
 
-* o token **OAuth** de cada ateliê registra o webhook na conta dele
-  (`POST /api/v0/webhook`); não existe webhook único do app, então cada conta
-  tem o seu, com o seu `secret_token`;
-* `X-ME-Signature` é o HMAC-SHA256 do **corpo bruto** com o `secret_token`, em
-  **hexadecimal**, sem prefixo;
+* o token **OAuth** de cada ateliê tem escopo sobre a conta dele e registra o
+  webhook nela (`POST /api/v0/webhook` com `Authorization: Bearer
+  {access_token}`); o modelo é por conta (user), não existe webhook global do
+  app OAuth com o `user_id` no payload, então cada conta tem o seu, com o seu
+  `secret_token`. A URL pode ser a mesma para todos (ou carregar um
+  identificador da loja): a EloShop põe uma chave aleatória do ateliê no
+  caminho;
+* `X-ME-Signature` é o HMAC-SHA256 do **corpo bruto** (bytes exatamente como
+  enviados) com o `secret_token`, em **hexadecimal minúsculo de 64
+  caracteres**, sem prefixo (nada de `sha256=`);
 * não há id de evento: a repetição se evita pelo par evento + id do pedido;
 * os eventos podem chegar fora de ordem ou pular etapas (`order.posted` nem é
   enviado se o pacote já foi entregue), e **uma notificação que falhou pode não
