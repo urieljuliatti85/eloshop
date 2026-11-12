@@ -1492,7 +1492,7 @@ Fluxo definido pelo Uriel, para feature, fix, docs e qualquer outra mudança:
 3. Faça a tarefa. Editar, testar e rodar lint seguem sem perguntar.
 4. **Pergunte antes de cada `git commit`, cada `git push` e cada `gh pr create`** — três perguntas separadas, a cada vez. Um "sim" anterior não vale para o próximo.
 5. Não dê push a cada commit: junte os commits locais e só então pergunte pelo push. Cada merge na `main` dispara deploy.
-6. Depois do PR aberto, confira se o CI está verde.
+6. Depois do PR aberto, passe o link ao Uriel e **não fique esperando o CI**: o ruleset da `main` já bloqueia o merge enquanto os seis jobs não estiverem verdes, e o GitHub avisa o Uriel quando o CI falha. Olhe o CI só quando o Uriel pedir o merge ou disser que ele falhou, e então leia só o job que falhou.
 7. **Merge remoto (`gh pr merge` ou pelo GitHub) só com permissão explícita do Uriel, PR a PR.** CI verde não autoriza, nem um "sim" para push ou PR.
 8. Depois do merge, atualize a `main` local.
 
