@@ -13,6 +13,8 @@ Leia `CLAUDE.md` antes de começar. Ele cobre:
 - o **fluxo de git** (§63, "Fluxo de git"): branch nova a partir de `origin/main` antes
   de editar; perguntar antes de cada commit, push e PR; merge só com permissão explícita;
   commits em português no formato `tipo(área): descrição`
+- o **repositório público** (§63, "O repositório é público"): o que não se mostraria a
+  um concorrente não entra em arquivo, commit nem PR
 
 E, como manda o próprio `CLAUDE.md`, leia também a seção **"Estado atual"** no fim do
 [`ROADMAP.md`](ROADMAP.md) — é a fonte de verdade sobre a fase corrente e a próxima tarefa.

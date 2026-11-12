@@ -1506,6 +1506,20 @@ Pegadinhas conhecidas:
 
 Ao passar uma tarefa inacabada de um agente para outro (por exemplo, do Claude Code para o Cursor), registre o estado em `tmp/handoff.md` (o `tmp/` não é versionado): branch, o que já foi feito, o que falta, o que não mexer e o que já foi autorizado. Quem assume lê esse arquivo antes de começar.
 
+### O repositório é público
+
+Desde 2026-11-12 o repositório é público de vez (decisão do Uriel): qualquer pessoa lê os arquivos, o histórico, as mensagens de commit, os títulos e descrições de PR e os comentários no GitHub. A `main` é protegida pelo ruleset "Proteção da main" (PR obrigatório, os seis jobs do CI verdes, sem force-push e sem exclusão); ao renomear um job do CI, atualize o ruleset, senão o merge trava.
+
+**O que você não mostraria a um concorrente não entra no repositório**, nem em arquivo, nem em commit, nem em PR. Antes de escrever em `docs/`, `ROADMAP.md`, `CLAUDE.md`, numa mensagem de commit ou numa descrição de PR, faça três perguntas:
+
+1. Eu mostraria isso a um concorrente?
+2. Isso explica como o sistema funciona, ou conta o que a EloShop está planejando ou negociando?
+3. Tem nome, documento ou contato de alguém real?
+
+Se a resposta for "não", "planejando ou negociando" ou "sim", essa parte fica fora. O repositório guarda o técnico: como o sistema funciona e por quê, e as regras que já estão em vigor no site. Ficam fora: negociação com parceiros (SuperFrete, Mercado Pago), conversas e pareceres de advogado e contador, decisões comerciais em aberto, números e contatos da captação de artesãos e dados de pessoas reais. Esse conteúdo vai para documentos privados do Uriel no claude.ai ("Notas de negócio da EloShop" e o checklist de captação), que os agentes sem acesso a eles não alcançam: nesse caso, escreva só o resultado técnico e peça ao Uriel para registrar o resto. Assunto misto se divide: a conversa com a SuperFrete sobre o limite de etiquetas fica fora, e a tela que avisa o limite antes da compra entra em `docs/`. Na dúvida, pergunte ao Uriel antes de commitar.
+
+Testes e seeds usam só dados inventados. Senhas, tokens e chaves vivem nas variáveis da Railway ou no `credentials.yml.enc`, nunca em texto. Os commits deste projeto usam o e-mail `noreply` do GitHub, configurado no `git config` local.
+
 ## 64. Processo obrigatório para cada tarefa
 
 Antes de implementar:
