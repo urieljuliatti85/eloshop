@@ -40,6 +40,9 @@ module SellerPortal
       account = oauth.account(access_token: access_token)
       previous_account_id = seller.superfrete_account_id
       seller.connect_superfrete!(access_token: access_token, account: account, sandbox: oauth.sandbox?)
+      # Webhook de rastreio na conta conectada (troca o anterior, se houver).
+      # Em job: este retorno é do servidor da SuperFrete e deve ser rápido.
+      RegisterSuperfreteWebhookJob.perform_later(seller) if ShippingLabels.enabled?
 
       Rails.event.notify("marketplace.superfrete_oauth.connected", seller_id: seller.id,
         account_changed: previous_account_id.present? && previous_account_id != account.id)
@@ -51,6 +54,8 @@ module SellerPortal
     end
 
     def destroy
+      # Antes de apagar o token, que é o que permite apagar o webhook lá.
+      ShippingLabels::Webhook.new(current_seller, interactive: true).unregister if current_seller.superfrete_connected?
       current_seller.disconnect_superfrete!
       redirect_back_or_to seller_atelier_path, notice: "Conta SuperFrete desconectada na EloShop. Para encerrar o acesso por completo, remova também a integração no painel da SuperFrete."
     end

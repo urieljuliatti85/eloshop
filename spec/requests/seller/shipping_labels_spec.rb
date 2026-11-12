@@ -22,6 +22,7 @@ RSpec.describe "Seller shipping labels", type: :request do
     connect_superfrete!(seller, email: user.email_address)
     sign_in_as(user)
     allow(ShippingLabels).to receive(:client_for).and_return(client)
+    allow(client).to receive(:label_limits).and_return(nil)
   end
 
   it "quotes the package and shows the price, the final box and the difference the atelier pays" do
@@ -34,6 +35,39 @@ RSpec.describe "Seller shipping labels", type: :request do
     expect(response.body).to include("PAC", "R$ 23,51", "10 × 16 × 24 cm", "a diferença de R$ 13,51 fica por sua conta")
     expect(client).to have_received(:quote).with(origin_zip_code: "01001000", destination_zip_code: "20040020",
       height_cm: 10, width_cm: 15, length_cm: 20, weight_grams: 500)
+  end
+
+  it "tells how many labels the SuperFrete account can still buy" do
+    order = paid_order_for(seller)
+    allow(client).to receive(:label_limits).and_return(ShippingLabels::Client::Limits.new(pending: 2, available: 3))
+
+    get new_seller_order_shipping_label_path(order)
+
+    expect(Nokogiri::HTML(response.body).at_css("[data-label-limit]").text.squish).to include("ainda pode comprar 3 etiquetas")
+  end
+
+  it "stops before quoting when the account reached its label limit" do
+    order = paid_order_for(seller)
+    allow(client).to receive(:label_limits).and_return(ShippingLabels::Client::Limits.new(pending: 5, available: 0))
+    allow(client).to receive(:quote)
+
+    get new_seller_order_shipping_label_path(order, height_cm: 10, width_cm: 15, length_cm: 20, weight_grams: 500)
+
+    blocker = Nokogiri::HTML(response.body).at_css("[data-label-blocker]")
+    expect(blocker.text).to include("chegou ao limite", "Poste ou cancele")
+    expect(client).not_to have_received(:quote)
+  end
+
+  it "quotes normally when the limit lookup fails" do
+    order = paid_order_for(seller)
+    allow(client).to receive(:label_limits).and_raise(ShippingLabels::Client::Ambiguous, "timeout")
+    allow(client).to receive(:quote).and_return([ pac ])
+
+    get new_seller_order_shipping_label_path(order, height_cm: 10, width_cm: 15, length_cm: 20, weight_grams: 500)
+
+    page = Nokogiri::HTML(response.body)
+    expect(page.at_css("[data-label-limit]")).to be_nil
+    expect(page.at_css("[data-label-option='1']")).to be_present
   end
 
   it "requests the label and leaves the purchase to the job" do
@@ -119,6 +153,34 @@ RSpec.describe "Seller shipping labels", type: :request do
     page = Nokogiri::HTML(response.body)
     expect(page.at_css("[data-shipping-label-card]").text).to include("PAC", "AA123456789BR", "Imprimir etiqueta")
     expect(page.at_css("input[name='tracking_code']")["value"]).to eq("AA123456789BR")
+  end
+
+  it "explains a posting that could not move the order, without offering to cancel the label" do
+    order = paid_order_for(seller)
+    create_label(order, status: :purchased, purchased_at: 1.day.ago, posted_at: Time.current, tracking_code: "AA123456789BR")
+
+    get seller_order_path(order)
+
+    card = Nokogiri::HTML(response.body).at_css("[data-shipping-label-card]")
+    expect(card.at_css("[data-label-posted]").text).to include("informou a postagem")
+    expect(card.at_css("a[href='#{seller_shipping_settings_path(anchor: "etiqueta")}']").text).to eq("Como funciona")
+    expect(card.at_css("form[action='#{seller_order_shipping_label_path(order)}']")).to be_nil
+  end
+
+  it "explains how to recharge when the purchase failed for lack of balance, and only then" do
+    order = paid_order_for(seller)
+    create_label(order, status: :failed, failure_message: "Sem saldo na carteira! Utilize o app para recarregar a carteira ou pagar a etiqueta com cartão de crédito.")
+
+    get seller_order_path(order)
+
+    failure = Nokogiri::HTML(response.body).at_css("[data-label-failure]")
+    expect(failure.text).to include("Sem saldo na carteira!")
+    expect(failure.at_css("[data-label-balance-hint]").text).to include("sempre com o saldo da carteira", "Gerar etiqueta de novo")
+
+    order.shipment.shipping_labels.sole.update_columns(failure_message: "Campo CPF/CNPJ do destinatário é obrigatório.")
+    get seller_order_path(order)
+
+    expect(Nokogiri::HTML(response.body).at_css("[data-label-balance-hint]")).to be_nil
   end
 
   it "hides the card when labels are switched off" do

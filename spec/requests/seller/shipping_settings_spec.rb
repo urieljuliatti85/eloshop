@@ -27,6 +27,25 @@ RSpec.describe "Seller shipping settings (Frete e entregas)", type: :request do
     expect(page.at_css("a[href='#{seller_superfrete_connect_path}']")).to be_present
   end
 
+  it "teaches how to use the shipping label while labels are on, and hides it while they are off" do
+    sign_in_as(user)
+
+    get seller_shipping_settings_path
+
+    tutorial = Nokogiri::HTML(response.body).at_css("[data-shipping-label-tutorial]")
+    expect(tutorial["id"]).to eq("etiqueta")
+    expect(tutorial.text.squish).to include("mesmo e-mail do seu acesso à EloShop", "a diferença fica por sua conta",
+      "O rastreio é automático", "Cancelar, só antes de postar", "não poste", "Limite de etiquetas")
+
+    Rails.configuration.x.shipping.labels_enabled = false
+    get seller_shipping_settings_path
+
+    expect(Nokogiri::HTML(response.body).at_css("[data-shipping-label-tutorial]")).to be_nil
+    expect(response.body).to include("em breve")
+  ensure
+    Rails.configuration.x.shipping.labels_enabled = true
+  end
+
   it "is in the Configuração menu" do
     sign_in_as(user)
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_07_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_11_120200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -689,10 +689,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_200000) do
     t.string "kind", default: "atelier", null: false
     t.string "cnpj"
     t.boolean "issues_invoices"
+    t.string "superfrete_webhook_id"
+    t.string "superfrete_webhook_key"
+    t.text "superfrete_webhook_secret_ciphertext"
     t.index ["cpf_hash", "kind"], name: "index_sellers_on_cpf_hash_and_kind", unique: true, where: "(cpf_hash IS NOT NULL)"
     t.index ["mercado_pago_user_id"], name: "index_sellers_on_mercado_pago_user_id", unique: true, where: "(mercado_pago_user_id IS NOT NULL)"
     t.index ["slug"], name: "index_sellers_on_slug", unique: true
     t.index ["superfrete_oauth_state_digest"], name: "index_sellers_on_superfrete_oauth_state_digest", unique: true, where: "(superfrete_oauth_state_digest IS NOT NULL)"
+    t.index ["superfrete_webhook_key"], name: "index_sellers_on_superfrete_webhook_key", unique: true, where: "(superfrete_webhook_key IS NOT NULL)"
     t.check_constraint "kind::text = ANY (ARRAY['atelier'::character varying::text, 'distributor'::character varying::text])", name: "sellers_kind_check"
     t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'approved'::character varying::text, 'suspended'::character varying::text])", name: "sellers_status_check"
   end
@@ -704,6 +708,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_200000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
+  create_table "shipping_label_events", force: :cascade do |t|
+    t.bigint "shipping_label_id", null: false
+    t.string "event", null: false
+    t.string "provider_order_id", null: false
+    t.string "status", null: false
+    t.string "tracking_code"
+    t.datetime "processed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider_order_id", "event"], name: "index_shipping_label_events_on_provider_order_id_and_event", unique: true
+    t.index ["shipping_label_id"], name: "index_shipping_label_events_on_shipping_label_id"
   end
 
   create_table "shipping_labels", force: :cascade do |t|
@@ -726,6 +743,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_200000) do
     t.datetime "cancelled_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "provider_status"
+    t.datetime "posted_at"
+    t.datetime "delivered_at"
+    t.datetime "attention_notified_at"
     t.index ["provider_order_id"], name: "index_shipping_labels_on_provider_order_id", unique: true
     t.index ["shipment_id"], name: "index_shipping_labels_on_shipment_id"
     t.index ["shipment_id"], name: "index_shipping_labels_one_active_per_shipment", unique: true, where: "((status)::text = ANY ((ARRAY['draft'::character varying, 'cart_created'::character varying, 'purchasing'::character varying, 'purchased'::character varying])::text[]))"
@@ -858,6 +879,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_200000) do
   add_foreign_key "seller_terms_acceptances", "users"
   add_foreign_key "sessions", "users"
   add_foreign_key "shipments", "seller_orders", on_delete: :cascade
+  add_foreign_key "shipping_label_events", "shipping_labels"
   add_foreign_key "shipping_labels", "shipments"
   add_foreign_key "users", "sellers"
   add_foreign_key "wishlist_items", "customers"

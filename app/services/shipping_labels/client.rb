@@ -49,6 +49,15 @@ module ShippingLabels
       end
     end
 
+    # Limite de etiquetas da conta (regra antifraude da SuperFrete para conta
+    # nova; cresce sozinho conforme a conta posta): `pending` são as pagas
+    # aguardando postagem, `available` quantas ainda podem ser pagas.
+    Limits = Data.define(:pending, :available) do
+      def exhausted?
+        available <= 0
+      end
+    end
+
     # Correios: PAC, SEDEX e Mini Envios, os mesmos da cotação do checkout.
     SERVICE_CODES = [ 1, 2, 17 ].freeze
     OPEN_TIMEOUT = 5
@@ -118,6 +127,36 @@ module ShippingLabels
       true
     end
 
+    # `GET /api/v0/user` traz também os dados pessoais da conta do ateliê: só
+    # os dois números do limite saem daqui. Sem eles na resposta, nil — a tela
+    # segue sem o aviso.
+    def label_limits
+      response = request(:get, "/api/v0/user")
+      limits = response["limits"] if response.is_a?(Hash)
+      return unless limits.is_a?(Hash)
+
+      Limits.new(pending: Integer(limits["shipments"] || 0), available: Integer(limits["shipments_available"]))
+    rescue ArgumentError, TypeError
+      nil
+    end
+
+    # Registra o webhook de rastreio na conta do ateliê, com o token OAuth dele
+    # (confirmado pela SuperFrete em 2026-11-11). O `secret_token` que assina
+    # as notificações só volta nesta resposta.
+    def create_webhook(name:, url:, events:)
+      response = request(:post, "/api/v0/webhook", { name: name, url: url, events: events })
+      id = response.is_a?(Hash) && response["id"].presence
+      secret = response.is_a?(Hash) && response["secret_token"].presence
+      raise Ambiguous, "webhook criado sem id ou segredo na resposta" unless id && secret
+
+      { id: id.to_s, secret: secret.to_s }
+    end
+
+    def delete_webhook(webhook_id)
+      request(:delete, "/api/v0/webhook/#{ERB::Util.url_encode(webhook_id)}")
+      true
+    end
+
     private
 
     def build_option(option)
@@ -153,7 +192,7 @@ module ShippingLabels
       token = @seller.superfrete_access_token
       raise Unauthorized, "a conta SuperFrete do ateliê não está conectada" if token.blank?
 
-      request = (method == :get ? Net::HTTP::Get : Net::HTTP::Post).new(path)
+      request = { get: Net::HTTP::Get, post: Net::HTTP::Post, delete: Net::HTTP::Delete }.fetch(method).new(path)
       request["Authorization"] = "Bearer #{token}"
       request["Accept"] = "application/json"
       request["Content-Type"] = "application/json"

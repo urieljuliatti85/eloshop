@@ -31,14 +31,7 @@ module SellerPortal
       raise ActiveRecord::RecordNotFound unless shipment
 
       shipment.mark_shipped!(**shipment_details)
-      NotifyCustomerOfShipmentJob.perform_later(shipment.seller_order)
-      Notification.create!(
-        recipient: shipment.order.customer,
-        kind: :order_shipped,
-        title: shipment.local_pickup? ? "Pedido pronto para retirada" : "Pedido enviado",
-        body: shipment.local_pickup? ? "Seu pedido ##{shipment.order.id} está pronto para retirada." : "Seu pedido ##{shipment.order.id} foi enviado.",
-        url: order_path(shipment.order)
-      )
+      ShipmentNotifications.shipped(shipment)
 
       message = shipment.local_pickup? ? "Pedido marcado como pronto para retirada." : "Pedido marcado como enviado."
       redirect_to seller_order_path(shipment.order), notice: message
@@ -51,14 +44,7 @@ module SellerPortal
       raise ActiveRecord::RecordNotFound unless shipment
 
       shipment.mark_delivered!
-      NotifyCustomerOfDeliveryJob.perform_later(shipment.seller_order)
-      Notification.create!(
-        recipient: shipment.order.customer,
-        kind: :order_delivered,
-        title: "Pedido entregue",
-        body: "O vendedor confirmou a entrega do seu pedido ##{shipment.order.id}.",
-        url: order_path(shipment.order)
-      )
+      ShipmentNotifications.delivered(shipment)
 
       message = shipment.local_pickup? ? "Retirada confirmada." : "Entrega confirmada."
       redirect_to seller_order_path(shipment.order), notice: message

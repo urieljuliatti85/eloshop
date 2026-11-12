@@ -226,9 +226,9 @@ cotação em produção):**
   novo; o cliente vê o total antes de pagar. Corrigir (recusar e pedir nova
   escolha) só se aparecer reclamação.
 
-**Etiqueta pelo painel** (2026-11-05, ver abaixo). **Ainda não feito**: rastreio
-por webhook (HMAC-SHA256 em `X-ME-Signature`). Decisões e desenho no ADR 005,
-"Etapa 2 e 3 — decisões e desenho (2026-11-05)".
+**Etiqueta pelo painel** (2026-11-05) e **rastreio por webhook** (2026-11-11),
+ver abaixo. Decisões e desenho no ADR 005, "Etapa 2 e 3 — decisões e desenho
+(2026-11-05)".
 
 ### Etiqueta pelo painel (2026-11-05)
 
@@ -277,12 +277,39 @@ condicionado. A resposta crua da SuperFrete nunca é gravada:
 `ShippingLabels::Client` extrai só id, status, rastreio, preço, serviço e link.
 Timeouts: 8 s nas chamadas feitas durante a requisição do painel, 20 s no job.
 
+**Limite de etiquetas antes da compra** (2026-11-11): ao abrir a tela de gerar
+etiqueta, o sistema consulta a conta SuperFrete do ateliê (`GET /api/v0/user`,
+`ShippingLabels::Client#label_limits`, que só extrai os dois números — a
+resposta traz dados pessoais da conta) e mostra quantas etiquetas ele ainda
+pode comprar. Com o limite zerado, a tela para antes de cotar e explica que é
+preciso postar ou cancelar as pendentes. Se a consulta falhar, a tela segue
+sem o aviso e a SuperFrete continua recusando a compra se faltar espaço.
+
+**Quem paga a etiqueta é sempre a carteira SuperFrete do ateliê.** O sistema
+só envia o comando de compra em nome dele, autorizado pela conexão OAuth; a
+conta da plataforma não paga etiqueta de ninguém.
+
+**Pendente — tentar o pagamento de novo quando o pedido está pendente**
+(decisão do Uriel, 2026-11-11: só depois do teste em produção). Hoje, se a
+resposta do pagamento se perde (timeout), o sistema consulta o pedido e, se a
+SuperFrete o mostra pendente, **não** manda cobrar de novo: a etiqueta fica
+"confirmando" até o ateliê clicar em **Conferir de novo** ou **Cancelar**. A
+SuperFrete afirmou em 2026-11-11 que repetir o checkout de um pedido já pago
+responde `409` "Pedido já comprado." sem cobrar de novo; com isso, o sistema
+poderia repetir o comando sozinho quando a consulta disser "pendente". Antes de
+mudar, o teste em produção deve provar a afirmação — comprar uma etiqueta,
+repetir o checkout do mesmo pedido e conferir que a carteira do ateliê foi
+debitada uma vez só —, porque o erro aqui seria uma cobrança dupla na carteira
+do ateliê. O caso é raro (só com falha de rede no meio do pagamento) e hoje
+não custa dinheiro, só um clique.
+
 **Ligar em produção**: `SHIPPING_LABELS_ENABLED=true` na Railway, **depois** da
 compra real verificada (saldo no sandbox ou uma etiqueta de produção). O que
 ainda não foi exercitado contra a API: a resposta do checkout com saldo, o
 rastreio devolvido nela e o estorno do cancelamento. O código de rastreio é
-gravado na etiqueta e preenche o campo do envio manual; marcar como enviado
-continua com o ateliê até o webhook (PR 4).
+gravado na etiqueta e preenche o campo do envio manual; a postagem e a
+entrega passam a vir do rastreio (abaixo), e o ateliê continua podendo marcar
+à mão.
 
 ### Etiqueta e rastreio: o que o sandbox mostrou (2026-11-05)
 
@@ -321,13 +348,87 @@ diverge da API em vários pontos; vale o que está aqui.
   `secret_token` de 64 caracteres hexadecimais, **que não volta na listagem**
   (`GET /api/v0/webhook`); `DELETE /api/v0/webhook/{id}` responde `204`.
   Perdido o segredo, o webhook tem de ser recriado.
-* **Conta nova tem limite de etiquetas:** a conta de sandbox (nível 1) mostrava
-  `limits.shipments_available: 5` em `GET /api/v0/user`. Se valer também em
-  produção, o ateliê novo esbarra no limite: a tela de compra deve mostrar o
-  erro da SuperFrete como recebido.
-* **Recarga PIX do sandbox** falhou pela interface com erro genérico; a compra
-  com saldo, o código de rastreio e o estorno do cancelamento ficam por
-  verificar.
+* **Conta nova tem limite de etiquetas:** `GET /api/v0/user` traz
+  `limits.shipments` (pagas aguardando postagem) e `limits.shipments_available`
+  (quantas ainda podem ser pagas). Segundo a SuperFrete (duas respostas em
+  2026-11-11), é uma regra antifraude de conta nova (5 no nível 1), vale
+  também em produção e se libera postando ou cancelando etiquetas. A conta
+  **sobe de nível sozinha** conforme emite etiquetas e tem postagens
+  confirmadas, e o limite cresce. Para parceiros homologados e ateliês que já
+  começam com volume, a equipe de suporte/parcerias da SuperFrete pode
+  **elevar o limite antes**, para o artesão não travar no início — vale pedir
+  isso para os ateliês da EloShop no lançamento. O valor muda (a mesma conta de
+  sandbox mostrou 5 em 2026-11-05 e 10 em 2026-11-11): ler da API, nunca
+  fixar número. A tela de gerar etiqueta mostra o que resta e para antes de
+  cotar quando o limite está zerado (ver "Limite de etiquetas antes da
+  compra").
+* **Checkout repetido:** o checkout é atrelado aos ids enviados em `orders`;
+  num pedido já pago responde `409` "Pedido já comprado." e **não cobra de
+  novo** (SuperFrete, 2026-11-11). Depois de um timeout, a conduta que ela
+  recomenda é a que `ShippingLabels::Purchase` já segue: consultar
+  `GET /api/v0/order/info/{id}` antes de qualquer nova tentativa —
+  `released`/`generated` é pago (seguir o fluxo); pendente pode repetir o
+  checkout com segurança. A EloShop é mais conservadora: depois de um
+  resultado incerto só confere, não reenvia sozinha (o ateliê decide).
+* **Id inexistente responde `500` no sandbox** em vez de `404`/`422` — a
+  SuperFrete confirmou que é comportamento do sandbox. Em produção ela
+  recomenda validar a existência do pedido antes do checkout; a EloShop só
+  paga o id que acabou de criar e gravar, e continua tratando `500` como
+  incerto.
+* **Recarga PIX do sandbox não funciona:** a SuperFrete confirmou em
+  2026-11-11 um bug para inserir saldo no sandbox e orientou seguir o teste
+  **por produção**. A compra com saldo, o código de rastreio e o estorno do
+  cancelamento ficam para o teste em produção.
+
+### Rastreio por webhook (2026-11-11)
+
+Respostas da SuperFrete em 2026-11-11 e guia oficial
+(`developers.superfrete.com/guias/webhooks`):
+
+* o token **OAuth** de cada ateliê tem escopo sobre a conta dele e registra o
+  webhook nela (`POST /api/v0/webhook` com `Authorization: Bearer
+  {access_token}`); o modelo é por conta (user), não existe webhook global do
+  app OAuth com o `user_id` no payload, então cada conta tem o seu, com o seu
+  `secret_token`. A URL pode ser a mesma para todos (ou carregar um
+  identificador da loja): a EloShop põe uma chave aleatória do ateliê no
+  caminho;
+* `X-ME-Signature` é o HMAC-SHA256 do **corpo bruto** (bytes exatamente como
+  enviados) com o `secret_token`, em **hexadecimal minúsculo de 64
+  caracteres**, sem prefixo (nada de `sha256=`);
+* não há id de evento: a repetição se evita pelo par evento + id do pedido;
+* os eventos podem chegar fora de ordem ou pular etapas (`order.posted` nem é
+  enviado se o pacote já foi entregue), e **uma notificação que falhou pode não
+  ser reenviada** — a recomendação é consultar os pedidos em aberto.
+
+Como ficou:
+
+1. **Registro** (`ShippingLabels::Webhook`, em `RegisterSuperfreteWebhookJob`):
+   ao conectar a SuperFrete e depois da primeira etiqueta comprada, se ainda
+   não houver. Cria o novo antes de apagar o antigo e grava no `Seller` o id, o
+   segredo cifrado e uma chave aleatória (`superfrete_webhook_key`) que vai na
+   URL `/webhooks/superfrete/:key`. Desconectar apaga o webhook lá (se
+   conseguir) e limpa os três campos. Só com `SHIPPING_LABELS_ENABLED`.
+2. **Recebimento** (`SuperfreteWebhooksController`): acha o ateliê pela chave,
+   confere a assinatura em tempo constante (chave desconhecida e assinatura
+   errada respondem igual, `401`), grava `ShippingLabelEvent` só com os campos
+   usados (índice único em pedido + evento) e responde `200`; o processamento
+   é em job. Notificação de pedido que não é etiqueta do próprio ateliê é
+   ignorada.
+3. **Aplicação** (`ShippingLabels::Track`): `posted` marca o envio como
+   enviado com o rastreio da etiqueta; `delivered` marca enviado (se faltar) e
+   entregue — a entrega confirmada pela transportadora fecha o envio (decisão
+   do Uriel, 2026-11-11), e o aviso ao comprador diz que foi a transportadora;
+   `cancelled` cancela a etiqueta ainda não postada. Vale o status informado,
+   não a ordem de chegada; repetir não avisa de novo.
+4. **Postagem que o envio recusaria** (desistência aberta, reembolso integral
+   em andamento, pedido reembolsado): a etiqueta guarda a postagem/entrega, o
+   envio não muda, e a equipe e o ateliê recebem **um** aviso
+   (`ShippingLabelMailer#needs_attention`) — o pacote já está com a
+   transportadora; uma pessoa decide (decisão do Uriel, 2026-11-11).
+5. **Conferência periódica** (`ReconcileShippingLabelsJob`, de hora em hora):
+   consulta as etiquetas compradas e ainda não entregues, até 60 dias depois
+   da compra, e passa o resultado pelo mesmo `Track`. Cobre a notificação
+   perdida e quem ainda não tem webhook.
 
 ## Endereço de origem do ateliê
 
@@ -520,7 +621,6 @@ aceita letras, números e hífen e não pode repetir o de outro pedido — o ín
 para a resposta não confirmar que o código existe em pedido de outro ateliê
 (`Shipment::InvalidTrackingCode`).
 
-Essa atualização é deliberadamente manual: não cria etiqueta, não afirma que
-uma transportadora confirmou a entrega e não depende da integração bloqueada
-com o Melhor Envio. Quando a Etapa 3 do ADR 005 existir, os webhooks do
-provedor deverão convergir para as mesmas transições de `Shipment`.
+Essa atualização manual continua valendo para quem envia sem a etiqueta da
+EloShop. Para a etiqueta da SuperFrete, o rastreio por webhook (acima) usa as
+mesmas transições de `Shipment` e os mesmos avisos (`ShipmentNotifications`).

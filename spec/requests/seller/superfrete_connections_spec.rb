@@ -86,6 +86,17 @@ RSpec.describe "Seller SuperFrete connection", type: :request do
       expect(seller.superfrete_oauth_state_digest).to be_nil
     end
 
+    it "registers the tracking webhook in a job after connecting" do
+      state = start_authorization
+      allow(oauth).to receive(:exchange).and_return("superfrete-token")
+      allow(oauth).to receive(:account).and_return(account)
+      reset!
+
+      expect do
+        get seller_superfrete_callback_path, params: { code: "valid-code", state: state }
+      end.to have_enqueued_job(RegisterSuperfreteWebhookJob).with(seller)
+    end
+
     it "says so when the seller reconnects with a different account" do
       seller.connect_superfrete!(access_token: "old", account: Marketplace::SuperfreteOauth::Account.new(id: "sf-old", email: nil))
       state = start_authorization
@@ -194,6 +205,31 @@ RSpec.describe "Seller SuperFrete connection", type: :request do
     expect(response).to redirect_to(seller_atelier_path)
     expect(seller.reload).not_to be_superfrete_connected
     expect(other.reload).to be_superfrete_connected
+  end
+
+  it "deletes the tracking webhook at SuperFrete before forgetting the token" do
+    seller.connect_superfrete!(access_token: "token", account: account)
+    seller.store_superfrete_webhook!(id: "wh-1", key: "key-1", secret: "s" * 64)
+    client = instance_double(ShippingLabels::Client)
+    allow(ShippingLabels).to receive(:client_for).and_return(client)
+    expect(client).to receive(:delete_webhook).with("wh-1").and_return(true)
+
+    delete seller_superfrete_connection_path
+
+    expect(seller.reload.superfrete_webhook_key).to be_nil
+    expect(seller).not_to be_superfrete_connected
+  end
+
+  it "disconnects even if SuperFrete refuses to delete the webhook" do
+    seller.connect_superfrete!(access_token: "token", account: account)
+    seller.store_superfrete_webhook!(id: "wh-1", key: "key-1", secret: "s" * 64)
+    client = instance_double(ShippingLabels::Client)
+    allow(ShippingLabels).to receive(:client_for).and_return(client)
+    allow(client).to receive(:delete_webhook).and_raise(ShippingLabels::Client::Rejected, "não encontrado")
+
+    delete seller_superfrete_connection_path
+
+    expect(seller.reload).not_to be_superfrete_connected
   end
 
   describe "shipping preference" do

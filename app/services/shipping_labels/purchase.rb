@@ -107,6 +107,9 @@ module ShippingLabels
       @label.advance!(from: :purchasing, to: :purchased, tracking_code: tracking, price_cents: price_cents || @label.price_cents,
         purchased_at: Time.current, failure_message: nil)
       Rails.event.notify("shipping.label_purchased", shipping_label_id: @label.id, seller_id: @seller.id)
+      # O rastreio depende do webhook da conta; quem conectou antes de a
+      # etiqueta ser ligada ainda não tem.
+      RegisterSuperfreteWebhookJob.perform_later(@seller) unless @seller.superfrete_webhook_registered?
     end
 
     def abandon_cart(message)

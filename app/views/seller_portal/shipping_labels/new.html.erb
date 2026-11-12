@@ -9,6 +9,11 @@
   <% if @blocker %>
     <div class="seller-card text-sm leading-6 text-ink" role="alert" data-label-blocker><%= @blocker %></div>
   <% else %>
+    <% if @limits %>
+      <p class="rounded-xl bg-brand-50 px-4 py-3 text-sm leading-6 text-stone-800" data-label-limit>
+        Você ainda pode comprar <strong><%= pluralize(@limits.available, "etiqueta", plural: "etiquetas") %></strong> antes de postar as que estão pendentes na SuperFrete.
+      </p>
+    <% end %>
     <section class="seller-card" aria-labelledby="package_heading">
       <h2 id="package_heading" class="text-xl font-bold">1. Pacote</h2>
       <p class="mt-1 text-sm text-ink-muted">Meça a caixa já embalada. Sugerimos as medidas das peças cadastradas; corrija se a caixa for outra.</p>

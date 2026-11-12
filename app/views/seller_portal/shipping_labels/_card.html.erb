@@ -9,7 +9,10 @@
         form: { data: { turbo_confirm: "Cancelar a etiqueta? Só dá para cancelar antes de postar. Se ela tiver sido paga, o valor volta para a sua carteira na SuperFrete." } } %>
 <% end %>
 <div class="mt-5 rounded-2xl border border-brand-100 bg-white p-4 sm:p-5" data-shipping-label-card>
-  <h3 class="text-lg font-bold">Etiqueta pela SuperFrete</h3>
+  <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+    <h3 class="text-lg font-bold">Etiqueta pela SuperFrete</h3>
+    <%= link_to "Como funciona", seller_shipping_settings_path(anchor: "etiqueta"), class: "text-sm font-semibold text-brand-700 underline underline-offset-4" %>
+  </div>
   <% if refunding %>
     <% if label&.active? %>
       <p class="mt-1 text-sm text-ink" data-label-refunding>O valor deste pedido foi ou está sendo devolvido ao comprador. Não poste a peça: cancele a etiqueta para o valor dela voltar à sua carteira na SuperFrete.</p>
@@ -20,10 +23,15 @@
       <strong><%= label.service_name %></strong> · <%= format_price(label.price_cents || label.quoted_price_cents) %>
       <% if label.tracking_code.present? %> · rastreio <strong><%= label.tracking_code %></strong><% end %>
     </p>
-    <p class="mt-1 text-sm text-ink-muted">Imprima, cole na caixa e poste. Depois, marque o pedido como enviado abaixo.</p>
+    <% if label.posted_at? %>
+      <p class="mt-1 text-sm text-ink" data-label-posted>A SuperFrete informou a postagem em <%= l(label.posted_at, format: :short) %>, mas o pedido não pôde ser marcado como enviado. A equipe da EloShop vai entrar em contato.</p>
+    <% else %>
+      <p class="mt-1 text-sm text-ink-muted">Imprima, cole na caixa e poste. Quando a postagem for registrada, o pedido é marcado como enviado sozinho; se preferir, marque abaixo.</p>
+    <% end %>
     <div class="mt-4 flex flex-wrap gap-3">
       <%= link_to "Imprimir etiqueta", print_seller_order_shipping_label_path(order), target: "_blank", rel: "noopener", class: "seller-button seller-button--primary" %>
-      <%= cancel_button %>
+      <%# Postada não se cancela mais na SuperFrete. %>
+      <%= cancel_button unless label.posted_at? %>
     </div>
   <% elsif label&.in_progress? %>
     <%# Conferir e cancelar em todo estado em andamento: se o job morreu no
@@ -38,7 +46,12 @@
     </div>
   <% else %>
     <% if label&.failure_message.present? %>
-      <p class="mt-1 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900" data-label-failure>A última tentativa não gerou etiqueta: <%= label.failure_message %></p>
+      <div class="mt-1 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900" data-label-failure>
+        <p>A última tentativa não gerou etiqueta: <%= label.failure_message %></p>
+        <% if label.failed_for_lack_of_balance? %>
+          <p class="mt-1 font-semibold" data-label-balance-hint>Pela EloShop, a etiqueta é paga sempre com o saldo da carteira. Recarregue a carteira no site ou no app da SuperFrete (por PIX) e clique em Gerar etiqueta de novo.</p>
+        <% end %>
+      </div>
     <% end %>
     <p class="mt-1 text-sm text-ink-muted">Compre a etiqueta por aqui, com o saldo da sua carteira na SuperFrete, sem digitar os dados do cliente.</p>
     <%= link_to "Gerar etiqueta", new_seller_order_shipping_label_path(order), class: "seller-button seller-button--primary mt-4" %>

@@ -34,6 +34,13 @@ production:
     class: PurgeRetainedMercadoPagoCredentialsJob
     queue: default
     schedule: every day at 4am
+  # Rede de segurança do webhook de rastreio da SuperFrete, que não reenvia
+  # notificação perdida: confere as etiquetas compradas que ainda não
+  # chegaram (ShippingLabels::Track). Só age com SHIPPING_LABELS_ENABLED.
+  reconcile_shipping_labels:
+    class: ReconcileShippingLabelsJob
+    queue: default
+    schedule: every hour at minute 23
   # Procura sinais de vendedor irregular e avisa o admin por e-mail e Sentry.
   # Só notifica (Fraud::SellerScan); idempotente por vendedor e regra.
   seller_fraud_scan:

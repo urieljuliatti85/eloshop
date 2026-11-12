@@ -52,6 +52,48 @@ module ShippingLabels
       assert_equal "Campo CPF/CNPJ do destinatário é obrigatório.", error.message
     end
 
+    test "creating the webhook returns its id and the secret that signs the notifications" do
+      sent = nil
+      client = client_responding(201, { "id" => "wh-1", "secret_token" => "f" * 64, "is_active" => true }) { |request| sent = request }
+
+      result = client.create_webhook(name: "EloShop", url: "https://eloshop.test/webhooks/superfrete/k", events: [ "order.posted" ])
+
+      assert_equal({ id: "wh-1", secret: "f" * 64 }, result)
+      assert_equal "/api/v0/webhook", sent.path
+      assert_equal [ "order.posted" ], JSON.parse(sent.body)["events"]
+    end
+
+    test "a webhook created without the secret is uncertain" do
+      client = client_responding(201, { "id" => "wh-1" })
+
+      assert_raises(Client::Ambiguous) { client.create_webhook(name: "EloShop", url: "https://x", events: []) }
+    end
+
+    test "label limits keep only the two numbers, never the account's personal data" do
+      client = client_responding(200, { "id" => "u1", "email" => "atelie@example.com", "document" => "10555718760",
+        "limits" => { "shipments" => 2, "shipments_available" => 3 } })
+
+      limits = client.label_limits
+
+      assert_equal({ pending: 2, available: 3 }, limits.to_h)
+      assert_not limits.exhausted?
+      assert ShippingLabels::Client::Limits.new(pending: 5, available: 0).exhausted?
+    end
+
+    test "label limits are nil when the account does not report them" do
+      assert_nil client_responding(200, { "id" => "u1" }).label_limits
+      assert_nil client_responding(200, { "limits" => { "shipments_available" => "muitas" } }).label_limits
+    end
+
+    test "deleting the webhook sends a DELETE" do
+      sent = nil
+      client = client_responding(204, nil) { |request| sent = request }
+
+      assert client.delete_webhook("wh-1")
+      assert_equal "DELETE", sent.method
+      assert_equal "/api/v0/webhook/wh-1", sent.path
+    end
+
     test "a 500 is uncertain, not a refusal: it does not prove nothing was charged" do
       client = client_responding(500, { "message" => "Não foi possível finalizar o pagamento" })
 

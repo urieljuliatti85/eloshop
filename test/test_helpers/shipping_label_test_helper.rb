@@ -5,7 +5,8 @@ module ShippingLabelTestHelper
   # observado no sandbox em 2026-11-05.
   class FakeClient
     attr_reader :calls
-    attr_accessor :quote_result, :cart_result, :checkout_result, :info_result, :cancel_result
+    attr_accessor :quote_result, :cart_result, :checkout_result, :info_result, :cancel_result,
+      :create_webhook_result, :delete_webhook_result
 
     def initialize
       @calls = []
@@ -14,6 +15,8 @@ module ShippingLabelTestHelper
       @checkout_result = { tracking: "AA123456789BR", price_cents: 2351 }
       @info_result = info(status: "released", tracking: "AA123456789BR")
       @cancel_result = true
+      @create_webhook_result = { id: "sf-webhook-1", secret: "a" * 64 }
+      @delete_webhook_result = true
     end
 
     def quote(**args) = respond(:quote, args, @quote_result)
@@ -21,6 +24,8 @@ module ShippingLabelTestHelper
     def checkout(id) = respond(:checkout, id, @checkout_result)
     def order_info(id) = respond(:order_info, id, @info_result)
     def cancel(id, reason:) = respond(:cancel, id, @cancel_result)
+    def create_webhook(**args) = respond(:create_webhook, args, @create_webhook_result)
+    def delete_webhook(id) = respond(:delete_webhook, id, @delete_webhook_result)
 
     def called?(name) = calls.any? { |call| call.first == name }
     def count(name) = calls.count { |call| call.first == name }

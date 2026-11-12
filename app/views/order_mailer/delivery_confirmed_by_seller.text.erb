@@ -1,6 +1,6 @@
 Olá, <%= @order.customer.name %>!
 
-O ateliê <%= @seller.name %> confirmou <%= @seller_order.shipment&.local_pickup? ? "a retirada" : "a entrega" %> do pedido #<%= @order.id %>.
+<% if @by_carrier %>A transportadora confirmou a entrega do pedido #<%= @order.id %>, do ateliê <%= @seller.name %>.<% else %>O ateliê <%= @seller.name %> confirmou <%= @seller_order.shipment&.local_pickup? ? "a retirada" : "a entrega" %> do pedido #<%= @order.id %>.<% end %>
 
 Se você ainda não recebeu o pedido, fale com o ateliê antes de qualquer outra providência.
 

@@ -357,6 +357,7 @@ Rails.application.routes.draw do
   # na tela de pagamento apontam para ele.
   post "webhooks/payments", to: "payment_webhooks#create", as: :payment_webhook
   post "webhooks/fake_gateway", to: "payment_webhooks#create", as: :fake_gateway_webhook
+  post "webhooks/superfrete/:key", to: "superfrete_webhooks#create", as: :superfrete_webhook
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

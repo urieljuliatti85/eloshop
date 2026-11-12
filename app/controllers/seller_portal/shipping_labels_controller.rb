@@ -3,6 +3,8 @@ module SellerPortal
   # `current_seller`: o pedido de outro ateliê responde 404.
   class ShippingLabelsController < BaseController
     PACKAGE_FIELDS = %i[height_cm width_cm length_cm weight_grams].freeze
+    LIMIT_REACHED_MESSAGE = "Você chegou ao limite de etiquetas aguardando postagem na SuperFrete. " \
+      "Poste ou cancele as etiquetas pendentes para liberar espaço. O limite cresce sozinho conforme você posta.".freeze
 
     rate_limit to: 20, within: 10.minutes, only: %i[create destroy], by: -> { current_seller.id },
       with: -> { redirect_to seller_order_path(params[:order_id]), alert: "Muitas tentativas. Tente de novo em alguns minutos." }
@@ -15,6 +17,8 @@ module SellerPortal
     def new
       @blocker = ShippingLabels::Guard.account_blocker(current_seller, @order) || ShippingLabels::Guard.blocker(@shipment) || active_label_message
       @package = suggested_package.merge(requested_package)
+      @limits = label_limits unless @blocker
+      @blocker ||= LIMIT_REACHED_MESSAGE if @limits&.exhausted?
       return if @blocker || params.permit(*PACKAGE_FIELDS).to_h.compact_blank.empty?
 
       unless complete_package?
@@ -69,6 +73,15 @@ module SellerPortal
     end
 
     private
+
+    # O limite de etiquetas da conta, para avisar antes da compra em vez de o
+    # ateliê descobrir pela recusa da SuperFrete. Falhar aqui não impede nada:
+    # a tela segue sem o aviso, e a SuperFrete continua recusando se faltar.
+    def label_limits
+      ShippingLabels.client_for(current_seller, interactive: true).label_limits
+    rescue ShippingLabels::Client::Error
+      nil
+    end
 
     def set_shipment
       seller_order = current_seller.seller_orders.find_by!(order_id: params[:order_id])
