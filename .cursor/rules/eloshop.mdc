@@ -21,6 +21,8 @@ outro agente (branch, o que falta, o que não mexer, o que já foi autorizado).
    `gh pr create`. São três perguntas separadas; um "sim" anterior não vale para o próximo.
 3. Junte commits locais antes de pedir o push (cada merge na `main` vira deploy).
 4. Nunca faça merge (`gh pr merge` ou pelo GitHub) sem permissão explícita, PR a PR.
+   Depois de abrir o PR, não fique esperando o CI: o GitHub já bloqueia o merge com o
+   CI vermelho. Olhe o CI só quando o Uriel pedir o merge ou disser que ele falhou.
 5. Antes de push numa branch que já teve PR, rode `gh pr view <branch> --json state`
    sozinho, sem `&&` com o push.
 6. Commits e títulos de PR em português: `tipo(área): descrição` (`feat`, `fix`,
