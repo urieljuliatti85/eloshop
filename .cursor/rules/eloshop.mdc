@@ -29,6 +29,14 @@ outro agente (branch, o que falta, o que não mexer, o que já foi autorizado).
 8. O roteiro do projeto é um artifact do Claude Code que o Cursor não alcança. Ao abrir
    ou mergear um PR, avise o Uriel para atualizar o roteiro pelo Claude Code.
 
+## O repositório é público (ver CLAUDE.md §63, "O repositório é público")
+
+Arquivos, histórico, commits e PRs ficam visíveis para qualquer pessoa. O que você não
+mostraria a um concorrente não entra: negociação com parceiros, advogado e contador,
+decisões comerciais em aberto, números e contatos da captação, dados de pessoas reais,
+senhas e tokens. Escreva só o resultado técnico e peça ao Uriel para registrar o resto
+nos documentos privados dele. Na dúvida, pergunte antes de commitar.
+
 ## Testes e lint
 
 - Duas suítes, de propósito: regra de domínio ou serviço → Minitest (`test/`, rode
