@@ -65,7 +65,7 @@ gem "mercadopago-sdk"
 
 # Cliente oficial da Google Analytics Data API. A coleta pública usa gtag.js;
 # esta gem é somente para os relatórios agregados e read-only do Admin.
-gem "google-analytics-data", "~> 0.9"
+gem "google-analytics-data", "~> 0.10"
 
 # Error tracking (backend). Protocolo compatível com Sentry — aponta para o
 # GlitchTip via SENTRY_DSN [https://github.com/getsentry/sentry-ruby]
