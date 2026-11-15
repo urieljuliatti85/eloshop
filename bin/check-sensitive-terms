@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Procura, nas linhas que o commit acrescenta, termos de uma lista privada:
+# nomes de pessoas reais, registros, contatos e assuntos que não entram no
+# repositório público (CLAUDE.md, "O repositório é público").
+#
+# A lista fica em .git/info/sensitive-terms, dentro de .git e portanto fora
+# do versionamento: publicá-la exporia justamente o que ela protege. Um termo
+# ou expressão regular estendida por linha, sem diferenciar maiúsculas;
+# linhas em branco e começadas por "#" são ignoradas. Sem a lista (outra
+# máquina, CI), a checagem é pulada com um aviso.
+#
+# Uso: bin/check-sensitive-terms  (olha o que está staged)
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+list="$(git rev-parse --git-path info/sensitive-terms)"
+
+if [ ! -s "$list" ]; then
+  echo "(lista privada $list ausente: checagem de termos sensíveis pulada)"
+  exit 0
+fi
+
+patterns="$(grep -v -E '^[[:space:]]*(#|$)' "$list" || true)"
+[ -z "$patterns" ] && exit 0
+
+hits="$(
+  git diff --cached -U0 --no-color --diff-filter=ACMR |
+    awk '/^\+\+\+ b\// { file = substr($0, 7); next }
+         /^\+/        { print file ": " substr($0, 2) }' |
+    grep -i -E -f <(printf '%s\n' "$patterns") || true
+)"
+
+if [ -n "$hits" ]; then
+  echo "Termos da lista privada nas linhas acrescentadas (repositório público):"
+  echo "$hits"
+  echo
+  echo "Tire o trecho ou leve-o para um documento privado. Se for falso positivo,"
+  echo "ajuste $list."
+  exit 1
+fi

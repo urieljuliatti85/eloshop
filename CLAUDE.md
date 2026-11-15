@@ -1520,7 +1520,7 @@ Se a resposta for "não", "planejando ou negociando" ou "sim", essa parte fica f
 
 **Desenho de algo ainda não implementado é plano**, mesmo escrito em linguagem técnica: fase futura, prazos ainda não aplicados, papéis previstos, fatiamento em PRs. ADR e `docs/` descrevem o que já está no código ou em vigor no site; o desenho fica no documento privado e entra no repositório junto com o PR que o implementa, escrito como funcionamento. Perguntas para advogado ou contador também ficam fora, mesmo sem a resposta.
 
-**O push já publica**: a branch fica visível antes de qualquer PR. Ao pedir commit que toque `docs/`, `ROADMAP.md`, `CLAUDE.md` ou texto público (mensagem de commit, descrição de PR), mostre ao Uriel a resposta às três perguntas; mostre a descrição do PR antes de abri-lo.
+**O push já publica**: a branch fica visível antes de qualquer PR. Ao pedir commit que toque `docs/`, `ROADMAP.md`, `CLAUDE.md` ou texto público (mensagem de commit, descrição de PR), mostre ao Uriel a resposta às três perguntas; mostre a descrição do PR antes de abri-lo. O pre-commit também procura termos de uma lista privada (`.git/info/sensitive-terms`, fora do git; ver `.githooks/README.md`) e para o commit se achar algum.
 
 Testes e seeds usam só dados inventados. Senhas, tokens e chaves vivem nas variáveis da Railway ou no `credentials.yml.enc`, nunca em texto. Os commits deste projeto usam o e-mail `noreply` do GitHub, configurado no `git config` local.
 
