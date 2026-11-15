@@ -39,6 +39,10 @@ decisões comerciais em aberto, números e contatos da captação, dados de pess
 senhas e tokens. Escreva só o resultado técnico e peça ao Uriel para registrar o resto
 nos documentos privados dele. Na dúvida, pergunte antes de commitar.
 
+Desenho de algo ainda não implementado (fase futura, prazos ainda não aplicados, fatiamento)
+é plano: fica fora do repositório até o PR que o implementa. Perguntas para advogado ou
+contador também. O push já publica a branch, então a checagem vem antes dele.
+
 ## Testes e lint
 
 - Duas suítes, de propósito: regra de domínio ou serviço → Minitest (`test/`, rode
