@@ -1,40 +1,63 @@
-#!/usr/bin/env bash
-# Procura, nas linhas que o commit acrescenta, termos de uma lista privada:
-# nomes de pessoas reais, registros, contatos e assuntos que não entram no
-# repositório público (CLAUDE.md, "O repositório é público").
+#!/usr/bin/env ruby
+# Procura, no que o commit acrescenta, termos de uma lista privada: nomes de
+# pessoas reais, registros, contatos e assuntos que não entram no repositório
+# público (CLAUDE.md, "O repositório é público").
 #
 # A lista fica em .git/info/sensitive-terms, dentro de .git e portanto fora
 # do versionamento: publicá-la exporia justamente o que ela protege. Um termo
-# ou expressão regular estendida por linha, sem diferenciar maiúsculas;
-# linhas em branco e começadas por "#" são ignoradas. Sem a lista (outra
-# máquina, CI), a checagem é pulada com um aviso.
+# ou expressão regular por linha, sem diferenciar maiúsculas; linhas em branco
+# e começadas por "#" são ignoradas; `[[:space:]]` vale como `\s`. Sem a lista
+# (outra máquina, CI), a checagem é pulada com um aviso.
+#
+# Só bloqueia ocorrência nova: por arquivo e por termo, compara as linhas
+# acrescentadas com as removidas. Editar uma linha que já tinha o termo, sem
+# acrescentar outro, não bloqueia.
 #
 # Uso: bin/check-sensitive-terms  (olha o que está staged)
-set -euo pipefail
 
-cd "$(git rev-parse --show-toplevel)"
-list="$(git rev-parse --git-path info/sensitive-terms)"
+Dir.chdir(`git rev-parse --show-toplevel`.strip)
+list = `git rev-parse --git-path info/sensitive-terms`.strip
 
-if [ ! -s "$list" ]; then
-  echo "(lista privada $list ausente: checagem de termos sensíveis pulada)"
+unless File.size?(list)
+  puts "(lista privada #{list} ausente: checagem de termos sensíveis pulada)"
   exit 0
-fi
+end
 
-patterns="$(grep -v -E '^[[:space:]]*(#|$)' "$list" || true)"
-[ -z "$patterns" ] && exit 0
+patterns = File.readlines(list, chomp: true)
+  .map(&:strip)
+  .reject { |line| line.empty? || line.start_with?("#") }
+  .map { |line| Regexp.new(line.gsub("[[:space:]]", "\\s"), Regexp::IGNORECASE) }
+exit 0 if patterns.empty?
 
-hits="$(
-  git diff --cached -U0 --no-color --diff-filter=ACMR |
-    awk '/^\+\+\+ b\// { file = substr($0, 7); next }
-         /^\+/        { print file ": " substr($0, 2) }' |
-    grep -i -E -f <(printf '%s\n' "$patterns") || true
-)"
+added = Hash.new { |hash, file| hash[file] = [] }
+removed = Hash.new { |hash, file| hash[file] = [] }
+file = nil
+`git diff --cached -U0 --no-color --diff-filter=ACMR`.each_line(chomp: true) do |line|
+  if line.start_with?("+++ ")
+    file = line.delete_prefix("+++ ").delete_prefix("b/")
+  elsif line.start_with?("--- ")
+    next
+  elsif line.start_with?("+")
+    added[file] << line[1..]
+  elsif line.start_with?("-")
+    removed[file] << line[1..]
+  end
+end
 
-if [ -n "$hits" ]; then
-  echo "Termos da lista privada nas linhas acrescentadas (repositório público):"
-  echo "$hits"
-  echo
-  echo "Tire o trecho ou leve-o para um documento privado. Se for falso positivo,"
-  echo "ajuste $list."
-  exit 1
-fi
+hits = added.flat_map do |path, lines|
+  patterns.filter_map do |pattern|
+    count = ->(texts) { texts.sum { |text| text.scan(pattern).size } }
+    next if count.(lines) <= count.(removed[path])
+
+    lines.select { |text| text.match?(pattern) }.map { |text| "#{path}: #{text}" }
+  end.flatten
+end.uniq
+
+exit 0 if hits.empty?
+
+puts "Termos da lista privada acrescentados (repositório público):"
+puts hits
+puts
+puts "Tire o trecho ou leve-o para um documento privado. Se for falso positivo,"
+puts "ajuste #{list}."
+exit 1
