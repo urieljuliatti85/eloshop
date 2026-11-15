@@ -55,7 +55,7 @@ class ReturnRequestTest < ActiveSupport::TestCase
   end
 
   test "refuses invalid transitions and leaves no history behind" do
-    return_request = open_request
+    return_request = open_request(kind: :product_issue)
     return_request.record_update!(author: @admin, new_status: "resolved")
 
     assert_no_difference -> { return_request.updates.count } do
@@ -65,6 +65,49 @@ class ReturnRequestTest < ActiveSupport::TestCase
     end
     assert_predicate return_request.reload, :resolved?
     assert_not_nil return_request.resolved_at
+  end
+
+  # Desistência antes do envio: "Resolvida" é a desistência atendida, e só o
+  # reembolso integral impede o envio de vez. Sem ele, o ateliê voltaria a
+  # poder postar a peça de um pedido do qual o comprador desistiu.
+  test "refuses to resolve a withdrawal before shipping until the order is fully refunded" do
+    return_request = open_request(kind: :withdrawal)
+
+    error = assert_raises(ReturnRequest::InvalidStatusTransition) do
+      return_request.record_update!(author: @admin, body: "Resolvido.", new_status: "resolved")
+    end
+    assert_match "reembolse o valor integral", error.message
+    assert_predicate return_request.reload, :received?
+    assert_equal 1, return_request.updates.count
+
+    @seller_order.update_columns(status: "partially_refunded")
+    assert_raises(ReturnRequest::InvalidStatusTransition) do
+      return_request.record_update!(author: @admin, new_status: "resolved")
+    end
+
+    @seller_order.update_columns(status: "refunded")
+    return_request.record_update!(author: @admin, new_status: "resolved")
+    assert_predicate return_request.reload, :resolved?
+  end
+
+  test "closing a withdrawal before shipping needs no refund: the buyer changed their mind" do
+    return_request = open_request(kind: :withdrawal)
+
+    return_request.record_update!(author: @admin, new_status: "closed")
+
+    assert_predicate return_request.reload, :closed?
+  end
+
+  test "a withdrawal after shipping and the other kinds resolve without a refund" do
+    open_request(kind: :product_issue).tap { |request| request.record_update!(author: @admin, new_status: "resolved") }
+    open_request(kind: :delivery_issue).tap { |request| request.record_update!(author: @admin, new_status: "resolved") }
+
+    withdrawal = open_request(kind: :withdrawal)
+    @seller_order.create_shipment!(carrier: "Correios", service: "PAC", shipping_cents: 1_500, estimated_days: 5)
+      .update_columns(status: "shipped", shipped_at: 1.day.ago)
+    withdrawal.reload.record_update!(author: @admin, new_status: "resolved")
+
+    assert_equal 3, @seller_order.return_requests.where(status: "resolved").count
   end
 
   test "an update with neither answer nor new status records nothing" do

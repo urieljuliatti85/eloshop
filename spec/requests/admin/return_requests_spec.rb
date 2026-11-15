@@ -70,7 +70,21 @@ RSpec.describe "Admin return requests", type: :request do
     expect(Notification.where(recipient: seller_order.seller, kind: "return_request_updated")).to exist
   end
 
+  it "refuses to resolve a withdrawal before shipping while the order is not fully refunded" do
+    sign_in_admin
+
+    expect {
+      patch admin_return_request_path(return_request), params: { return_request_update: { status: "resolved", body: "Resolvido." } }
+    }.not_to have_enqueued_mail(ReturnRequestMailer, :updated)
+
+    expect(response).to redirect_to(admin_return_request_path(return_request))
+    expect(flash[:alert]).to include("reembolse o valor integral")
+    expect(return_request.reload).to be_received
+  end
+
   it "refuses an invalid transition without changing anything" do
+    return_request
+    seller_order.update_columns(status: "refunded")
     return_request.record_update!(author: admin, new_status: "resolved")
     sign_in_admin
 

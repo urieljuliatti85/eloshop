@@ -117,7 +117,7 @@ module ReturnRequests
 
       message = "A EloShop mudou a solicitação do pedido ##{@order.id} (#{kind_label.downcase}) para \"#{status_label}\"."
       if @return_request.kind_withdrawal? && !@return_request.open? && not_shipped?
-        message += " O envio está liberado."
+        message += shippable? ? " O envio está liberado." : " O pedido foi reembolsado: não envie a peça."
       end
       message
     end
@@ -130,7 +130,13 @@ module ReturnRequests
     end
 
     def not_shipped?
-      @seller_order.shipment.nil? || @seller_order.shipment.pending?
+      @return_request.before_shipment?
+    end
+
+    # As mesmas situações em que Shipment#transition_to! aceita o envio.
+    def shippable?
+      @seller_order.reload
+      @seller_order.confirmed? || @seller_order.partially_refunded?
     end
 
     def safely(&block)

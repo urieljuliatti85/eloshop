@@ -112,6 +112,20 @@ class ReturnRequest < ApplicationRecord
     (shipment&.delivered_at || shipment&.customer_reported_delivered_at)&.in_time_zone&.to_date
   end
 
+  def before_shipment?
+    shipment = seller_order.shipment
+    shipment.nil? || shipment.pending?
+  end
+
+  # Fechar a desistência tira a trava do envio (Shipment#transition_to!), e
+  # depois dela só o status do pedido segura a peça. "Resolvida" é a
+  # desistência atendida, então exige o reembolso integral, que passa o pedido
+  # para `refunded` e barra o envio de vez; "Encerrada" fica para o comprador
+  # que voltou atrás, e aí o envio volta a valer.
+  def unrefunded_withdrawal_before_shipment?
+    kind_withdrawal? && before_shipment? && !seller_order.reload.refunded?
+  end
+
   # `nil` quando a entrega não foi registrada. Nunca usado para recusar.
   def within_withdrawal_window?
     return unless kind_withdrawal?
@@ -132,6 +146,11 @@ class ReturnRequest < ApplicationRecord
       if new_status && !STATUS_TRANSITIONS.fetch(status).include?(new_status)
         raise InvalidStatusTransition,
           "não é possível passar de \"#{status_label}\" para \"#{STATUS_LABELS.fetch(new_status, new_status)}\""
+      end
+      if new_status == "resolved" && unrefunded_withdrawal_before_shipment?
+        raise InvalidStatusTransition,
+          "para marcar a desistência como resolvida antes do envio, reembolse o valor integral pela tela do pedido. " \
+          "Se o comprador voltou atrás, use \"Encerrada\", que libera o envio ao ateliê"
       end
       next nil if body.nil? && new_status.nil?
 

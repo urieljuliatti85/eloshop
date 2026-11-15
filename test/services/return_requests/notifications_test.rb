@@ -62,6 +62,19 @@ class ReturnRequests::NotificationsTest < ActiveSupport::TestCase
     assert_match "O envio está liberado", seller_notification.body
   end
 
+  test "resolving a refunded withdrawal before shipping tells the atelier not to ship" do
+    return_request = open_request(kind: :withdrawal)
+    @seller_order.update_columns(status: "refunded")
+    update = return_request.record_update!(author: @admin, new_status: "resolved")
+
+    ReturnRequests::Notifications.updated(update)
+
+    seller_notification = Notification.where(recipient: @seller, kind: "return_request_updated").last
+    assert_match "Resolvida", seller_notification.body
+    assert_match "O pedido foi reembolsado: não envie a peça.", seller_notification.body
+    assert_no_match "O envio está liberado", seller_notification.body
+  end
+
   test "a status change that keeps the withdrawal open does not unlock shipping" do
     return_request = open_request(kind: :withdrawal)
     update = return_request.record_update!(author: @admin, new_status: "in_progress")
