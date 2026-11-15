@@ -27,8 +27,8 @@ protocolo e confirmação imediata —, com o reembolso e o estoque ainda feitos
 mão pelo admin. O resto do desenho é a **Fase 2**, depois da abertura. Ver a
 seção "Fase 1".
 
-É a primeira condição do parecer jurídico de 2026-10-29 (Marcos Alex Silva,
-OAB/ES 39.173) para publicar a política de trocas e devoluções (PR #172), e o
+É a primeira condição do parecer jurídico de 2026-10-29 para publicar a
+política de trocas e devoluções (PR #172), e o
 item 6 do texto da política ("utilize a ferramenta… na área da sua compra").
 
 ## Contexto
