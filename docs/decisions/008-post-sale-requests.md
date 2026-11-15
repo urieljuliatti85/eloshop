@@ -27,8 +27,8 @@ protocolo e confirmação imediata —, com o reembolso e o estoque ainda feitos
 mão pelo admin. O resto do desenho é a **Fase 2**, depois da abertura. Ver a
 seção "Fase 1".
 
-É a primeira condição do parecer jurídico de 2026-10-29 (Marcos Alex Silva,
-OAB/ES 39.173) para publicar a política de trocas e devoluções (PR #172), e o
+É a primeira condição do parecer jurídico de 2026-10-29 para publicar a
+política de trocas e devoluções (PR #172), e o
 item 6 do texto da política ("utilize a ferramenta… na área da sua compra").
 
 ## Contexto
@@ -271,142 +271,6 @@ volta", escolha das peças devolvidas, fotos, ateliê escrevendo na solicitaçã
 * Confirmar com o advogado que a Fase 1 atende à condição do parecer para
   publicar a política (#172).
 
-## Fase 2: problema com o produto e problema na entrega (desenho de 2026-11-15)
-
-Na Fase 1, `product_issue` e `delivery_issue` só registram a reclamação e
-avisam: o ateliê é notificado, mas não escreve na solicitação, não propõe
-solução e não tem prazo, e o admin faz a ponte com o comprador por fora. A
-conversa do pedido (`OrderMessage`) existe, mas fica fora do protocolo e sem o
-admin. Este desenho completa a Fase 2 para os dois motivos. A desistência não
-muda.
-
-**Papéis.** O ateliê **propõe e executa** a solução (conserto, peça nova,
-abatimento); o comprador **aceita ou recusa**; a EloShop **arbitra** quando
-não há acordo ou um prazo vence, e continua sendo a única a reembolsar (Anexo
-II do parecer, §34). O ateliê nunca encerra a solicitação nem dispara
-reembolso: "propor reembolso" é um pedido ao admin.
-
-### Comunicação: conversa a três na solicitação
-
-O histórico da solicitação (`ReturnRequestUpdate`) vira a conversa entre
-comprador, ateliê e EloShop, com o autor visível para os três. É o que fica no
-protocolo e serve de prova numa disputa; a conversa do pedido continua para o
-resto do atendimento e, com solicitação aberta, mostra um aviso que leva a
-ela. Além do texto, cada parte tem ações próprias, que gravam um registro e
-mudam a vez:
-
-| Quem | Ações |
-|---|---|
-| Ateliê | propor solução, informar código de postagem (devolução ou reenvio), anexar comprovante de entrega, "peça recebida de volta" |
-| Comprador | aceitar ou recusar a proposta, informar código da devolução, "recebi" |
-| EloShop | responder, decidir, reembolsar (`Payments::Refund` ligado à solicitação, regras 1, 2, 5 e 9), encerrar |
-
-Fotos seguem a regra 7 (controller próprio, URL de curta duração) e nunca são
-obrigatórias.
-
-### Vez e prazos
-
-O status ganha `awaiting_seller` e `awaiting_customer`, que dizem de quem é a
-vez. `respond_by` passa a ser o prazo **de quem está com a vez** (2 dias
-úteis a cada passagem), e `resolve_by` é o prazo total para resolver. Um job
-diário (o lembrete já previsto na Fase 2) avisa antes do vencimento e, vencido
-o prazo do ateliê, **escala** para a EloShop: a solicitação vai para
-`in_progress` com a marca de escalada, no topo da fila do admin. Vencido o
-prazo do comprador (ex.: não postou a devolução), a EloShop decide se encerra.
-
-| Prazo | Valor recomendado | Base |
-|---|---|---|
-| Ateliê responder com uma proposta | 2 dias úteis | prazo de resposta já prometido na política |
-| Comprador aceitar ou recusar | 5 dias úteis | sem resposta, a EloShop decide |
-| Resolver um vício (`resolve_by`) | 30 dias corridos da abertura | CDC, art. 18, §1º: depois disso a escolha é do comprador |
-| Atraso virar extravio | data prevista + 7 dias úteis | data prevista = postagem + `shipments.estimated_days` |
-
-Os valores ficam em constantes do model, como `RESPONSE_BUSINESS_DAYS`.
-
-### Problema com o produto (`product_issue`)
-
-```
-Comprador relata (descrição, fotos opcionais)
-        ↓  awaiting_seller (2 dias úteis)
-Ateliê propõe uma solução:
-   conserto       → comprador devolve → ateliê ajusta → reenvia
-   peça nova      → ateliê envia outra (devolução da defeituosa opcional)
-   abatimento     → reembolso parcial, comprador fica com a peça
-   reembolso      → integral, com devolução da peça
-        ↓  awaiting_customer (5 dias úteis)
-Aceita  → execução registrada: código da devolução → peça recebida de volta
-          → código do reenvio → "recebi" do comprador → Resolvida
-Recusa, silêncio do ateliê ou resolve_by vencido → EloShop decide
-```
-
-* **A proposta é um registro**, `ReturnRequestProposal` (`solution`:
-  `repair` / `replacement` / `partial_refund` / `full_refund`; valor sugerido
-  quando há reembolso; prazo prometido; `status`: `proposed` / `accepted` /
-  `rejected`). Recusada, o ateliê pode propor outra dentro de `resolve_by`;
-  aceita, a EloShop executa o reembolso quando houver.
-* **Peça única ou sob encomenda sem conserto possível** não tem "peça nova":
-  a tela não oferece a opção quando o produto é `one_of_a_kind`, e o caminho
-  é conserto ou reembolso.
-* **Estoque.** Peça nova tirada do estoque é debitada na ação de reenvio, com
-  o mesmo lock do checkout; a peça defeituosa devolvida **não volta ao
-  estoque** (diferente da desistência), a menos que o ateliê marque que ela
-  está vendável.
-
-### Problema na entrega (`delivery_issue`)
-
-O comprador escolhe o subtipo (`delivery_issue_reason`), porque cada um tem
-um caminho:
-
-| Subtipo | O ateliê faz (2 dias úteis) | Saídas |
-|---|---|---|
-| `late` (atrasado) | Confirma o rastreio e uma nova previsão. Com etiqueta da SuperFrete, o rastreio já chega pelo webhook (#361) e a tela mostra. | Chegou: comprador marca "recebi" → Resolvida. Passou da data prevista + 7 dias úteis: vira `lost`. |
-| `lost` (extraviado, não chegou) | Abre a reclamação na transportadora e propõe reenvio ou reembolso. | Reenvio com novo código, ou reembolso integral pela EloShop. |
-| `delivered_not_received` (consta entregue, não recebi) | Anexa o comprovante de entrega da transportadora. | Comprador reconhece → Resolvida. Contesta, ou não há comprovante → EloShop decide. |
-| `wrong_address` (endereço errado) | Compara o endereço postado com o snapshot do pedido. | Reenvio para o endereço certo. A EloShop registra de quem foi o erro, porque é isso que define quem paga o frete (ver parâmetros abaixo). |
-
-Pedido ainda não postado não abre `delivery_issue` como atraso de transporte:
-é atraso de produção, e a tela mostra o prazo de produção prometido no pedido
-(`OrderItem`) antes de deixar abrir.
-
-As etiquetas atuais saem com `insurance_value: 0`
-(`ShippingLabels::Payload`): num extravio, a indenização da transportadora
-fica limitada ao mínimo dela, e o resto do valor da peça não é coberto.
-Declarar valor na etiqueta é decisão à parte, com custo por envio.
-
-### Envios da solicitação
-
-Devolução e reenvio **não reaproveitam o `Shipment` do pedido** (`has_one`,
-com máquina de estados e trava de desistência próprias). Ficam em
-`ReturnRequestShipment` (`direction`: `return` / `replacement`;
-transportadora; código de rastreio; `posted_at`; `received_at`; quem pagou o
-frete), um por trecho. Começa com o código informado à mão; a etiqueta
-reversa pela SuperFrete entra depois, pelo mesmo caminho da etiqueta de ida
-(`ShippingLabels::Purchase`, paga pela carteira do ateliê).
-
-### Parâmetros que dependem de decisão do negócio
-
-O sistema precisa saber, para cada caso, **quem paga cada trecho de frete**
-(devolução e reenvio no vício, reenvio no extravio, reenvio por endereço
-errado) e **se o abatimento é oferecido**. A decisão fica fora deste
-documento; o desenho só exige que ela vire regra fixa por subtipo, aplicada
-pelo sistema e registrada em `ReturnRequestShipment`, e não escolha do admin
-caso a caso. O que for decidido entra nos Termos do Artesão (nova versão,
-novo aceite) e na Política de Trocas antes de ligar a funcionalidade.
-
-### Fatiamento sugerido
-
-1. Conversa a três e vez/prazos (`awaiting_seller`, `awaiting_customer`,
-   `resolve_by`, escalada no job diário), sem ações estruturadas: já tira o
-   admin do papel de ponte.
-2. Subtipos de entrega, comprovante e "recebi".
-3. Proposta do ateliê e `ReturnRequestShipment` com código informado à mão.
-4. Reembolso ligado à solicitação (o PR de dinheiro da Fase 2, regras 1, 2, 5
-   e 9) e estoque da peça nova.
-5. Etiqueta reversa pela SuperFrete.
-
-Cada fatia passa pelo `/principal-reviewer` antes da implementação; as fatias
-4 e 5 mexem em dinheiro e frete e são as de maior risco.
-
 ## Pendente
 
 * **Quando reembolsar na desistência depois da entrega** — ao receber o pedido
@@ -414,11 +278,6 @@ Cada fatia passa pelo `/principal-reviewer` antes da implementação; as fatias
   providências "imediatas". **Pergunta para o advogado.** Até a resposta: o
   admin decide caso a caso, com o botão de reembolso disponível desde o
   primeiro minuto.
-* **Prazo para sanar o vício no marketplace** — se os 30 dias do art. 18,
-  §1º, do CDC contam da abertura da solicitação e como fica a
-  responsabilidade da plataforma quando o ateliê não resolve no prazo.
-  **Pergunta para o advogado.** Até a resposta, o desenho da Fase 2 usa 30
-  dias corridos da abertura e escala para a EloShop no vencimento.
 
 ## Condições externas (não bloqueiam construir, bloqueiam publicar a política)
 
