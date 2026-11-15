@@ -48,7 +48,10 @@
                       ReturnRequest::STATUS_TRANSITIONS.fetch(@return_request.status).map { |status| [ ReturnRequest::STATUS_LABELS.fetch(status), status ] },
                     {}, class: "w-full" %>
               <% if @return_request.kind_withdrawal? %>
-                <p class="mt-2 text-sm text-slate-500">Enquanto a desistência estiver aberta, o ateliê não consegue marcar o pedido como enviado. Resolver ou encerrar libera o envio.</p>
+                <p class="mt-2 text-sm text-slate-500">Enquanto a desistência estiver aberta, o ateliê não consegue marcar o pedido como enviado.</p>
+                <% if @return_request.before_shipment? %>
+                  <p class="mt-1 text-sm text-slate-500"><strong>Resolvida</strong> exige o reembolso integral pela tela do pedido, que impede o envio de vez. <strong>Encerrada</strong> é para quando o comprador voltou atrás: libera o envio ao ateliê.</p>
+                <% end %>
               <% end %>
             </div>
             <%= form.submit "Salvar e avisar o comprador", class: "admin-button admin-button--primary" %>

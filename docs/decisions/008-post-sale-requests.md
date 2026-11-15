@@ -216,6 +216,14 @@ apontados na revisão.
 4. Reembolsa pela tela do pedido, como hoje (`Payments::Refund`, #309/#310), e
    ajusta o estoque à mão no produto. A tela do pedido mostra a solicitação
    aberta, com link, e a da solicitação mostra os reembolsos do pedido.
+5. Fechar a desistência tira a trava do envio, e depois dela só o status do
+   pedido segura a peça. Por isso, antes do envio, **"Resolvida" exige o
+   pedido reembolsado por inteiro** (`refunded`, que barra o envio de vez) e é
+   recusada sem ele, inclusive com reembolso parcial. **"Encerrada"** é para o
+   comprador que voltou atrás: não pede reembolso e libera o envio. O aviso ao
+   ateliê segue o status do pedido: "O envio está liberado" só quando o envio
+   de fato volta a valer, e "O pedido foi reembolsado: não envie a peça" no
+   caso contrário (revisão de 2026-11-15).
 
 **Ateliê**
 

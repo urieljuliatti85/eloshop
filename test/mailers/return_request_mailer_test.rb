@@ -23,6 +23,7 @@ class ReturnRequestMailerTest < ActionMailer::TestCase
   end
 
   test "updated sends the new status and the answer" do
+    @return_request.seller_order.update_columns(status: "refunded")
     update = @return_request.record_update!(author: users(:one), body: "Reembolso solicitado.", new_status: "resolved")
 
     email = ReturnRequestMailer.updated(update)
