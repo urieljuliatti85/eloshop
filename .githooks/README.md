@@ -11,7 +11,8 @@ deles falhar.
 `bin/check-sensitive-terms` procura, nas linhas acrescentadas, os termos de
 uma lista privada em `.git/info/sensitive-terms` (um termo ou expressão
 regular por linha). A lista fica dentro de `.git`, fora do versionamento,
-porque o repositório é público; sem ela, a checagem é pulada.
+porque o repositório é público; sem ela, a checagem é pulada. Só
+bloqueia ocorrência nova: editar uma linha que já tinha o termo não bloqueia.
 
 Para reinstalar manualmente (ex.: depois de editar `.githooks/pre-commit`):
 
