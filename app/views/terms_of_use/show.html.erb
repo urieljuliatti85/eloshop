@@ -1,0 +1,192 @@
+<%# Rascunho de 2026-10-31 para revisão jurídica (documento "Análise das
+    políticas da EloShop — acompanhamento", aba "Termos de Uso do comprador").
+    NÃO publicar enquanto houver marcação [PENDENTE] nem sem a revisão do
+    advogado. A forma de aceite (caixa no cadastro, registro da versão) também
+    depende dele: hoje o cadastro do comprador não registra aceite. %>
+<% content_for :title, "Termos de Uso — EloShop" %>
+<% content_for :meta_description, "Regras para navegar e comprar na EloShop: cadastro, compras, pagamento, entrega, cancelamentos, avaliações e responsabilidades." %>
+<% pending = ->(text) { tag.mark("[PENDENTE: #{text}]", class: "rounded bg-amber-100 px-1 font-semibold text-amber-900") } %>
+
+<div class="container mx-auto max-w-3xl px-5 py-16">
+  <h1 class="text-3xl font-bold text-ink">Termos de Uso</h1>
+  <p class="mt-2 text-sm text-ink-muted">Última atualização: <%= pending.call("data da publicação") %>.</p>
+
+  <div class="mt-10 space-y-10 text-ink-muted [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-ink [&_li]:mt-1 [&_p]:mt-3 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">
+    <section id="sobre">
+      <h2>1. Sobre estes termos</h2>
+      <p>
+        Estes Termos de Uso regem o uso da EloShop por quem navega e compra no site eloshop.shop. Ao criar uma conta ou
+        fazer um pedido, você declara que leu e concorda com eles, com a
+        <%= link_to "Política de Privacidade", privacy_policy_path, class: "font-semibold text-brand-700 underline" %>
+        e com a Política de Trocas, Devoluções, Cancelamentos e Reembolsos.
+      </p>
+      <p>
+        A EloShop é operada por <%= pending.call("nome empresarial ou nome do responsável, CNPJ ou CPF, endereço físico") %>,
+        com atendimento pelo e-mail
+        <a href="mailto:contato@eloshop.shop" class="font-semibold text-brand-700 underline">contato@eloshop.shop</a>.
+      </p>
+    </section>
+
+    <section id="o-que-e">
+      <h2>2. O que é a EloShop</h2>
+      <p>
+        A EloShop é uma plataforma que reúne peças artesanais oferecidas por ateliês independentes. Cada peça é vendida
+        pelo ateliê que a produz, identificado na página do produto e na página do ateliê.
+      </p>
+      <ul>
+        <li><strong>O ateliê</strong> é responsável pelo anúncio, pela produção, pela qualidade da peça, pelo envio, pela nota fiscal e pelo cumprimento do que foi oferecido.</li>
+        <li><strong>A EloShop</strong> mantém o site, intermedeia o pagamento pelo Mercado Pago, recebe e acompanha cancelamentos, devoluções, reembolsos e reclamações, e pode adotar medidas para resolvê-los.</li>
+        <li>As análises e decisões internas da EloShop não impedem o acesso aos órgãos de defesa do consumidor ou ao Poder Judiciário, nem afastam direitos e responsabilidades previstos em lei.</li>
+      </ul>
+    </section>
+
+    <section id="cadastro">
+      <h2>3. Cadastro e conta</h2>
+      <p>
+        Para comprar, você cria uma conta com nome, e-mail e senha, e informa o endereço de entrega no pedido. Você pode
+        navegar, montar o carrinho e ver as peças sem conta.
+      </p>
+      <ul>
+        <li><strong>Idade:</strong> <%= pending.call("idade mínima ou regra para menores") %>.</li>
+        <li><strong>Dados verdadeiros:</strong> as informações do cadastro e do endereço devem ser verdadeiras e atualizadas, porque são usadas na entrega e no atendimento.</li>
+        <li><strong>Senha:</strong> é pessoal. Avise a EloShop se suspeitar de uso indevido da sua conta. A EloShop nunca pede sua senha por e-mail ou mensagem.</li>
+        <li><strong>Dados pessoais:</strong> você pode atualizar seus dados na área da conta e pedir o encerramento da conta e a exclusão dos dados pelo e-mail contato@eloshop.shop, respeitados os registros que a lei obriga a guardar (por exemplo, os dos pedidos).</li>
+        <li><strong>Suspensão:</strong> a EloShop pode suspender ou encerrar a conta em caso de fraude, uso indevido ou descumprimento destes termos, sem prejuízo dos pedidos já feitos e dos direitos do comprador.</li>
+      </ul>
+    </section>
+
+    <section id="compras">
+      <h2>4. Compras</h2>
+      <p>O pedido só é confirmado depois que o pagamento é aprovado; antes disso, a peça pode ficar indisponível.</p>
+      <ul>
+        <li><strong>Oferta:</strong> preço, características, variações, personalizações, prazo de produção e ateliê responsável aparecem na página do produto antes da compra.</li>
+        <li><strong>Valor final:</strong> o resumo do pedido mostra os produtos, o desconto de cupom, quando houver, e o frete, antes do pagamento. Os valores são calculados pela EloShop no momento do pedido.</li>
+        <li><strong>Um ateliê por pedido:</strong> cada pedido reúne peças de um único ateliê. Para comprar de outro ateliê, é feito um novo pedido.</li>
+        <li><strong>Carrinho:</strong> colocar uma peça no carrinho não a reserva. Se ela deixar de estar disponível ou mudar de preço antes da finalização, o pedido mostra a situação atualizada antes do pagamento.</li>
+        <li><strong>Pagamento:</strong> é processado pelo Mercado Pago, por PIX ou cartão de crédito, nas condições de parcelamento que ele oferecer. A EloShop não recebe nem guarda os dados do seu cartão. O código PIX tem validade; se expirar, você pode gerar outro no mesmo pedido.</li>
+        <li><strong>Confirmação:</strong> você recebe a confirmação do pedido por e-mail e acompanha o andamento na área "Meus pedidos".</li>
+        <li><strong>Preço com erro evidente:</strong> <%= pending.call("tratamento de preço anunciado com erro evidente") %>.</li>
+      </ul>
+    </section>
+
+    <section id="pecas">
+      <h2>5. Peças artesanais, sob encomenda e personalizadas</h2>
+      <p>
+        Peças feitas à mão podem ter pequenas diferenças de cor, textura e medida em relação às fotos, próprias do
+        processo artesanal, desde que dentro do que o anúncio descreve.
+      </p>
+      <ul>
+        <li><strong>Sob encomenda:</strong> a peça é produzida depois da compra. O prazo de produção aparece na página do produto e fica registrado no pedido. Quando o ateliê começa a produção, você é avisado e a data aparece no pedido.</li>
+        <li><strong>Personalizadas:</strong> as escolhas que você faz (nome gravado, cor, tamanho, mensagem) ficam registradas no pedido como foram informadas. Confira antes de pagar.</li>
+        <li><strong>Direitos mantidos:</strong> o início da produção não tira, por si só, o seu direito de arrependimento previsto em lei.</li>
+      </ul>
+    </section>
+
+    <section id="entrega">
+      <h2>6. Entrega</h2>
+      <p>O prazo total é a soma do prazo de produção, quando houver, com o prazo de envio informados no pedido.</p>
+      <ul>
+        <li><strong>Frete:</strong> o valor e o prazo de envio aparecem antes do pagamento. Alguns ateliês oferecem retirada no local, sem custo.</li>
+        <li><strong>Envio:</strong> é feito pelo ateliê. Quando houver código de rastreio, ele aparece no pedido.</li>
+        <li><strong>Recebimento:</strong> você pode informar no pedido que recebeu a peça. Se ela não chegar no prazo ou chegar diferente do anunciado, veja a seção 7.</li>
+        <li><strong>Endereço:</strong> confira o endereço antes de pagar. <%= pending.call("tratamento de entrega frustrada por endereço incorreto ou ausência do comprador") %>.</li>
+      </ul>
+    </section>
+
+    <section id="cancelamentos">
+      <h2>7. Cancelamentos, trocas e reembolsos</h2>
+      <p>
+        As regras completas estão na Política de Trocas, Devoluções, Cancelamentos e Reembolsos, que faz parte destes
+        termos. Em resumo:
+      </p>
+      <ul>
+        <li>Você pode desistir da compra em até 7 dias corridos do recebimento, sem justificar, e recebe de volta tudo o que pagou, inclusive o frete.</li>
+        <li>Produto com vício, avaria ou diferente do anunciado segue os prazos e as soluções do Código de Defesa do Consumidor.</li>
+        <li>A devolução física, quando a lei garante que seja sem custo, não gera frete de retorno para você.</li>
+        <li>Os pedidos são feitos pela área do pedido ou pelo e-mail contato@eloshop.shop, com confirmação imediata e retorno em até 2 dias úteis.</li>
+        <li>O reembolso é feito pelo Mercado Pago, na forma de pagamento usada, e os acertos entre a EloShop e o ateliê não reduzem o valor devido a você.</li>
+      </ul>
+    </section>
+
+    <section id="avaliacoes">
+      <h2>8. Avaliações</h2>
+      <p>
+        Você pode avaliar uma peça com nota de 1 a 5 e um comentário, uma vez por produto. A avaliação de quem comprou a
+        peça na EloShop aparece como compra verificada.
+      </p>
+      <ul>
+        <li>As avaliações passam por moderação antes de aparecer. Podem ser recusadas as que tiverem ofensa, dado pessoal de terceiros, conteúdo ilegal, propaganda ou nada a ver com a peça. Avaliações negativas não são recusadas por serem negativas.</li>
+        <li>O ateliê pode responder publicamente à avaliação.</li>
+        <li>Você é responsável pelo que escreve e autoriza a EloShop a exibir a avaliação no site.</li>
+      </ul>
+    </section>
+
+    <section id="comunicacoes">
+      <h2>9. Lista de desejos e comunicações</h2>
+      <ul>
+        <li><strong>Lista de desejos:</strong> guardar uma peça nos favoritos não a reserva nem garante preço ou disponibilidade.</li>
+        <li><strong>E-mails do pedido:</strong> confirmação, pagamento, envio, reembolso e respostas de atendimento são enviados por e-mail e não podem ser desligados enquanto houver pedido em andamento.</li>
+        <li><strong>Mensagens do pedido:</strong> você pode conversar com o ateliê pela página do pedido. Mantenha a conversa no site, que é onde ela fica registrada para o atendimento.</li>
+        <li><strong>Outros e-mails:</strong> <%= pending.call("lembrete de carrinho e comunicações de divulgação, com a forma de descadastro") %>.</li>
+      </ul>
+    </section>
+
+    <section id="condutas">
+      <h2>10. Condutas não permitidas</h2>
+      <p>Não é permitido usar a EloShop para:</p>
+      <ul>
+        <li>fazer pedidos com dados falsos, de terceiros sem autorização ou com meio de pagamento que não seja seu;</li>
+        <li>tentar alterar preços, fraudar cupons ou explorar falhas do site;</li>
+        <li>acessar dados de outras pessoas ou contas que não sejam suas;</li>
+        <li>publicar conteúdo ofensivo, ilegal ou enganoso em avaliações e mensagens;</li>
+        <li>combinar pagamento por fora da plataforma para pedidos feitos nela.</li>
+      </ul>
+      <p>Você pode denunciar um ateliê pela página dele, se suspeitar de fraude ou irregularidade.</p>
+    </section>
+
+    <section id="privacidade">
+      <h2>11. Privacidade</h2>
+      <p>
+        O tratamento dos seus dados pessoais está descrito na
+        <%= link_to "Política de Privacidade", privacy_policy_path, class: "font-semibold text-brand-700 underline" %>.
+        Para entregar o pedido, o ateliê recebe seu nome, o endereço de entrega e as escolhas do pedido; para processar o
+        pagamento, o Mercado Pago recebe os dados necessários para isso.
+      </p>
+    </section>
+
+    <section id="responsabilidades">
+      <h2>12. Responsabilidades</h2>
+      <ul>
+        <li>A EloShop se esforça para manter o site disponível e seguro, mas ele pode ficar fora do ar por manutenção ou falhas de terceiros (hospedagem, pagamento, envio). Isso não afeta pedidos já confirmados nem os seus direitos.</li>
+        <li>A responsabilidade da EloShop e do ateliê perante você segue o Código de Defesa do Consumidor e depende da atuação de cada um na venda. Nada nestes termos limita direitos que a lei garante ao consumidor.</li>
+        <li>Os acertos entre a EloShop e o ateliê, como comissão, frete de devolução e reembolsos, ficam nos Termos do Artesão e não reduzem os seus direitos.</li>
+      </ul>
+    </section>
+
+    <section id="atendimento">
+      <h2>13. Atendimento</h2>
+      <p>
+        O atendimento é feito pela área do pedido e pelo e-mail
+        <a href="mailto:contato@eloshop.shop" class="font-semibold text-brand-700 underline">contato@eloshop.shop</a>,
+        com retorno em até 2 dias úteis (segunda a sexta).
+      </p>
+    </section>
+
+    <section id="alteracoes">
+      <h2>14. Alterações</h2>
+      <p>
+        A EloShop pode atualizar estes termos. A versão em vigor fica publicada com a data da última atualização, e
+        mudanças relevantes são avisadas no site ou por e-mail. Pedidos já feitos seguem os termos vigentes na data da
+        compra.
+      </p>
+    </section>
+
+    <section id="foro">
+      <h2>15. Lei aplicável e foro</h2>
+      <p>
+        Estes termos seguem a lei brasileira. Para consumidores, vale o foro do seu domicílio, como prevê o Código de
+        Defesa do Consumidor. <%= pending.call("confirmar a redação do foro") %>.
+      </p>
+    </section>
+  </div>
+</div>
