@@ -54,6 +54,49 @@ module Gateways
       assert_equal 13.49, body["application_fee"]
     end
 
+    test "pix and card payloads carry the statement descriptor, the items and the payer name for the risk engine" do
+      @order.customer.update!(name: "Maria Aparecida da Silva")
+      item = @order.order_items.first
+
+      pix = stub_request("id" => 1, "point_of_interaction" => {}) do
+        @gateway.authorize(order: @order, idempotency_key: "risk-pix", application_fee_cents: 1_349)
+      end
+      card = stub_request("id" => 2, "status" => "approved", "payment_method_id" => "visa", "card" => {}) do
+        @gateway.authorize(
+          order: @order, idempotency_key: "risk-card", application_fee_cents: 1_349, payment_method: "credit_card",
+          card_token: "tok", installments: 1, payment_method_id: "visa"
+        )
+      end
+
+      [ pix, card ].each do |captured|
+        body = JSON.parse(captured.body)
+        assert_equal "ELOSHOP", body["statement_descriptor"]
+        assert_equal "Maria", body.dig("payer", "first_name")
+        assert_equal "Aparecida da Silva", body.dig("payer", "last_name")
+        assert_equal @order.customer.email, body.dig("payer", "email")
+        sent = body.dig("additional_info", "items").first
+        assert_equal item.sku, sent["id"]
+        assert_equal item.product_name, sent["title"]
+        assert_equal item.quantity, sent["quantity"]
+        assert_equal item.unit_price_cents / 100.0, sent["unit_price"]
+        assert_equal 13.49, body["application_fee"], "extra fields must not change the charged amounts"
+      end
+    end
+
+    test "a one-word customer name sends only first_name, and a long item title is truncated" do
+      @order.customer.update!(name: "Maria")
+      @order.order_items.first.update_columns(product_name: "A" * 400)
+
+      captured = stub_request("id" => 1, "point_of_interaction" => {}) do
+        @gateway.authorize(order: @order, idempotency_key: "risk-short", application_fee_cents: 1_349)
+      end
+
+      body = JSON.parse(captured.body)
+      assert_equal "Maria", body.dig("payer", "first_name")
+      assert_not body["payer"].key?("last_name")
+      assert_equal 256, body.dig("additional_info", "items").first["title"].length
+    end
+
     # `payment_method_id`/`issuer_id` são os campos que faltavam no payload
     # real e causaram o 500 opaco investigado nos tickets WCS-50393/WCS-51962
     # — ver o comentário em Gateways::MercadoPago#authorize_credit_card.
